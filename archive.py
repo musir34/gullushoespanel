@@ -270,14 +270,26 @@ def recover_from_archive():
 
 @archive_bp.route('/delete_archived_order', methods=['POST'])
 def remove_archived_order():
-    order_number = request.form.get('order_number')
-    print(f"Arşivden siliniyor: {order_number}")
+    order_numbers = request.form.getlist('order_numbers[]')
+    if not order_numbers:
+        order_number = request.form.get('order_number')
+        if order_number:
+            order_numbers = [order_number]
+        else:
+            return jsonify({'success': False, 'message': 'Silinecek sipariş seçilmedi.'})
 
-    archived_order = Archive.query.filter_by(order_number=order_number).first()
-    if archived_order:
-        db.session.delete(archived_order)
+    deleted_count = 0
+    for order_number in order_numbers:
+        print(f"Arşivden siliniyor: {order_number}")
+        archived_order = Archive.query.filter_by(order_number=order_number).first()
+        if archived_order:
+            db.session.delete(archived_order)
+            deleted_count += 1
+
+    if deleted_count > 0:
         db.session.commit()
-        print(f"Sipariş {order_number} arşivden silindi.")
-        return jsonify({'success': True, 'message': 'Sipariş başarıyla silindi.'})
+        message = f"{deleted_count} sipariş başarıyla silindi."
+        print(message)
+        return jsonify({'success': True, 'message': message})
     else:
-        return jsonify({'success': False, 'message': 'Sipariş arşivde bulunamadı.'})
+        return jsonify({'success': False, 'message': 'Silinecek sipariş bulunamadı.'})
