@@ -86,44 +86,6 @@ def siparis_fisi_detay(siparis_id):
 # ==================================
 # 4) YENI SIPARIS FISI OLUSTUR (Form)
 # ==================================
-@siparis_fisi_bp.route("/siparis_fisi/toplu_olustur", methods=["GET", "POST"])
-def siparis_fisi_toplu_olustur():
-    if request.method == "POST":
-        created_ids = []
-        for i in range(10):
-            model_kodu = request.form.get(f"urun_model_kodu_{i}")
-            if not model_kodu:  # Skip empty rows
-                continue
-                
-            yeni_fis = SiparisFisi(
-                urun_model_kodu=model_kodu,
-                renk=request.form.get(f"renk_{i}"),
-                beden_35=int(request.form.get(f"beden_35_{i}", 0)),
-                beden_36=int(request.form.get(f"beden_36_{i}", 0)),
-                beden_37=int(request.form.get(f"beden_37_{i}", 0)),
-                beden_38=int(request.form.get(f"beden_38_{i}", 0)),
-                beden_39=int(request.form.get(f"beden_39_{i}", 0)),
-                beden_40=int(request.form.get(f"beden_40_{i}", 0)),
-                beden_41=int(request.form.get(f"beden_41_{i}", 0)),
-                cift_basi_fiyat=float(request.form.get(f"cift_basi_fiyat_{i}", 0))
-            )
-            yeni_fis.toplam_adet = (yeni_fis.beden_35 + yeni_fis.beden_36 + 
-                                   yeni_fis.beden_37 + yeni_fis.beden_38 + 
-                                   yeni_fis.beden_39 + yeni_fis.beden_40 + 
-                                   yeni_fis.beden_41)
-            yeni_fis.toplam_fiyat = float(yeni_fis.toplam_adet) * float(yeni_fis.cift_basi_fiyat)
-            
-            db.session.add(yeni_fis)
-            db.session.flush()
-            created_ids.append(str(yeni_fis.siparis_id))
-            
-        db.session.commit()
-        if created_ids:
-            return redirect(url_for('siparis_fisi_bp.toplu_yazdir', fis_ids=','.join(created_ids)))
-        return redirect(url_for('siparis_fisi_bp.siparis_fisi_sayfasi'))
-        
-    return render_template("siparis_fisi_toplu_olustur.html")
-
 @siparis_fisi_bp.route("/siparis_fisi/olustur", methods=["GET", "POST"])
 def siparis_fisi_olustur():
     """
