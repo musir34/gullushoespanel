@@ -1,0 +1,61 @@
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Toplu Sipariş Fişi Oluştur</title>
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        .form-container { max-width: 800px; margin: 0 auto; }
+        .order-row { 
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-bottom: 10px;
+            background: #f9f9f9;
+        }
+        .form-group { margin-bottom: 10px; }
+        label { display: inline-block; width: 120px; }
+        input { padding: 5px; margin: 2px; }
+        button { padding: 10px; margin: 10px 0; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <h2>Toplu Sipariş Fişi Oluştur</h2>
+        <form method="POST">
+            {% for i in range(10) %}
+            <div class="order-row">
+                <h3>Sipariş #{{i+1}}</h3>
+                <div class="form-group">
+                    <label>Model Kodu:</label>
+                    <input type="text" name="urun_model_kodu_{{i}}">
+                    <label>Renk:</label>
+                    <input type="text" name="renk_{{i}}">
+                </div>
+                <div class="form-group">
+                    <label>35:</label>
+                    <input type="number" name="beden_35_{{i}}" value="0" min="0">
+                    <label>36:</label>
+                    <input type="number" name="beden_36_{{i}}" value="0" min="0">
+                    <label>37:</label>
+                    <input type="number" name="beden_37_{{i}}" value="0" min="0">
+                    <label>38:</label>
+                    <input type="number" name="beden_38_{{i}}" value="0" min="0">
+                </div>
+                <div class="form-group">
+                    <label>39:</label>
+                    <input type="number" name="beden_39_{{i}}" value="0" min="0">
+                    <label>40:</label>
+                    <input type="number" name="beden_40_{{i}}" value="0" min="0">
+                    <label>41:</label>
+                    <input type="number" name="beden_41_{{i}}" value="0" min="0">
+                    <label>Çift Fiyatı:</label>
+                    <input type="number" step="0.01" name="cift_basi_fiyat_{{i}}" value="0">
+                </div>
+            </div>
+            {% endfor %}
+            <button type="submit">Fişleri Oluştur ve Yazdır</button>
+        </form>
+    </div>
+</body>
+</html>
