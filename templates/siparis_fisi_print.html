@@ -16,14 +16,14 @@
             background: white;
         }
         .fis-container {
-            width: 148mm; /* A5 genişlik */
-            min-height: 210mm; /* A5 yükseklik */
+            width: 148mm;
+            min-height: 210mm;
             padding: 10mm;
             box-sizing: border-box;
         }
         .fis-header {
             text-align: center;
-            border-bottom: 1px solid #000;
+            border-bottom: 2px solid #000;
             padding-bottom: 10px;
             margin-bottom: 20px;
         }
@@ -31,21 +31,39 @@
             max-width: 100px;
             height: auto;
         }
-        .fis-bilgi {
-            margin-bottom: 15px;
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #000;
+            padding: 10px;
         }
-        .fis-bilgi-row {
+        .info-item {
             display: flex;
-            margin-bottom: 8px;
             border-bottom: 1px dotted #ccc;
             padding: 5px 0;
         }
-        .fis-label {
+        .info-label {
             font-weight: bold;
-            width: 140px;
+            width: 120px;
+            color: #333;
         }
-        .fis-value {
+        .info-value {
             flex: 1;
+        }
+        .beden-table {
+            width: 100%;
+            margin: 20px 0;
+            border-collapse: collapse;
+        }
+        .beden-table th, .beden-table td {
+            border: 1px solid #000;
+            padding: 8px;
+            text-align: center;
+        }
+        .beden-table th {
+            background-color: #f0f0f0;
         }
         .fis-toplam {
             margin-top: 20px;
@@ -54,11 +72,8 @@
             text-align: right;
             font-weight: bold;
         }
-        @media print {
-            body {
-                width: 148mm;
-                height: 210mm;
-            }
+        .fis-toplam div {
+            margin: 5px 0;
         }
     </style>
 </head>
@@ -69,40 +84,51 @@
             <h2>Sipariş Fişi</h2>
         </div>
 
-        <div class="fis-bilgi">
-            <div class="fis-bilgi-row">
-                <span class="fis-label">Sipariş No:</span>
-                <span class="fis-value">{{ fis.siparis_id }}</span>
+        <div class="info-grid">
+            <div class="info-item">
+                <span class="info-label">Fiş No:</span>
+                <span class="info-value">{{ fis.siparis_id }}</span>
             </div>
-            <div class="fis-bilgi-row">
-                <span class="fis-label">Ürün Model:</span>
-                <span class="fis-value">{{ fis.urun_model_kodu }}</span>
+            <div class="info-item">
+                <span class="info-label">Model Kodu:</span>
+                <span class="info-value">{{ fis.urun_model_kodu }}</span>
             </div>
-            <div class="fis-bilgi-row">
-                <span class="fis-label">Renk:</span>
-                <span class="fis-value">{{ fis.renk }}</span>
+            <div class="info-item">
+                <span class="info-label">Renk:</span>
+                <span class="info-value">{{ fis.renk }}</span>
             </div>
-            <div class="fis-bilgi-row">
-                <span class="fis-label">Bedenler:</span>
-                <span class="fis-value">
-                    {% if fis.beden_35 > 0 %}35: {{ fis.beden_35 }} {% endif %}
-                    {% if fis.beden_36 > 0 %}36: {{ fis.beden_36 }} {% endif %}
-                    {% if fis.beden_37 > 0 %}37: {{ fis.beden_37 }} {% endif %}
-                    {% if fis.beden_38 > 0 %}38: {{ fis.beden_38 }} {% endif %}
-                    {% if fis.beden_39 > 0 %}39: {{ fis.beden_39 }} {% endif %}
-                    {% if fis.beden_40 > 0 %}40: {{ fis.beden_40 }} {% endif %}
-                    {% if fis.beden_41 > 0 %}41: {{ fis.beden_41 }} {% endif %}
-                </span>
-            </div>
-            <div class="fis-bilgi-row">
-                <span class="fis-label">Tarih:</span>
-                <span class="fis-value">{{ fis.created_date.strftime('%d/%m/%Y %H:%M') if fis.created_date else 'Belirtilmemiş' }}</span>
+            <div class="info-item">
+                <span class="info-label">Tarih:</span>
+                <span class="info-value">{{ fis.created_date.strftime('%d/%m/%Y %H:%M') if fis.created_date else 'Belirtilmemiş' }}</span>
             </div>
         </div>
 
+        <table class="beden-table">
+            <tr>
+                <th>Beden</th>
+                <th>35</th>
+                <th>36</th>
+                <th>37</th>
+                <th>38</th>
+                <th>39</th>
+                <th>40</th>
+                <th>41</th>
+            </tr>
+            <tr>
+                <td>Adet</td>
+                <td>{{ fis.beden_35 }}</td>
+                <td>{{ fis.beden_36 }}</td>
+                <td>{{ fis.beden_37 }}</td>
+                <td>{{ fis.beden_38 }}</td>
+                <td>{{ fis.beden_39 }}</td>
+                <td>{{ fis.beden_40 }}</td>
+                <td>{{ fis.beden_41 }}</td>
+            </tr>
+        </table>
+
         <div class="fis-toplam">
-            <div>Toplam Adet: {{ fis.toplam_adet }}</div>
             <div>Çift Başı Fiyat: {{ "%.2f"|format(fis.cift_basi_fiyat) }} TL</div>
+            <div>Toplam Adet: {{ fis.toplam_adet }}</div>
             <div>Toplam Tutar: {{ "%.2f"|format(fis.toplam_fiyat) }} TL</div>
         </div>
     </div>
