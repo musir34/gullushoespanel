@@ -100,12 +100,57 @@
 <body>
   <div class="header">
     <div class="left-btns">
-      <!-- Anasayfa'ya dön ve fiş oluştur butonları -->
       <a href="{{ url_for('home') }}">Anasayfa</a>
       <a href="{{ url_for('siparis_fisi_bp.siparis_fisi_olustur') }}">Fiş Oluştur</a>
     </div>
     <h1>Sipariş Fişleri</h1>
   </div>
+  
+  <div class="search-container">
+    <form method="GET" class="search-form">
+      <input type="text" name="model_kodu" placeholder="Model Kodu..." value="{{ request.args.get('model_kodu', '') }}">
+      <input type="text" name="renk" placeholder="Renk..." value="{{ request.args.get('renk', '') }}">
+      <button type="submit">Ara</button>
+      <a href="{{ url_for('siparis_fisi_bp.siparis_fisi_sayfasi') }}" class="clear-btn">Temizle</a>
+    </form>
+  </div>
+
+  <style>
+    .search-container {
+      padding: 20px;
+      background: #fff;
+      margin: 20px auto;
+      width: 90%;
+      max-width: 1200px;
+      border-radius: 6px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .search-form {
+      display: flex;
+      gap: 10px;
+    }
+    .search-form input {
+      flex: 1;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    .search-form button {
+      padding: 8px 16px;
+      background: #007bff;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .clear-btn {
+      padding: 8px 16px;
+      background: #6c757d;
+      color: #fff;
+      text-decoration: none;
+      border-radius: 4px;
+    }
+  </style>
 
   <div class="content">
     {% for fis in fisler %}
@@ -141,6 +186,62 @@
       </div>
     {% endfor %}
   </div>
+
+  {% if pagination %}
+  <div class="pagination">
+    {% if pagination.has_prev %}
+      <a href="{{ url_for('siparis_fisi_bp.siparis_fisi_sayfasi', page=pagination.prev_num, 
+                         model_kodu=request.args.get('model_kodu', ''),
+                         renk=request.args.get('renk', '')) }}">&laquo; Önceki</a>
+    {% endif %}
+
+    {% for page in pagination.iter_pages() %}
+      {% if page %}
+        <a href="{{ url_for('siparis_fisi_bp.siparis_fisi_sayfasi', page=page,
+                           model_kodu=request.args.get('model_kodu', ''),
+                           renk=request.args.get('renk', '')) }}"
+           {% if page == pagination.page %}class="active"{% endif %}>
+          {{ page }}
+        </a>
+      {% else %}
+        <span>...</span>
+      {% endif %}
+    {% endfor %}
+
+    {% if pagination.has_next %}
+      <a href="{{ url_for('siparis_fisi_bp.siparis_fisi_sayfasi', page=pagination.next_num,
+                         model_kodu=request.args.get('model_kodu', ''),
+                         renk=request.args.get('renk', '')) }}">Sonraki &raquo;</a>
+    {% endif %}
+  </div>
+
+  <style>
+    .pagination {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin: 20px 0;
+    }
+    .pagination a {
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      text-decoration: none;
+      color: #007bff;
+    }
+    .pagination a:hover {
+      background: #f5f5f5;
+    }
+    .pagination a.active {
+      background: #007bff;
+      color: #fff;
+      border-color: #007bff;
+    }
+    .pagination span {
+      padding: 8px 12px;
+    }
+  </style>
+  {% endif %}
 
   <script>
     function deleteFis(id) {

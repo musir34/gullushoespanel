@@ -15,8 +15,28 @@ def siparis_fisi_sayfasi():
     'siparis_fisi.html' adli sablonu ac,
     fişleri tablo/kart seklinde gosterir
     """
-    fisler = SiparisFisi.query.order_by(SiparisFisi.created_date.desc()).all()
-    return render_template("siparis_fisi.html", fisler=fisler)
+    model_kodu = request.args.get('model_kodu', '')
+    renk = request.args.get('renk', '')
+    
+    query = SiparisFisi.query
+    
+    if model_kodu:
+        query = query.filter(SiparisFisi.urun_model_kodu.ilike(f'%{model_kodu}%'))
+    if renk:
+        query = query.filter(SiparisFisi.renk.ilike(f'%{renk}%'))
+        
+    page = request.args.get('page', 1, type=int)
+    per_page = 12  # Her sayfada gösterilecek fiş sayısı
+    
+    pagination = query.order_by(SiparisFisi.created_date.desc()).paginate(
+        page=page, per_page=per_page, error_out=False)
+    fisler = pagination.items
+    
+    return render_template(
+        "siparis_fisi.html",
+        fisler=fisler,
+        pagination=pagination
+    )
 
 # =====================
 # 2) Ozet Liste Gorunumu
