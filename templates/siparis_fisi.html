@@ -95,6 +95,12 @@
     .btn-delete:hover {
       background-color: #b02a37;
     }
+    .fis-select {
+        margin-bottom: 5px; /* Add some spacing */
+    }
+    .fis-checkbox {
+        margin-right: 5px; /* Add some spacing */
+    }
   </style>
 </head>
 <body>
@@ -155,6 +161,9 @@
   <div class="content">
     {% for fis in fisler %}
       <div class="card">
+        <div class="fis-select">
+            <input type="checkbox" class="fis-checkbox" data-fis-id="{{ fis.siparis_id }}" onchange="checkSelection(this)">
+        </div>
         {% if fis.image_url %}
           <img src="{{ fis.image_url }}" alt="Ürün Görseli">
         {% else %}
@@ -257,6 +266,12 @@
         location.reload();
       })
       .catch(err => console.error(err));
+    }
+    function checkSelection(checkbox) {
+        // Implement selection logic here.  This function should likely update a counter 
+        // to track how many checkboxes are selected and potentially disable further 
+        // selections once the limit (10) is reached.  Also, add a button to trigger
+        // the bulk printing operation.
     }
   </script>
 </body>

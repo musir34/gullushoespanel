@@ -1,0 +1,125 @@
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Toplu Sipariş Fişi</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 10mm;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: white;
+        }
+        .fis-container {
+            page-break-after: always;
+            width: 190mm;
+            padding: 5mm;
+            box-sizing: border-box;
+            border-bottom: 1px dashed #000;
+            margin-bottom: 10mm;
+        }
+        .fis-container:last-child {
+            page-break-after: avoid;
+            border-bottom: none;
+        }
+        .fis-header {
+            text-align: center;
+            border-bottom: 2px solid #000;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #000;
+            padding: 10px;
+        }
+        .beden-table {
+            width: 100%;
+            margin: 20px 0;
+            border-collapse: collapse;
+        }
+        .beden-table th, .beden-table td {
+            border: 1px solid #000;
+            padding: 8px;
+            text-align: center;
+        }
+        .fis-toplam {
+            margin-top: 20px;
+            text-align: right;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    {% for fis in fisler %}
+    <div class="fis-container">
+        <div class="fis-header">
+            <img src="{{ url_for('static', filename='logo/gullu.png') }}" alt="Logo" style="max-width: 100px;">
+            <h2>Sipariş Fişi</h2>
+        </div>
+
+        <div class="info-grid">
+            <div class="info-item">
+                <span class="info-label">Fiş No:</span>
+                <span class="info-value">{{ fis.siparis_id }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Model Kodu:</span>
+                <span class="info-value">{{ fis.urun_model_kodu }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Renk:</span>
+                <span class="info-value">{{ fis.renk }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Tarih:</span>
+                <span class="info-value">{{ fis.created_date.strftime('%d/%m/%Y %H:%M') if fis.created_date else 'Belirtilmemiş' }}</span>
+            </div>
+        </div>
+
+        <table class="beden-table">
+            <tr>
+                <th>Beden</th>
+                <th>35</th>
+                <th>36</th>
+                <th>37</th>
+                <th>38</th>
+                <th>39</th>
+                <th>40</th>
+                <th>41</th>
+            </tr>
+            <tr>
+                <td>Adet</td>
+                <td>{{ fis.beden_35 }}</td>
+                <td>{{ fis.beden_36 }}</td>
+                <td>{{ fis.beden_37 }}</td>
+                <td>{{ fis.beden_38 }}</td>
+                <td>{{ fis.beden_39 }}</td>
+                <td>{{ fis.beden_40 }}</td>
+                <td>{{ fis.beden_41 }}</td>
+            </tr>
+        </table>
+
+        <div class="fis-toplam">
+            <div>Çift Başı Fiyat: {{ "%.2f"|format(fis.cift_basi_fiyat) }} TL</div>
+            <div>Toplam Adet: {{ fis.toplam_adet }}</div>
+            <div>Toplam Tutar: {{ "%.2f"|format(fis.toplam_fiyat) }} TL</div>
+        </div>
+    </div>
+    {% endfor %}
+
+    <script>
+        window.onload = function() {
+            window.print();
+        };
+    </script>
+</body>
+</html>
