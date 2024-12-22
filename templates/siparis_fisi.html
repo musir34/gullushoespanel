@@ -108,9 +108,25 @@
     <div class="left-btns">
       <a href="{{ url_for('home') }}">Anasayfa</a>
       <a href="{{ url_for('siparis_fisi_bp.siparis_fisi_olustur') }}">Fiş Oluştur</a>
+      <button id="printSelectedBtn" class="btn-print" onclick="printSelected()" disabled>Seçilenleri Yazdır</button>
     </div>
     <h1>Sipariş Fişleri</h1>
   </div>
+
+  <style>
+    .btn-print {
+      padding: 6px 12px;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .btn-print:disabled {
+      background-color: #6c757d;
+      cursor: not-allowed;
+    }
+  </style>
   
   <div class="search-container">
     <form method="GET" class="search-form">
@@ -267,11 +283,42 @@
       })
       .catch(err => console.error(err));
     }
+    let selectedCount = 0;
+    const maxSelection = 10;
+    
     function checkSelection(checkbox) {
-        // Implement selection logic here.  This function should likely update a counter 
-        // to track how many checkboxes are selected and potentially disable further 
-        // selections once the limit (10) is reached.  Also, add a button to trigger
-        // the bulk printing operation.
+        if (checkbox.checked) {
+            selectedCount++;
+            if (selectedCount > maxSelection) {
+                checkbox.checked = false;
+                selectedCount--;
+                alert('En fazla 10 fiş seçebilirsiniz!');
+                return;
+            }
+        } else {
+            selectedCount--;
+        }
+        
+        document.getElementById('printSelectedBtn').disabled = selectedCount === 0;
+        updateCheckboxes();
+    }
+    
+    function updateCheckboxes() {
+        const checkboxes = document.querySelectorAll('.fis-checkbox:not(:checked)');
+        checkboxes.forEach(cb => {
+            cb.disabled = selectedCount >= maxSelection;
+        });
+    }
+    
+    function printSelected() {
+        const selectedFisIds = [];
+        document.querySelectorAll('.fis-checkbox:checked').forEach(cb => {
+            selectedFisIds.push(cb.dataset.fisId);
+        });
+        
+        if (selectedFisIds.length > 0) {
+            window.open('/siparis_fisi/toplu_yazdir/' + selectedFisIds.join(','), '_blank');
+        }
     }
   </script>
 </body>
