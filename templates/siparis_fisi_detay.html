@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <title>Fiş Detayı</title>
+  <style>
+    body {
+      background-color: #f7f7f7;
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .table-container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: #fff;
+      border-radius: 6px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      padding: 20px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 15px;
+    }
+    th, td {
+      padding: 10px;
+      border-bottom: 1px solid #ddd;
+      text-align: left;
+    }
+    th {
+      background-color: #eee;
+    }
+    .btn-back {
+      display: inline-block;
+      padding: 8px 14px;
+      background-color: #555;
+      color: #fff;
+      border-radius: 4px;
+      text-decoration: none;
+    }
+    .btn-back:hover {
+      background-color: #333;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Fiş Detayı</h1>
+  <div class="table-container">
+    <table>
+      <tr>
+        <th>Sipariş ID</th>
+        <td>{{ fis.siparis_id }}</td>
+      </tr>
+      <tr>
+        <th>Model Kodu</th>
+        <td>{{ fis.urun_model_kodu }}</td>
+      </tr>
+      <tr>
+        <th>Renk</th>
+        <td>{{ fis.renk }}</td>
+      </tr>
+      <tr>
+        <th>Beden 35</th>
+        <td>{{ fis.beden_35 }}</td>
+      </tr>
+      <tr>
+        <th>Beden 36</th>
+        <td>{{ fis.beden_36 }}</td>
+      </tr>
+      <tr>
+        <th>Beden 37</th>
+        <td>{{ fis.beden_37 }}</td>
+      </tr>
+      <tr>
+        <th>Beden 38</th>
+        <td>{{ fis.beden_38 }}</td>
+      </tr>
+      <tr>
+        <th>Beden 39</th>
+        <td>{{ fis.beden_39 }}</td>
+      </tr>
+      <tr>
+        <th>Beden 40</th>
+        <td>{{ fis.beden_40 }}</td>
+      </tr>
+      <tr>
+        <th>Beden 41</th>
+        <td>{{ fis.beden_41 }}</td>
+      </tr>
+      <tr>
+        <th>Çift Başı Fiyat (TL)</th>
+        <td>{{ "%.2f"|format(fis.cift_basi_fiyat) }}</td>
+      </tr>
+      <tr>
+        <th>Toplam Adet</th>
+        <td>{{ fis.toplam_adet }}</td>
+      </tr>
+      <tr>
+        <th>Toplam Fiyat (TL)</th>
+        <td>{{ "%.2f"|format(fis.toplam_fiyat) }}</td>
+      </tr>
+      <tr>
+        <th>Oluşturma Tarihi</th>
+        <td>
+          {% if fis.created_date %}
+            {{ fis.created_date.strftime('%Y-%m-%d %H:%M') }}
+          {% else %}
+            Bilinmiyor
+          {% endif %}
+        </td>
+      </tr>
+      <tr>
+        <th>Ürün Görseli</th>
+        <td>
+          {% if fis.image_url %}
+            <img src="{{ fis.image_url }}" alt="Ürün Görseli" style="width:100px; height:100px; object-fit:cover; border-radius:4px;">
+          {% else %}
+            Yok
+          {% endif %}
+        </td>
+      </tr>
+    </table>
+    <!-- Geri dön butonu -->
+    <a href="{{ url_for('siparis_fisi_bp.siparis_fisi_sayfasi') }}" class="btn-back">Listeye Dön</a>
+  </div>
+
+</body>
+</html>

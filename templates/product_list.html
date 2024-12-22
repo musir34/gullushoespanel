@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <!-- Meta bilgiler ve stil tanımlamaları -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ürün Listesi - Trendyol</title>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <!-- Font Awesome için ikonlar -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Roboto', sans-serif;
+        }
+
+        .product-card {
+            border: none;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            background-color: #fff;
+        }
+
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        }
+
+        .product-card img {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 8px;
+            object-fit: cover;
+        }
+
+        .product-info {
+            text-align: left;
+            margin-top: 10px;
+            flex-grow: 1;
+        }
+
+        .product-info h5 {
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .product-info p {
+            font-size: 14px;
+            color: #555;
+        }
+
+        .variant-list {
+            display: none;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px dashed #ddd;
+        }
+
+        .variant-details {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            align-items: center;
+        }
+
+        .variant-details span {
+            font-weight: bold;
+        }
+
+        .size {
+            color: #007bff;
+        }
+
+        .quantity {
+            color: #28a745;
+        }
+
+        .barcode {
+            color: #dc3545;
+        }
+
+        .copy-btn {
+            background-color: transparent;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: #007bff;
+        }
+
+        .copy-btn:hover {
+            color: #0056b3;
+        }
+
+        .copy-confirmation {
+            display: none;
+            font-size: 20px;
+            color: green;
+            margin-left: 10px;
+        }
+
+        .copy-confirmation.show {
+            display: inline-block;
+        }
+
+        .btn-info {
+            background-color: #017bff;
+            border-color: #017bff;
+        }
+
+        .btn-info:hover {
+            background-color: #0056b3;
+            border-color: #0056b3;
+        }
+
+        .btn-warning-img {
+            padding: 0;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-warning-img img {
+            max-width: 100%;
+            max-height: 100%;
+            border-radius: 8px;
+        }
+
+        /* Responsive Ayarlar */
+        @media (max-width: 768px) {
+            .product-card {
+                max-width: 100%;
+            }
+
+            .btn-warning-img {
+                width: 35px;
+                height: 35px;
+            }
+
+            .product-info h5 {
+                font-size: 1rem;
+            }
+
+            .product-info p {
+                font-size: 13px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- Anasayfaya Dön Butonu -->
+        <div class="row">
+            <div class="col-12 text-center">
+                <a href="/" class="btn btn-secondary mb-4">
+                    <i class="fas fa-home mr-2"></i> Anasayfaya Dön
+                </a>
+            </div>
+        </div>
+
+        <!-- Sayfa Başlığı -->
+        <h1 class="text-center mb-4">Güllü Ayakkabı Ürün Listesi</h1>
+
+        <!-- Ürünleri Güncelleme Butonu -->
+        <form action="{{ url_for('get_products.update_products_route') }}" method="post" class="text-center">
+            <button type="submit" class="btn btn-success mt-3 mb-4">
+                <i class="fas fa-sync-alt mr-2"></i> Ürünleri Güncelle
+            </button>
+        </form>
+
+        <!-- Barkod Sayfasına Git Butonu -->
+        <div class="text-center mb-4">
+            <a href="/product_label" class="btn btn-primary">
+                <i class="fas fa-barcode mr-2"></i> Barkod Sayfasına Git
+            </a>
+        </div>
+
+        <!-- Arama Formu -->
+        <form action="{{ url_for('get_products.search_products') }}" method="GET" class="text-center mb-4">
+            <div class="form-group">
+                <div class="input-group">
+                    <input type="text" name="query" class="form-control" placeholder="Model koduna göre ara" required>
+                    <div class="input-group-append">
+                        <button type="submit" class="btn btn-info">
+                            <i class="fas fa-search mr-2"></i> Ara
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+
+        <!-- Ürünlerin Listelendiği Kısım -->
+        <div class="row" id="productContainer">
+            {% if grouped_products %}
+                {% if search_mode %}
+                    <!-- Arama modunda her barkodu ayrı göster -->
+                    {% for (model_id, color), product_group in grouped_products.items() %}
+                        <div class="col-md-4 mb-3">
+                            <div class="product-card">
+                                <div>
+                                    {% if product_group[0].images %}
+                                        <img src="{{ product_group[0].images.split(',')[0] }}" alt="Ürün Görseli">
+                                    {% else %}
+                                        <img src="https://via.placeholder.com/150" alt="Görsel Yok">
+                                    {% endif %}
+                                </div>
+                                <div class="product-info">
+                                    <h5>{{ product_group[0].title }}</h5>
+                                    <p>Model Kodu: {{ model_id }}</p>
+                                    <p>Renk: {{ color }}</p>
+                                    <button class="btn btn-info btn-sm mt-2 toggle-variants">
+                                        <i class="fas fa-chevron-down mr-2"></i> Tüm Varyantları Göster
+                                    </button>
+                                    <button class="btn btn-warning btn-sm mt-2 update-stocks"
+                                        data-model="{{ model_id }}"
+                                        data-color="{{ color }}">
+                                        <i class="fas fa-edit mr-2"></i> Stokları Güncelle
+                                    </button>
+                                    <!-- Stok güncelleme formu buraya eklenecek -->
+                                    <div class="stock-update-form mt-3" style="display: none;"></div>
+                                    <div class="variant-list">
+                                        {% for product in product_group %}
+                                            {% if product.barcode and product.barcode != 'undefined' %}
+                                                <div class="variant-details">
+                                                    <span class="size">Beden: {{ product.size }}</span>
+                                                    <span class="quantity">Stok: {{ product.quantity }}</span>
+                                                    <span class="barcode">Barkod: {{ product.barcode }}</span>
+                                                    <button class="btn btn-info btn-sm select-product"
+                                                        data-barcode="{{ product.barcode }}"
+                                                        data-model="{{ model_id }}"
+                                                        data-color="{{ color }}"
+                                                        data-size="{{ product.size }}">
+                                                        <i class="fas fa-check mr-2"></i> Bu Varyantı Seç
+                                                    </button>
+                                                    <!-- Kopyalama Butonu -->
+                                                    <button class="copy-btn" title="Barkodu Kopyala">
+                                                        <i class="fas fa-copy"></i>
+                                                    </button>
+                                                    <span class="copy-confirmation">Kopyalandı!</span>
+                                                </div>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <!-- Normal modda ana ürün altında varyantları göster -->
+                    {% for (model_id, color), product_group in grouped_products.items() %}
+                        <div class="col-md-4 mb-3">
+                            <div class="product-card">
+                                <div>
+                                    {% if product_group[0].images %}
+                                        <img src="{{ product_group[0].images.split(',')[0] }}" alt="Ürün Görseli">
+                                    {% else %}
+                                        <img src="https://via.placeholder.com/150" alt="Görsel Yok">
+                                    {% endif %}
+                                </div>
+                                <div class="product-info">
+                                    <h5>{{ product_group[0].title }}</h5>
+                                    <p>Model Kodu: {{ model_id }}</p>
+                                    <p>Renk: {{ color }}</p>
+                                    <button class="btn btn-info btn-sm mt-2 toggle-variants">
+                                        <i class="fas fa-chevron-down mr-2"></i> Tüm Varyantları Göster
+                                    </button>
+                                    <button class="btn btn-warning btn-sm mt-2 update-stocks"
+                                        data-model="{{ model_id }}"
+                                        data-color="{{ color }}">
+                                        <i class="fas fa-edit mr-2"></i> Stokları Güncelle
+                                    </button>
+                                    <!-- Stok güncelleme formu buraya eklenecek -->
+                                    <div class="stock-update-form mt-3" style="display: none;"></div>
+                                    <div class="variant-list">
+                                        {% for product in product_group %}
+                                            {% if product.barcode and product.barcode != 'undefined' %}
+                                                <div class="variant-details">
+                                                    <span class="size">Beden: {{ product.size }}</span>
+                                                    <span class="quantity">Stok: {{ product.quantity }}</span>
+                                                    <span class="barcode">Barkod: {{ product.barcode }}</span>
+                                                    <button class="btn btn-info btn-sm select-product"
+                                                        data-barcode="{{ product.barcode }}"
+                                                        data-model="{{ model_id }}"
+                                                        data-color="{{ color }}"
+                                                        data-size="{{ product.size }}">
+                                                        <i class="fas fa-check mr-2"></i> Bu Varyantı Seç
+                                                    </button>
+                                                    <!-- Kopyalama Butonu -->
+                                                    <button class="copy-btn" title="Barkodu Kopyala">
+                                                        <i class="fas fa-copy"></i>
+                                                    </button>
+                                                    <span class="copy-confirmation">Kopyalandı!</span>
+                                                </div>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% else %}
+                <div class="col-12">
+                    <p class="text-center">Hiç ürün bulunamadı.</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Sayfalama -->
+        <div class="row mt-4">
+            <div class="col-12">
+                {% if pagination %}
+                    <nav>
+                        <ul class="pagination justify-content-center">
+                            {% if pagination.has_prev %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('get_products.product_list', page=pagination.prev_num) }}" aria-label="Previous">
+                                        <span aria-hidden="true">&laquo;</span>
+                                    </a>
+                                </li>
+                            {% endif %}
+
+                            {% for p in pagination.iter_pages(left_edge=2, right_edge=2, left_current=2, right_current=2) %}
+                                {% if p %}
+                                    <li class="page-item {% if p == pagination.page %}active{% endif %}">
+                                        <a class="page-link" href="{{ url_for('get_products.product_list', page=p) }}">{{ p }}</a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item disabled"><span class="page-link">…</span></li>
+                                {% endif %}
+                            {% endfor %}
+
+                            {% if pagination.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('get_products.product_list', page=pagination.next_num) }}" aria-label="Next">
+                                        <span aria-hidden="true">&raquo;</span>
+                                    </a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                {% else %}
+                    <p class="text-center">Sayfalama bilgisi bulunamadı.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Geçici Kopyalama Alanı -->
+        <textarea id="temp-copier" style="position: absolute; top: -1000px;"></textarea>
+
+        <!-- JQuery ve Bootstrap JS -->
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+        <!-- JavaScript Kodları -->
+        <script>
+            $(document).ready(function () {
+                // Varyantları göster/gizle
+                $('#productContainer').on('click', '.toggle-variants', function () {
+                    var variantList = $(this).siblings('.variant-list');
+                    variantList.slideToggle();
+                    if ($(this).html().includes('Gizle')) {
+                        $(this).html('<i class="fas fa-chevron-down mr-2"></i> Tüm Varyantları Göster');
+                    } else {
+                        $(this).html('<i class="fas fa-chevron-up mr-2"></i> Varyantları Gizle');
+                    }
+                });
+
+                // Ürün seçme işlemi
+                $('#productContainer').on('click', '.select-product', function () {
+                    var barcode = $(this).data('barcode');
+                    var model = $(this).data('model');
+                    var color = $(this).data('color');
+                    var size = $(this).data('size');
+
+                    console.log("Select Product clicked:", { barcode, model, color, size });
+
+                    if (!barcode || barcode === 'undefined') {
+                        alert('Geçersiz barkod bilgisi.');
+                        console.warn('Geçersiz barkod:', barcode);
+                        return;
+                    }
+
+                    window.open(`/product_label?barcode=${barcode}&model=${model}&color=${color}&size=${size}`, '_blank');
+                });
+
+                // Stokları güncelleme işlemi
+                $('#productContainer').on('click', '.update-stocks', function () {
+                    var model = $(this).data('model');
+                    var color = $(this).data('color');
+                    var $stockFormContainer = $(this).siblings('.stock-update-form');
+
+                    console.log("Update Stocks clicked:", { model, color });
+
+                    if (!model || !color) {
+                        alert('Model veya renk bilgisi eksik!');
+                        return;
+                    }
+
+                    if ($stockFormContainer.is(':visible')) {
+                        $stockFormContainer.slideUp();
+                        $(this).html('<i class="fas fa-edit mr-2"></i> Stokları Güncelle');
+                        return;
+                    }
+
+                    $('.stock-update-form').not($stockFormContainer).slideUp();
+                    $('.update-stocks').not(this).html('<i class="fas fa-edit mr-2"></i> Stokları Güncelle');
+
+                    $(this).html('<i class="fas fa-times mr-2"></i> Güncellemeyi İptal Et');
+
+                    $.ajax({
+                        url: '{{ url_for("get_products.get_product_variants") }}',
+                        method: 'GET',
+                        data: { model: model, color: color },
+                        success: function (response) {
+                            console.log("AJAX GET response:", response);
+                            if (response.success && response.products) {
+                                var formHtml = `
+                                    <form class="stock-update-form-inner">
+                                        <table class="table table-bordered mt-3">
+                                            <thead>
+                                                <tr>
+                                                    <th>Beden</th>
+                                                    <th>Mevcut Stok</th>
+                                                    <th>Yeni Stok</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>`;
+
+                                response.products.forEach(function (product) {
+                                    if (product.original_product_barcode && product.original_product_barcode !== 'undefined') {
+                                        formHtml += `
+                                            <tr>
+                                                <td>${product.size}</td>
+                                                <td>${product.quantity}</td>
+                                                <td>
+                                                    <input type="number" name="${product.original_product_barcode}" value="${product.quantity}" min="0" class="form-control">
+                                                </td>
+                                            </tr>`;
+                                    }
+                                });
+
+                                formHtml += `
+                                            </tbody>
+                                        </table>
+                                        <button type="submit" class="btn btn-primary">Stokları Güncelle</button>
+                                    </form>`;
+                                $stockFormContainer.html(formHtml).slideDown();
+                            } else {
+                                alert('Varyantlar alınamadı.');
+                                console.warn('Yanıt beklenen formatta değil:', response);
+                            }
+                        },
+                        error: function (jqXHR, textStatus, errorThrown) {
+                            console.error("AJAX Error:", textStatus, errorThrown);
+                            alert('Sunucudan yanıt alınamadı.');
+                        }
+                    });
+                });
+
+                // Stok güncelleme formu gönderimi
+                $('#productContainer').on('submit', '.stock-update-form-inner', function (e) {
+                    e.preventDefault();
+                    var $form = $(this);
+                    var formData = $form.serialize();
+
+                    console.log("Submitting stock update form:", formData);
+
+                    $.ajax({
+                        url: '{{ url_for("get_products.update_stocks_ajax") }}',
+                        method: 'POST',
+                        data: formData,
+                        success: function (response) {
+                            console.log("Stock update response:", response);
+                            if (response.success) {
+                                alert('Stoklar başarıyla güncellendi.');
+                                $form.closest('.stock-update-form').slideUp();
+                                $form.closest('.product-info').find('.update-stocks').html('<i class="fas fa-edit mr-2"></i> Stokları Güncelle');
+                            } else {
+                                alert('Stok güncelleme sırasında bir hata oluştu.');
+                                console.warn('Yanıt:', response);
+                            }
+                        },
+                        error: function (jqXHR, textStatus, errorThrown) {
+                            console.error("Stock update error:", textStatus, errorThrown);
+                            alert('Sunucudan yanıt alınamadı.');
+                        }
+                    });
+                });
+
+                // Barkod kopyalama fonksiyonu
+                $('#productContainer').on('click', '.copy-btn', function () {
+                    var text = $(this).siblings('.barcode').text().replace('Barkod: ', '').trim();
+                    if (text && text !== 'undefined') {
+                        copyToClipboard(text, $(this));
+                    } else {
+                        alert('Kopyalanacak geçerli barkod bulunamadı.');
+                        console.warn('Geçersiz barkod:', text);
+                    }
+                });
+
+                function copyToClipboard(text, element) {
+                    const tempInput = document.getElementById('temp-copier');
+                    tempInput.value = text;
+                    tempInput.select();
+                    document.execCommand('copy');
+                    const confirmation = element.next('.copy-confirmation');
+                    confirmation.addClass('show');
+                    setTimeout(() => confirmation.removeClass('show'), 2000);
+                }
+            });
+        </script>
+    </div>
+</body>
+
+</html>

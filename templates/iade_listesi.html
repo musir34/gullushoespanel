@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>İade Listesi</title>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <!-- Ek CSS -->
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .user-info {
+            margin-top: 20px;
+            font-size: 16px;
+        }
+        .btn-group-top {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+        .btn-group-top form,
+        .btn-group-top a {
+            display: inline-block;
+            margin-left: 5px;
+        }
+        .page-header {
+            margin-top: 40px;
+            margin-bottom: 30px;
+        }
+        .page-header h2 {
+            font-weight: bold;
+        }
+        .table-container {
+            margin-top: 20px;
+        }
+        .pagination {
+            margin-top: 30px;
+        }
+        .copy-container {
+            display: inline-flex;
+            align-items: center;
+            margin-left: 5px;
+        }
+        .clipboard-icon {
+            cursor: pointer;
+            font-size: 18px;
+            color: #007bff;
+        }
+        .copy-confirmation {
+            display: none;
+            margin-left: 5px;
+            color: green;
+        }
+        .copy-confirmation.show {
+            display: inline;
+        }
+        .details-section {
+            background-color: #f8f9fa;
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Kullanıcı Bilgisi Sol Üstte -->
+        <div class="user-info">
+            Giriş Yapan: <strong>{{ session.get('first_name', 'Ad') }} {{ session.get('last_name', 'Soyad') }}</strong>
+        </div>
+
+        <!-- Sağ Üst Köşede Butonlar -->
+        <div class="btn-group-top">
+            <form method="POST" action="{{ url_for('logout') }}">
+                <button type="submit" class="btn btn-danger">Çıkış Yap</button>
+            </form>
+            {% if session.get('role') == 'admin' %}
+            <a href="{{ url_for('approve_users') }}" class="btn btn-warning">Kullanıcı Yönetimi</a>
+            {% endif %}
+            <a href="{{ url_for('home') }}" class="btn btn-secondary">Anasayfa</a>
+        </div>
+
+        <!-- Sayfa Başlığı -->
+        <div class="page-header text-center">
+            <h2>İade Listesi</h2>
+            <p>Toplam İade Sayısı: <strong>{{ total_elements }}</strong></p>
+        </div>
+
+        <!-- Arama ve İadeleri Güncelleme -->
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <form method="GET" action="{{ url_for('iade_islemleri.iade_listesi') }}">
+                    <div class="input-group">
+                        <input type="text" class="form-control" name="search" placeholder="İade Numarasına veya Sipariş Numarasına Göre Ara" value="{{ search }}">
+                        <button class="btn btn-primary" type="submit">Ara</button>
+                    </div>
+                </form>
+            </div>
+            <div class="col-md-4 text-end">
+                <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#refreshModal">
+                    <i class="bi bi-arrow-clockwise"></i> İadeleri Güncelle
+                </button>
+            </div>
+        </div>
+
+        <!-- İade Tablosu -->
+        <div class="table-responsive table-container">
+            <table class="table table-striped table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th>#</th>
+                        <th>İade Numarası</th>
+                        <th>Sipariş Numarası</th>
+                        <th>Müşteri Adı</th>
+                        <th>İade Tarihi</th>
+                        <th>Statü</th>
+                        <th>Detaylar</th>
+                        <th>İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for claim in claims %}
+                    <tr>
+                        <td>{{ loop.index + ((page - 1) * per_page) }}</td>
+                        <td>
+                            {{ claim.return_request_number }}
+                            <span class="copy-container">
+                                <span class="clipboard-icon" onclick="copyToClipboard('{{ claim.return_request_number }}', this)">
+                                    📋
+                                </span>
+                                <span class="copy-confirmation">✔️</span>
+                            </span>
+                        </td>
+                        <td>{{ claim.order_number }}</td>
+                        <td>{{ claim.customer_first_name }} {{ claim.customer_last_name }}</td>
+                        <td>{{ claim.return_date.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                        <td>
+                            {% set translated_status = {
+                                'Created': 'Oluşturuldu',
+                                'WaitingInAction': 'Aksiyon Bekleniyor',
+                                'Accepted': 'Kabul Edildi',
+                                'Rejected': 'Reddedildi',
+                                'Cancelled': 'İptal Edildi',
+                                'Unresolved': 'Çözümlenmedi',
+                                'InAnalysis': 'Analizde'
+                            }.get(claim.status, claim.status) %}
+                            <span class="badge 
+                                {% if translated_status == 'Oluşturuldu' %}
+                                    bg-warning
+                                {% elif translated_status == 'Kabul Edildi' %}
+                                    bg-success
+                                {% elif translated_status == 'Reddedildi' %}
+                                    bg-danger
+                                {% elif translated_status == 'İptal Edildi' %}
+                                    bg-secondary
+                                {% else %}
+                                    bg-info
+                                {% endif %}">
+                                {{ translated_status }}
+                            </span>
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-info" data-bs-toggle="collapse" data-bs-target="#details-{{ claim.id }}" aria-expanded="false" aria-controls="details-{{ claim.id }}">
+                                Detaylar
+                            </button>
+                        </td>
+                        <td>
+                            <!-- İşlemler sütununda Onayla butonu ekleyelim -->
+                            <form method="POST" action="{{ url_for('iade_islemleri.iade_onayla', claim_id=claim['id']) }}" class="d-inline">
+                                <!-- claim_line_item_ids değerlerini gizli input olarak gönderelim -->
+                                {% for product in claim.products %}
+                                    <input type="hidden" name="claim_line_item_ids" value="{{ product.claim_line_item_id }}">
+                                {% endfor %}
+                                <button class="btn btn-success btn-sm" type="submit">Onayla</button>
+                            </form>
+                            <!-- Durum Güncelleme Formu -->
+                            <form method="POST" action="{{ url_for('iade_islemleri.iade_guncelle', claim_id=claim.id) }}" class="d-inline">
+                                <div class="input-group">
+                                    <select class="form-select" name="status" required>
+                                        <option value="">Durum Seçin</option>
+                                        <option value="Accepted">Kabul Edildi</option>
+                                        <option value="Rejected">Reddedildi</option>
+                                        <option value="Cancelled">İptal Edildi</option>
+                                    </select>
+                                    <button class="btn btn-primary btn-sm" type="submit">Güncelle</button>
+                                </div>
+                            </form>
+                        </td>
+                    </tr>
+                    <!-- Detaylar -->
+                    <tr class="collapse" id="details-{{ claim.id }}">
+                        <td colspan="8">
+                            <div class="details-section">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Ürün Barkodu</th>
+                                            <th>Model No</th>
+                                            <th>Boyut</th>
+                                            <th>Renk</th>
+                                            <th>Sebep</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for product in claim.products %}
+                                        <tr>
+                                            <td>{{ product.barcode }}</td>
+                                            <td>{{ product.model_number }}</td>
+                                            <td>{{ product.size }}</td>
+                                            <td>{{ product.color }}</td>
+                                            <td>{{ product.reason }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Sayfalama -->
+        <nav aria-label="Sayfa gezintisi">
+            <ul class="pagination justify-content-center">
+                {% if page > 1 %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('iade_islemleri.iade_listesi', page=page-1, search=search) }}">Önceki</a>
+                </li>
+                {% endif %}
+                {% for i in range(1, total_pages + 1) %}
+                <li class="page-item {% if i == page %}active{% endif %}">
+                    <a class="page-link" href="{{ url_for('iade_islemleri.iade_listesi', page=i, search=search) }}">{{ i }}</a>
+                </li>
+                {% endfor %}
+                {% if page < total_pages %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('iade_islemleri.iade_listesi', page=page+1, search=search) }}">Sonraki</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+
+    <!-- İadeleri Güncelle Modal Penceresi -->
+    <div class="modal fade" id="refreshModal" tabindex="-1" aria-labelledby="refreshModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <!-- Bu formu iade verilerini güncellemek için iade_verileri endpointine yönlendiriyoruz -->
+            <form method="GET" action="{{ url_for('iade_islemleri.iade_verileri') }}">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="refreshModalLabel">İadeleri Güncelle</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>İadeleri Trendyol API'den güncellemek istediğinizden emin misiniz?</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                        <button type="submit" class="btn btn-primary">Güncelle</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- JavaScript - Kopyalama ve Diğer İşlevler -->
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function copyToClipboard(text, element) {
+            navigator.clipboard.writeText(text).then(function() {
+                const confirmation = element.nextElementSibling;
+                confirmation.classList.add('show');
+                setTimeout(() => {
+                    confirmation.classList.remove('show');
+                }, 2000);
+            }, function(err) {
+                console.error('Kopyalama hatası: ', err);
+            });
+        }
+    </script>
+</body>
+</html>

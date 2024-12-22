@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <title>Sipariş Fişleri</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
+    }
+    .header {
+      background: #333;
+      color: #fff;
+      padding: 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .header .left-btns a {
+      margin-right: 10px;
+      color: #fff;
+      text-decoration: none;
+    }
+    .header a:hover {
+      text-decoration: underline;
+    }
+    h1 {
+      margin: 0;
+    }
+
+    .content {
+      width: 90%;
+      max-width: 1200px;
+      margin: 20px auto;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+    .card {
+      background: #fff;
+      width: 250px;
+      border-radius: 6px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .card img {
+      width: 100%;
+      height: 150px;
+      object-fit: cover;
+    }
+    .card-body {
+      padding: 10px 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .card-title {
+      font-size: 1.1rem;
+      font-weight: bold;
+      margin: 0;
+    }
+    .card-text {
+      font-size: 0.9rem;
+      color: #555;
+      margin: 0;
+    }
+    /* Buton stili */
+    .btn-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .btn-detail,
+    .btn-delete {
+      padding: 6px 10px;
+      border-radius: 4px;
+      color: #fff;
+      text-decoration: none;
+      border: none;
+      cursor: pointer;
+    }
+    .btn-detail {
+      background-color: #007bff;
+    }
+    .btn-detail:hover {
+      background-color: #0056b3;
+    }
+    .btn-delete {
+      background-color: #dc3545;
+    }
+    .btn-delete:hover {
+      background-color: #b02a37;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="left-btns">
+      <!-- Anasayfa'ya dön ve fiş oluştur butonları -->
+      <a href="{{ url_for('home') }}">Anasayfa</a>
+      <a href="{{ url_for('siparis_fisi_bp.siparis_fisi_olustur') }}">Fiş Oluştur</a>
+    </div>
+    <h1>Sipariş Fişleri</h1>
+  </div>
+
+  <div class="content">
+    {% for fis in fisler %}
+      <div class="card">
+        {% if fis.image_url %}
+          <img src="{{ fis.image_url }}" alt="Ürün Görseli">
+        {% else %}
+          <img src="https://via.placeholder.com/250x150" alt="Placeholder">
+        {% endif %}
+        <div class="card-body">
+          <div class="card-title">{{ fis.urun_model_kodu }}</div>
+          <div class="card-text">Renk: {{ fis.renk }}</div>
+          <div class="card-text">Oluşturma: 
+            {{ fis.created_date.strftime('%Y-%m-%d %H:%M') if fis.created_date else '' }}
+          </div>
+          <div class="card-text">
+            Toplam Adet: {{ fis.toplam_adet }}<br>
+            Toplam Fiyat: {{ "%.2f"|format(fis.toplam_fiyat) }} TL
+          </div>
+
+          <!-- Butonlar -->
+          <div class="btn-actions">
+            <!-- Detay butonu -->
+            <a href="{{ url_for('siparis_fisi_bp.siparis_fisi_detay', siparis_id=fis.siparis_id) }}"
+               class="btn-detail">Detay</a>
+            <!-- Sil butonu -->
+            <button class="btn-delete" onclick="deleteFis({{ fis.siparis_id }})">Sil</button>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+  <script>
+    function deleteFis(id) {
+      if (!confirm("Bu fişi silmek istediğine emin misin?")) return;
+
+      fetch(`/siparis_fisi/${id}`, {
+        method: "DELETE"
+      })
+      .then(response => response.json())
+      .then(data => {
+        alert(data.mesaj);
+        // Silindikten sonra sayfayı yenile
+        location.reload();
+      })
+      .catch(err => console.error(err));
+    }
+  </script>
+</body>
+</html>

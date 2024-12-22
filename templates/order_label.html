@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kargo Etiketi - Yazdır</title>
+    <style>
+        @page {
+            size: 97mm 97mm;
+            margin: 0;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 2mm;
+            box-sizing: border-box;
+        }
+        .label {
+            width: 87mm;
+            height: 87mm;
+            padding: 5mm;
+            box-sizing: border-box;
+            position: relative;
+            border: 1px solid #000;
+        }
+        .barcode {
+            text-align: left;
+            margin-bottom: 5mm;
+        }
+        .barcode img {
+            width: 70mm;
+            height: auto;
+        }
+        .cargo-provider {
+            font-size: 12pt;
+            margin-bottom: 10mm;
+            text-align: left;
+            font-weight: bold;
+        }
+        .customer-info {
+            font-size: 10pt;
+            text-align: left;
+        }
+        .customer-info p {
+            margin: 2mm 0;
+        }
+        .customer-info .order-number {
+            font-weight: bold;
+            font-size: 10pt;
+            margin-bottom: 2mm;
+        }
+        .customer-info .name {
+            font-weight: bold;
+        }
+        .customer-info .address {
+            font-size: 9pt;
+            margin-top: 2mm;
+        }
+    </style>
+</head>
+<body>
+    <div class="label">
+        <div class="barcode">
+            {% if barcode_path %}
+                <img src="{{ url_for('static', filename=barcode_path) }}" alt="Kargo Barkodu">
+            {% else %}
+                <p>Barkod mevcut değil</p>
+            {% endif %}
+        </div>
+
+        <div class="cargo-provider">
+            {{ cargo_provider_name }}
+        </div>
+
+        <div class="customer-info">
+            <p class="order-number">Sipariş No: {{ order_number }}</p>
+            <p class="name">Alıcı: {{ customer_name }} {{ customer_surname }}</p>
+            <p class="address">{{ customer_address }}</p>
+            <!-- Telefon numarasını her zaman göster -->
+            <p class="phone">Telefon: {{ telefon_no }}</p>
+        </div>
+    </div>
+
+    <script>
+        window.onload = function() {
+            window.print();
+            window.onafterprint = function() {
+                window.close();
+            };
+        };
+    </script>
+</body>
+</html>

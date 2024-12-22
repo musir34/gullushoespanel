@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Kod Etiketi Oluştur</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f4f4f4;
+            font-family: Arial, sans-serif;
+        }
+
+        .form-container {
+            width: 300px;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .form-container h2 {
+            text-align: center;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background-color: #218838;
+        }
+
+        .label-container {
+            width: 70mm;
+            height: 40mm;
+            background-color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid black;
+            text-align: center;
+        }
+
+        .label-container img {
+            max-width: 100%;
+            max-height: 60%;
+        }
+
+        .product-info {
+            margin-top: 5px;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            width: 300px;
+            margin-top: 20px;
+        }
+
+        .nav-buttons a {
+            text-decoration: none;
+            color: white;
+            background-color: #007bff;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 16px;
+            text-align: center;
+            transition: background-color 0.3s;
+            width: 48%;
+        }
+
+        .nav-buttons a:hover {
+            background-color: #0056b3;
+        }
+
+        @media print {
+            @page {
+                size: 70mm 40mm;
+                margin: 0;
+            }
+
+            body {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+                background-color: white;
+            }
+
+            .form-container, .nav-buttons, button {
+                display: none;
+            }
+
+            .label-container {
+                border: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Form Alanı -->
+    <div class="form-container">
+        <h2>Etiket Bilgileri</h2>
+        <input type="text" id="barcode-input" placeholder="Barkod" required>
+        <input type="text" id="model-input" placeholder="Model Kodu" required>
+        <input type="text" id="color-input" placeholder="Renk" required>
+        <input type="text" id="size-input" placeholder="Beden" required>
+
+        <button type="button" onclick="generateLabel()">Etiket Oluştur</button>
+    </div>
+
+    <!-- Etiket Alanı -->
+    <div class="label-container" id="label">
+        <img id="qr-code-image" src="https://via.placeholder.com/150" alt="QR Kod">
+        <div class="product-info">
+            <span id="model-text">Model</span> - 
+            <span id="color-text">Renk</span> - 
+            <span id="size-text">Beden</span>
+        </div>
+    </div>
+
+    <!-- Yazdırma Butonu -->
+    <button style="margin-top: 15px;" onclick="window.print();">Etiketi Yazdır</button>
+
+    <!-- Navigasyon Butonları -->
+    <div class="nav-buttons">
+        <a href="/">Ana Sayfa</a>
+        <a href="/product_list">Ürün Listesi</a>
+    </div>
+
+    <script>
+        // URL'den gelen parametreleri form alanlarına doldurmak için kullanıyoruz
+        window.onload = function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const barcode = urlParams.get('barcode');
+            const model = urlParams.get('model');
+            const color = urlParams.get('color');
+            const size = urlParams.get('size');
+
+            // Eğer URL'de gelen değerler varsa formu doldur
+            if (barcode && model && color && size) {
+                document.getElementById('barcode-input').value = barcode;
+                document.getElementById('model-input').value = model;
+                document.getElementById('color-input').value = color;
+                document.getElementById('size-input').value = size;
+            }
+        };
+
+        // Etiket oluşturma fonksiyonu
+        function generateLabel() {
+            const barcode = document.getElementById('barcode-input').value;
+            const model = document.getElementById('model-input').value;
+            const color = document.getElementById('color-input').value;
+            const size = document.getElementById('size-input').value;
+
+            const qrCodeImage = document.getElementById('qr-code-image');
+
+            // Backend'den QR kod görselini çek
+            fetch(`/generate_qr?barcode=${barcode}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        qrCodeImage.src = data.qr_code_path;
+                    } else {
+                        alert(data.message);
+                    }
+                })
+                .catch(err => console.error('QR Kod oluşturulurken hata:', err));
+
+            document.getElementById('model-text').textContent = model;
+            document.getElementById('color-text').textContent = color;
+            document.getElementById('size-text').textContent = size;
+        }
+    </script>
+
+</body>
+
+</html>
