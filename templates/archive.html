@@ -11,30 +11,77 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-p6ZXNOGRZ0q2X0yGfC/YGktggO1+d2ThfCqG+ezN0Bqv6W14E6J37iR0afwgM3YcBw3TcB2mEkkkzLb/nT+8sQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <style>
         body {
-            background-color: #f8f9fa;
-            font-family: 'Roboto', sans-serif;
-        }
-        .container {
-            max-width: 1200px;
+            background-color: #f0f2f5;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
         }
         .card {
-            margin-bottom: 15px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            box-shadow: none;
-            transition: box-shadow 0.2s ease;
+            transition: all 0.3s ease;
+            border: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
         .card:hover {
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            transform: translateY(-3px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
-        .card-header, .card-body {
-            padding: 15px;
+        .btn {
+            border-radius: 6px;
+            padding: 8px 16px;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+        .btn:hover {
+            transform: translateY(-1px);
+        }
+        .pagination {
+            gap: 8px;
+        }
+        .pagination .page-link {
+            border-radius: 6px;
+            border: none;
+            padding: 10px 16px;
+            color: #444;
+            font-weight: 500;
+            background: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .pagination .page-link:hover {
+            background: #f8f9fa;
+            color: #000;
+        }
+        .pagination .active .page-link {
+            background: #0d6efd;
+            color: white;
+        }
+        .container {
+            max-width: 1400px;
+            padding: 20px;
+        }
+        .card-header {
+            background: white;
+            border-bottom: 1px solid #eee;
+        }
+        .badge {
+            padding: 6px 12px;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+        }
+        .copy-container {
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+        .copy-container:hover {
+            opacity: 1;
+        }
+        .btn-actions .btn {
+            font-size: 0.9rem;
+            padding: 6px 12px;
         }
         .product-image {
-            width: 100px;
-            height: 100px;
-            object-fit: cover;
             border-radius: 8px;
+            transition: transform 0.2s;
+        }
+        .product-image:hover {
+            transform: scale(1.05);
         }
         .clipboard-icon {
             cursor: pointer;
@@ -80,9 +127,6 @@
             height: 20px;
             filter: invert(1);
         }
-        .badge {
-            font-size: 0.9em;
-        }
         .bg-orange {
             background-color: orange;
             color: white;
@@ -102,21 +146,24 @@
 <body>
     <div class="container mt-5">
         <!-- Başlık -->
-        <div class="text-center mb-5">
-            <h2>Arşivlenmiş Siparişler</h2>
-            <h5>Şu anki sayfa: {{ page }}</h5>
-        </div>
-
-        <!-- Anasayfaya Dön Butonu -->
-        <div class="text-center mb-4">
-            <a href="{{ url_for('home.home') }}" class="btn btn-secondary">
-                <i class="fas fa-home me-1"></i> Anasayfaya Dön
-            </a>
-        </div>
-
-        <!-- Toplam Sipariş Sayısı -->
-        <div class="text-center mb-4">
-            <h4>Toplam Arşivlenmiş Sipariş Sayısı: {{ total_archived_orders_count }}</h4>
+        <div class="bg-white shadow-sm py-4 mb-4 rounded-3">
+            <div class="container">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="mb-0">Arşivlenmiş Siparişler</h2>
+                        <p class="text-muted mb-0">Sayfa {{ page }} / {{ total_pages }}</p>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <a href="{{ url_for('home.home') }}" class="btn btn-light">
+                            <i class="fas fa-home me-1"></i> Ana Sayfa
+                        </a>
+                        <div class="ms-2 border-start ps-2">
+                            <div class="text-muted">Toplam Arşiv</div>
+                            <div class="fw-bold">{{ total_archived_orders_count }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Siparişlerin Listelendiği Kısım -->
