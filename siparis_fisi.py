@@ -33,6 +33,13 @@ def siparis_fisi_listesi():
 # ======================
 # 3) Tek Fisin Detay Sayfasi
 # ======================
+@siparis_fisi_bp.route("/siparis_fisi/<int:siparis_id>/yazdir", methods=["GET"])
+def siparis_fisi_yazdir(siparis_id):
+    fis = SiparisFisi.query.get(siparis_id)
+    if not fis:
+        return jsonify({"mesaj": "Sipariş fişi bulunamadı"}), 404
+    return render_template("siparis_fisi_print.html", fis=fis)
+
 @siparis_fisi_bp.route("/siparis_fisi/<int:siparis_id>/detay", methods=["GET"])
 def siparis_fisi_detay(siparis_id):
     """

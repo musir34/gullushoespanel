@@ -1,0 +1,116 @@
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Sipariş Fişi</title>
+    <style>
+        @page {
+            size: A5;
+            margin: 10mm;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: white;
+        }
+        .fis-container {
+            width: 148mm; /* A5 genişlik */
+            min-height: 210mm; /* A5 yükseklik */
+            padding: 10mm;
+            box-sizing: border-box;
+        }
+        .fis-header {
+            text-align: center;
+            border-bottom: 1px solid #000;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .fis-header img {
+            max-width: 100px;
+            height: auto;
+        }
+        .fis-bilgi {
+            margin-bottom: 15px;
+        }
+        .fis-bilgi-row {
+            display: flex;
+            margin-bottom: 8px;
+            border-bottom: 1px dotted #ccc;
+            padding: 5px 0;
+        }
+        .fis-label {
+            font-weight: bold;
+            width: 140px;
+        }
+        .fis-value {
+            flex: 1;
+        }
+        .fis-toplam {
+            margin-top: 20px;
+            border-top: 2px solid #000;
+            padding-top: 10px;
+            text-align: right;
+            font-weight: bold;
+        }
+        @media print {
+            body {
+                width: 148mm;
+                height: 210mm;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="fis-container">
+        <div class="fis-header">
+            <img src="{{ url_for('static', filename='logo/gullu.png') }}" alt="Logo">
+            <h2>Sipariş Fişi</h2>
+        </div>
+
+        <div class="fis-bilgi">
+            <div class="fis-bilgi-row">
+                <span class="fis-label">Sipariş No:</span>
+                <span class="fis-value">{{ fis.siparis_id }}</span>
+            </div>
+            <div class="fis-bilgi-row">
+                <span class="fis-label">Ürün Model:</span>
+                <span class="fis-value">{{ fis.urun_model_kodu }}</span>
+            </div>
+            <div class="fis-bilgi-row">
+                <span class="fis-label">Renk:</span>
+                <span class="fis-value">{{ fis.renk }}</span>
+            </div>
+            <div class="fis-bilgi-row">
+                <span class="fis-label">Bedenler:</span>
+                <span class="fis-value">
+                    {% if fis.beden_35 > 0 %}35: {{ fis.beden_35 }} {% endif %}
+                    {% if fis.beden_36 > 0 %}36: {{ fis.beden_36 }} {% endif %}
+                    {% if fis.beden_37 > 0 %}37: {{ fis.beden_37 }} {% endif %}
+                    {% if fis.beden_38 > 0 %}38: {{ fis.beden_38 }} {% endif %}
+                    {% if fis.beden_39 > 0 %}39: {{ fis.beden_39 }} {% endif %}
+                    {% if fis.beden_40 > 0 %}40: {{ fis.beden_40 }} {% endif %}
+                    {% if fis.beden_41 > 0 %}41: {{ fis.beden_41 }} {% endif %}
+                </span>
+            </div>
+            <div class="fis-bilgi-row">
+                <span class="fis-label">Tarih:</span>
+                <span class="fis-value">{{ fis.created_date.strftime('%d/%m/%Y %H:%M') if fis.created_date else 'Belirtilmemiş' }}</span>
+            </div>
+        </div>
+
+        <div class="fis-toplam">
+            <div>Toplam Adet: {{ fis.toplam_adet }}</div>
+            <div>Çift Başı Fiyat: {{ "%.2f"|format(fis.cift_basi_fiyat) }} TL</div>
+            <div>Toplam Tutar: {{ "%.2f"|format(fis.toplam_fiyat) }} TL</div>
+        </div>
+    </div>
+
+    <script>
+        window.onload = function() {
+            window.print();
+        };
+    </script>
+</body>
+</html>

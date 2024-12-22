@@ -128,12 +128,15 @@
 
           <!-- Butonlar -->
           <div class="btn-actions">
-            <!-- Detay butonu -->
-            <a href="{{ url_for('siparis_fisi_bp.siparis_fisi_detay', siparis_id=fis.siparis_id) }}"
-               class="btn-detail">Detay</a>
-            <!-- Sil butonu -->
-            <button class="btn-delete" onclick="deleteFis({{ fis.siparis_id }})">Sil</button>
-          </div>
+                <!-- Detay butonu -->
+                <a href="{{ url_for('siparis_fisi_bp.siparis_fisi_detay', siparis_id=fis.siparis_id) }}"
+                   class="btn-detail">Detay</a>
+                <!-- Yazdır butonu -->
+                <a href="{{ url_for('siparis_fisi_bp.siparis_fisi_yazdir', siparis_id=fis.siparis_id) }}"
+                   class="btn-detail" target="_blank">Yazdır</a>
+                <!-- Sil butonu -->
+                <button class="btn-delete" onclick="deleteFis({{ fis.siparis_id }})">Sil</button>
+            </div>
         </div>
       </div>
     {% endfor %}
