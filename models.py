@@ -9,24 +9,32 @@ db = SQLAlchemy()
 Base = declarative_base()
 
 #Sipariş Fişi Tablosu
+class SiparisFisiDetay(db.Model):
+    __tablename__ = 'siparis_fisi_detay'
+    
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    siparis_id = db.Column(db.Integer, db.ForeignKey('siparis_fisi.siparis_id'), nullable=False)
+    urun_model_kodu = db.Column(db.String(50), nullable=False)
+    renk = db.Column(db.String(20), nullable=False)
+    beden_35 = db.Column(db.Integer, nullable=False, default=0)
+    beden_36 = db.Column(db.Integer, nullable=False, default=0)
+    beden_37 = db.Column(db.Integer, nullable=False, default=0)
+    beden_38 = db.Column(db.Integer, nullable=False, default=0)
+    beden_39 = db.Column(db.Integer, nullable=False, default=0)
+    beden_40 = db.Column(db.Integer, nullable=False, default=0)
+    beden_41 = db.Column(db.Integer, nullable=False, default=0)
+    cift_basi_fiyat = db.Column(db.Numeric(10,2), nullable=False)
+    toplam_adet = db.Column(db.Integer, nullable=False)
+    toplam_fiyat = db.Column(db.Numeric(10,2), nullable=False)
+    image_url = db.Column(db.String(255))
+
 class SiparisFisi(db.Model):
     __tablename__ = 'siparis_fisi'
 
-    siparis_id       = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    urun_model_kodu  = db.Column(db.String(50), nullable=False)
-    renk             = db.Column(db.String(20), nullable=False)
-    beden_35         = db.Column(db.Integer, nullable=False, default=0)
-    beden_36         = db.Column(db.Integer, nullable=False, default=0)
-    beden_37         = db.Column(db.Integer, nullable=False, default=0)
-    beden_38         = db.Column(db.Integer, nullable=False, default=0)
-    beden_39         = db.Column(db.Integer, nullable=False, default=0)
-    beden_40         = db.Column(db.Integer, nullable=False, default=0)
-    beden_41         = db.Column(db.Integer, nullable=False, default=0)
-    cift_basi_fiyat  = db.Column(db.Numeric(10,2), nullable=False)
-    toplam_adet      = db.Column(db.Integer, nullable=False)
-    toplam_fiyat     = db.Column(db.Numeric(10,2), nullable=False)
+    siparis_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     created_date = db.Column(db.DateTime, default=datetime.utcnow)
-    image_url = db.Column(db.String(255))  # Ürün görselinin linki
+    detaylar = db.relationship('SiparisFisiDetay', backref='fis', lazy=True)
+    toplam_fiyat = db.Column(db.Numeric(10,2), nullable=False, default=0)
     
 
 # İade siparişleri için veritabanı modeli 
