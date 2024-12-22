@@ -33,7 +33,7 @@ class SiparisFisi(db.Model):
 
     siparis_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     created_date = db.Column(db.DateTime, default=datetime.utcnow)
-    detaylar = db.relationship('SiparisFisiDetay', backref='fis', lazy=True)
+    detaylar = db.relationship('SiparisFisiDetay', backref='fis', lazy=True, cascade="all, delete-orphan")
     toplam_fiyat = db.Column(db.Numeric(10,2), nullable=False, default=0)
     
 
