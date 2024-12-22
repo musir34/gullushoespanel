@@ -62,60 +62,40 @@ def siparis_fisi_olustur():
     POST: Form verilerini al -> SiparisFisi nesnesi yarat -> DB'ye kaydet -> Listeye don
     """
     if request.method == "POST":
-        # Yeni ana fiş oluştur
-        yeni_fis = SiparisFisi()
-        db.session.add(yeni_fis)
-        db.session.flush()  # siparis_id'yi almak için flush
-        
-        # Form verilerini al (çoklu model için)
-        model_kodlari = request.form.getlist("urun_model_kodu[]")
-        renkler = request.form.getlist("renk[]")
-        beden_35_list = request.form.getlist("beden_35[]")
-        beden_36_list = request.form.getlist("beden_36[]")
-        beden_37_list = request.form.getlist("beden_37[]")
-        beden_38_list = request.form.getlist("beden_38[]")
-        beden_39_list = request.form.getlist("beden_39[]")
-        beden_40_list = request.form.getlist("beden_40[]")
-        beden_41_list = request.form.getlist("beden_41[]")
-        fiyatlar = request.form.getlist("cift_basi_fiyat[]")
-        image_urls = request.form.getlist("image_url[]")
-        
-        toplam_genel = 0
-        
-        # Her model için detay oluştur
-        for i in range(len(model_kodlari)):
-            beden_35 = int(beden_35_list[i] or 0)
-            beden_36 = int(beden_36_list[i] or 0)
-            beden_37 = int(beden_37_list[i] or 0)
-            beden_38 = int(beden_38_list[i] or 0)
-            beden_39 = int(beden_39_list[i] or 0)
-            beden_40 = int(beden_40_list[i] or 0)
-            beden_41 = int(beden_41_list[i] or 0)
-            
-            toplam_adet = (beden_35 + beden_36 + beden_37 +
-                          beden_38 + beden_39 + beden_40 + beden_41)
-            toplam_fiyat = float(toplam_adet) * float(fiyatlar[i])
-            toplam_genel += toplam_fiyat
-            
-            detay = SiparisFisiDetay(
-                siparis_id=yeni_fis.siparis_id,
-                urun_model_kodu=model_kodlari[i],
-                renk=renkler[i],
-                beden_35=beden_35,
-                beden_36=beden_36,
-                beden_37=beden_37,
-                beden_38=beden_38,
-                beden_39=beden_39,
-                beden_40=beden_40,
-                beden_41=beden_41,
-                cift_basi_fiyat=fiyatlar[i],
-                toplam_adet=toplam_adet,
-                toplam_fiyat=toplam_fiyat,
-                image_url=image_urls[i] if i < len(image_urls) else ""
-            )
-            db.session.add(detay)
-        
-        yeni_fis.toplam_fiyat = toplam_genel
+        # Form verilerini al
+        urun_model_kodu = request.form.get("urun_model_kodu")
+        renk = request.form.get("renk")
+        beden_35 = int(request.form.get("beden_35", 0))
+        beden_36 = int(request.form.get("beden_36", 0))
+        beden_37 = int(request.form.get("beden_37", 0))
+        beden_38 = int(request.form.get("beden_38", 0))
+        beden_39 = int(request.form.get("beden_39", 0))
+        beden_40 = int(request.form.get("beden_40", 0))
+        beden_41 = int(request.form.get("beden_41", 0))
+        cift_basi_fiyat = float(request.form.get("cift_basi_fiyat", 0))
+        image_url = request.form.get("image_url", "")
+
+        # Hesapla
+        toplam_adet = (beden_35 + beden_36 + beden_37 +
+                       beden_38 + beden_39 + beden_40 + beden_41)
+        toplam_fiyat = float(toplam_adet) * cift_basi_fiyat
+
+        # Yeni fiş nesnesi
+        yeni_fis = SiparisFisi(
+            urun_model_kodu=urun_model_kodu,
+            renk=renk,
+            beden_35=beden_35,
+            beden_36=beden_36,
+            beden_37=beden_37,
+            beden_38=beden_38,
+            beden_39=beden_39,
+            beden_40=beden_40,
+            beden_41=beden_41,
+            cift_basi_fiyat=cift_basi_fiyat,
+            toplam_adet=toplam_adet,
+            toplam_fiyat=toplam_fiyat,
+            image_url=image_url
+        )
 
         db.session.add(yeni_fis)
         db.session.commit()
