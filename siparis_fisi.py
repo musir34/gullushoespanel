@@ -84,8 +84,60 @@ def siparis_fisi_detay(siparis_id):
     fis = SiparisFisi.query.get(siparis_id)
     if not fis:
         return jsonify({"mesaj": "Sipariş fişi bulunamadı"}), 404
+        
+    if not fis.teslim_kayitlari:
+        fis.teslim_kayitlari = "[]"
+        fis.kalan_adet = fis.toplam_adet
+        db.session.commit()
 
     return render_template("siparis_fisi_detay.html", fis=fis)
+
+@siparis_fisi_bp.route("/siparis_fisi/<int:siparis_id>/teslimat", methods=["POST"])
+def teslimat_kaydi_ekle(siparis_id):
+    """Yeni teslimat kaydı ekle"""
+    fis = SiparisFisi.query.get(siparis_id)
+    if not fis:
+        return jsonify({"mesaj": "Sipariş fişi bulunamadı"}), 404
+
+    try:
+        # Form verilerini al
+        beden_35 = int(request.form.get("beden_35", 0))
+        beden_36 = int(request.form.get("beden_36", 0))
+        beden_37 = int(request.form.get("beden_37", 0))
+        beden_38 = int(request.form.get("beden_38", 0))
+        beden_39 = int(request.form.get("beden_39", 0))
+        beden_40 = int(request.form.get("beden_40", 0))
+        beden_41 = int(request.form.get("beden_41", 0))
+
+        toplam = beden_35 + beden_36 + beden_37 + beden_38 + beden_39 + beden_40 + beden_41
+
+        # Mevcut kayıtları al
+        import json
+        kayitlar = json.loads(fis.teslim_kayitlari or "[]")
+        
+        # Yeni kaydı ekle
+        yeni_kayit = {
+            "tarih": datetime.now().strftime("%Y-%m-%d %H:%M"),
+            "beden_35": beden_35,
+            "beden_36": beden_36,
+            "beden_37": beden_37,
+            "beden_38": beden_38,
+            "beden_39": beden_39,
+            "beden_40": beden_40,
+            "beden_41": beden_41,
+            "toplam": toplam
+        }
+        kayitlar.append(yeni_kayit)
+        
+        # Kalan adedi güncelle
+        fis.teslim_kayitlari = json.dumps(kayitlar)
+        fis.kalan_adet = fis.toplam_adet - sum(k["toplam"] for k in kayitlar)
+        
+        db.session.commit()
+        return redirect(url_for("siparis_fisi_bp.siparis_fisi_detay", siparis_id=siparis_id))
+
+    except Exception as e:
+        return jsonify({"mesaj": f"Hata oluştu: {str(e)}"}), 500
 
 # ==================================
 # 4) YENI SIPARIS FISI OLUSTUR (Form)

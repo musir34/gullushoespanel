@@ -26,8 +26,10 @@ class SiparisFisi(db.Model):
     cift_basi_fiyat  = db.Column(db.Numeric(10,2), nullable=False)
     toplam_adet      = db.Column(db.Integer, nullable=False)
     toplam_fiyat     = db.Column(db.Numeric(10,2), nullable=False)
-    created_date = db.Column(db.DateTime, default=datetime.utcnow)
-    image_url = db.Column(db.String(255))  # Ürün görselinin linki
+    created_date     = db.Column(db.DateTime, default=datetime.utcnow)
+    image_url        = db.Column(db.String(255))
+    teslim_kayitlari = db.Column(db.Text)  # JSON formatında teslimat kayıtları
+    kalan_adet       = db.Column(db.Integer)
     
 
 # İade siparişleri için veritabanı modeli 
