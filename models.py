@@ -122,19 +122,6 @@ class Order(db.Model):
 
 
 
-class HiddenProduct(db.Model):
-    __tablename__ = 'hidden_products'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    barcode = db.Column(db.String)
-    original_product_barcode = db.Column(db.String)
-    title = db.Column(db.String)
-    product_main_id = db.Column(db.String)
-    images = db.Column(db.String)
-    size = db.Column(db.String)
-    color = db.Column(db.String)
-    hide_date = db.Column(db.DateTime, default=datetime.utcnow)
-
 class Product(db.Model):
     __tablename__ = 'products'
 

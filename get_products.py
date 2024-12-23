@@ -591,17 +591,7 @@ def hide_products():
     try:
         products = Product.query.filter(Product.barcode.in_(barcodes)).all()
         for product in products:
-            hidden_product = HiddenProduct(
-                barcode=product.barcode,
-                original_product_barcode=product.original_product_barcode,
-                title=product.title,
-                product_main_id=product.product_main_id,
-                images=product.images,
-                size=product.size,
-                color=product.color
-            )
-            db.session.add(hidden_product)
-            db.session.delete(product)
+            product.hidden = True
         db.session.commit()
         return jsonify({'success': True})
     except Exception as e:
@@ -611,12 +601,11 @@ def hide_products():
 @get_products_bp.route('/get_hidden_products')
 def get_hidden_products():
     try:
-        hidden_products = HiddenProduct.query.order_by(HiddenProduct.hide_date.desc()).all()
+        hidden_products = Product.query.filter_by(hidden=True).all()
         products_data = [{
             'barcode': p.barcode,
             'title': p.title,
-            'product_main_id': p.product_main_id,
-            'hide_date': p.hide_date.strftime('%Y-%m-%d %H:%M:%S')
+            'product_main_id': p.product_main_id
         } for p in hidden_products]
         return jsonify({'success': True, 'products': products_data})
     except Exception as e:
