@@ -3,85 +3,86 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>Boş Sipariş Fişi</title>
+    <title>Boş Sipariş Fişleri</title>
     <style>
         @page {
             size: A5;
-            margin: 5mm;
+            margin: 2mm;
         }
         body {
             font-family: Arial, sans-serif;
             margin: 0;
-            padding: 5mm;
+            padding: 2mm;
             background: white;
-            max-width: 148mm;
-            height: 210mm;
-            overflow: hidden;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            grid-gap: 2mm;
         }
         .header {
             text-align: center;
-            margin-bottom: 8px;
-            padding-bottom: 5px;
+            margin-bottom: 2px;
+            padding-bottom: 2px;
             border-bottom: 1px solid #000;
         }
         .header img {
-            max-width: 40px;
-            margin-bottom: 2px;
+            max-width: 20px;
+            margin-bottom: 1px;
         }
         .header h2 {
             margin: 0;
-            font-size: 14pt;
+            font-size: 8pt;
         }
         .fis-container {
-            margin-bottom: 4px;
-            border-bottom: 1px dashed #000;
-            padding: 2px 0;
-            font-size: 8pt;
+            border: 0.5px solid #000;
+            margin-bottom: 2px;
+            padding: 2px;
+            font-size: 6pt;
         }
         .fis-details {
             display: flex;
-            gap: 8px;
-            margin-bottom: 3px;
+            gap: 4px;
+            margin-bottom: 2px;
             align-items: center;
             flex-wrap: wrap;
-            font-size: 7pt;
+            font-size: 6pt;
         }
         .beden-table {
             width: 100%;
             border-collapse: collapse;
-            margin: 2px 0;
+            margin: 1px 0;
         }
         .beden-table th, .beden-table td {
-            border: 1px solid #000;
+            border: 0.5px solid #000;
             padding: 1px;
             text-align: center;
-            font-size: 7pt;
-            height: 15px;
+            font-size: 6pt;
+            height: 8px;
         }
         .fis-toplam {
             text-align: right;
             font-weight: bold;
-            margin-top: 3px;
-            font-size: 7pt;
+            margin-top: 2px;
+            font-size: 6pt;
         }
         .input-line {
-            border-bottom: 1px solid #000;
+            border-bottom: 0.5px solid #000;
             display: inline-block;
-            width: 80px;
+            width: 40px;
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <img src="{{ url_for('static', filename='logo/gullu.png') }}" alt="Logo">
-        <h2>Sipariş Fişi</h2>
-    </div>
-
+    {% for i in range(10) %}
     <div class="fis-container">
+        <div class="header">
+            <img src="{{ url_for('static', filename='logo/gullu.png') }}" alt="Logo">
+            <h2>Sipariş Fişi</h2>
+        </div>
+
         <div class="fis-details">
-            <span><b>Model:</b> _____________</span>
-            <span><b>Renk:</b> _____________</span>
-            <span><b>Tarih:</b> _____________</span>
+            <span><b>Model:</b> _______</span>
+            <span><b>Renk:</b> _______</span>
+            <span><b>Tarih:</b> _______</span>
         </div>
 
         <table class="beden-table">
@@ -108,11 +109,11 @@
         </table>
 
         <div class="fis-toplam">
-            <span>Çift Başı Fiyat: _____________ TL</span> |
-            <span>Toplam Adet: _____________</span> |
-            <span>Toplam Tutar: _____________ TL</span>
+            <span>Çift Başı: _____ TL</span> |
+            <span>Toplam: _____</span>
         </div>
     </div>
+    {% endfor %}
 
     <script>
         window.onload = function() {
