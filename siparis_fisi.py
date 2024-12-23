@@ -100,9 +100,15 @@ def siparis_fisi_olustur():
         # Form verilerini al
         urun_model_kodu = request.form.get("urun_model_kodu")
         renk = request.form.get("renk")
-        siparis_adedi = int(request.form.get("siparis_adedi", 0))
+        beden_35 = int(request.form.get("beden_35", 0))
+        beden_36 = int(request.form.get("beden_36", 0))
+        beden_37 = int(request.form.get("beden_37", 0))
+        beden_38 = int(request.form.get("beden_38", 0))
+        beden_39 = int(request.form.get("beden_39", 0))
+        beden_40 = int(request.form.get("beden_40", 0))
+        beden_41 = int(request.form.get("beden_41", 0))
         cift_basi_fiyat = float(request.form.get("cift_basi_fiyat", 0))
-        termin_tarihi = datetime.strptime(request.form.get("termin_tarihi"), "%Y-%m-%d").date()
+        image_url = request.form.get("image_url", "")
 
         # Hesapla
         toplam_adet = (beden_35 + beden_36 + beden_37 +
@@ -147,38 +153,6 @@ def get_siparis_fisi_list():
     sonuc = []
     for fis in fisler:
         sonuc.append({
-
-@siparis_fisi_bp.route("/teslimat/<int:siparis_id>", methods=["GET", "POST"])
-def teslimat_kaydet(siparis_id):
-    siparis = SiparisFisi.query.get_or_404(siparis_id)
-    
-    if request.method == "POST":
-        teslim_adedi = int(request.form.get("teslim_adedi", 0))
-        aciklama = request.form.get("aciklama", "")
-        
-        if teslim_adedi > 0:
-            yeni_teslimat = SiparisDetay(
-                siparis_id=siparis_id,
-                teslim_adedi=teslim_adedi,
-                aciklama=aciklama
-            )
-            
-            db.session.add(yeni_teslimat)
-            
-            # Toplam teslim edilen adet kontrolü
-            toplam_teslim = sum(detay.teslim_adedi for detay in siparis.teslimatlar) + teslim_adedi
-            
-            if toplam_teslim >= siparis.siparis_adedi:
-                siparis.teslim_durumu = 'Tamamlandı'
-            else:
-                siparis.teslim_durumu = 'Kısmi Teslimat'
-                
-            db.session.commit()
-            flash('Teslimat başarıyla kaydedildi', 'success')
-            return redirect(url_for('siparis_fisi_bp.siparis_fisi_sayfasi'))
-            
-    return render_template("teslimat_form.html", siparis=siparis)
-
             "siparis_id": fis.siparis_id,
             "urun_model_kodu": fis.urun_model_kodu,
             "renk": fis.renk,
