@@ -14,43 +14,46 @@
             margin: 0;
             padding: 3mm;
             background: white;
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            grid-gap: 3mm;
             width: 148mm;
             height: 210mm;
         }
-        .fis-container {
-            border: 0.5px solid #000;
-            padding: 2mm;
-            font-size: 7pt;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            height: calc(210mm/5 - 4mm);
-        }
-        .header {
+        .page-header {
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 4mm;
-            border-bottom: 0.5px solid #000;
-            padding-bottom: 1mm;
+            margin-bottom: 3mm;
+            padding: 2mm;
+            border-bottom: 1px solid #000;
         }
-        .header img {
-            height: 8mm;
+        .page-header img {
+            height: 12mm;
             width: auto;
         }
-        .header h2 {
+        .page-header h1 {
             margin: 0;
-            font-size: 9pt;
+            font-size: 14pt;
             font-weight: bold;
+        }
+        .fis-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            grid-gap: 3mm;
+        }
+        .fis-container {
+            border: 0.5px solid #000;
+            padding: 2mm;
+            font-size: 8pt;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: calc((210mm - 25mm) / 5 - 4mm);
         }
         .fis-details {
             display: flex;
             justify-content: space-between;
             padding: 1mm 0;
-            font-size: 7pt;
+            font-size: 8pt;
         }
         .beden-table {
             width: 100%;
@@ -59,10 +62,10 @@
         }
         .beden-table th, .beden-table td {
             border: 0.5px solid #000;
-            padding: 1mm;
+            padding: 1.5mm;
             text-align: center;
-            font-size: 7pt;
-            height: 5mm;
+            font-size: 8pt;
+            height: 6mm;
         }
         .beden-table th {
             background-color: #f5f5f5;
@@ -72,60 +75,63 @@
             justify-content: space-between;
             border-top: 0.5px solid #000;
             padding-top: 1mm;
-            font-size: 7pt;
+            font-size: 8pt;
             font-weight: bold;
         }
         .input-line {
             display: inline-block;
-            width: 25mm;
+            width: 35mm;
             border-bottom: 0.5px solid #000;
             text-align: center;
+            height: 5mm;
         }
     </style>
 </head>
 <body>
-    {% for i in range(10) %}
-    <div class="fis-container">
-        <div class="header">
-            <img src="{{ url_for('static', filename='logo/gullu.png') }}" alt="Logo">
-            <h2>Sipariş Fişi</h2>
-        </div>
-
-        <div class="fis-details">
-            <span><b>Model:</b> <span class="input-line"></span></span>
-            <span><b>Renk:</b> <span class="input-line"></span></span>
-            <span><b>Tarih:</b> <span class="input-line"></span></span>
-        </div>
-
-        <table class="beden-table">
-            <tr>
-                <th>Beden</th>
-                <th>35</th>
-                <th>36</th>
-                <th>37</th>
-                <th>38</th>
-                <th>39</th>
-                <th>40</th>
-                <th>41</th>
-            </tr>
-            <tr>
-                <td>Adet</td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-            </tr>
-        </table>
-
-        <div class="fis-toplam">
-            <span>Çift Başı: <span class="input-line"></span> TL</span>
-            <span>Toplam: <span class="input-line"></span></span>
-        </div>
+    <div class="page-header">
+        <img src="{{ url_for('static', filename='logo/gullu.png') }}" alt="Logo">
+        <h1>Sipariş Fişi</h1>
     </div>
-    {% endfor %}
+    
+    <div class="fis-grid">
+        {% for i in range(10) %}
+        <div class="fis-container">
+            <div class="fis-details">
+                <span><b>Model:</b> <span class="input-line"></span></span>
+                <span><b>Renk:</b> <span class="input-line"></span></span>
+                <span><b>Tarih:</b> <span class="input-line"></span></span>
+            </div>
+
+            <table class="beden-table">
+                <tr>
+                    <th>Beden</th>
+                    <th>35</th>
+                    <th>36</th>
+                    <th>37</th>
+                    <th>38</th>
+                    <th>39</th>
+                    <th>40</th>
+                    <th>41</th>
+                </tr>
+                <tr>
+                    <td>Adet</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+            </table>
+
+            <div class="fis-toplam">
+                <span>Çift Başı: <span class="input-line"></span> TL</span>
+                <span>Toplam: <span class="input-line"></span></span>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
 
     <script>
         window.onload = function() {
