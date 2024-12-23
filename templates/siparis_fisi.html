@@ -2,34 +2,142 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
-  <title>Sipariş Fişleri</title>
+  <title>Tedarik Bilgileri</title>
   <style>
-    body {
+    /* Temel Sıfırlama */
+    * {
       margin: 0;
       padding: 0;
+      box-sizing: border-box;
+    }
+
+    /* Sayfa Arka Plan ve Yazı Tipi */
+    body {
       font-family: Arial, sans-serif;
       background: #f5f5f5;
+      color: #333;
     }
+
+    /********************************
+     * Header (Üst Menü)
+     ********************************/
     .header {
-      background: #333;
+      background: #30475e; /* Daha yumuşak bir lacivert ton */
       color: #fff;
       padding: 15px;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      position: sticky;
+      top: 0;
+      z-index: 999;
     }
-    .header .left-btns a {
+
+    /* Logo alanı */
+    .logo-container {
+      display: flex;
+      align-items: center;
+      gap: 10px; /* logo ile başlık arasında boşluk */
+    }
+    .logo {
+      width: 50px;  /* Logo genişliği */
+      height: auto; /* Oran korunsun */
+      border-radius: 4px;
+      object-fit: cover;
+    }
+
+    /* Header içindeki sol butonlar */
+    .header .left-btns a,
+    .header .left-btns button.btn-print {
       margin-right: 10px;
       color: #fff;
       text-decoration: none;
-    }
-    .header a:hover {
-      text-decoration: underline;
-    }
-    h1 {
-      margin: 0;
+      font-weight: 500;
+      padding: 8px 12px;
+      border: none;
+      border-radius: 4px;
+      background-color: transparent;
+      transition: background-color 0.2s ease;
+      cursor: pointer;
     }
 
+    .header .left-btns a:hover,
+    .header .left-btns button.btn-print:hover {
+      background-color: #1b2c38; /* Hover rengi */
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 1.5rem;
+      font-weight: normal;
+    }
+
+    /* Printer ve benzeri butonlar */
+    .btn-print {
+      background-color: #28a745;
+      color: white;
+    }
+    .btn-print:hover {
+      background-color: #218838;
+    }
+    .btn-print:disabled {
+      background-color: #6c757d;
+      cursor: not-allowed;
+    }
+
+    /********************************
+     * Arama Alanı
+     ********************************/
+    .search-container {
+      padding: 20px;
+      background: #fff;
+      margin: 20px auto;
+      width: 90%;
+      max-width: 1200px;
+      border-radius: 6px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      animation: fadeIn 0.8s ease forwards;
+    }
+    .search-form {
+      display: flex;
+      gap: 10px;
+    }
+    .search-form input {
+      flex: 1;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      outline: none;
+    }
+    .search-form button {
+      padding: 8px 16px;
+      background: #007bff;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: background-color 0.2s ease;
+    }
+    .search-form button:hover {
+      background-color: #0056b3;
+    }
+    .clear-btn {
+      padding: 8px 16px;
+      background: #6c757d;
+      color: #fff;
+      text-decoration: none;
+      border-radius: 4px;
+      transition: background-color 0.2s ease;
+    }
+    .clear-btn:hover {
+      background: #5a6268;
+    }
+
+    /********************************
+     * Ana İçerik ve Kartlar
+     ********************************/
     .content {
       width: 90%;
       max-width: 1200px;
@@ -38,6 +146,19 @@
       flex-wrap: wrap;
       gap: 20px;
     }
+
+    /* Fade-in animasyonu */
+    @keyframes fadeIn {
+      0% {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
     .card {
       background: #fff;
       width: 250px;
@@ -46,6 +167,12 @@
       overflow: hidden;
       display: flex;
       flex-direction: column;
+      animation: fadeIn 0.8s ease forwards;
+      transition: transform 0.2s ease;
+    }
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.15);
     }
     .card img {
       width: 100%;
@@ -67,8 +194,21 @@
       font-size: 0.9rem;
       color: #555;
       margin: 0;
+      line-height: 1.4;
     }
-    /* Buton stili */
+    /* Checkbox alanı */
+    .fis-select {
+      margin: 10px;
+    }
+    .fis-checkbox {
+      margin-right: 5px;
+      transform: scale(1.2);
+      cursor: pointer;
+    }
+
+    /********************************
+     * Butonlar (Detay, Yazdır, Sil)
+     ********************************/
     .btn-actions {
       display: flex;
       gap: 10px;
@@ -82,6 +222,8 @@
       text-decoration: none;
       border: none;
       cursor: pointer;
+      font-weight: 500;
+      transition: background-color 0.2s ease;
     }
     .btn-detail {
       background-color: #007bff;
@@ -95,40 +237,57 @@
     .btn-delete:hover {
       background-color: #b02a37;
     }
-    .fis-select {
-        margin-bottom: 5px; /* Add some spacing */
+
+    /********************************
+     * Sayfalandırma (Pagination)
+     ********************************/
+    .pagination {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin: 20px 0;
+      animation: fadeIn 0.8s ease forwards;
     }
-    .fis-checkbox {
-        margin-right: 5px; /* Add some spacing */
+    .pagination a {
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      text-decoration: none;
+      color: #007bff;
+      transition: background-color 0.2s ease;
+    }
+    .pagination a:hover {
+      background: #f5f5f5;
+    }
+    .pagination a.active {
+      background: #007bff;
+      color: #fff;
+      border-color: #007bff;
+    }
+    .pagination span {
+      padding: 8px 12px;
     }
   </style>
 </head>
 <body>
+  <!-- Üst Menü (Header) -->
   <div class="header">
+    <!-- Sol Butonlar -->
     <div class="left-btns">
       <a href="{{ url_for('home') }}">Anasayfa</a>
       <a href="{{ url_for('siparis_fisi_bp.siparis_fisi_olustur') }}">Sipariş Oluştur</a>
       <button id="printSelectedBtn" class="btn-print" onclick="printSelected()" disabled>Seçilenleri Yazdır</button>
-      <a href="{{ url_for('siparis_fisi_bp.bos_yazdir') }}" target="_blank" class="btn-print">Boş Fiş Yazdır</a>
+      <a href="{{ url_for('siparis_fisi_bp.bos_yazdir') }}" target="_blank" class="btn-print">Teslimat Fişi Yazdır</a>
     </div>
-    <h1>Sipariş Fişleri</h1>
+    <!-- Logo + Sayfa Başlığı -->
+    <div class="logo-container">
+      <!-- Logo (örn. static/img/logo.png) -->
+      <img class="logo" src="{{ url_for('static', filename='logo/gullu.png') }}" alt="Logo">
+      <h1>Sipariş Fişleri</h1>
+    </div>
   </div>
 
-  <style>
-    .btn-print {
-      padding: 6px 12px;
-      background-color: #28a745;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    .btn-print:disabled {
-      background-color: #6c757d;
-      cursor: not-allowed;
-    }
-  </style>
-  
+  <!-- Arama Alanı -->
   <div class="search-container">
     <form method="GET" class="search-form">
       <input type="text" name="model_kodu" placeholder="Model Kodu..." value="{{ request.args.get('model_kodu', '') }}">
@@ -138,48 +297,12 @@
     </form>
   </div>
 
-  <style>
-    .search-container {
-      padding: 20px;
-      background: #fff;
-      margin: 20px auto;
-      width: 90%;
-      max-width: 1200px;
-      border-radius: 6px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
-    .search-form {
-      display: flex;
-      gap: 10px;
-    }
-    .search-form input {
-      flex: 1;
-      padding: 8px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-    }
-    .search-form button {
-      padding: 8px 16px;
-      background: #007bff;
-      color: #fff;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    .clear-btn {
-      padding: 8px 16px;
-      background: #6c757d;
-      color: #fff;
-      text-decoration: none;
-      border-radius: 4px;
-    }
-  </style>
-
+  <!-- İçerik (Kartlar) -->
   <div class="content">
     {% for fis in fisler %}
       <div class="card">
         <div class="fis-select">
-            <input type="checkbox" class="fis-checkbox" data-fis-id="{{ fis.siparis_id }}" onchange="checkSelection(this)">
+          <input type="checkbox" class="fis-checkbox" data-fis-id="{{ fis.siparis_id }}" onchange="checkSelection(this)">
         </div>
         {% if fis.image_url %}
           <img src="{{ fis.image_url }}" alt="Ürün Görseli">
@@ -188,32 +311,35 @@
         {% endif %}
         <div class="card-body">
           <div class="card-title">{{ fis.urun_model_kodu }}</div>
-          <div class="card-text">Renk: {{ fis.renk }}</div>
-          <div class="card-text">Oluşturma: 
+          <div class="card-text">
+            Renk: {{ fis.renk }}
+          </div>
+          <div class="card-text">
+            Oluşturma: 
             {{ fis.created_date.strftime('%Y-%m-%d %H:%M') if fis.created_date else '' }}
           </div>
           <div class="card-text">
             Toplam Adet: {{ fis.toplam_adet }}<br>
             Toplam Fiyat: {{ "%.2f"|format(fis.toplam_fiyat) }} TL
           </div>
-
           <!-- Butonlar -->
           <div class="btn-actions">
-                <!-- Detay butonu -->
-                <a href="{{ url_for('siparis_fisi_bp.siparis_fisi_detay', siparis_id=fis.siparis_id) }}"
-                   class="btn-detail">Detay</a>
-                <!-- Yazdır butonu -->
-                <a href="{{ url_for('siparis_fisi_bp.siparis_fisi_yazdir', siparis_id=fis.siparis_id) }}"
-                   class="btn-detail" target="_blank">Yazdır</a>
-                <!-- Sil butonu -->
-                <button class="btn-delete" onclick="deleteFis({{ fis.siparis_id }})">Sil</button>
-            </div>
+            <!-- Detay Butonu -->
+            <a href="{{ url_for('siparis_fisi_bp.siparis_fisi_detay', siparis_id=fis.siparis_id) }}"
+               class="btn-detail">Detay</a>
+            <!-- Yazdır Butonu -->
+            <a href="{{ url_for('siparis_fisi_bp.siparis_fisi_yazdir', siparis_id=fis.siparis_id) }}"
+               class="btn-detail" target="_blank">Yazdır</a>
+            <!-- Sil Butonu -->
+            <button class="btn-delete" onclick="deleteFis({{ fis.siparis_id }})">Sil</button>
+          </div>
         </div>
       </div>
     {% endfor %}
   </div>
 
   {% if pagination %}
+  <!-- Sayfalandırma (Pagination) -->
   <div class="pagination">
     {% if pagination.has_prev %}
       <a href="{{ url_for('siparis_fisi_bp.siparis_fisi_sayfasi', page=pagination.prev_num, 
@@ -240,36 +366,10 @@
                          renk=request.args.get('renk', '')) }}">Sonraki &raquo;</a>
     {% endif %}
   </div>
-
-  <style>
-    .pagination {
-      display: flex;
-      justify-content: center;
-      gap: 10px;
-      margin: 20px 0;
-    }
-    .pagination a {
-      padding: 8px 12px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      text-decoration: none;
-      color: #007bff;
-    }
-    .pagination a:hover {
-      background: #f5f5f5;
-    }
-    .pagination a.active {
-      background: #007bff;
-      color: #fff;
-      border-color: #007bff;
-    }
-    .pagination span {
-      padding: 8px 12px;
-    }
-  </style>
   {% endif %}
 
   <script>
+    /* Fiş Silme Fonksiyonu */
     function deleteFis(id) {
       if (!confirm("Bu fişi silmek istediğine emin misin?")) return;
 
@@ -284,9 +384,11 @@
       })
       .catch(err => console.error(err));
     }
+
+    /* Seçilen fişleri yönetmek (checkbox) */
     let selectedCount = 0;
     const maxSelection = 10;
-    
+
     function checkSelection(checkbox) {
         if (checkbox.checked) {
             selectedCount++;
@@ -299,24 +401,25 @@
         } else {
             selectedCount--;
         }
-        
-        document.getElementById('printSelectedBtn').disabled = selectedCount === 0;
+
+        document.getElementById('printSelectedBtn').disabled = (selectedCount === 0);
         updateCheckboxes();
     }
-    
+
     function updateCheckboxes() {
         const checkboxes = document.querySelectorAll('.fis-checkbox:not(:checked)');
         checkboxes.forEach(cb => {
             cb.disabled = selectedCount >= maxSelection;
         });
     }
-    
+
+    /* Seçilenleri Yazdır */
     function printSelected() {
         const selectedFisIds = [];
         document.querySelectorAll('.fis-checkbox:checked').forEach(cb => {
             selectedFisIds.push(cb.dataset.fisId);
         });
-        
+
         if (selectedFisIds.length > 0) {
             window.open('/siparis_fisi/toplu_yazdir/' + selectedFisIds.join(','), '_blank');
         }

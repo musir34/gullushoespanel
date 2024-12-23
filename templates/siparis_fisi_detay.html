@@ -4,90 +4,138 @@
   <meta charset="UTF-8">
   <title>Fiş Detayı</title>
   <style>
-    /* Genel stil */
-    body {
-      background-color: #f1f1f1;
-      font-family: Arial, sans-serif;
+    /* Global reset ve temel ayarlar */
+    * {
+      box-sizing: border-box;
       margin: 0;
       padding: 0;
     }
+    body {
+      background-color: #f9f9f9;
+      font-family: "Helvetica Neue", Arial, sans-serif;
+      color: #333;
+    }
 
+    /* Animasyon keyframe tanımları */
+    @keyframes fadeIn {
+      0% {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    @keyframes rotateLogo {
+      0% {
+        transform: rotate(0deg);
+      }
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* Container: Ana kutu */
     .container {
       max-width: 900px;
       margin: 30px auto;
       background-color: #fff;
       border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.07);
       overflow: hidden;
+
+      /* Sayfa yüklendiğinde fade-in animasyonu */
+      animation: fadeIn 0.8s ease forwards;
     }
 
+    /* Header: Logo + Başlık */
     .header {
-      background-color: #4CAF50;
+      background-color: #3b6e70; /* Pastel teal */
       color: #fff;
       padding: 20px;
       text-align: center;
+      position: relative;
+    }
+    /* Logo */
+    .logo {
+      width: 150px; 
+      height: 150px;
+      object-fit: contain; /* Logo aspect ratio korunsun */
+      vertical-align: middle;
+      margin-right: 10px;
+      border-radius: 50%;
+      /* Mouse üzerine gelince logo dönsün */
+      transition: transform 0.5s ease;
+    }
+    .logo:hover {
+      animation: rotateLogo 1s linear infinite; /* Sonsuz döndürme animasyonu */
     }
 
-    .section {
-      padding: 20px;
-    }
-
+    /* Başlık (H1) ve H2 */
     h1, h2 {
       margin: 0 0 10px;
       font-weight: normal;
     }
-
-    h2 {
-      color: #333;
-      font-size: 1.4rem;
-      margin-bottom: 15px;
-      border-bottom: 2px solid #eee;
-      padding-bottom: 5px;
+    h1 {
+      font-size: 1.8rem;
+      display: inline-block;
+      vertical-align: middle; /* Logo ile hizalamak için */
+    }
+    .header-content {
+      display: inline-block;
     }
 
-    /* Temel tablo stili */
+    h2 {
+      font-size: 1.4rem;
+      margin-bottom: 15px;
+      padding-bottom: 5px;
+      border-bottom: 2px solid #eee;
+      color: #444;
+    }
+
+    /* Ana bölümler */
+    .section {
+      padding: 20px;
+    }
+
+    /* Tablo container */
     .table-container {
       margin-bottom: 30px;
       overflow-x: auto; /* Çok dar ekranlarda yatay scrollbar */
     }
+
+    /* Tablo stilleri */
     table {
       width: 100%;
       border-collapse: collapse;
       margin-bottom: 15px;
-      min-width: 600px; /* Kolonların çok daralmasını engeller */
+      min-width: 600px;
     }
     th, td {
       padding: 12px 10px;
       border-bottom: 1px solid #ddd;
       text-align: left;
+      white-space: nowrap;
     }
     th {
-      background-color: #f8f8f8;
+      background-color: #f0f0f0; /* Başlık hücreleri için hafif gri */
       font-weight: 500;
     }
     /* Zebra satırlar */
     tr:nth-child(even) {
-      background-color: #fafafa;
+      background-color: #f9f9f9;
+    }
+    /* Satır hover efekti (küçük bir arka plan değişimi) */
+    tr:hover {
+      background-color: #eefcfb;
+      transition: background-color 0.3s ease;
     }
 
-    /* Buton stili */
-    .btn-back {
-      display: inline-block;
-      padding: 8px 14px;
-      background-color: #555;
-      color: #fff;
-      border-radius: 4px;
-      text-decoration: none;
-      transition: background-color 0.2s ease;
-    }
-    .btn-back:hover {
-      background-color: #333;
-    }
-
-    /* Teslimat Kayıtları */
+    /* Teslimat Formu ve Butonu */
     .delivery-form {
       display: flex;
-      flex-wrap: wrap; /* dar ekranda satır atlayabilsin */
+      flex-wrap: wrap;
       gap: 8px;
       margin-bottom: 20px;
     }
@@ -96,17 +144,24 @@
       border: 1px solid #ddd;
       border-radius: 4px;
       max-width: 120px;
+      outline: none;
+      transition: border-color 0.2s ease;
+    }
+    .delivery-form input:focus {
+      border-color: #aaa;
     }
     .delivery-form button {
       padding: 8px 16px;
-      background: #4CAF50;
-      color: white;
+      background: #3b6e70;
+      color: #fff;
       border: none;
       border-radius: 4px;
       cursor: pointer;
+      transition: background-color 0.2s ease, transform 0.2s ease;
     }
     .delivery-form button:hover {
-      background-color: #45a049;
+      background-color: #355f60;
+      transform: scale(1.05);
     }
 
     .delivery-records {
@@ -114,6 +169,21 @@
       overflow-y: auto;
       border: 1px solid #eee;
       border-radius: 6px;
+    }
+
+    /* Geri Butonu */
+    .btn-back {
+      display: inline-block;
+      padding: 8px 14px;
+      background-color: #666;
+      color: #fff;
+      border-radius: 4px;
+      text-decoration: none;
+      transition: background-color 0.2s ease, transform 0.2s ease;
+    }
+    .btn-back:hover {
+      background-color: #4b4b4b;
+      transform: scale(1.05);
     }
 
     /* Küçük ekran uyumu */
@@ -125,6 +195,13 @@
       .delivery-form button {
         flex: 1 0 100%;
       }
+      .logo, h1 {
+        display: block;
+        margin: 0 auto;
+      }
+      .header-content {
+        display: block;
+      }
     }
   </style>
 </head>
@@ -133,7 +210,11 @@
   <div class="container">
     <!-- Üst Kısım (Başlık) -->
     <div class="header">
-      <h1>Fiş Detayı</h1>
+      <!-- Logo dosyanızı static/logo/gullu.png olarak ekliyoruz -->
+      <img src="{{ url_for('static', filename='logo/gullu.png') }}" alt="Logo" class="logo">
+      <div class="header-content">
+        <h1>Fiş Detayı</h1>
+      </div>
     </div>
 
     <!-- Sipariş Bilgileri -->
@@ -182,7 +263,7 @@
             <td>{{ fis.beden_41 }}</td>
           </tr>
           <tr>
-            <th>Çift Başı Fiyat (TL)</th>
+            <th>Çift Fiyat (TL)</th>
             <td>{{ "%.2f"|format(fis.cift_basi_fiyat) }}</td>
           </tr>
           <tr>
@@ -190,7 +271,7 @@
             <td>{{ fis.toplam_adet }}</td>
           </tr>
           <tr>
-            <th>Kalan Fiş Detayı</th>
+            <th>Kalan Toplam</th>
             <td>({{ fis.kalan_adet }})</td>
           </tr>
           <tr>
@@ -227,13 +308,13 @@
           <thead>
             <tr>
               <th style="min-width:100px;">Tarih</th>
-              <th>35 (Kalan: {{ fis.beden_35 - (fis.teslim_kayitlari|json_loads|sum(attribute='beden_35') if fis.teslim_kayitlari else 0) }})</th>
-              <th>36 (Kalan: {{ fis.beden_36 - (fis.teslim_kayitlari|json_loads|sum(attribute='beden_36') if fis.teslim_kayitlari else 0) }})</th>
-              <th>37 (Kalan: {{ fis.beden_37 - (fis.teslim_kayitlari|json_loads|sum(attribute='beden_37') if fis.teslim_kayitlari else 0) }})</th>
-              <th>38 (Kalan: {{ fis.beden_38 - (fis.teslim_kayitlari|json_loads|sum(attribute='beden_38') if fis.teslim_kayitlari else 0) }})</th>
-              <th>39 (Kalan: {{ fis.beden_39 - (fis.teslim_kayitlari|json_loads|sum(attribute='beden_39') if fis.teslim_kayitlari else 0) }})</th>
-              <th>40 (Kalan: {{ fis.beden_40 - (fis.teslim_kayitlari|json_loads|sum(attribute='beden_40') if fis.teslim_kayitlari else 0) }})</th>
-              <th>41 (Kalan: {{ fis.beden_41 - (fis.teslim_kayitlari|json_loads|sum(attribute='beden_41') if fis.teslim_kayitlari else 0) }})</th>
+              <th>35 ( {{ fis.beden_35 - (fis.teslim_kayitlari|json_loads|sum(attribute='beden_35') if fis.teslim_kayitlari else 0) }})</th>
+              <th>36 ( {{ fis.beden_36 - (fis.teslim_kayitlari|json_loads|sum(attribute='beden_36') if fis.teslim_kayitlari else 0) }})</th>
+              <th>37 ( {{ fis.beden_37 - (fis.teslim_kayitlari|json_loads|sum(attribute='beden_37') if fis.teslim_kayitlari else 0) }})</th>
+              <th>38 ( {{ fis.beden_38 - (fis.teslim_kayitlari|json_loads|sum(attribute='beden_38') if fis.teslim_kayitlari else 0) }})</th>
+              <th>39 ( {{ fis.beden_39 - (fis.teslim_kayitlari|json_loads|sum(attribute='beden_39') if fis.teslim_kayitlari else 0) }})</th>
+              <th>40 ( {{ fis.beden_40 - (fis.teslim_kayitlari|json_loads|sum(attribute='beden_40') if fis.teslim_kayitlari else 0) }})</th>
+              <th>41 ( {{ fis.beden_41 - (fis.teslim_kayitlari|json_loads|sum(attribute='beden_41') if fis.teslim_kayitlari else 0) }})</th>
               <th>Toplam</th>
             </tr>
           </thead>
