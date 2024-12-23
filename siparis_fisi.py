@@ -60,6 +60,10 @@ def siparis_fisi_yazdir(siparis_id):
         return jsonify({"mesaj": "Sipariş fişi bulunamadı"}), 404
     return render_template("siparis_fisi_print.html", fis=fis)
 
+@siparis_fisi_bp.route("/siparis_fisi/bos_yazdir")
+def bos_yazdir():
+    return render_template("siparis_fisi_bos_print.html")
+
 @siparis_fisi_bp.route("/siparis_fisi/toplu_yazdir/<fis_ids>")
 def toplu_yazdir(fis_ids):
     try:

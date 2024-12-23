@@ -1,0 +1,123 @@
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Boş Sipariş Fişi</title>
+    <style>
+        @page {
+            size: A5;
+            margin: 5mm;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 5mm;
+            background: white;
+            max-width: 148mm;
+            height: 210mm;
+            overflow: hidden;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 8px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #000;
+        }
+        .header img {
+            max-width: 40px;
+            margin-bottom: 2px;
+        }
+        .header h2 {
+            margin: 0;
+            font-size: 14pt;
+        }
+        .fis-container {
+            margin-bottom: 4px;
+            border-bottom: 1px dashed #000;
+            padding: 2px 0;
+            font-size: 8pt;
+        }
+        .fis-details {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 3px;
+            align-items: center;
+            flex-wrap: wrap;
+            font-size: 7pt;
+        }
+        .beden-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2px 0;
+        }
+        .beden-table th, .beden-table td {
+            border: 1px solid #000;
+            padding: 1px;
+            text-align: center;
+            font-size: 7pt;
+            height: 15px;
+        }
+        .fis-toplam {
+            text-align: right;
+            font-weight: bold;
+            margin-top: 3px;
+            font-size: 7pt;
+        }
+        .input-line {
+            border-bottom: 1px solid #000;
+            display: inline-block;
+            width: 80px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <img src="{{ url_for('static', filename='logo/gullu.png') }}" alt="Logo">
+        <h2>Sipariş Fişi</h2>
+    </div>
+
+    <div class="fis-container">
+        <div class="fis-details">
+            <span><b>Model:</b> _____________</span>
+            <span><b>Renk:</b> _____________</span>
+            <span><b>Tarih:</b> _____________</span>
+        </div>
+
+        <table class="beden-table">
+            <tr>
+                <th>Beden</th>
+                <th>35</th>
+                <th>36</th>
+                <th>37</th>
+                <th>38</th>
+                <th>39</th>
+                <th>40</th>
+                <th>41</th>
+            </tr>
+            <tr>
+                <td>Adet</td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+            </tr>
+        </table>
+
+        <div class="fis-toplam">
+            <span>Çift Başı Fiyat: _____________ TL</span> |
+            <span>Toplam Adet: _____________</span> |
+            <span>Toplam Tutar: _____________ TL</span>
+        </div>
+    </div>
+
+    <script>
+        window.onload = function() {
+            window.print();
+        };
+    </script>
+</body>
+</html>
