@@ -188,6 +188,18 @@
             </a>
         </div>
 
+        <!-- Ürün Görünürlük Seçimi -->
+        <div class="btn-group mb-4" role="group">
+            <button type="button" class="btn btn-primary active" data-toggle="tab" data-target="#visible-products">Görünür Ürünler</button>
+            <button type="button" class="btn btn-secondary" data-toggle="tab" data-target="#hidden-products">Gizli Ürünler</button>
+        </div>
+
+        <!-- Toplu İşlem Butonları -->
+        <div class="mb-4">
+            <button id="hideSelectedBtn" class="btn btn-warning">Seçili Ürünleri Gizle</button>
+            <button id="showSelectedBtn" class="btn btn-info">Seçili Ürünleri Göster</button>
+        </div>
+
         <!-- Arama Formu -->
         <form action="{{ url_for('get_products.search_products') }}" method="GET" class="text-center mb-4">
             <div class="form-group">
@@ -202,8 +214,11 @@
             </div>
         </form>
 
-        <!-- Ürünlerin Listelendiği Kısım -->
-        <div class="row" id="productContainer">
+        <!-- Tab İçerikleri -->
+        <div class="tab-content">
+            <!-- Görünür Ürünler -->
+            <div class="tab-pane fade show active" id="visible-products">
+                <div class="row" id="visibleProductContainer">
             {% if grouped_products %}
                 {% if search_mode %}
                     <!-- Arama modunda her barkodu ayrı göster -->
