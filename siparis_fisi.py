@@ -99,22 +99,47 @@ def siparis_fisi_detay(siparis_id):
 
 @siparis_fisi_bp.route("/siparis_fisi/<int:siparis_id>/teslimat", methods=["POST"])
 def teslimat_kaydi_ekle(siparis_id):
-    """Yeni teslimat kaydı ekle"""
+    """Yeni teslimat kaydı ekle ve ürün stoklarını güncelle"""
     fis = SiparisFisi.query.get(siparis_id)
     if not fis:
         return jsonify({"mesaj": "Sipariş fişi bulunamadı"}), 404
 
     try:
-        # Form verilerini al
-        beden_35 = int(request.form.get("beden_35", 0))
-        beden_36 = int(request.form.get("beden_36", 0))
-        beden_37 = int(request.form.get("beden_37", 0))
-        beden_38 = int(request.form.get("beden_38", 0))
-        beden_39 = int(request.form.get("beden_39", 0))
-        beden_40 = int(request.form.get("beden_40", 0))
-        beden_41 = int(request.form.get("beden_41", 0))
+        # Form verilerini al ve boş değerleri kontrol et
+        beden_35 = int(request.form.get("beden_35", 0) or 0)
+        beden_36 = int(request.form.get("beden_36", 0) or 0)
+        beden_37 = int(request.form.get("beden_37", 0) or 0)
+        beden_38 = int(request.form.get("beden_38", 0) or 0)
+        beden_39 = int(request.form.get("beden_39", 0) or 0)
+        beden_40 = int(request.form.get("beden_40", 0) or 0)
+        beden_41 = int(request.form.get("beden_41", 0) or 0)
 
         toplam = beden_35 + beden_36 + beden_37 + beden_38 + beden_39 + beden_40 + beden_41
+
+        # Ürün stoklarını güncelle
+        beden_stok_map = {
+            "35": beden_35,
+            "36": beden_36,
+            "37": beden_37,
+            "38": beden_38,
+            "39": beden_39,
+            "40": beden_40,
+            "41": beden_41
+        }
+
+        for beden, miktar in beden_stok_map.items():
+            if miktar > 0:
+                # İlgili ürünü bul
+                product = Product.query.filter_by(
+                    product_main_id=fis.urun_model_kodu,
+                    color=fis.renk,
+                    size=beden
+                ).first()
+                
+                if product:
+                    # Stok miktarını güncelle
+                    product.quantity = (product.quantity or 0) + miktar
+                    print(f"Stok güncellendi: {product.product_main_id} - Beden: {beden} - Yeni stok: {product.quantity}")
 
         # Mevcut kayıtları al
         import json
@@ -142,6 +167,7 @@ def teslimat_kaydi_ekle(siparis_id):
         return redirect(url_for("siparis_fisi_bp.siparis_fisi_detay", siparis_id=siparis_id))
 
     except Exception as e:
+        print(f"Hata oluştu: {str(e)}")
         return jsonify({"mesaj": f"Hata oluştu: {str(e)}"}), 500
 
 # ==================================
