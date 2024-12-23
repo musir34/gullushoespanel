@@ -1,10 +1,15 @@
 # siparis_fisi.py
 
 from flask import Blueprint, render_template, request, redirect, url_for, jsonify
+import json
 from datetime import datetime
 from models import db, SiparisFisi
 
 siparis_fisi_bp = Blueprint("siparis_fisi_bp", __name__)
+
+@siparis_fisi_bp.app_template_filter('json_loads')
+def json_loads_filter(s):
+    return json.loads(s)
 
 # ================
 # 1) Liste Gorunumu
