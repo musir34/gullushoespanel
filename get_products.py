@@ -438,25 +438,6 @@ async def fetch_products_route():
 
     return redirect(url_for('get_products.product_list'))
 
-@get_products_bp.route('/toggle_product_visibility', methods=['POST'])
-def toggle_product_visibility():
-    """Ürünlerin görünürlüğünü değiştirir"""
-    try:
-        product_ids = request.json.get('product_ids', [])
-        action = request.json.get('action')  # 'hide' or 'show'
-        
-        if action not in ['hide', 'show']:
-            return jsonify({'success': False, 'message': 'Geçersiz işlem'})
-            
-        products = Product.query.filter(Product.barcode.in_(product_ids)).all()
-        for product in products:
-            product.hidden = (action == 'hide')
-        
-        db.session.commit()
-        return jsonify({'success': True})
-    except Exception as e:
-        return jsonify({'success': False, 'message': str(e)})
-
 @get_products_bp.route('/product_list')
 def product_list():
     """
