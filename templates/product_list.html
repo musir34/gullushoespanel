@@ -244,13 +244,20 @@
                                                     <span class="size">Beden: {{ product.size }}</span>
                                                     <span class="quantity">Stok: {{ product.quantity }}</span>
                                                     <span class="barcode">Barkod: {{ product.barcode }}</span>
-                                                    <button class="btn btn-info btn-sm select-product"
-                                                        data-barcode="{{ product.barcode }}"
-                                                        data-model="{{ model_id }}"
-                                                        data-color="{{ color }}"
-                                                        data-size="{{ product.size }}">
-                                                        <i class="fas fa-check mr-2"></i> Bu Varyantı Seç
-                                                    </button>
+                                                    <div class="d-flex align-items-center">
+                                                        <input type="checkbox" class="product-checkbox mr-2" 
+                                                               data-barcode="{{ product.barcode }}"
+                                                               data-model="{{ model_id }}"
+                                                               data-color="{{ color }}"
+                                                               data-size="{{ product.size }}">
+                                                        <button class="btn btn-info btn-sm select-product"
+                                                                data-barcode="{{ product.barcode }}"
+                                                                data-model="{{ model_id }}"
+                                                                data-color="{{ color }}"
+                                                                data-size="{{ product.size }}">
+                                                                <i class="fas fa-check mr-2"></i> Bu Varyantı Seç
+                                                        </button>
+                                                    </div>
                                                     <!-- Kopyalama Butonu -->
                                                     <button class="copy-btn" title="Barkodu Kopyala">
                                                         <i class="fas fa-copy"></i>
@@ -297,13 +304,20 @@
                                                     <span class="size">Beden: {{ product.size }}</span>
                                                     <span class="quantity">Stok: {{ product.quantity }}</span>
                                                     <span class="barcode">Barkod: {{ product.barcode }}</span>
-                                                    <button class="btn btn-info btn-sm select-product"
-                                                        data-barcode="{{ product.barcode }}"
-                                                        data-model="{{ model_id }}"
-                                                        data-color="{{ color }}"
-                                                        data-size="{{ product.size }}">
-                                                        <i class="fas fa-check mr-2"></i> Bu Varyantı Seç
-                                                    </button>
+                                                    <div class="d-flex align-items-center">
+                                                        <input type="checkbox" class="product-checkbox mr-2" 
+                                                               data-barcode="{{ product.barcode }}"
+                                                               data-model="{{ model_id }}"
+                                                               data-color="{{ color }}"
+                                                               data-size="{{ product.size }}">
+                                                        <button class="btn btn-info btn-sm select-product"
+                                                                data-barcode="{{ product.barcode }}"
+                                                                data-model="{{ model_id }}"
+                                                                data-color="{{ color }}"
+                                                                data-size="{{ product.size }}">
+                                                                <i class="fas fa-check mr-2"></i> Bu Varyantı Seç
+                                                        </button>
+                                                    </div>
                                                     <!-- Kopyalama Butonu -->
                                                     <button class="copy-btn" title="Barkodu Kopyala">
                                                         <i class="fas fa-copy"></i>
@@ -544,7 +558,7 @@
                     // Bu kısım, seçili ürünlerin barkodlarını hiddenProducts dizisine eklemeli ve arayüzü güncellemeli.
                     //  Örnek olarak, seçili ürünlerin barkodlarını nasıl alacağınızı gösteren bir kod parçası ekliyorum.
                     //  Gerçek uygulamada, seçili ürünlerin belirlenmesi için daha gelişmiş bir yöntem kullanmanız gerekebilir.
-                    $('.select-product').each(function() {
+                    $('.product-checkbox:checked').each(function() {
                         let barcode = $(this).data('barcode');
                         if (barcode) {
                             hiddenProducts.push(barcode);
