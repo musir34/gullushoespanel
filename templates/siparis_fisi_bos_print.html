@@ -36,9 +36,9 @@
             font-weight: bold;
         }
         .fis-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            grid-gap: 3mm;
+            display: flex;
+            flex-direction: column;
+            gap: 3mm;
         }
         .fis-container {
             border: 0.5px solid #000;
@@ -47,7 +47,7 @@
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            height: calc((210mm - 25mm) / 5 - 4mm);
+            height: 35mm;
         }
         .fis-details {
             display: flex;
