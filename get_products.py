@@ -583,3 +583,46 @@ def search_products():
 @get_products_bp.route('/product_label')
 def product_label():
     return render_template('product_label.html')
+@get_products_bp.route('/hide_products', methods=['POST'])
+def hide_products():
+    data = request.get_json()
+    barcodes = data.get('barcodes', [])
+    
+    try:
+        products = Product.query.filter(Product.barcode.in_(barcodes)).all()
+        for product in products:
+            product.hidden = True
+        db.session.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@get_products_bp.route('/get_hidden_products')
+def get_hidden_products():
+    try:
+        hidden_products = Product.query.filter_by(hidden=True).all()
+        products_data = [{
+            'barcode': p.barcode,
+            'title': p.title,
+            'product_main_id': p.product_main_id
+        } for p in hidden_products]
+        return jsonify({'success': True, 'products': products_data})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@get_products_bp.route('/unhide_product', methods=['POST'])
+def unhide_product():
+    data = request.get_json()
+    barcode = data.get('barcode')
+    
+    try:
+        product = Product.query.get(barcode)
+        if product:
+            product.hidden = False
+            db.session.commit()
+            return jsonify({'success': True})
+        return jsonify({'success': False, 'error': 'Product not found'}), 404
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500

@@ -181,11 +181,17 @@
             </button>
         </form>
 
-        <!-- Barkod Sayfasına Git Butonu -->
+        <!-- Barkod Sayfasına Git Butonu ve Gizleme Butonları -->
         <div class="text-center mb-4">
             <a href="/product_label" class="btn btn-primary">
                 <i class="fas fa-barcode mr-2"></i> Barkod Sayfasına Git
             </a>
+            <button id="hideSelectedBtn" class="btn btn-warning ml-2" onclick="hideSelected()" disabled>
+                <i class="fas fa-eye-slash mr-2"></i> Seçilenleri Gizle
+            </button>
+            <button id="toggleHiddenBtn" class="btn btn-info ml-2" onclick="toggleHiddenProducts()">
+                <i class="fas fa-eye mr-2"></i> Gizli Ürünleri Göster
+            </button>
         </div>
 
         <!-- Arama Formu -->
@@ -358,6 +364,14 @@
             </div>
         </div>
 
+        <!-- Gizli Ürünler Bölümü -->
+        <div id="hiddenProducts" class="row mt-4" style="display:none;">
+            <div class="col-12">
+                <h3>Gizlenen Ürünler</h3>
+                <div class="row" id="hiddenProductsList"></div>
+            </div>
+        </div>
+
         <!-- Geçici Kopyalama Alanı -->
         <textarea id="temp-copier" style="position: absolute; top: -1000px;"></textarea>
 
@@ -520,6 +534,43 @@
                     const confirmation = element.next('.copy-confirmation');
                     confirmation.addClass('show');
                     setTimeout(() => confirmation.removeClass('show'), 2000);
+                }
+
+
+                // Yeni fonksiyonlar
+                let hiddenProducts = [];
+
+                function hideSelected() {
+                    // Bu kısım, seçili ürünlerin barkodlarını hiddenProducts dizisine eklemeli ve arayüzü güncellemeli.
+                    //  Örnek olarak, seçili ürünlerin barkodlarını nasıl alacağınızı gösteren bir kod parçası ekliyorum.
+                    //  Gerçek uygulamada, seçili ürünlerin belirlenmesi için daha gelişmiş bir yöntem kullanmanız gerekebilir.
+                    $('.select-product').each(function() {
+                        let barcode = $(this).data('barcode');
+                        if (barcode) {
+                            hiddenProducts.push(barcode);
+                        }
+                    });
+                    updateHiddenProductList();
+                    $('#hiddenProducts').show();
+                }
+
+                function toggleHiddenProducts() {
+                    $('#hiddenProducts').toggle();
+                }
+
+                function updateHiddenProductList() {
+                    $('#hiddenProductsList').empty();
+                    if(hiddenProducts.length > 0){
+                        hiddenProducts.forEach(barcode => {
+                            $('#hiddenProductsList').append(`<div class="col-md-4 mb-3">
+                                <div class="product-card">
+                                    <p>Gizli Ürün: ${barcode}</p>
+                                </div>
+                            </div>`);
+                        });
+                    } else {
+                        $('#hiddenProductsList').append('<p>Gizli ürün yok.</p>');
+                    }
                 }
             });
         </script>
