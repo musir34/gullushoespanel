@@ -15,18 +15,23 @@ class SiparisFisi(db.Model):
     siparis_id       = db.Column(db.Integer, primary_key=True, autoincrement=True)
     urun_model_kodu  = db.Column(db.String(50), nullable=False)
     renk             = db.Column(db.String(20), nullable=False)
-    beden_35         = db.Column(db.Integer, nullable=False, default=0)
-    beden_36         = db.Column(db.Integer, nullable=False, default=0)
-    beden_37         = db.Column(db.Integer, nullable=False, default=0)
-    beden_38         = db.Column(db.Integer, nullable=False, default=0)
-    beden_39         = db.Column(db.Integer, nullable=False, default=0)
-    beden_40         = db.Column(db.Integer, nullable=False, default=0)
-    beden_41         = db.Column(db.Integer, nullable=False, default=0)
+    siparis_adedi    = db.Column(db.Integer, nullable=False)
     cift_basi_fiyat  = db.Column(db.Numeric(10,2), nullable=False)
-    toplam_adet      = db.Column(db.Integer, nullable=False)
     toplam_fiyat     = db.Column(db.Numeric(10,2), nullable=False)
-    created_date = db.Column(db.DateTime, default=datetime.utcnow)
-    image_url = db.Column(db.String(255))  # Ürün görselinin linki
+    termin_tarihi    = db.Column(db.Date, nullable=False)
+    created_date     = db.Column(db.DateTime, default=datetime.utcnow)
+    teslim_durumu    = db.Column(db.String(20), default='Beklemede')
+
+class SiparisDetay(db.Model):
+    __tablename__ = 'siparis_detay'
+
+    detay_id         = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    siparis_id       = db.Column(db.Integer, db.ForeignKey('siparis_fisi.siparis_id'), nullable=False)
+    teslim_tarihi    = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    teslim_adedi     = db.Column(db.Integer, nullable=False)
+    aciklama         = db.Column(db.Text)
+
+    siparis = db.relationship('SiparisFisi', backref=db.backref('teslimatlar', lazy=True))
     
 
 # İade siparişleri için veritabanı modeli 
