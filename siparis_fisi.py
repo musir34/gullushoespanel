@@ -26,7 +26,7 @@ def siparis_fisi_sayfasi():
         query = query.filter(SiparisFisi.renk.ilike(f'%{renk}%'))
         
     page = request.args.get('page', 1, type=int)
-    per_page = 12  # Her sayfada gösterilecek fiş sayısı
+    per_page = 20  # Her sayfada gösterilecek fiş sayısı
     
     pagination = query.order_by(SiparisFisi.created_date.desc()).paginate(
         page=page, per_page=per_page, error_out=False)

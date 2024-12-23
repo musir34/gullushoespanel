@@ -8,6 +8,7 @@ import uuid
 db = SQLAlchemy()
 Base = declarative_base()
 
+
 #Sipariş Fişi Tablosu
 class SiparisFisi(db.Model):
     __tablename__ = 'siparis_fisi'
