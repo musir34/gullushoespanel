@@ -105,14 +105,14 @@ def teslimat_kaydi_ekle(siparis_id):
         return jsonify({"mesaj": "Sipariş fişi bulunamadı"}), 404
 
     try:
-        # Form verilerini al
-        beden_35 = int(request.form.get("beden_35", 0))
-        beden_36 = int(request.form.get("beden_36", 0))
-        beden_37 = int(request.form.get("beden_37", 0))
-        beden_38 = int(request.form.get("beden_38", 0))
-        beden_39 = int(request.form.get("beden_39", 0))
-        beden_40 = int(request.form.get("beden_40", 0))
-        beden_41 = int(request.form.get("beden_41", 0))
+        # Form verilerini al ve boş değerleri kontrol et
+        beden_35 = int(request.form.get("beden_35", 0) or 0)
+        beden_36 = int(request.form.get("beden_36", 0) or 0)
+        beden_37 = int(request.form.get("beden_37", 0) or 0)
+        beden_38 = int(request.form.get("beden_38", 0) or 0)
+        beden_39 = int(request.form.get("beden_39", 0) or 0)
+        beden_40 = int(request.form.get("beden_40", 0) or 0)
+        beden_41 = int(request.form.get("beden_41", 0) or 0)
 
         toplam = beden_35 + beden_36 + beden_37 + beden_38 + beden_39 + beden_40 + beden_41
 
