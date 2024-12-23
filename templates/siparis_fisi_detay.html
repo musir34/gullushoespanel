@@ -227,13 +227,13 @@
           <thead>
             <tr>
               <th style="min-width:100px;">Tarih</th>
-              <th>35</th>
-              <th>36</th>
-              <th>37</th>
-              <th>38</th>
-              <th>39</th>
-              <th>40</th>
-              <th>41</th>
+              <th>35 (Kalan: {{ fis.beden_35 - (fis.teslim_kayitlari|json_loads|sum(attribute='beden_35') if fis.teslim_kayitlari else 0) }})</th>
+              <th>36 (Kalan: {{ fis.beden_36 - (fis.teslim_kayitlari|json_loads|sum(attribute='beden_36') if fis.teslim_kayitlari else 0) }})</th>
+              <th>37 (Kalan: {{ fis.beden_37 - (fis.teslim_kayitlari|json_loads|sum(attribute='beden_37') if fis.teslim_kayitlari else 0) }})</th>
+              <th>38 (Kalan: {{ fis.beden_38 - (fis.teslim_kayitlari|json_loads|sum(attribute='beden_38') if fis.teslim_kayitlari else 0) }})</th>
+              <th>39 (Kalan: {{ fis.beden_39 - (fis.teslim_kayitlari|json_loads|sum(attribute='beden_39') if fis.teslim_kayitlari else 0) }})</th>
+              <th>40 (Kalan: {{ fis.beden_40 - (fis.teslim_kayitlari|json_loads|sum(attribute='beden_40') if fis.teslim_kayitlari else 0) }})</th>
+              <th>41 (Kalan: {{ fis.beden_41 - (fis.teslim_kayitlari|json_loads|sum(attribute='beden_41') if fis.teslim_kayitlari else 0) }})</th>
               <th>Toplam</th>
             </tr>
           </thead>
