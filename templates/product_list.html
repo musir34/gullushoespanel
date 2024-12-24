@@ -20,7 +20,7 @@
         .product-card {
             border: none;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            transition: all 0.2s ease;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
             padding: 15px;
             border-radius: 12px;
             margin-bottom: 20px;
@@ -29,13 +29,6 @@
             flex-direction: column;
             justify-content: space-between;
             background-color: #fff;
-            position: relative;
-            cursor: pointer; /* Kartın tıklanabilir olması için */
-        }
-
-        .product-card.selected {
-            background-color: rgba(0, 123, 255, 0.1);
-            box-shadow: 0 0 0 2px #007bff;
         }
 
         .product-card:hover {
@@ -188,17 +181,11 @@
             </button>
         </form>
 
-        <!-- Barkod Sayfasına Git Butonu ve Gizleme Butonları -->
+        <!-- Barkod Sayfasına Git Butonu -->
         <div class="text-center mb-4">
             <a href="/product_label" class="btn btn-primary">
                 <i class="fas fa-barcode mr-2"></i> Barkod Sayfasına Git
             </a>
-            <button id="hideSelectedBtn" class="btn btn-warning ml-2" onclick="hideSelected()" disabled>
-                <i class="fas fa-eye-slash mr-2"></i> Seçilenleri Gizle
-            </button>
-            <button id="toggleHiddenBtn" class="btn btn-info ml-2" onclick="toggleHiddenProducts()">
-                <i class="fas fa-eye mr-2"></i> Gizli Ürünleri Göster
-            </button>
         </div>
 
         <!-- Arama Formu -->
@@ -222,9 +209,7 @@
                     <!-- Arama modunda her barkodu ayrı göster -->
                     {% for (model_id, color), product_group in grouped_products.items() %}
                         <div class="col-md-4 mb-3">
-                            <!-- Kart: Tümü tıklanınca seçilsin -->
-                            <div class="product-card" data-model="{{ model_id }}" data-color="{{ color }}"
-                                 onclick="selectProductCard(this)">
+                            <div class="product-card">
                                 <div>
                                     {% if product_group[0].images %}
                                         <img src="{{ product_group[0].images.split(',')[0] }}" alt="Ürün Görseli">
@@ -236,19 +221,16 @@
                                     <h5>{{ product_group[0].title }}</h5>
                                     <p>Model Kodu: {{ model_id }}</p>
                                     <p>Renk: {{ color }}</p>
-
-                                    <button class="btn btn-info btn-sm mt-2 toggle-variants" type="button">
+                                    <button class="btn btn-info btn-sm mt-2 toggle-variants">
                                         <i class="fas fa-chevron-down mr-2"></i> Tüm Varyantları Göster
                                     </button>
                                     <button class="btn btn-warning btn-sm mt-2 update-stocks"
-                                        data-model="{{ model_id }}" data-color="{{ color }}">
+                                        data-model="{{ model_id }}"
+                                        data-color="{{ color }}">
                                         <i class="fas fa-edit mr-2"></i> Stokları Güncelle
                                     </button>
-
                                     <!-- Stok güncelleme formu buraya eklenecek -->
                                     <div class="stock-update-form mt-3" style="display: none;"></div>
-
-                                    <!-- Varyantların listesi -->
                                     <div class="variant-list">
                                         {% for product in product_group %}
                                             {% if product.barcode and product.barcode != 'undefined' %}
@@ -256,6 +238,13 @@
                                                     <span class="size">Beden: {{ product.size }}</span>
                                                     <span class="quantity">Stok: {{ product.quantity }}</span>
                                                     <span class="barcode">Barkod: {{ product.barcode }}</span>
+                                                    <button class="btn btn-info btn-sm select-product"
+                                                        data-barcode="{{ product.barcode }}"
+                                                        data-model="{{ model_id }}"
+                                                        data-color="{{ color }}"
+                                                        data-size="{{ product.size }}">
+                                                        <i class="fas fa-check mr-2"></i> Bu Varyantı Seç
+                                                    </button>
                                                     <!-- Kopyalama Butonu -->
                                                     <button class="copy-btn" title="Barkodu Kopyala">
                                                         <i class="fas fa-copy"></i>
@@ -273,8 +262,7 @@
                     <!-- Normal modda ana ürün altında varyantları göster -->
                     {% for (model_id, color), product_group in grouped_products.items() %}
                         <div class="col-md-4 mb-3">
-                            <div class="product-card" data-model="{{ model_id }}" data-color="{{ color }}"
-                                 onclick="selectProductCard(this)">
+                            <div class="product-card">
                                 <div>
                                     {% if product_group[0].images %}
                                         <img src="{{ product_group[0].images.split(',')[0] }}" alt="Ürün Görseli">
@@ -286,18 +274,16 @@
                                     <h5>{{ product_group[0].title }}</h5>
                                     <p>Model Kodu: {{ model_id }}</p>
                                     <p>Renk: {{ color }}</p>
-
-                                    <button class="btn btn-info btn-sm mt-2 toggle-variants" type="button">
+                                    <button class="btn btn-info btn-sm mt-2 toggle-variants">
                                         <i class="fas fa-chevron-down mr-2"></i> Tüm Varyantları Göster
                                     </button>
                                     <button class="btn btn-warning btn-sm mt-2 update-stocks"
-                                        data-model="{{ model_id }}" data-color="{{ color }}">
+                                        data-model="{{ model_id }}"
+                                        data-color="{{ color }}">
                                         <i class="fas fa-edit mr-2"></i> Stokları Güncelle
                                     </button>
-
                                     <!-- Stok güncelleme formu buraya eklenecek -->
                                     <div class="stock-update-form mt-3" style="display: none;"></div>
-
                                     <div class="variant-list">
                                         {% for product in product_group %}
                                             {% if product.barcode and product.barcode != 'undefined' %}
@@ -305,6 +291,13 @@
                                                     <span class="size">Beden: {{ product.size }}</span>
                                                     <span class="quantity">Stok: {{ product.quantity }}</span>
                                                     <span class="barcode">Barkod: {{ product.barcode }}</span>
+                                                    <button class="btn btn-info btn-sm select-product"
+                                                        data-barcode="{{ product.barcode }}"
+                                                        data-model="{{ model_id }}"
+                                                        data-color="{{ color }}"
+                                                        data-size="{{ product.size }}">
+                                                        <i class="fas fa-check mr-2"></i> Bu Varyantı Seç
+                                                    </button>
                                                     <!-- Kopyalama Butonu -->
                                                     <button class="copy-btn" title="Barkodu Kopyala">
                                                         <i class="fas fa-copy"></i>
@@ -365,14 +358,6 @@
             </div>
         </div>
 
-        <!-- Gizli Ürünler Bölümü -->
-        <div id="hiddenProducts" class="row mt-4" style="display:none;">
-            <div class="col-12">
-                <h3>Gizlenen Ürünler</h3>
-                <div class="row" id="hiddenProductsList"></div>
-            </div>
-        </div>
-
         <!-- Geçici Kopyalama Alanı -->
         <textarea id="temp-copier" style="position: absolute; top: -1000px;"></textarea>
 
@@ -382,20 +367,11 @@
 
         <!-- JavaScript Kodları -->
         <script>
-            // Gizlenecek kartları tutmak isterseniz
-            let hiddenProducts = [];
-
-            // Sayfa yüklendiğinde
             $(document).ready(function () {
-
-                // 1) Varyantları göster/gizle
-                $('#productContainer').on('click', '.toggle-variants', function (e) {
-                    // Butonun kendi tıklamasının kart seçmesini engellemesi için
-                    e.stopPropagation();
-
+                // Varyantları göster/gizle
+                $('#productContainer').on('click', '.toggle-variants', function () {
                     var variantList = $(this).siblings('.variant-list');
                     variantList.slideToggle();
-
                     if ($(this).html().includes('Gizle')) {
                         $(this).html('<i class="fas fa-chevron-down mr-2"></i> Tüm Varyantları Göster');
                     } else {
@@ -403,40 +379,54 @@
                     }
                 });
 
-                // 2) Stokları güncelleme butonuna tıklama
-                $('#productContainer').on('click', '.update-stocks', function (e) {
-                    // Buton tıklamasının kart seçmesini engellemesi için
-                    e.stopPropagation();
+                // Ürün seçme işlemi
+                $('#productContainer').on('click', '.select-product', function () {
+                    var barcode = $(this).data('barcode');
+                    var model = $(this).data('model');
+                    var color = $(this).data('color');
+                    var size = $(this).data('size');
 
+                    console.log("Select Product clicked:", { barcode, model, color, size });
+
+                    if (!barcode || barcode === 'undefined') {
+                        alert('Geçersiz barkod bilgisi.');
+                        console.warn('Geçersiz barkod:', barcode);
+                        return;
+                    }
+
+                    window.open(`/product_label?barcode=${barcode}&model=${model}&color=${color}&size=${size}`, '_blank');
+                });
+
+                // Stokları güncelleme işlemi
+                $('#productContainer').on('click', '.update-stocks', function () {
                     var model = $(this).data('model');
                     var color = $(this).data('color');
                     var $stockFormContainer = $(this).siblings('.stock-update-form');
+
+                    console.log("Update Stocks clicked:", { model, color });
 
                     if (!model || !color) {
                         alert('Model veya renk bilgisi eksik!');
                         return;
                     }
 
-                    // Açık ise kapat
                     if ($stockFormContainer.is(':visible')) {
                         $stockFormContainer.slideUp();
                         $(this).html('<i class="fas fa-edit mr-2"></i> Stokları Güncelle');
                         return;
                     }
 
-                    // Başka açık stok formları varsa kapat
                     $('.stock-update-form').not($stockFormContainer).slideUp();
                     $('.update-stocks').not(this).html('<i class="fas fa-edit mr-2"></i> Stokları Güncelle');
 
-                    // Bu butonu "Güncellemeyi İptal Et" olarak değiştir
                     $(this).html('<i class="fas fa-times mr-2"></i> Güncellemeyi İptal Et');
 
-                    // AJAX ile varyantları çekiyoruz
                     $.ajax({
                         url: '{{ url_for("get_products.get_product_variants") }}',
                         method: 'GET',
                         data: { model: model, color: color },
                         success: function (response) {
+                            console.log("AJAX GET response:", response);
                             if (response.success && response.products) {
                                 var formHtml = `
                                     <form class="stock-update-form-inner">
@@ -481,22 +471,24 @@
                     });
                 });
 
-                // 3) Stok güncelleme formu gönderimi
+                // Stok güncelleme formu gönderimi
                 $('#productContainer').on('submit', '.stock-update-form-inner', function (e) {
                     e.preventDefault();
                     var $form = $(this);
                     var formData = $form.serialize();
+
+                    console.log("Submitting stock update form:", formData);
 
                     $.ajax({
                         url: '{{ url_for("get_products.update_stocks_ajax") }}',
                         method: 'POST',
                         data: formData,
                         success: function (response) {
+                            console.log("Stock update response:", response);
                             if (response.success) {
                                 alert('Stoklar başarıyla güncellendi.');
                                 $form.closest('.stock-update-form').slideUp();
-                                $form.closest('.product-info').find('.update-stocks')
-                                     .html('<i class="fas fa-edit mr-2"></i> Stokları Güncelle');
+                                $form.closest('.product-info').find('.update-stocks').html('<i class="fas fa-edit mr-2"></i> Stokları Güncelle');
                             } else {
                                 alert('Stok güncelleme sırasında bir hata oluştu.');
                                 console.warn('Yanıt:', response);
@@ -509,11 +501,8 @@
                     });
                 });
 
-                // 4) Barkod kopyalama fonksiyonu
-                $('#productContainer').on('click', '.copy-btn', function (e) {
-                    // Buton tıklamasının kart seçmesini engellemesi için
-                    e.stopPropagation();
-
+                // Barkod kopyalama fonksiyonu
+                $('#productContainer').on('click', '.copy-btn', function () {
                     var text = $(this).siblings('.barcode').text().replace('Barkod: ', '').trim();
                     if (text && text !== 'undefined') {
                         copyToClipboard(text, $(this));
@@ -533,55 +522,6 @@
                     setTimeout(() => confirmation.removeClass('show'), 2000);
                 }
             });
-
-            // 5) Kartı seçme fonksiyonu
-            function selectProductCard(card) {
-                $(card).toggleClass('selected');
-
-                // Seçili kart sayısına göre butonu aktif/pasif yap
-                let selectedCount = $('.product-card.selected').length;
-                if (selectedCount > 0) {
-                    $('#hideSelectedBtn').prop('disabled', false);
-                } else {
-                    $('#hideSelectedBtn').prop('disabled', true);
-                }
-            }
-
-            // 6) Seçilenleri Gizleme
-            function hideSelected() {
-                let selectedCards = $('.product-card.selected');
-                if (!selectedCards.length) return;
-
-                selectedCards.each(function () {
-                    let model = $(this).data('model');
-                    let color = $(this).data('color');
-
-                    // Klonlayarak gizli listeye ekle
-                    let clonedCard = $(this).clone();
-                    clonedCard.removeClass('selected');
-                    $('#hiddenProductsList').append(clonedCard);
-
-                    // Asıl kartı DOM'dan kaldır
-                    $(this).remove();
-
-                    // (Opsiyonel) Bir diziye kaydetmek isterseniz
-                    hiddenProducts.push({
-                        model: model,
-                        color: color
-                    });
-                });
-
-                // Tüm seçili kartlar gizlendi, buton pasif
-                $('#hideSelectedBtn').prop('disabled', true);
-
-                // Gizli ürünler alanını aç
-                $('#hiddenProducts').show();
-            }
-
-            // 7) Gizli Ürünler Bölümünü Göster/Gizle
-            function toggleHiddenProducts() {
-                $('#hiddenProducts').toggle();
-            }
         </script>
     </div>
 </body>
