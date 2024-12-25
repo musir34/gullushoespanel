@@ -44,39 +44,45 @@ def delete_worker(id):
 def is_ekle():
     if request.method == 'POST':
         try:
-            kesici_id = request.form['kesici_id']
-            sayaci_id = request.form['sayaci_id']
-            kalfa_id = request.form['kalfa_id']
-            model_id = request.form['model_id']
-            renk_id = request.form['renk_id']
+            kesici_id = int(request.form.get('kesici_id'))
+            sayaci_id = int(request.form.get('sayaci_id'))
+            kalfa_id = int(request.form.get('kalfa_id'))
+            model_id = int(request.form.get('model_id'))
+            renk_id = int(request.form.get('renk_id'))
             
-            # Bedenleri al
-            bedenler = {
-                'beden_35': int(request.form.get('beden_35', 0)),
-                'beden_36': int(request.form.get('beden_36', 0)),
-                'beden_37': int(request.form.get('beden_37', 0)),
-                'beden_38': int(request.form.get('beden_38', 0)),
-                'beden_39': int(request.form.get('beden_39', 0)),
-                'beden_40': int(request.form.get('beden_40', 0)),
-                'beden_41': int(request.form.get('beden_41', 0))
-            }
+            # Bedenleri al ve integer'a çevir
+            bedenler = {}
+            for i in range(35, 42):
+                beden_key = f'beden_{i}'
+                try:
+                    bedenler[beden_key] = int(request.form.get(beden_key, 0))
+                except (TypeError, ValueError):
+                    bedenler[beden_key] = 0
             
+            # Toplam adet ve fiyat hesapla
             toplam_adet = sum(bedenler.values())
-            model = AyakkabiModel.query.get(model_id)
-            birim_fiyat = model.fiyat
+            if toplam_adet <= 0:
+                raise ValueError("Toplam adet 0'dan büyük olmalıdır")
+                
+            model = AyakkabiModel.query.get_or_404(model_id)
+            birim_fiyat = float(model.fiyat)
             toplam_fiyat = birim_fiyat * toplam_adet
             
+            # Yeni iş kaydı oluştur
             yeni_is = UretimIsi(
                 kesici_id=kesici_id,
                 sayaci_id=sayaci_id,
                 kalfa_id=kalfa_id,
                 model_id=model_id,
                 renk_id=renk_id,
-                **bedenler,
                 toplam_adet=toplam_adet,
                 birim_fiyat=birim_fiyat,
                 toplam_fiyat=toplam_fiyat
             )
+            
+            # Bedenleri tek tek ata
+            for beden_key, adet in bedenler.items():
+                setattr(yeni_is, beden_key, adet)
             
             db.session.add(yeni_is)
             db.session.commit()
