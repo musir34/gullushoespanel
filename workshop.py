@@ -88,7 +88,7 @@ def is_ekle():
     
     from models import Product
     workers = Worker.query.filter_by(aktif=True).all()
-    products = Product.query.filter(Product.hidden == False).all()
+    products = Product.query.filter(Product.hidden == 0).all()
     renkler = AyakkabiRenk.query.filter_by(aktif=True).all()
     
     return render_template('workshop/is_ekle.html', 
