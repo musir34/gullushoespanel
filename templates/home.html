@@ -221,11 +221,11 @@
 
     <!-- Sağ üst köşede butonlar -->
     <div class="btn-group-top">
-        <a href="{{ url_for('approve_users') }}" class="btn btn-warning">Kullanıcı Yönetimi</a>
-        <a href="{{ url_for('home.home') }}" class="btn btn-secondary">Anasayfa</a>
-        <a href="{{ url_for('siparis_fisi_bp.siparis_fisi_sayfasi') }}" class="btn btn-secondary">
+        <a href="{{ url_for('siparis_fisi_bp.siparis_fisi_sayfasi') }}" class="btn btn-primary">
          Ürün Tedarik Sayfası
         </a>
+        <a href="{{ url_for('approve_users') }}" class="btn btn-warning">Kullanıcı Yönetimi</a>
+        <a href="{{ url_for('home.home') }}" class="btn btn-secondary">Anasayfa</a>
         <a href="{{ url_for('iade_listesi') }}" class="btn btn-secondary">İade Listesi</a>
         <a href="{{ url_for('product_list') }}" class="btn btn-secondary">Ürün Listesi</a>
         <a href="{{ url_for('order_list_all') }}" class="btn btn-secondary">Sipariş Listesi</a>
