@@ -15,10 +15,37 @@ def dashboard():
         print(f"Hata: {str(e)}")
         return "Atölye yönetimi paneline erişilirken bir hata oluştu.", 500
 
+@workshop_bp.route('/workshop/workers', methods=['GET', 'POST'])
+def workers():
+    if request.method == 'POST':
+        ad = request.form['ad']
+        soyad = request.form['soyad']
+        worker_type = WorkerType[request.form['worker_type']]
+        
+        worker = Worker(ad=ad, soyad=soyad, worker_type=worker_type)
+        db.session.add(worker)
+        db.session.commit()
+        
+        flash('Çalışan başarıyla eklendi!', 'success')
+        return redirect(url_for('workshop.workers'))
+        
+    workers = Worker.query.all()
+    return render_template('workshop/workers.html', workers=workers, WorkerType=WorkerType)
+
+@workshop_bp.route('/workshop/worker/delete/<int:id>')
+def delete_worker(id):
+    worker = Worker.query.get_or_404(id)
+    worker.aktif = False
+    db.session.commit()
+    flash('Çalışan pasif duruma alındı!', 'success')
+    return redirect(url_for('workshop.workers'))
+
 @workshop_bp.route('/workshop/is-ekle', methods=['GET', 'POST'])
 def is_ekle():
     if request.method == 'POST':
         try:
+            kesici_id = request.form['kesici_id']
+            sayaci_id = request.form['sayaci_id']
             kalfa_id = request.form['kalfa_id']
             model_id = request.form['model_id']
             renk_id = request.form['renk_id']

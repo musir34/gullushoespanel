@@ -16,14 +16,22 @@ class JobStatus(enum.Enum):
     COMPLETED = "Tamamlandı"
     CANCELLED = "İptal"
 
-class Kalfa(db.Model):
-    __tablename__ = 'kalfalar'
+class WorkerType(enum.Enum):
+    KESICI = "Kesici"
+    SAYACI = "Sayacı"
+    KALFA = "Kalfa"
+
+class Worker(db.Model):
+    __tablename__ = 'workers'
     
     id = db.Column(db.Integer, primary_key=True)
     ad = db.Column(db.String(100), nullable=False)
     soyad = db.Column(db.String(100), nullable=False)
+    worker_type = db.Column(db.Enum(WorkerType), nullable=False)
     aktif = db.Column(db.Boolean, default=True)
-    isler = relationship("UretimIsi", back_populates="kalfa")
+    kesici_isler = relationship("UretimIsi", foreign_keys="UretimIsi.kesici_id")
+    sayaci_isler = relationship("UretimIsi", foreign_keys="UretimIsi.sayaci_id")
+    kalfa_isler = relationship("UretimIsi", foreign_keys="UretimIsi.kalfa_id")
 
 class AyakkabiModel(db.Model):
     __tablename__ = 'ayakkabi_modelleri'
@@ -45,7 +53,9 @@ class UretimIsi(db.Model):
     __tablename__ = 'uretim_isleri'
     
     id = db.Column(db.Integer, primary_key=True)
-    kalfa_id = db.Column(db.Integer, db.ForeignKey('kalfalar.id'), nullable=False)
+    kesici_id = db.Column(db.Integer, db.ForeignKey('workers.id'), nullable=False)
+    sayaci_id = db.Column(db.Integer, db.ForeignKey('workers.id'), nullable=False)
+    kalfa_id = db.Column(db.Integer, db.ForeignKey('workers.id'), nullable=False)
     model_id = db.Column(db.Integer, db.ForeignKey('ayakkabi_modelleri.id'), nullable=False)
     renk_id = db.Column(db.Integer, db.ForeignKey('ayakkabi_renkleri.id'), nullable=False)
     
