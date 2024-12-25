@@ -1,11 +1,3 @@
-<!DOCTYPE html>
-<html>
-  <head>
-    <title>Yeni İş Ekle</title>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
-  </head>
-  <body>
 {% block content %}
 <div class="container mt-4">
     <h2>Yeni İş Ekle</h2>
@@ -44,82 +36,58 @@
             <div class="col-md-4">
                 <div class="form-group">
                     <label>Model Seçimi</label>
-                    <div class="input-group">
-                        <input type="text" id="modelSearchInput" class="form-control" placeholder="Model kodu veya adı girin...">
-                        <div class="input-group-append">
-                            <button type="button" class="btn btn-primary" id="searchModelBtn">
-                                <i class="fas fa-search"></i> Ara
-                            </button>
+                    <input type="hidden" name="model_id" id="selected_model_id" required>
+                    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#modelSelectModal">
+                        <i class="fas fa-search"></i> Model Seç
+                    </button>
+                    <div id="selected_model_info" class="mt-2"></div>
+                </div>
+
+                <!-- Model Seçim Modal -->
+                <div class="modal fade" id="modelSelectModal" tabindex="-1" role="dialog">
+                    <div class="modal-dialog modal-lg" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Model Seçimi</h5>
+                                <button type="button" class="close" data-dismiss="modal">
+                                    <span>&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="row">
+                                    {% for model in modeller %}
+                                    <div class="col-md-4 mb-3">
+                                        <div class="card product-card" data-model-id="{{ model.id }}" data-model-name="{{ model.model_adi }}">
+                                            <div class="card-body">
+                                                <h5 class="card-title">{{ model.model_adi }}</h5>
+                                                <button type="button" class="btn btn-success btn-sm select-model">
+                                                    Bu Modeli Seç
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <input type="hidden" name="model_id" id="selected_model_id" required>
-                    <div id="selected_model_info" class="mt-2"></div>
-                    <div id="searchResults" class="mt-2"></div>
                 </div>
 
                 <script>
                 $(document).ready(function() {
-                    $("#searchModelBtn, #modelSearchInput").on("click keyup", function(e) {
-                        if (e.type === "keyup" && e.which !== 13) return;
-                        
-                        var searchTerm = $("#modelSearchInput").val().trim().toLowerCase();
-                        if (!searchTerm) return;
-                        
-                        $("#searchResults").empty();
-                        var matchingProducts = {};
-                        
-                        {% for product in products %}
-                        if ("{{ product.product_main_id }}".toLowerCase().includes(searchTerm) || 
-                            "{{ product.title }}".toLowerCase().includes(searchTerm)) {
-                            var color = "{{ product.color }}";
-                            var key = "{{ product.product_main_id }}" + color;
-                            if (!matchingProducts[key]) {
-                                matchingProducts[key] = {
-                                    title: "{{ product.title }}",
-                                    model_id: "{{ product.product_main_id }}",
-                                    image: "{{ product.images.split(',')[0] if product.images else '' }}",
-                                    color: color,
-                                    price: "{{ product.sale_price }}",
-                                    currency: "{{ product.currency_type }}"
-                                };
-                            }
-                        }
-                        {% endfor %}
-                        
-                        var resultsHtml = '<div class="row">';
-                        Object.values(matchingProducts).forEach(function(product) {
-                            resultsHtml += `
-                                <div class="col-md-4 mb-3">
-                                    <div class="card">
-                                        ${product.image ? `<img src="${product.image}" class="card-img-top" alt="${product.title}">` : ''}
-                                        <div class="card-body">
-                                            <h5 class="card-title">${product.title}</h5>
-                                            <p class="card-text">Model: ${product.model_id}</p>
-                                            <p class="card-text">Renk: ${product.color}</p>
-                                            <p class="card-text">Fiyat: ${product.price} ${product.currency}</p>
-                                            <button type="button" class="btn btn-success btn-sm select-model" 
-                                                    data-model-id="${product.model_id}" 
-                                                    data-model-name="${product.title}">
-                                                Bu Modeli Seç
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>`;
-                        });
-                        resultsHtml += '</div>';
-                        $("#searchResults").html(resultsHtml);
-                    });
-                    
-                    $(document).on('click', '.select-model', function() {
-                        const modelId = $(this).data('model-id');
-                        const modelName = $(this).data('model-name');
+                    $('.select-model').click(function() {
+                        const card = $(this).closest('.product-card');
+                        const modelId = card.data('model-id');
+                        const modelName = card.data('model-name');
                         
                         $('#selected_model_id').val(modelId);
                         $('#selected_model_info').html(`
                             <div class="alert alert-success">
-                                <strong>Seçilen Model:</strong> ${modelName} (${modelId})
+                                Seçilen Model: ${modelName}
                             </div>
                         `);
+                        
+                        $('#modelSelectModal').modal('hide');
                     });
                 });
                 </script>
@@ -154,5 +122,3 @@
     </form>
 </div>
 {% endblock %}
-  </body>
-</html>
