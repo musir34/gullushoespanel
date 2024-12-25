@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
-from models import db, Worker, UretimIsi, JobStatus, WorkerType, Product, AyakkabiRenk
+from models import db, Worker, UretimIsi, JobStatus, WorkerType, Product, AyakkabiRenk, AyakkabiModel
 from datetime import datetime
 import json
 
@@ -79,22 +79,34 @@ def is_ekle():
             }
             toplam_adet = sum(bedenler.values())
 
-            # Product tablosundan product_main_id’ye göre kaydı buluyoruz
+            # Product tablosundan product_main_id'ye göre kaydı buluyoruz
             product = Product.query.filter_by(product_main_id=product_main_id, hidden=False).first()
             if not product:
                 raise ValueError(f"Seçilen ürün (product_main_id={product_main_id}) bulunamadı veya pasif (hidden).")
+
+            # Yeni model ve renk kayıtları oluştur
+            model = AyakkabiModel.query.filter_by(model_adi=product_main_id).first()
+            if not model:
+                model = AyakkabiModel(model_adi=product_main_id, fiyat=product.sale_price or 0)
+                db.session.add(model)
+
+            renk = AyakkabiRenk.query.filter_by(renk_adi=selected_color).first()
+            if not renk:
+                renk = AyakkabiRenk(renk_adi=selected_color)
+                db.session.add(renk)
+            
+            db.session.flush()  # ID'leri almak için flush yapıyoruz
 
             # Fiyat hesaplaması
             birim_fiyat = product.sale_price or 0
             toplam_fiyat = birim_fiyat * toplam_adet
 
-            # UretimIsi kaydı: veritabanında product_main_id ve color(renk_id) varsa
-            # (Bu örnekte "renk_id" numeric olabilir, "selected_color" string olabilir;
-            #  uyarlama yapmanız gerekebilir.)
             yeni_is = UretimIsi(
                 kalfa_id=kalfa_id,
-                product_main_id=product_main_id,  # tablo sütununuz varsa
-                renk_id=selected_color,           # eğer bu numeric ise, int() dönüştürün
+                kesici_id=kesici_id,
+                sayaci_id=sayaci_id,
+                model_id=model.id,
+                renk_id=renk.id,
                 **bedenler,
                 toplam_adet=toplam_adet,
                 birim_fiyat=birim_fiyat,
