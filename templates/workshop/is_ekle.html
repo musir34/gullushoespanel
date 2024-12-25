@@ -62,13 +62,20 @@
                                 </button>
                             </div>
                             <div class="modal-body">
-                                <div class="row">
+                                <div class="input-group mb-3">
+                                    <input type="text" id="modelSearch" class="form-control" placeholder="Model ara...">
+                                </div>
+                                <div class="row" id="productCards">
                                     {% for product in products %}
-                                    <div class="col-md-4 mb-3">
+                                    <div class="col-md-4 mb-3 product-item">
                                         <div class="card product-card" data-model-id="{{ product.product_main_id }}" data-model-name="{{ product.title }}">
+                                            {% if product.images %}
+                                            <img src="{{ product.images.split(',')[0] }}" class="card-img-top" alt="{{ product.title }}">
+                                            {% endif %}
                                             <div class="card-body">
                                                 <h5 class="card-title">{{ product.title }}</h5>
                                                 <p class="card-text">Model: {{ product.product_main_id }}</p>
+                                                <p class="card-text">Fiyat: {{ product.sale_price }} {{ product.currency_type }}</p>
                                                 <button type="button" class="btn btn-success btn-sm select-model">
                                                     Bu Modeli Seç
                                                 </button>
@@ -84,6 +91,14 @@
 
                 <script>
                 $(document).ready(function() {
+                    // Model arama fonksiyonu
+                    $("#modelSearch").on("keyup", function() {
+                        var value = $(this).val().toLowerCase();
+                        $(".product-item").filter(function() {
+                            var text = $(this).text().toLowerCase();
+                            $(this).toggle(text.indexOf(value) > -1);
+                        });
+                    });
                     $('.select-model').click(function() {
                         const card = $(this).closest('.product-card');
                         const modelId = card.data('model-id');
