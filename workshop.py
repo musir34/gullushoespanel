@@ -91,7 +91,7 @@ def is_ekle():
     renkler = AyakkabiRenk.query.filter_by(aktif=True).all()
     
     return render_template('workshop/is_ekle.html', 
-                         kalfalar=kalfalar,
+                         workers=workers,
                          modeller=modeller,
                          renkler=renkler)
 
