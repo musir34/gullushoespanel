@@ -304,6 +304,9 @@
             Oluşturma: {{ fis.created_date.strftime('%Y-%m-%d %H:%M') if fis.created_date else '' }}
           </div>
           <div class="card-text">
+            Son Yazdırma: {{ fis.print_date.strftime('%Y-%m-%d %H:%M') if fis.print_date else 'Yazdırılmamış' }}
+          </div>
+          <div class="card-text">
             Toplam Adet: {{ fis.toplam_adet }}<br>
             Toplam Fiyat: {{ "%.2f"|format(fis.toplam_fiyat) }} TL
           </div>
