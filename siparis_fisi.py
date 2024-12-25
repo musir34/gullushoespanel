@@ -283,13 +283,15 @@ def siparis_fisi_olustur():
     ).all()
 
     if request.method == "POST":
-        # Get model code from form
+        # Get model code and color from form
         model_code = request.form.get("model_code")
+        selected_color = request.form.get("color")
+        
         if not model_code:
             return jsonify({"mesaj": "Model kodu gerekli!"}), 400
 
-        # Find product by model code
-        product = Product.query.filter_by(product_main_id=model_code).first()
+        # Find product by model code and color
+        product = Product.query.filter_by(product_main_id=model_code, color=selected_color).first()
         if not product:
             return jsonify({"mesaj": "Seçilen ürün bulunamadı!"}), 400
 
@@ -307,7 +309,7 @@ def siparis_fisi_olustur():
 
         # 4) Üründen gelen bilgileri (title, color vs.) sipariş fişine aktaralım
         urun_model_kodu = product.title or "Model Bilgisi Yok"
-        renk = product.color or "Renk Bilgisi Yok"
+        renk = selected_color
 
         # 5) Toplam adet ve fiyat hesapla
         toplam_adet = (beden_35 + beden_36 + beden_37 + beden_38 +
@@ -330,6 +332,7 @@ def siparis_fisi_olustur():
             toplam_fiyat=toplam_fiyat,
             image_url=image_url
         )
+        yeni_fis.created_date = datetime.now()
         db.session.add(yeni_fis)
         db.session.commit()
 
