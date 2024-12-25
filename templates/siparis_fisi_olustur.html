@@ -186,15 +186,9 @@ document.getElementById('model_code').addEventListener('change', function() {
     const selectedModel = this.value;
     const colorSelect = document.getElementById('color');
     const bedenContainer = document.getElementById('beden_barkod_container');
-    const bedenInputs = bedenContainer.querySelectorAll('input[type="number"]');
     
-    // Show/hide beden container based on selection
-    bedenContainer.style.display = selectedModel ? 'block' : 'none';
-    
-    // Enable/disable beden inputs
-    bedenInputs.forEach(input => {
-        input.disabled = !selectedModel;
-    });
+    // Hide sizes when model changes
+    bedenContainer.style.display = 'none';
     
     // Reset color select
     colorSelect.innerHTML = '<option value="" disabled selected>Renk Seçin</option>';
@@ -233,14 +227,14 @@ document.getElementById('model_code').addEventListener('change', function() {
 document.getElementById('color').addEventListener('change', function() {
     const selectedColor = this.value;
     const productData = JSON.parse(this.dataset.productData || '{}');
-    const sizesContainer = document.getElementById('sizes_container');
+    const bedenContainer = document.getElementById('beden_barkod_container');
     
     if (!selectedColor || !productData[selectedColor]) {
-        sizesContainer.style.display = 'none';
+        bedenContainer.style.display = 'none';
         return;
     }
     
-    sizesContainer.style.display = 'block';
+    bedenContainer.style.display = 'block';
     const barcodes = productData[selectedColor];
     
     // Update barcode spans
