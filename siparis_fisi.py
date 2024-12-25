@@ -262,10 +262,13 @@ def teslimat_kaydi_ekle(siparis_id):
 # ==================================
 @siparis_fisi_bp.route("/siparis_fisi/olustur", methods=["GET", "POST"])
 def siparis_fisi_olustur():
-    """
-    GET: 'siparis_fisi_olustur.html' formu aç
-    POST: Form verilerini al -> SiparisFisi nesnesi yarat -> DB'ye kaydet -> Listeye dön
-    """
+    # Ürünleri veritabanından çek
+    urunler = Product.query.with_entities(
+        Product.barcode,
+        Product.title,
+        Product.color
+    ).distinct().all()
+
     if request.method == "POST":
         # 1) Formdan "barcode" bilgisini alıp products tablosundan ürünü bulalım
         selected_barcode = request.form.get("barcode")  # <select name="barcode"> vb.
@@ -319,7 +322,7 @@ def siparis_fisi_olustur():
 
     else:
         # GET isteği: form şablonunu açmadan önce, products tablosundaki ürünleri çekelim
-        urunler = Product.query.filter_by(hidden=False).all()  # hidden=False olanlar
+        #urunler = Product.query.filter_by(hidden=False).all()  # hidden=False olanlar
         return render_template("siparis_fisi_olustur.html", urunler=urunler)
 
 
