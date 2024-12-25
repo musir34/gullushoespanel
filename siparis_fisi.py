@@ -450,8 +450,9 @@ def get_product_details(model_code):
     product_data = {}
     for color in colors:
         product_data[color] = {}
-        for product in products:
-            if product.color == color and product.size and product.barcode:
+        color_products = [p for p in products if p.color == color]
+        for product in color_products:
+            if product.size and product.barcode:
                 product_data[color][product.size] = product.barcode
     
     return jsonify({

@@ -96,7 +96,9 @@
 
       <div class="form-group">
         <label for="color">Renk</label>
-        <input type="text" id="color" name="color" readonly>
+        <select id="color" name="color" required>
+          <option value="" disabled selected>Önce model seçin</option>
+        </select>
       </div>
 
       <!-- Bedenler ve Barkodlar -->
@@ -183,37 +185,56 @@ document.getElementById('model_code').addEventListener('change', function() {
     const selectedModel = this.value;
     const colorSelect = document.getElementById('color');
     
-    // AJAX isteği ile seçilen modele ait ürün bilgilerini al
+    // Reset color select
+    colorSelect.innerHTML = '<option value="" disabled selected>Renk Seçin</option>';
+    
+    // Reset all barcode spans
+    for (let size = 35; size <= 41; size++) {
+        const barcodeSpan = document.getElementById(`barcode_${size}`);
+        if (barcodeSpan) barcodeSpan.textContent = '';
+    }
+    
+    if (!selectedModel) return;
+    
+    // Fetch product details for selected model
     fetch(`/get_product_details/${selectedModel}`)
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                // Renk seçimini aktifleştir ve renkleri doldur
-                colorSelect.innerHTML = '<option value="">Renk Seçin</option>';
+                // Populate color options
                 data.colors.forEach(color => {
-                    colorSelect.innerHTML += `<option value="${color}">${color}</option>`;
+                    const option = document.createElement('option');
+                    option.value = color;
+                    option.textContent = color;
+                    colorSelect.appendChild(option);
                 });
-                colorSelect.removeAttribute('readonly');
                 
-                // Renk seçimi değiştiğinde barkodları güncelle
-                colorSelect.onchange = function() {
-                    const selectedColor = this.value;
-                    const barcodes = data.product_data[selectedColor];
-                    
-                    // Beden barkodlarını doldur
-                    for (let size = 35; size <= 41; size++) {
-                        const barcodeSpan = document.getElementById(`barcode_${size}`);
-                        const barcode = barcodes[size.toString()];
-                        if (barcode) {
-                            barcodeSpan.textContent = `Barkod: ${barcode}`;
-                        } else {
-                            barcodeSpan.textContent = '';
-                        }
-                    }
-                };
+                // Enable color select
+                colorSelect.disabled = false;
+                
+                // Store product data for later use
+                colorSelect.dataset.productData = JSON.stringify(data.product_data);
             }
         })
         .catch(error => console.error('Error:', error));
+});
+
+document.getElementById('color').addEventListener('change', function() {
+    const selectedColor = this.value;
+    const productData = JSON.parse(this.dataset.productData || '{}');
+    
+    if (!selectedColor || !productData[selectedColor]) return;
+    
+    const barcodes = productData[selectedColor];
+    
+    // Update barcode spans
+    for (let size = 35; size <= 41; size++) {
+        const barcodeSpan = document.getElementById(`barcode_${size}`);
+        if (barcodeSpan) {
+            const barcode = barcodes[size.toString()];
+            barcodeSpan.textContent = barcode ? `Barkod: ${barcode}` : '';
+        }
+    }
 });
 </script>
 
