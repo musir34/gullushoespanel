@@ -67,6 +67,8 @@ def is_ekle():
             toplam_fiyat = birim_fiyat * toplam_adet
             
             yeni_is = UretimIsi(
+                kesici_id=kesici_id,
+                sayaci_id=sayaci_id,
                 kalfa_id=kalfa_id,
                 model_id=model_id,
                 renk_id=renk_id,
