@@ -72,6 +72,15 @@
       ← Sipariş Listesine Dön
     </a>
 
+    <!-- Arama Formu -->
+    <form method="GET" class="search-form" style="margin-bottom: 20px;">
+      <input type="text" name="search" placeholder="Model kodu veya renk ara..." value="{{ request.args.get('search', '') }}">
+      <button type="submit">Ara</button>
+      {% if request.args.get('search') %}
+        <a href="{{ url_for('siparis_fisi_bp.siparis_fisi_olustur') }}" class="clear-btn">Temizle</a>
+      {% endif %}
+    </form>
+
     <!-- Form: POST metoduyla siparis_fisi_olustur endpointine gidecek -->
     <form method="POST">
       <!-- ÜRÜN SEÇİMİ: Artık manuel girmek yerine Product tablosundan barcode vb. bilgileri çekiyoruz -->
