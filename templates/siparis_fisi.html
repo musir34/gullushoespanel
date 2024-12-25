@@ -22,7 +22,7 @@
      * Header (Üst Menü)
      ********************************/
     .header {
-      background: #30475e; /* Daha yumuşak bir lacivert ton */
+      background: #30475e;
       color: #fff;
       padding: 15px;
       display: flex;
@@ -34,20 +34,17 @@
       z-index: 999;
     }
 
-    /* Logo alanı */
     .logo-container {
       display: flex;
       align-items: center;
-      gap: 10px; /* logo ile başlık arasında boşluk */
+      gap: 10px;
     }
     .logo {
-      width: 50px;  /* Logo genişliği */
-      height: auto; /* Oran korunsun */
+      width: 50px;
+      height: auto;
       border-radius: 4px;
       object-fit: cover;
     }
-
-    /* Header içindeki sol butonlar */
     .header .left-btns a,
     .header .left-btns button.btn-print {
       margin-right: 10px;
@@ -61,19 +58,15 @@
       transition: background-color 0.2s ease;
       cursor: pointer;
     }
-
     .header .left-btns a:hover,
     .header .left-btns button.btn-print:hover {
-      background-color: #1b2c38; /* Hover rengi */
+      background-color: #1b2c38;
     }
-
     h1 {
       margin: 0;
       font-size: 1.5rem;
       font-weight: normal;
     }
-
-    /* Printer ve benzeri butonlar */
     .btn-print {
       background-color: #28a745;
       color: white;
@@ -146,8 +139,6 @@
       flex-wrap: wrap;
       gap: 20px;
     }
-
-    /* Fade-in animasyonu */
     @keyframes fadeIn {
       0% {
         opacity: 0;
@@ -158,7 +149,6 @@
         transform: translateY(0);
       }
     }
-
     .card {
       background: #fff;
       width: 250px;
@@ -196,7 +186,6 @@
       margin: 0;
       line-height: 1.4;
     }
-    /* Checkbox alanı */
     .fis-select {
       margin: 10px;
     }
@@ -272,16 +261,13 @@
 <body>
   <!-- Üst Menü (Header) -->
   <div class="header">
-    <!-- Sol Butonlar -->
     <div class="left-btns">
       <a href="{{ url_for('home') }}">Anasayfa</a>
       <a href="{{ url_for('siparis_fisi_bp.siparis_fisi_olustur') }}">Sipariş Oluştur</a>
       <button id="printSelectedBtn" class="btn-print" onclick="printSelected()" disabled>Seçilenleri Yazdır</button>
       <a href="{{ url_for('siparis_fisi_bp.bos_yazdir') }}" target="_blank" class="btn-print">Teslimat Fişi Yazdır</a>
     </div>
-    <!-- Logo + Sayfa Başlığı -->
     <div class="logo-container">
-      <!-- Logo (örn. static/img/logo.png) -->
       <img class="logo" src="{{ url_for('static', filename='logo/gullu.png') }}" alt="Logo">
       <h1>Sipariş Fişleri</h1>
     </div>
@@ -315,22 +301,30 @@
             Renk: {{ fis.renk }}
           </div>
           <div class="card-text">
-            Oluşturma: 
-            {{ fis.created_date.strftime('%Y-%m-%d %H:%M') if fis.created_date else '' }}
+            Oluşturma: {{ fis.created_date.strftime('%Y-%m-%d %H:%M') if fis.created_date else '' }}
           </div>
           <div class="card-text">
             Toplam Adet: {{ fis.toplam_adet }}<br>
             Toplam Fiyat: {{ "%.2f"|format(fis.toplam_fiyat) }} TL
           </div>
-          <!-- Butonlar -->
+
+          <!-- Detay (Örnek: Beden Adetleri) -->
+          <div class="card-text" style="margin-top: 5px; color: #444;">
+            <strong>Detay (Beden Adetleri):</strong><br>
+            35: {{ fis.beden_35 }} |
+            36: {{ fis.beden_36 }} |
+            37: {{ fis.beden_37 }} |
+            38: {{ fis.beden_38 }} |
+            39: {{ fis.beden_39 }} |
+            40: {{ fis.beden_40 }} |
+            41: {{ fis.beden_41 }}
+          </div>
+
           <div class="btn-actions">
-            <!-- Detay Butonu -->
             <a href="{{ url_for('siparis_fisi_bp.siparis_fisi_detay', siparis_id=fis.siparis_id) }}"
                class="btn-detail">Detay</a>
-            <!-- Yazdır Butonu -->
             <a href="{{ url_for('siparis_fisi_bp.siparis_fisi_yazdir', siparis_id=fis.siparis_id) }}"
                class="btn-detail" target="_blank">Yazdır</a>
-            <!-- Sil Butonu -->
             <button class="btn-delete" onclick="deleteFis({{ fis.siparis_id }})">Sil</button>
           </div>
         </div>
@@ -339,19 +333,18 @@
   </div>
 
   {% if pagination %}
-  <!-- Sayfalandırma (Pagination) -->
   <div class="pagination">
     {% if pagination.has_prev %}
-      <a href="{{ url_for('siparis_fisi_bp.siparis_fisi_sayfasi', page=pagination.prev_num, 
-                         model_kodu=request.args.get('model_kodu', ''),
-                         renk=request.args.get('renk', '')) }}">&laquo; Önceki</a>
+      <a href="{{ url_for('siparis_fisi_bp.siparis_fisi_sayfasi', page=pagination.prev_num,
+                           model_kodu=request.args.get('model_kodu', ''),
+                           renk=request.args.get('renk', '')) }}">&laquo; Önceki</a>
     {% endif %}
 
     {% for page in pagination.iter_pages() %}
       {% if page %}
         <a href="{{ url_for('siparis_fisi_bp.siparis_fisi_sayfasi', page=page,
-                           model_kodu=request.args.get('model_kodu', ''),
-                           renk=request.args.get('renk', '')) }}"
+                             model_kodu=request.args.get('model_kodu', ''),
+                             renk=request.args.get('renk', '')) }}"
            {% if page == pagination.page %}class="active"{% endif %}>
           {{ page }}
         </a>
@@ -362,8 +355,8 @@
 
     {% if pagination.has_next %}
       <a href="{{ url_for('siparis_fisi_bp.siparis_fisi_sayfasi', page=pagination.next_num,
-                         model_kodu=request.args.get('model_kodu', ''),
-                         renk=request.args.get('renk', '')) }}">Sonraki &raquo;</a>
+                           model_kodu=request.args.get('model_kodu', ''),
+                           renk=request.args.get('renk', '')) }}">Sonraki &raquo;</a>
     {% endif %}
   </div>
   {% endif %}
@@ -379,7 +372,6 @@
       .then(response => response.json())
       .then(data => {
         alert(data.mesaj);
-        // Silindikten sonra sayfayı yenile
         location.reload();
       })
       .catch(err => console.error(err));
@@ -390,39 +382,36 @@
     const maxSelection = 10;
 
     function checkSelection(checkbox) {
-        if (checkbox.checked) {
-            selectedCount++;
-            if (selectedCount > maxSelection) {
-                checkbox.checked = false;
-                selectedCount--;
-                alert('En fazla 10 fiş seçebilirsiniz!');
-                return;
-            }
-        } else {
-            selectedCount--;
+      if (checkbox.checked) {
+        selectedCount++;
+        if (selectedCount > maxSelection) {
+          checkbox.checked = false;
+          selectedCount--;
+          alert('En fazla 10 fiş seçebilirsiniz!');
+          return;
         }
-
-        document.getElementById('printSelectedBtn').disabled = (selectedCount === 0);
-        updateCheckboxes();
+      } else {
+        selectedCount--;
+      }
+      document.getElementById('printSelectedBtn').disabled = (selectedCount === 0);
+      updateCheckboxes();
     }
 
     function updateCheckboxes() {
-        const checkboxes = document.querySelectorAll('.fis-checkbox:not(:checked)');
-        checkboxes.forEach(cb => {
-            cb.disabled = selectedCount >= maxSelection;
-        });
+      const checkboxes = document.querySelectorAll('.fis-checkbox:not(:checked)');
+      checkboxes.forEach(cb => {
+        cb.disabled = selectedCount >= maxSelection;
+      });
     }
 
-    /* Seçilenleri Yazdır */
     function printSelected() {
-        const selectedFisIds = [];
-        document.querySelectorAll('.fis-checkbox:checked').forEach(cb => {
-            selectedFisIds.push(cb.dataset.fisId);
-        });
-
-        if (selectedFisIds.length > 0) {
-            window.open('/siparis_fisi/toplu_yazdir/' + selectedFisIds.join(','), '_blank');
-        }
+      const selectedFisIds = [];
+      document.querySelectorAll('.fis-checkbox:checked').forEach(cb => {
+        selectedFisIds.push(cb.dataset.fisId);
+      });
+      if (selectedFisIds.length > 0) {
+        window.open('/siparis_fisi/toplu_yazdir/' + selectedFisIds.join(','), '_blank');
+      }
     }
   </script>
 </body>

@@ -1,85 +1,13 @@
 from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
-from sqlalchemy import create_engine, Column, String, DateTime, ForeignKey, Integer, Float, Enum
+from sqlalchemy import create_engine, Column, String, DateTime, ForeignKey, Integer
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship
 import uuid
-import enum
+
 
 db = SQLAlchemy()
 Base = declarative_base()
-
-class JobStatus(enum.Enum):
-    PENDING = "Bekliyor"
-    IN_PROGRESS = "Devam Ediyor"
-    COMPLETED = "Tamamlandı"
-    CANCELLED = "İptal"
-
-class WorkerType(enum.Enum):
-    KESICI = "Kesici"
-    SAYACI = "Sayacı"
-    KALFA = "Kalfa"
-
-class Worker(db.Model):
-    __tablename__ = 'workers'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    ad = db.Column(db.String(100), nullable=False)
-    soyad = db.Column(db.String(100), nullable=False)
-    worker_type = db.Column(db.Enum(WorkerType), nullable=False)
-    aktif = db.Column(db.Boolean, default=True)
-    kesici_isler = relationship("UretimIsi", foreign_keys="UretimIsi.kesici_id")
-    sayaci_isler = relationship("UretimIsi", foreign_keys="UretimIsi.sayaci_id")
-    kalfa_isler = relationship("UretimIsi", foreign_keys="UretimIsi.kalfa_id")
-
-class AyakkabiModel(db.Model):
-    __tablename__ = 'ayakkabi_modelleri'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    model_adi = db.Column(db.String(100), nullable=False)
-    fiyat = db.Column(db.Float, nullable=False)
-    aktif = db.Column(db.Boolean, default=True)
-
-class AyakkabiRenk(db.Model):
-    __tablename__ = 'ayakkabi_renkleri'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    renk_adi = db.Column(db.String(50), nullable=False)
-    renk_kodu = db.Column(db.String(20))
-    aktif = db.Column(db.Boolean, default=True)
-
-class UretimIsi(db.Model):
-    __tablename__ = 'uretim_isleri'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    kesici_id = db.Column(db.Integer, db.ForeignKey('workers.id'), nullable=False)
-    sayaci_id = db.Column(db.Integer, db.ForeignKey('workers.id'), nullable=False)
-    kalfa_id = db.Column(db.Integer, db.ForeignKey('workers.id'), nullable=False)
-    model_id = db.Column(db.Integer, db.ForeignKey('ayakkabi_modelleri.id'), nullable=False)
-    renk_id = db.Column(db.Integer, db.ForeignKey('ayakkabi_renkleri.id'), nullable=False)
-    
-    beden_35 = db.Column(db.Integer, default=0)
-    beden_36 = db.Column(db.Integer, default=0)
-    beden_37 = db.Column(db.Integer, default=0)
-    beden_38 = db.Column(db.Integer, default=0)
-    beden_39 = db.Column(db.Integer, default=0)
-    beden_40 = db.Column(db.Integer, default=0)
-    beden_41 = db.Column(db.Integer, default=0)
-    
-    toplam_adet = db.Column(db.Integer, nullable=False)
-    birim_fiyat = db.Column(db.Float, nullable=False)
-    toplam_fiyat = db.Column(db.Float, nullable=False)
-    
-    baslangic_tarihi = db.Column(db.DateTime, default=datetime.utcnow)
-    bitis_tarihi = db.Column(db.DateTime)
-    durum = db.Column(db.Enum(JobStatus), default=JobStatus.PENDING)
-    
-    kesici = relationship("Worker", foreign_keys=[kesici_id], back_populates="kesici_isler", overlaps="kesici_isler")
-    sayaci = relationship("Worker", foreign_keys=[sayaci_id], back_populates="sayaci_isler", overlaps="sayaci_isler")
-    kalfa = relationship("Worker", foreign_keys=[kalfa_id], back_populates="kalfa_isler", overlaps="kalfa_isler")
-    model = relationship("AyakkabiModel")
-    renk = relationship("AyakkabiRenk")
 
 
 #Sipariş Fişi Tablosu

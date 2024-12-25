@@ -48,7 +48,6 @@ from new_orders_service import new_orders_service_bp
 from processed_orders_service import processed_orders_service_bp
 from iade_islemleri import iade_islemleri, fetch_data_from_api, save_to_database  # iade_islemleri'nden import ettiğimizi varsayıyorum
 from siparis_fisi import siparis_fisi_bp
-from workshop import workshop_bp
 
 blueprints = [
     order_service_bp,
@@ -63,8 +62,7 @@ blueprints = [
     new_orders_service_bp,
     processed_orders_service_bp,
     iade_islemleri,
-    siparis_fisi_bp,
-    workshop_bp
+    siparis_fisi_bp
 ]
 
 for bp in blueprints:

@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Toplu Sipariş Fişi</title>
     <style>
+        /* Sayfa ve yazı ayarları */
         @page {
             size: A5;
             margin: 5mm;
@@ -17,6 +18,8 @@
             height: 210mm;
             overflow: hidden;
         }
+
+        /* Başlık (header) */
         .header {
             text-align: center;
             margin-bottom: 8px;
@@ -31,6 +34,8 @@
             margin: 0;
             font-size: 14pt;
         }
+
+        /* Fiş listesi */
         .fis-container {
             margin-bottom: 4px;
             border-bottom: 1px dashed #000;
@@ -62,9 +67,35 @@
             margin-top: 3px;
             font-size: 7pt;
         }
+
+        /* --- Renkli Nokta İçin CSS Başlangıcı --- */
+        /* Normalde gizle */
+        .print-indicator {
+            display: none;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            position: absolute; /* Dilerseniz konum sabitlemek için */
+            top: 10px;
+            right: 10px;
+        }
+        /* Yalnızca yazdırırken göster */
+        @media print {
+            .print-indicator {
+                display: block;
+            }
+        }
+        /* Toplu olduğu için kırmızı nokta */
+        .multiple-print {
+            background-color: red;
+        }
+        /* --- Renkli Nokta İçin CSS Sonu --- */
     </style>
 </head>
 <body>
+    <!-- Kırmızı nokta göstergesi (toplu) -->
+    <div class="print-indicator multiple-print"></div>
+
     <div class="header">
         <img src="{{ url_for('static', filename='logo/gullu.png') }}" alt="Logo">
         <h2>Sipariş Fişi</h2>
