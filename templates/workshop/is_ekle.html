@@ -44,11 +44,17 @@
             <div class="col-md-4">
                 <div class="form-group">
                     <label>Model Seçimi</label>
+                    <div class="input-group">
+                        <input type="text" id="modelSearchInput" class="form-control" placeholder="Model kodu girin...">
+                        <div class="input-group-append">
+                            <button type="button" class="btn btn-primary" id="searchModelBtn">
+                                <i class="fas fa-search"></i> Ara
+                            </button>
+                        </div>
+                    </div>
                     <input type="hidden" name="model_id" id="selected_model_id" required>
-                    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#modelSelectModal">
-                        <i class="fas fa-shoe-prints"></i> Model Seç
-                    </button>
                     <div id="selected_model_info" class="mt-2"></div>
+                    <div id="searchResults" class="mt-2"></div>
                 </div>
 
                 <!-- Model Seçim Modal -->
@@ -91,14 +97,69 @@
 
                 <script>
                 $(document).ready(function() {
-                    // Model arama fonksiyonu
-                    $("#modelSearch").on("keyup", function() {
-                        var value = $(this).val().toLowerCase();
-                        $(".product-item").filter(function() {
-                            var text = $(this).text().toLowerCase();
-                            $(this).toggle(text.indexOf(value) > -1);
-                        });
+                    $("#searchModelBtn").click(function() {
+                        var modelCode = $("#modelSearchInput").val().trim();
+                        if (!modelCode) return;
+                        
+                        $("#searchResults").empty();
+                        
+                        var matchingProducts = {};
+                        {% for product in products %}
+                            if ("{{ product.product_main_id }}".toLowerCase() === modelCode.toLowerCase()) {
+                                var color = "{{ product.color }}";
+                                if (!matchingProducts[color]) {
+                                    matchingProducts[color] = {
+                                        title: "{{ product.title }}",
+                                        model_id: "{{ product.product_main_id }}",
+                                        image: "{{ product.images.split(',')[0] if product.images else '' }}",
+                                        color: color
+                                    };
+                                }
+                            }
+                        {% endfor %}
+                        
+                        var resultsHtml = '<div class="row">';
+                        for (var color in matchingProducts) {
+                            var product = matchingProducts[color];
+                            resultsHtml += `
+                                <div class="col-md-4 mb-3">
+                                    <div class="card">
+                                        ${product.image ? `<img src="${product.image}" class="card-img-top" alt="${product.title}">` : ''}
+                                        <div class="card-body">
+                                            <h5 class="card-title">${product.title}</h5>
+                                            <p class="card-text">Model: ${product.model_id}</p>
+                                            <p class="card-text">Renk: ${product.color}</p>
+                                            <button type="button" class="btn btn-success btn-sm select-model" 
+                                                    data-model-id="${product.model_id}" 
+                                                    data-model-name="${product.title}">
+                                                Bu Modeli Seç
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>`;
+                        }
+                        resultsHtml += '</div>';
+                        $("#searchResults").html(resultsHtml);
                     });
+                    
+                    $(document).on('click', '.select-model', function() {
+                        const modelId = $(this).data('model-id');
+                        const modelName = $(this).data('model-name');
+                        
+                        $('#selected_model_id').val(modelId);
+                        $('#selected_model_info').html(`
+                            <div class="alert alert-success">
+                                Seçilen Model: ${modelName}
+                            </div>
+                        `);
+                    });
+                    
+                    $("#modelSearchInput").on("keypress", function(e) {
+                        if (e.which == 13) {
+                            $("#searchModelBtn").click();
+                        }
+                    });
+                });
                     $('.select-model').click(function() {
                         const card = $(this).closest('.product-card');
                         const modelId = card.data('model-id');
