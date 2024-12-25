@@ -126,6 +126,10 @@
                 <span class="info-label">Tarih:</span>
                 <span class="info-value">{{ fis.created_date.strftime('%d/%m/%Y %H:%M') if fis.created_date else 'Belirtilmemiş' }}</span>
             </div>
+            <div class="info-item">
+                <span class="info-label">Yazdırma Tarihi:</span>
+                <span class="info-value">{{ fis.print_date.strftime('%d/%m/%Y %H:%M') if fis.print_date else 'Yazdırılmamış' }}</span>
+            </div>
         </div>
 
         <table class="beden-table">

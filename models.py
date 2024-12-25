@@ -17,6 +17,7 @@ class SiparisFisi(db.Model):
     siparis_id       = db.Column(db.Integer, primary_key=True, autoincrement=True)
     urun_model_kodu  = db.Column(db.String(50), nullable=False)
     renk             = db.Column(db.String(20), nullable=False)
+    print_date       = db.Column(db.DateTime)
     beden_35         = db.Column(db.Integer, nullable=False, default=0)
     beden_36         = db.Column(db.Integer, nullable=False, default=0)
     beden_37         = db.Column(db.Integer, nullable=False, default=0)

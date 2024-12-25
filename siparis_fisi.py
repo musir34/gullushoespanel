@@ -67,6 +67,9 @@ def siparis_fisi_yazdir(siparis_id):
     fis = SiparisFisi.query.get(siparis_id)
     if not fis:
         return jsonify({"mesaj": "Sipariş fişi bulunamadı"}), 404
+    
+    fis.print_date = datetime.now()
+    db.session.commit()
 
     return render_template(
         "siparis_fisi_print.html",
