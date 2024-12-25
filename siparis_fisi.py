@@ -283,11 +283,13 @@ def siparis_fisi_olustur():
     ).all()
 
     if request.method == "POST":
-        # 1) Formdan "barcode" bilgisini alıp products tablosundan ürünü bulalım
-        selected_barcode = request.form.get("barcode")  # <select name="barcode"> vb.
+        # Get model code from form
+        model_code = request.form.get("model_code")
+        if not model_code:
+            return jsonify({"mesaj": "Model kodu gerekli!"}), 400
 
-        # 2) Seçilen ürünü bul
-        product = Product.query.get(selected_barcode)
+        # Find product by model code
+        product = Product.query.filter_by(product_main_id=model_code).first()
         if not product:
             return jsonify({"mesaj": "Seçilen ürün bulunamadı!"}), 400
 
