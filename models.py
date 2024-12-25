@@ -14,7 +14,7 @@ Base = declarative_base()
 class SiparisFisi(db.Model):
     __tablename__ = 'siparis_fisi'
     siparis_id = db.Column(db.Integer, primary_key=True)
-    urun_model_kodu = db.Column(db.String(100))
+    urun_model_kodu = db.Column(db.String(255))
     renk = db.Column(db.String(100))
     beden_35 = db.Column(db.Integer, default=0)
     beden_36 = db.Column(db.Integer, default=0)
