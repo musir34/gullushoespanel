@@ -99,6 +99,12 @@ def toplu_yazdir(fis_ids):
         if not fisler:
             return jsonify({"mesaj": "Seçili fişler bulunamadı"}), 404
 
+        # Yazdırma tarihlerini güncelle
+        current_time = datetime.now()
+        for fis in fisler:
+            fis.print_date = current_time
+        db.session.commit()
+
         return render_template(
             "siparis_fisi_toplu_print.html",
             fisler=fisler,

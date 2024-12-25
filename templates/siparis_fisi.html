@@ -414,7 +414,12 @@
             });
             
             if (selectedFisIds.length > 0) {
-                window.open(`/siparis_fisi/toplu_yazdir/${selectedFisIds.join(',')}`, '_blank');
+                const url = `/siparis_fisi/toplu_yazdir/${selectedFisIds.join(',')}`;
+                console.log("URL:", url); // Debug için
+                const printWindow = window.open(url, '_blank');
+                if (!printWindow) {
+                    alert('Popup engelleyiciyi devre dışı bırakın!');
+                }
             } else {
                 alert('Lütfen yazdırılacak fişleri seçin!');
             }
