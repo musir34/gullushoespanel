@@ -345,6 +345,19 @@ def siparis_fisi_olustur():
             toplam_fiyat=toplam_fiyat,
             image_url=f"/static/images/{barcodes.get('37')}.jpg" if barcodes.get('37') else image_url
         )
+        
+        # Image resizing if image exists
+        if yeni_fis.image_url and yeni_fis.image_url.startswith('/static/images/'):
+            from PIL import Image
+            import os
+            
+            image_path = os.path.join('static', 'images', os.path.basename(yeni_fis.image_url))
+            if os.path.exists(image_path):
+                with Image.open(image_path) as img:
+                    img = img.convert('RGB')
+                    img = img.resize((250, 150), Image.Resampling.LANCZOS)
+                    img.save(image_path, 'JPEG', quality=85)
+        
         yeni_fis.created_date = datetime.now()
         db.session.add(yeni_fis)
         db.session.commit()
