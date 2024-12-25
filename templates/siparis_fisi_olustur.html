@@ -141,33 +141,35 @@
       </div>
 
       <!-- Bedenler -->
-      <div class="form-group">
-        <label for="beden_35">Beden 35</label>
-        <input type="number" id="beden_35" name="beden_35" value="0">
-      </div>
-      <div class="form-group">
-        <label for="beden_36">Beden 36</label>
-        <input type="number" id="beden_36" name="beden_36" value="0">
-      </div>
-      <div class="form-group">
-        <label for="beden_37">Beden 37</label>
-        <input type="number" id="beden_37" name="beden_37" value="0">
-      </div>
-      <div class="form-group">
-        <label for="beden_38">Beden 38</label>
-        <input type="number" id="beden_38" name="beden_38" value="0">
-      </div>
-      <div class="form-group">
-        <label for="beden_39">Beden 39</label>
-        <input type="number" id="beden_39" name="beden_39" value="0">
-      </div>
-      <div class="form-group">
-        <label for="beden_40">Beden 40</label>
-        <input type="number" id="beden_40" name="beden_40" value="0">
-      </div>
-      <div class="form-group">
-        <label for="beden_41">Beden 41</label>
-        <input type="number" id="beden_41" name="beden_41" value="0">
+      <div id="sizes_container" style="display: none;">
+        <div class="form-group">
+          <label for="beden_35">Beden 35</label>
+          <input type="number" id="beden_35" name="beden_35" value="0">
+        </div>
+        <div class="form-group">
+          <label for="beden_36">Beden 36</label>
+          <input type="number" id="beden_36" name="beden_36" value="0">
+        </div>
+        <div class="form-group">
+          <label for="beden_37">Beden 37</label>
+          <input type="number" id="beden_37" name="beden_37" value="0">
+        </div>
+        <div class="form-group">
+          <label for="beden_38">Beden 38</label>
+          <input type="number" id="beden_38" name="beden_38" value="0">
+        </div>
+        <div class="form-group">
+          <label for="beden_39">Beden 39</label>
+          <input type="number" id="beden_39" name="beden_39" value="0">
+        </div>
+        <div class="form-group">
+          <label for="beden_40">Beden 40</label>
+          <input type="number" id="beden_40" name="beden_40" value="0">
+        </div>
+        <div class="form-group">
+          <label for="beden_41">Beden 41</label>
+          <input type="number" id="beden_41" name="beden_41" value="0">
+        </div>
       </div>
 
       <div class="form-group">
@@ -231,9 +233,14 @@ document.getElementById('model_code').addEventListener('change', function() {
 document.getElementById('color').addEventListener('change', function() {
     const selectedColor = this.value;
     const productData = JSON.parse(this.dataset.productData || '{}');
+    const sizesContainer = document.getElementById('sizes_container');
     
-    if (!selectedColor || !productData[selectedColor]) return;
+    if (!selectedColor || !productData[selectedColor]) {
+        sizesContainer.style.display = 'none';
+        return;
+    }
     
+    sizesContainer.style.display = 'block';
     const barcodes = productData[selectedColor];
     
     // Update barcode spans
