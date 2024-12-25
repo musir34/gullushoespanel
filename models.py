@@ -13,25 +13,54 @@ Base = declarative_base()
 #Sipariş Fişi Tablosu
 class SiparisFisi(db.Model):
     __tablename__ = 'siparis_fisi'
+    siparis_id = db.Column(db.Integer, primary_key=True)
+    urun_model_kodu = db.Column(db.String(100))
+    renk = db.Column(db.String(100))
+    beden_35 = db.Column(db.Integer, default=0)
+    beden_36 = db.Column(db.Integer, default=0)
+    beden_37 = db.Column(db.Integer, default=0)
+    beden_38 = db.Column(db.Integer, default=0)
+    beden_39 = db.Column(db.Integer, default=0)
+    beden_40 = db.Column(db.Integer, default=0)
+    beden_41 = db.Column(db.Integer, default=0)
+    cift_basi_fiyat = db.Column(db.Float, default=0)
+    toplam_adet = db.Column(db.Integer, default=0)
+    toplam_fiyat = db.Column(db.Float, default=0)
+    created_date = db.Column(db.DateTime, default=None)
+    print_date = db.Column(db.DateTime, default=None)
+    teslim_kayitlari = db.Column(db.Text, default=None)  # JSON string olarak saklayabilirsiniz
+    kalan_adet = db.Column(db.Integer, default=0)
+    image_url = db.Column(db.String)
 
-    siparis_id       = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    urun_model_kodu  = db.Column(db.String(50), nullable=False)
-    renk             = db.Column(db.String(20), nullable=False)
-    print_date       = db.Column(db.DateTime)
-    beden_35         = db.Column(db.Integer, nullable=False, default=0)
-    beden_36         = db.Column(db.Integer, nullable=False, default=0)
-    beden_37         = db.Column(db.Integer, nullable=False, default=0)
-    beden_38         = db.Column(db.Integer, nullable=False, default=0)
-    beden_39         = db.Column(db.Integer, nullable=False, default=0)
-    beden_40         = db.Column(db.Integer, nullable=False, default=0)
-    beden_41         = db.Column(db.Integer, nullable=False, default=0)
-    cift_basi_fiyat  = db.Column(db.Numeric(10,2), nullable=False)
-    toplam_adet      = db.Column(db.Integer, nullable=False)
-    toplam_fiyat     = db.Column(db.Numeric(10,2), nullable=False)
-    created_date     = db.Column(db.DateTime, default=datetime.utcnow)
-    image_url        = db.Column(db.String(255))
-    teslim_kayitlari = db.Column(db.Text)  # JSON formatında teslimat kayıtları
-    kalan_adet       = db.Column(db.Integer)
+    def __init__(
+        self,
+        urun_model_kodu,
+        renk,
+        beden_35,
+        beden_36,
+        beden_37,
+        beden_38,
+        beden_39,
+        beden_40,
+        beden_41,
+        cift_basi_fiyat,
+        toplam_adet,
+        toplam_fiyat,
+        image_url
+    ):
+        self.urun_model_kodu = urun_model_kodu
+        self.renk = renk
+        self.beden_35 = beden_35
+        self.beden_36 = beden_36
+        self.beden_37 = beden_37
+        self.beden_38 = beden_38
+        self.beden_39 = beden_39
+        self.beden_40 = beden_40
+        self.beden_41 = beden_41
+        self.cift_basi_fiyat = cift_basi_fiyat
+        self.toplam_adet = toplam_adet
+        self.toplam_fiyat = toplam_fiyat
+        self.image_url = image_url
     
 
 # İade siparişleri için veritabanı modeli 

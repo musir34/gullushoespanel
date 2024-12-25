@@ -1,13 +1,82 @@
 from flask import Blueprint, render_template, request, redirect, url_for, jsonify
 import json
 from datetime import datetime
-from models import db, SiparisFisi
+from models import db, SiparisFisi, Product  # Product modelini de ekledik
 
 siparis_fisi_bp = Blueprint("siparis_fisi_bp", __name__)
 
 @siparis_fisi_bp.app_template_filter('json_loads')
 def json_loads_filter(s):
     return json.loads(s)
+
+
+# ------------------------------------------------------------
+# YARDIMCI FONKSİYONLAR (Gruplama & Beden Sıralama)
+# ------------------------------------------------------------
+def group_products_by_model_and_color(products):
+    """
+    Product tablosundan gelen kayıtları (model, renk) ikilisine göre gruplar.
+    Örn: grouped_products[(model_id, color)] = [list_of_products]
+    """
+    grouped_products = {}
+    for product in products:
+        # product_main_id veya color eksikse, boş string ile geçici olarak dolduralım
+        key = (product.product_main_id or '', product.color or '')
+        grouped_products.setdefault(key, []).append(product)
+    return grouped_products
+
+def sort_variants_by_size(product_group):
+    """
+    Ürünlerin 'size' alanını (beden) büyükten küçüğe doğru sıralar.
+    Numerik değilse, alfabetik ters sırada sıralama yapar.
+    """
+    try:
+        return sorted(product_group, key=lambda x: float(x.size), reverse=True)
+    except (ValueError, TypeError):
+        return sorted(product_group, key=lambda x: x.size, reverse=True)
+
+
+# ------------------------------------------------------------
+# YENİ ROTA: /siparis_fisi_urunler
+# ------------------------------------------------------------
+@siparis_fisi_bp.route("/siparis_fisi_urunler")
+def siparis_fisi_urunler():
+    """
+    Product tablosundaki ürünleri (model_main_id, color) bazında gruplar,
+    sayfalama yapar ve 'siparis_fisi_urunler.html' şablonuna gönderir.
+    """
+    # Tüm veya bir filtreyle çekebilirsiniz (örneğin hidden=False).
+    products = Product.query.all()
+
+    # 1) Gruplama: (model, color) bazında
+    grouped_products = group_products_by_model_and_color(products)
+
+    # 2) Sayfalama ayarları
+    page = request.args.get('page', 1, type=int)
+    per_page = 9
+    total_groups = len(grouped_products)
+
+    # 3) Grupları keylerine göre sıralayalım
+    sorted_keys = sorted(grouped_products.keys())
+    paginated_keys = sorted_keys[(page - 1) * per_page : page * per_page]
+
+    # 4) Her grup içindeki product listelerini 'size' alanına göre sırala
+    paginated_product_groups = {
+        key: sort_variants_by_size(grouped_products[key])
+        for key in paginated_keys
+    }
+
+    # 5) Toplam sayfa hesabı
+    total_pages = (total_groups + per_page - 1) // per_page
+
+    return render_template(
+        "siparis_fisi_urunler.html",  # Bu şablonu oluşturmalısınız
+        grouped_products=paginated_product_groups,
+        page=page,
+        per_page=per_page,
+        total_pages=total_pages
+    )
+
 
 # ================
 # 1) Liste Görünümü
@@ -42,6 +111,7 @@ def siparis_fisi_sayfasi():
         pagination=pagination
     )
 
+
 # =====================
 # 2) Özet Liste Görünümü
 # =====================
@@ -53,6 +123,7 @@ def siparis_fisi_listesi():
     """
     fisler = SiparisFisi.query.order_by(SiparisFisi.created_date.desc()).all()
     return render_template("siparis_fisi_listesi.html", fisler=fisler)
+
 
 # ======================
 # 3) Tek Fiş Yazdırma
@@ -67,7 +138,8 @@ def siparis_fisi_yazdir(siparis_id):
     fis = SiparisFisi.query.get(siparis_id)
     if not fis:
         return jsonify({"mesaj": "Sipariş fişi bulunamadı"}), 404
-    
+
+    # Yazdırma tarihini güncelle
     fis.print_date = datetime.now()
     db.session.commit()
 
@@ -83,6 +155,7 @@ def bos_yazdir():
     Boş bir fiş şablonu yazdırmak isterseniz kullanılacak endpoint
     """
     return render_template("siparis_fisi_bos_print.html")
+
 
 # ======================
 # 4) Toplu Fiş Yazdırma
@@ -113,6 +186,7 @@ def toplu_yazdir(fis_ids):
     except Exception as e:
         return jsonify({"mesaj": "Hata oluştu", "error": str(e)}), 500
 
+
 # =====================
 # 5) Fiş Detay Sayfası
 # =====================
@@ -133,6 +207,7 @@ def siparis_fisi_detay(siparis_id):
         db.session.commit()
 
     return render_template("siparis_fisi_detay.html", fis=fis)
+
 
 @siparis_fisi_bp.route("/siparis_fisi/<int:siparis_id>/teslimat", methods=["POST"])
 def teslimat_kaydi_ekle(siparis_id):
@@ -181,6 +256,7 @@ def teslimat_kaydi_ekle(siparis_id):
     except Exception as e:
         return jsonify({"mesaj": f"Hata oluştu: {str(e)}"}), 500
 
+
 # ==================================
 # 6) YENİ SİPARİŞ FİŞİ OLUŞTUR (Form)
 # ==================================
@@ -191,9 +267,15 @@ def siparis_fisi_olustur():
     POST: Form verilerini al -> SiparisFisi nesnesi yarat -> DB'ye kaydet -> Listeye dön
     """
     if request.method == "POST":
-        # Form verilerini al
-        urun_model_kodu = request.form.get("urun_model_kodu")
-        renk = request.form.get("renk")
+        # 1) Formdan "barcode" bilgisini alıp products tablosundan ürünü bulalım
+        selected_barcode = request.form.get("barcode")  # <select name="barcode"> vb.
+
+        # 2) Seçilen ürünü bul
+        product = Product.query.get(selected_barcode)
+        if not product:
+            return jsonify({"mesaj": "Seçilen ürün bulunamadı!"}), 400
+
+        # 3) Diğer form verileri (bedenler vb.)
         beden_35 = int(request.form.get("beden_35", 0))
         beden_36 = int(request.form.get("beden_36", 0))
         beden_37 = int(request.form.get("beden_37", 0))
@@ -201,14 +283,20 @@ def siparis_fisi_olustur():
         beden_39 = int(request.form.get("beden_39", 0))
         beden_40 = int(request.form.get("beden_40", 0))
         beden_41 = int(request.form.get("beden_41", 0))
+
         cift_basi_fiyat = float(request.form.get("cift_basi_fiyat", 0))
         image_url = request.form.get("image_url", "")
 
-        # Hesapla
-        toplam_adet = (beden_35 + beden_36 + beden_37 + beden_38 + beden_39 + beden_40 + beden_41)
+        # 4) Üründen gelen bilgileri (title, color vs.) sipariş fişine aktaralım
+        urun_model_kodu = product.title or "Model Bilgisi Yok"
+        renk = product.color or "Renk Bilgisi Yok"
+
+        # 5) Toplam adet ve fiyat hesapla
+        toplam_adet = (beden_35 + beden_36 + beden_37 + beden_38 +
+                       beden_39 + beden_40 + beden_41)
         toplam_fiyat = float(toplam_adet) * cift_basi_fiyat
 
-        # Yeni fiş nesnesi
+        # 6) Yeni fiş nesnesi
         yeni_fis = SiparisFisi(
             urun_model_kodu=urun_model_kodu,
             renk=renk,
@@ -224,21 +312,20 @@ def siparis_fisi_olustur():
             toplam_fiyat=toplam_fiyat,
             image_url=image_url
         )
-
         db.session.add(yeni_fis)
         db.session.commit()
 
-        # İşlem bitince listeye yönlendir
         return redirect(url_for("siparis_fisi_bp.siparis_fisi_sayfasi"))
+
     else:
-        # GET isteği: form şablonu
-        return render_template("siparis_fisi_olustur.html")
+        # GET isteği: form şablonunu açmadan önce, products tablosundaki ürünleri çekelim
+        urunler = Product.query.filter_by(hidden=False).all()  # hidden=False olanlar
+        return render_template("siparis_fisi_olustur.html", urunler=urunler)
+
 
 # ===========================
 # 7) CRUD JSON Endpoint'leri
 # ===========================
-
-# Tüm siparis fişlerini JSON getiren
 @siparis_fisi_bp.route("/siparis_fisi", methods=["GET"])
 def get_siparis_fisi_list():
     fisler = SiparisFisi.query.order_by(SiparisFisi.created_date.desc()).all()
@@ -263,7 +350,6 @@ def get_siparis_fisi_list():
         })
     return jsonify(sonuc), 200
 
-# Tek sipariş fişini JSON getiren
 @siparis_fisi_bp.route("/siparis_fisi/<int:siparis_id>", methods=["GET"])
 def get_siparis_fisi(siparis_id):
     fis = SiparisFisi.query.get(siparis_id)
@@ -288,7 +374,6 @@ def get_siparis_fisi(siparis_id):
         "image_url": fis.image_url
     }), 200
 
-# Güncelleme
 @siparis_fisi_bp.route("/siparis_fisi/<int:siparis_id>", methods=["PUT"])
 def update_siparis_fisi(siparis_id):
     fis = SiparisFisi.query.get(siparis_id)
@@ -307,11 +392,9 @@ def update_siparis_fisi(siparis_id):
     fis.beden_41 = data.get("beden_41", fis.beden_41)
     fis.cift_basi_fiyat = data.get("cift_basi_fiyat", fis.cift_basi_fiyat)
 
-    # image_url
     if "image_url" in data:
         fis.image_url = data["image_url"]
 
-    # created_date
     if "created_date" in data:
         created_date_str = data["created_date"]
         fis.created_date = datetime.strptime(created_date_str, "%Y-%m-%d %H:%M:%S")
@@ -326,7 +409,6 @@ def update_siparis_fisi(siparis_id):
     db.session.commit()
     return jsonify({"mesaj": "Sipariş fişi güncellendi."}), 200
 
-# Silme
 @siparis_fisi_bp.route("/siparis_fisi/<int:siparis_id>", methods=["DELETE"])
 def delete_siparis_fisi(siparis_id):
     fis = SiparisFisi.query.get(siparis_id)

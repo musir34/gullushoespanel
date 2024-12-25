@@ -293,7 +293,8 @@
         {% if fis.image_url %}
           <img src="{{ fis.image_url }}" alt="Ürün Görseli">
         {% else %}
-          <img src="https://via.placeholder.com/250x150" alt="Placeholder">
+          <!-- Fotoğraf yoksa gullu.png göster -->
+          <img src="{{ url_for('static', filename='logo/gullu.png') }}" alt="Logo">
         {% endif %}
         <div class="card-body">
           <div class="card-title">{{ fis.urun_model_kodu }}</div>
@@ -311,17 +312,7 @@
             Toplam Fiyat: {{ "%.2f"|format(fis.toplam_fiyat) }} TL
           </div>
 
-          <!-- Detay (Örnek: Beden Adetleri) -->
-          <div class="card-text" style="margin-top: 5px; color: #444;">
-            <strong>Detay (Beden Adetleri):</strong><br>
-            35: {{ fis.beden_35 }} |
-            36: {{ fis.beden_36 }} |
-            37: {{ fis.beden_37 }} |
-            38: {{ fis.beden_38 }} |
-            39: {{ fis.beden_39 }} |
-            40: {{ fis.beden_40 }} |
-            41: {{ fis.beden_41 }}
-          </div>
+          <!-- "Detay (Beden Adetleri)" Kaldırıldı -->
 
           <div class="btn-actions">
             <a href="{{ url_for('siparis_fisi_bp.siparis_fisi_detay', siparis_id=fis.siparis_id) }}"
@@ -365,65 +356,65 @@
   {% endif %}
 
   <script>
-        /* Fiş Silme Fonksiyonu */
-        function deleteFis(id) {
-            if (!confirm("Bu fişi silmek istediğine emin misin?")) return;
+    /* Fiş Silme Fonksiyonu */
+    function deleteFis(id) {
+      if (!confirm("Bu fişi silmek istediğine emin misin?")) return;
 
-            fetch(`/siparis_fisi/${id}`, {
-                method: "DELETE"
-            })
-            .then(response => response.json())
-            .then(data => {
-                alert(data.mesaj);
-                location.reload();
-            })
-            .catch(err => console.error(err));
+      fetch(`/siparis_fisi/${id}`, {
+        method: "DELETE"
+      })
+      .then(response => response.json())
+      .then(data => {
+        alert(data.mesaj);
+        location.reload();
+      })
+      .catch(err => console.error(err));
+    }
+
+    /* Seçilen fişleri yönetmek (checkbox) */
+    let selectedCount = 0;
+    const maxSelection = 10;
+
+    function checkSelection(checkbox) {
+      if (checkbox.checked) {
+        selectedCount++;
+        if (selectedCount > maxSelection) {
+          checkbox.checked = false;
+          selectedCount--;
+          alert('En fazla 10 fiş seçebilirsiniz!');
+          return;
         }
+      } else {
+        selectedCount--;
+      }
+      document.getElementById('printSelectedBtn').disabled = (selectedCount === 0);
+      updateCheckboxes();
+    }
 
-        /* Seçilen fişleri yönetmek (checkbox) */
-        let selectedCount = 0;
-        const maxSelection = 10;
+    function updateCheckboxes() {
+      const checkboxes = document.querySelectorAll('.fis-checkbox:not(:checked)');
+      checkboxes.forEach(cb => {
+        cb.disabled = selectedCount >= maxSelection;
+      });
+    }
 
-        function checkSelection(checkbox) {
-            if (checkbox.checked) {
-                selectedCount++;
-                if (selectedCount > maxSelection) {
-                    checkbox.checked = false;
-                    selectedCount--;
-                    alert('En fazla 10 fiş seçebilirsiniz!');
-                    return;
-                }
-            } else {
-                selectedCount--;
-            }
-            document.getElementById('printSelectedBtn').disabled = (selectedCount === 0);
-            updateCheckboxes();
+    function printSelected() {
+      const selectedFisIds = [];
+      document.querySelectorAll('.fis-checkbox:checked').forEach(cb => {
+        selectedFisIds.push(cb.value);
+      });
+
+      if (selectedFisIds.length > 0) {
+        const url = `/siparis_fisi/toplu_yazdir/${selectedFisIds.join(',')}`;
+        console.log("URL:", url); // Debug için
+        const printWindow = window.open(url, '_blank');
+        if (!printWindow) {
+          alert('Popup engelleyiciyi devre dışı bırakın!');
         }
-
-        function updateCheckboxes() {
-            const checkboxes = document.querySelectorAll('.fis-checkbox:not(:checked)');
-            checkboxes.forEach(cb => {
-                cb.disabled = selectedCount >= maxSelection;
-            });
-        }
-
-        function printSelected() {
-            const selectedFisIds = [];
-            document.querySelectorAll('.fis-checkbox:checked').forEach(cb => {
-                selectedFisIds.push(cb.value);
-            });
-            
-            if (selectedFisIds.length > 0) {
-                const url = `/siparis_fisi/toplu_yazdir/${selectedFisIds.join(',')}`;
-                console.log("URL:", url); // Debug için
-                const printWindow = window.open(url, '_blank');
-                if (!printWindow) {
-                    alert('Popup engelleyiciyi devre dışı bırakın!');
-                }
-            } else {
-                alert('Lütfen yazdırılacak fişleri seçin!');
-            }
-        }
+      } else {
+        alert('Lütfen yazdırılacak fişleri seçin!');
+      }
+    }
   </script>
 </body>
 </html>
