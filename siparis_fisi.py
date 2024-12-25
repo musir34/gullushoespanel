@@ -307,8 +307,8 @@ def siparis_fisi_olustur():
         cift_basi_fiyat = float(request.form.get("cift_basi_fiyat", 0))
         image_url = request.form.get("image_url", "")
 
-        # 4) Üründen gelen bilgileri (title, color vs.) sipariş fişine aktaralım
-        urun_model_kodu = product.title or "Model Bilgisi Yok"
+        # 4) Üründen gelen bilgileri (model kodu, renk vs.) sipariş fişine aktaralım
+        urun_model_kodu = product.product_main_id or "Model Bilgisi Yok"
         renk = selected_color
 
         # 5) Toplam adet ve fiyat hesapla
