@@ -273,8 +273,7 @@ def siparis_fisi_olustur():
     # Apply search filter if query exists
     if search_query:
         query = query.filter(
-            (Product.product_main_id.ilike(f'%{search_query}%')) |
-            (Product.color.ilike(f'%{search_query}%'))
+            Product.product_main_id == search_query  # Exact match for model code
         )
     
     # Group and get results
