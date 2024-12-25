@@ -33,8 +33,7 @@
                 <td>{{ is.baslangic_tarihi.strftime('%d.%m.%Y') }}</td>
                 <td>{{ is.durum.value }}</td>
                 <td>
-                    <a href="{{ url_for('workshop.is_detay', is_id=is.id) }}" 
-                       class="btn btn-sm btn-info">Detay</a>
+                    <a href="{{ url_for('workshop.is_detay', is_id=is.id) }}" class="btn btn-sm btn-info">Detay</a>
                 </td>
             </tr>
             {% endfor %}
