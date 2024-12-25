@@ -223,9 +223,9 @@ def teslimat_kaydi_ekle(siparis_id):
             fis.teslim_kayitlari = "[]"
             
         try:
-        beden_35 = int(request.form.get("beden_35", 0))
-        beden_36 = int(request.form.get("beden_36", 0))
-        beden_37 = int(request.form.get("beden_37", 0))
+            beden_35 = int(request.form.get("beden_35", 0))
+            beden_36 = int(request.form.get("beden_36", 0))
+            beden_37 = int(request.form.get("beden_37", 0))
         beden_38 = int(request.form.get("beden_38", 0))
         beden_39 = int(request.form.get("beden_39", 0))
         beden_40 = int(request.form.get("beden_40", 0))
