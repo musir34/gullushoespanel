@@ -1,3 +1,4 @@
+
 {% block content %}
 <div class="container mt-4">
     <h2>Çalışan Yönetimi</h2>
@@ -6,8 +7,13 @@
         <div class="col-md-4">
             <div class="card">
                 <div class="card-body">
-                    <h5 class="card-title">Yeni Çalışan Ekle</h5>
-                    <form method="POST">
+                    <h5 class="card-title">Hızlı Çalışan Ekle</h5>
+                    <div class="d-grid gap-2">
+                        <button onclick="setWorkerType('KESICI')" class="btn btn-primary mb-2">Kesici Ekle</button>
+                        <button onclick="setWorkerType('SAYACI')" class="btn btn-success mb-2">Sayacı Ekle</button>
+                        <button onclick="setWorkerType('KALFA')" class="btn btn-info">Kalfa Ekle</button>
+                    </div>
+                    <form method="POST" id="workerForm" class="mt-4">
                         <div class="form-group">
                             <label>Ad</label>
                             <input type="text" name="ad" class="form-control" required>
@@ -18,7 +24,7 @@
                         </div>
                         <div class="form-group">
                             <label>Çalışan Tipi</label>
-                            <select name="worker_type" class="form-control" required>
+                            <select name="worker_type" id="workerType" class="form-control" required>
                                 {% for type in WorkerType %}
                                 <option value="{{ type.name }}">{{ type.value }}</option>
                                 {% endfor %}
@@ -69,4 +75,11 @@
         </div>
     </div>
 </div>
+
+<script>
+function setWorkerType(type) {
+    document.getElementById('workerType').value = type;
+    document.querySelector('input[name="ad"]').focus();
+}
+</script>
 {% endblock %}
