@@ -34,7 +34,8 @@
                 <td>{{ is.durum.value }}</td>
                 <td>
                     <a href="{{ url_for('workshop.is_detay', is_id=is.id) }}" 
-                       class="btn btn-sm btn-info">Detay</a>
+                       class="btn btn-sm btn-info"
+                       onclick="window.location.href=this.href; return false;">Detay</a>
                 </td>
             </tr>
             {% endfor %}
