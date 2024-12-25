@@ -290,10 +290,16 @@ def siparis_fisi_olustur():
         if not model_code:
             return jsonify({"mesaj": "Model kodu gerekli!"}), 400
 
-        # Find product by model code and color
-        product = Product.query.filter_by(product_main_id=model_code, color=selected_color).first()
-        if not product:
+        # Find products by model code and color
+        products = Product.query.filter_by(product_main_id=model_code, color=selected_color).all()
+        if not products:
             return jsonify({"mesaj": "Seçilen ürün bulunamadı!"}), 400
+
+        # Create barcode dictionary
+        barcodes = {}
+        for product in products:
+            if product.size and product.barcode:
+                barcodes[product.size] = product.barcode
 
         # 3) Diğer form verileri (bedenler vb.)
         beden_35 = int(request.form.get("beden_35", 0))
@@ -320,6 +326,13 @@ def siparis_fisi_olustur():
         yeni_fis = SiparisFisi(
             urun_model_kodu=urun_model_kodu,
             renk=renk,
+            barkod_35=barcodes.get('35'),
+            barkod_36=barcodes.get('36'),
+            barkod_37=barcodes.get('37'),
+            barkod_38=barcodes.get('38'),
+            barkod_39=barcodes.get('39'),
+            barkod_40=barcodes.get('40'),
+            barkod_41=barcodes.get('41'),
             beden_35=beden_35,
             beden_36=beden_36,
             beden_37=beden_37,
