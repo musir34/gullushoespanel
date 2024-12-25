@@ -1,6 +1,6 @@
 
 from flask import Blueprint, render_template, request, redirect, url_for, flash
-from models import db, Kalfa, AyakkabiModel, AyakkabiRenk, UretimIsi, JobStatus
+from models import db, Worker, AyakkabiModel, AyakkabiRenk, UretimIsi, JobStatus, WorkerType
 from datetime import datetime
 from sqlalchemy import func
 
@@ -86,7 +86,7 @@ def is_ekle():
             flash(f'Hata oluştu: {str(e)}', 'danger')
             db.session.rollback()
     
-    kalfalar = Kalfa.query.filter_by(aktif=True).all()
+    workers = Worker.query.filter_by(aktif=True).all()
     modeller = AyakkabiModel.query.filter_by(aktif=True).all()
     renkler = AyakkabiRenk.query.filter_by(aktif=True).all()
     
