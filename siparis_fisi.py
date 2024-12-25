@@ -436,3 +436,24 @@ def delete_siparis_fisi(siparis_id):
     db.session.delete(fis)
     db.session.commit()
     return jsonify({"mesaj": "Sipariş fişi silindi."}), 200
+@siparis_fisi_bp.route("/get_product_details/<model_code>")
+def get_product_details(model_code):
+    products = Product.query.filter_by(product_main_id=model_code).all()
+    
+    if not products:
+        return jsonify({"success": False, "message": "Ürün bulunamadı"})
+    
+    # İlk ürünün rengini al
+    color = products[0].color
+    
+    # Beden-barkod eşleştirmelerini yap
+    barcodes = {}
+    for product in products:
+        if product.size and product.barcode:
+            barcodes[product.size] = product.barcode
+    
+    return jsonify({
+        "success": True,
+        "color": color,
+        "barcodes": barcodes
+    })
