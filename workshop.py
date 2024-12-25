@@ -8,8 +8,12 @@ workshop_bp = Blueprint('workshop', __name__)
 
 @workshop_bp.route('/workshop/dashboard')
 def dashboard():
-    isler = UretimIsi.query.order_by(UretimIsi.baslangic_tarihi.desc()).all()
-    return render_template('workshop/dashboard.html', isler=isler)
+    try:
+        isler = UretimIsi.query.order_by(UretimIsi.baslangic_tarihi.desc()).all()
+        return render_template('workshop/dashboard.html', isler=isler)
+    except Exception as e:
+        print(f"Hata: {str(e)}")
+        return "Atölye yönetimi paneline erişilirken bir hata oluştu.", 500
 
 @workshop_bp.route('/workshop/is-ekle', methods=['GET', 'POST'])
 def is_ekle():
