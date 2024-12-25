@@ -75,9 +75,9 @@ class UretimIsi(db.Model):
     bitis_tarihi = db.Column(db.DateTime)
     durum = db.Column(db.Enum(JobStatus), default=JobStatus.PENDING)
     
-    kesici = relationship("Worker", foreign_keys=[kesici_id])
-    sayaci = relationship("Worker", foreign_keys=[sayaci_id])
-    kalfa = relationship("Worker", foreign_keys=[kalfa_id])
+    kesici = relationship("Worker", foreign_keys=[kesici_id], back_populates="kesici_isler", overlaps="kesici_isler")
+    sayaci = relationship("Worker", foreign_keys=[sayaci_id], back_populates="sayaci_isler", overlaps="sayaci_isler")
+    kalfa = relationship("Worker", foreign_keys=[kalfa_id], back_populates="kalfa_isler", overlaps="kalfa_isler")
     model = relationship("AyakkabiModel")
     renk = relationship("AyakkabiRenk")
 
