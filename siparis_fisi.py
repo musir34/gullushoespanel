@@ -214,9 +214,13 @@ def teslimat_kaydi_ekle(siparis_id):
     """
     Yeni teslimat kaydı ekle
     """
-    fis = SiparisFisi.query.get(siparis_id)
-    if not fis:
-        return jsonify({"mesaj": "Sipariş fişi bulunamadı"}), 404
+    try:
+        fis = SiparisFisi.query.get(siparis_id)
+        if not fis:
+            return jsonify({"mesaj": "Sipariş fişi bulunamadı"}), 404
+
+        if not fis.teslim_kayitlari:
+            fis.teslim_kayitlari = "[]"
 
     try:
         beden_35 = int(request.form.get("beden_35", 0))
