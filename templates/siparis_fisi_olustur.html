@@ -181,25 +181,36 @@
 <script>
 document.getElementById('model_code').addEventListener('change', function() {
     const selectedModel = this.value;
+    const colorSelect = document.getElementById('color');
     
     // AJAX isteği ile seçilen modele ait ürün bilgilerini al
     fetch(`/get_product_details/${selectedModel}`)
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                // Renk bilgisini doldur
-                document.getElementById('color').value = data.color;
+                // Renk seçimini aktifleştir ve renkleri doldur
+                colorSelect.innerHTML = '<option value="">Renk Seçin</option>';
+                data.colors.forEach(color => {
+                    colorSelect.innerHTML += `<option value="${color}">${color}</option>`;
+                });
+                colorSelect.removeAttribute('readonly');
                 
-                // Beden barkodlarını doldur
-                for (let size = 35; size <= 41; size++) {
-                    const barcodeSpan = document.getElementById(`barcode_${size}`);
-                    const barcode = data.barcodes[size.toString()];
-                    if (barcode) {
-                        barcodeSpan.textContent = `Barkod: ${barcode}`;
-                    } else {
-                        barcodeSpan.textContent = '';
+                // Renk seçimi değiştiğinde barkodları güncelle
+                colorSelect.onchange = function() {
+                    const selectedColor = this.value;
+                    const barcodes = data.product_data[selectedColor];
+                    
+                    // Beden barkodlarını doldur
+                    for (let size = 35; size <= 41; size++) {
+                        const barcodeSpan = document.getElementById(`barcode_${size}`);
+                        const barcode = barcodes[size.toString()];
+                        if (barcode) {
+                            barcodeSpan.textContent = `Barkod: ${barcode}`;
+                        } else {
+                            barcodeSpan.textContent = '';
+                        }
                     }
-                }
+                };
             }
         })
         .catch(error => console.error('Error:', error));

@@ -443,17 +443,19 @@ def get_product_details(model_code):
     if not products:
         return jsonify({"success": False, "message": "Ürün bulunamadı"})
     
-    # İlk ürünün rengini al
-    color = products[0].color
+    # Modele ait tüm benzersiz renkleri al
+    colors = list(set(p.color for p in products if p.color))
     
-    # Beden-barkod eşleştirmelerini yap
-    barcodes = {}
-    for product in products:
-        if product.size and product.barcode:
-            barcodes[product.size] = product.barcode
+    # Renk ve beden-barkod eşleştirmelerini yap
+    product_data = {}
+    for color in colors:
+        product_data[color] = {}
+        for product in products:
+            if product.color == color and product.size and product.barcode:
+                product_data[color][product.size] = product.barcode
     
     return jsonify({
         "success": True,
-        "color": color,
-        "barcodes": barcodes
+        "colors": colors,
+        "product_data": product_data
     })
