@@ -250,6 +250,36 @@ def teslimat_kaydi_ekle(siparis_id):
         fis.teslim_kayitlari = json.dumps(kayitlar)
         fis.kalan_adet = fis.toplam_adet - sum(k["toplam"] for k in kayitlar)
 
+        # Stokları güncelle
+        if beden_35 > 0 and fis.barkod_35:
+            product = Product.query.filter_by(barcode=fis.barkod_35).first()
+            if product:
+                product.quantity += beden_35
+        if beden_36 > 0 and fis.barkod_36:
+            product = Product.query.filter_by(barcode=fis.barkod_36).first()
+            if product:
+                product.quantity += beden_36
+        if beden_37 > 0 and fis.barkod_37:
+            product = Product.query.filter_by(barcode=fis.barkod_37).first()
+            if product:
+                product.quantity += beden_37
+        if beden_38 > 0 and fis.barkod_38:
+            product = Product.query.filter_by(barcode=fis.barkod_38).first()
+            if product:
+                product.quantity += beden_38
+        if beden_39 > 0 and fis.barkod_39:
+            product = Product.query.filter_by(barcode=fis.barkod_39).first()
+            if product:
+                product.quantity += beden_39
+        if beden_40 > 0 and fis.barkod_40:
+            product = Product.query.filter_by(barcode=fis.barkod_40).first()
+            if product:
+                product.quantity += beden_40
+        if beden_41 > 0 and fis.barkod_41:
+            product = Product.query.filter_by(barcode=fis.barkod_41).first()
+            if product:
+                product.quantity += beden_41
+
         db.session.commit()
         return redirect(url_for("siparis_fisi_bp.siparis_fisi_detay", siparis_id=siparis_id))
 
