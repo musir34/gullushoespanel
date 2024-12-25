@@ -46,7 +46,7 @@
                     <label>Model Seçimi</label>
                     <input type="hidden" name="model_id" id="selected_model_id" required>
                     <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#modelSelectModal">
-                        <i class="fas fa-search"></i> Model Seç
+                        <i class="fas fa-shoe-prints"></i> Model Seç
                     </button>
                     <div id="selected_model_info" class="mt-2"></div>
                 </div>
@@ -63,11 +63,12 @@
                             </div>
                             <div class="modal-body">
                                 <div class="row">
-                                    {% for model in modeller %}
+                                    {% for product in products %}
                                     <div class="col-md-4 mb-3">
-                                        <div class="card product-card" data-model-id="{{ model.id }}" data-model-name="{{ model.model_adi }}">
+                                        <div class="card product-card" data-model-id="{{ product.product_main_id }}" data-model-name="{{ product.title }}">
                                             <div class="card-body">
-                                                <h5 class="card-title">{{ model.model_adi }}</h5>
+                                                <h5 class="card-title">{{ product.title }}</h5>
+                                                <p class="card-text">Model: {{ product.product_main_id }}</p>
                                                 <button type="button" class="btn btn-success btn-sm select-model">
                                                     Bu Modeli Seç
                                                 </button>

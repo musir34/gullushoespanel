@@ -86,13 +86,14 @@ def is_ekle():
             flash(f'Hata oluştu: {str(e)}', 'danger')
             db.session.rollback()
     
+    from models import Product
     workers = Worker.query.filter_by(aktif=True).all()
-    modeller = AyakkabiModel.query.filter_by(aktif=True).all()
+    products = Product.query.with_entities(Product.product_main_id, Product.title).distinct().all()
     renkler = AyakkabiRenk.query.filter_by(aktif=True).all()
     
     return render_template('workshop/is_ekle.html', 
                          workers=workers,
-                         modeller=modeller,
+                         products=products,
                          renkler=renkler)
 
 @workshop_bp.route('/workshop/is-guncelle/<int:is_id>', methods=['POST'])
