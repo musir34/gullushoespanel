@@ -1,10 +1,20 @@
+{% extends "home.html" %}
 {% block content %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 <div class="container mt-4">
     <h2>Üretim İşleri Paneli</h2>
     
-    <a href="{{ url_for('workshop.is_ekle') }}" class="btn btn-primary mb-3">
-        Yeni İş Ekle
-    </a>
+    <div class="btn-group mb-3">
+        <a href="{{ url_for('workshop.is_ekle') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Yeni İş Ekle
+        </a>
+        <a href="{{ url_for('workshop.workers') }}" class="btn btn-success">
+            <i class="fas fa-users"></i> Çalışanlar
+        </a>
+        <button class="btn btn-info" onclick="window.print()">
+            <i class="fas fa-print"></i> Yazdır
+        </button>
+    </div>
     
     <table class="table table-striped">
         <thead>
