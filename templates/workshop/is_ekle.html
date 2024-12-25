@@ -35,72 +35,15 @@
             
             <div class="col-md-4">
                 <div class="form-group">
-                    <label>Model Seçimi</label>
-                    <input type="hidden" name="model_id" id="selected_model_id" required>
-                    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#modelSelectModal">
-                        <i class="fas fa-search"></i> Model Seç
-                    </button>
-                    <div id="selected_model_info" class="mt-2"></div>
+                    <label>Model Kodu</label>
+                    <input type="text" name="product_main_id" class="form-control" required>
                 </div>
-
-                <!-- Model Seçim Modal -->
-                <div class="modal fade" id="modelSelectModal" tabindex="-1" role="dialog">
-                    <div class="modal-dialog modal-lg" role="document">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title">Model Seçimi</h5>
-                                <button type="button" class="close" data-dismiss="modal">
-                                    <span>&times;</span>
-                                </button>
-                            </div>
-                            <div class="modal-body">
-                                <div class="row">
-                                    {% for model in modeller %}
-                                    <div class="col-md-4 mb-3">
-                                        <div class="card product-card" data-model-id="{{ model.id }}" data-model-name="{{ model.model_adi }}">
-                                            <div class="card-body">
-                                                <h5 class="card-title">{{ model.model_adi }}</h5>
-                                                <button type="button" class="btn btn-success btn-sm select-model">
-                                                    Bu Modeli Seç
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    {% endfor %}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <script>
-                $(document).ready(function() {
-                    $('.select-model').click(function() {
-                        const card = $(this).closest('.product-card');
-                        const modelId = card.data('model-id');
-                        const modelName = card.data('model-name');
-                        
-                        $('#selected_model_id').val(modelId);
-                        $('#selected_model_info').html(`
-                            <div class="alert alert-success">
-                                Seçilen Model: ${modelName}
-                            </div>
-                        `);
-                        
-                        $('#modelSelectModal').modal('hide');
-                    });
-                });
-                </script>
             </div>
             
             <div class="col-md-4">
                 <div class="form-group">
-                    <label>Renk Seçimi</label>
-                    <select name="renk_id" class="form-control" required>
-                        {% for renk in renkler %}
-                        <option value="{{ renk.id }}">{{ renk.renk_adi }}</option>
-                        {% endfor %}
-                    </select>
+                    <label>Renk</label>
+                    <input type="text" name="selected_color" class="form-control" required>
                 </div>
             </div>
         </div>
