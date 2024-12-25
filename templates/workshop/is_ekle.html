@@ -45,7 +45,7 @@
                 <div class="form-group">
                     <label>Model Seçimi</label>
                     <div class="input-group">
-                        <input type="text" id="modelSearchInput" class="form-control" placeholder="Model kodu girin...">
+                        <input type="text" id="modelSearchInput" class="form-control" placeholder="Model kodu veya adı girin...">
                         <div class="input-group-append">
                             <button type="button" class="btn btn-primary" id="searchModelBtn">
                                 <i class="fas fa-search"></i> Ara
@@ -57,70 +57,37 @@
                     <div id="searchResults" class="mt-2"></div>
                 </div>
 
-                <!-- Model Seçim Modal -->
-                <div class="modal fade" id="modelSelectModal" tabindex="-1" role="dialog">
-                    <div class="modal-dialog modal-lg" role="document">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title">Model Seçimi</h5>
-                                <button type="button" class="close" data-dismiss="modal">
-                                    <span>&times;</span>
-                                </button>
-                            </div>
-                            <div class="modal-body">
-                                <div class="input-group mb-3">
-                                    <input type="text" id="modelSearch" class="form-control" placeholder="Model ara...">
-                                </div>
-                                <div class="row" id="productCards">
-                                    {% for product in products %}
-                                    <div class="col-md-4 mb-3 product-item">
-                                        <div class="card product-card" data-model-id="{{ product.product_main_id }}" data-model-name="{{ product.title }}">
-                                            {% if product.images %}
-                                            <img src="{{ product.images.split(',')[0] }}" class="card-img-top" alt="{{ product.title }}">
-                                            {% endif %}
-                                            <div class="card-body">
-                                                <h5 class="card-title">{{ product.title }}</h5>
-                                                <p class="card-text">Model: {{ product.product_main_id }}</p>
-                                                <p class="card-text">Fiyat: {{ product.sale_price }} {{ product.currency_type }}</p>
-                                                <button type="button" class="btn btn-success btn-sm select-model">
-                                                    Bu Modeli Seç
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    {% endfor %}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
                 <script>
                 $(document).ready(function() {
-                    $("#searchModelBtn").click(function() {
-                        var modelCode = $("#modelSearchInput").val().trim();
-                        if (!modelCode) return;
+                    $("#searchModelBtn, #modelSearchInput").on("click keyup", function(e) {
+                        if (e.type === "keyup" && e.which !== 13) return;
+                        
+                        var searchTerm = $("#modelSearchInput").val().trim().toLowerCase();
+                        if (!searchTerm) return;
                         
                         $("#searchResults").empty();
-                        
                         var matchingProducts = {};
+                        
                         {% for product in products %}
-                            if ("{{ product.product_main_id }}".toLowerCase() === modelCode.toLowerCase()) {
-                                var color = "{{ product.color }}";
-                                if (!matchingProducts[color]) {
-                                    matchingProducts[color] = {
-                                        title: "{{ product.title }}",
-                                        model_id: "{{ product.product_main_id }}",
-                                        image: "{{ product.images.split(',')[0] if product.images else '' }}",
-                                        color: color
-                                    };
-                                }
+                        if ("{{ product.product_main_id }}".toLowerCase().includes(searchTerm) || 
+                            "{{ product.title }}".toLowerCase().includes(searchTerm)) {
+                            var color = "{{ product.color }}";
+                            var key = "{{ product.product_main_id }}" + color;
+                            if (!matchingProducts[key]) {
+                                matchingProducts[key] = {
+                                    title: "{{ product.title }}",
+                                    model_id: "{{ product.product_main_id }}",
+                                    image: "{{ product.images.split(',')[0] if product.images else '' }}",
+                                    color: color,
+                                    price: "{{ product.sale_price }}",
+                                    currency: "{{ product.currency_type }}"
+                                };
                             }
+                        }
                         {% endfor %}
                         
                         var resultsHtml = '<div class="row">';
-                        for (var color in matchingProducts) {
-                            var product = matchingProducts[color];
+                        Object.values(matchingProducts).forEach(function(product) {
                             resultsHtml += `
                                 <div class="col-md-4 mb-3">
                                     <div class="card">
@@ -129,6 +96,7 @@
                                             <h5 class="card-title">${product.title}</h5>
                                             <p class="card-text">Model: ${product.model_id}</p>
                                             <p class="card-text">Renk: ${product.color}</p>
+                                            <p class="card-text">Fiyat: ${product.price} ${product.currency}</p>
                                             <button type="button" class="btn btn-success btn-sm select-model" 
                                                     data-model-id="${product.model_id}" 
                                                     data-model-name="${product.title}">
@@ -137,7 +105,7 @@
                                         </div>
                                     </div>
                                 </div>`;
-                        }
+                        });
                         resultsHtml += '</div>';
                         $("#searchResults").html(resultsHtml);
                     });
@@ -149,30 +117,9 @@
                         $('#selected_model_id').val(modelId);
                         $('#selected_model_info').html(`
                             <div class="alert alert-success">
-                                Seçilen Model: ${modelName}
+                                <strong>Seçilen Model:</strong> ${modelName} (${modelId})
                             </div>
                         `);
-                    });
-                    
-                    $("#modelSearchInput").on("keypress", function(e) {
-                        if (e.which == 13) {
-                            $("#searchModelBtn").click();
-                        }
-                    });
-                });
-                    $('.select-model').click(function() {
-                        const card = $(this).closest('.product-card');
-                        const modelId = card.data('model-id');
-                        const modelName = card.data('model-name');
-                        
-                        $('#selected_model_id').val(modelId);
-                        $('#selected_model_info').html(`
-                            <div class="alert alert-success">
-                                Seçilen Model: ${modelName}
-                            </div>
-                        `);
-                        
-                        $('#modelSelectModal').modal('hide');
                     });
                 });
                 </script>
