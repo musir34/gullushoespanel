@@ -1,3 +1,4 @@
+
 {% extends "home.html" %}
 
 {% block content %}
@@ -33,50 +34,7 @@
                 <td>{{ is.durum.value }}</td>
                 <td>
                     <a href="{{ url_for('workshop.is_detay', is_id=is.id) }}" 
-                       class="btn btn-sm btn-info"
-                       onclick="window.location.href=this.href; return false;">Detay</a>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
-{% endblock %}
-{% extends "base.html" %}
-
-{% block content %}
-<div class="container mt-4">
-    <h2>Üretim İşleri Paneli</h2>
-    
-    <a href="{{ url_for('workshop.is_ekle') }}" class="btn btn-primary mb-3">
-        Yeni İş Ekle
-    </a>
-    
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>İş No</th>
-                <th>Kalfa</th>
-                <th>Model</th>
-                <th>Renk</th>
-                <th>Toplam Adet</th>
-                <th>Başlangıç</th>
-                <th>Durum</th>
-                <th>İşlemler</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for is in isler %}
-            <tr>
-                <td>{{ is.id }}</td>
-                <td>{{ is.kalfa.ad }} {{ is.kalfa.soyad }}</td>
-                <td>{{ is.model.model_adi }}</td>
-                <td>{{ is.renk.renk_adi }}</td>
-                <td>{{ is.toplam_adet }}</td>
-                <td>{{ is.baslangic_tarihi.strftime('%d.%m.%Y') }}</td>
-                <td>{{ is.durum.value }}</td>
-                <td>
-                    <a href="{{ url_for('workshop.is_detay', is_id=is.id) }}" class="btn btn-sm btn-info">Detay</a>
+                       class="btn btn-sm btn-info">Detay</a>
                 </td>
             </tr>
             {% endfor %}
