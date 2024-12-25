@@ -288,7 +288,7 @@
     {% for fis in fisler %}
       <div class="card">
         <div class="fis-select">
-          <input type="checkbox" class="fis-checkbox" data-fis-id="{{ fis.siparis_id }}" onchange="checkSelection(this)">
+          <input type="checkbox" class="fis-checkbox" value="{{ fis.siparis_id }}" onchange="checkSelection(this)">
         </div>
         {% if fis.image_url %}
           <img src="{{ fis.image_url }}" alt="Ürün Görseli">
@@ -365,57 +365,60 @@
   {% endif %}
 
   <script>
-    /* Fiş Silme Fonksiyonu */
-    function deleteFis(id) {
-      if (!confirm("Bu fişi silmek istediğine emin misin?")) return;
+        /* Fiş Silme Fonksiyonu */
+        function deleteFis(id) {
+            if (!confirm("Bu fişi silmek istediğine emin misin?")) return;
 
-      fetch(`/siparis_fisi/${id}`, {
-        method: "DELETE"
-      })
-      .then(response => response.json())
-      .then(data => {
-        alert(data.mesaj);
-        location.reload();
-      })
-      .catch(err => console.error(err));
-    }
-
-    /* Seçilen fişleri yönetmek (checkbox) */
-    let selectedCount = 0;
-    const maxSelection = 10;
-
-    function checkSelection(checkbox) {
-      if (checkbox.checked) {
-        selectedCount++;
-        if (selectedCount > maxSelection) {
-          checkbox.checked = false;
-          selectedCount--;
-          alert('En fazla 10 fiş seçebilirsiniz!');
-          return;
+            fetch(`/siparis_fisi/${id}`, {
+                method: "DELETE"
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.mesaj);
+                location.reload();
+            })
+            .catch(err => console.error(err));
         }
-      } else {
-        selectedCount--;
-      }
-      document.getElementById('printSelectedBtn').disabled = (selectedCount === 0);
-      updateCheckboxes();
-    }
 
-    function updateCheckboxes() {
-      const checkboxes = document.querySelectorAll('.fis-checkbox:not(:checked)');
-      checkboxes.forEach(cb => {
-        cb.disabled = selectedCount >= maxSelection;
-      });
-    }
+        /* Seçilen fişleri yönetmek (checkbox) */
+        let selectedCount = 0;
+        const maxSelection = 10;
 
-    function printSelected() {
-      const selectedFisIds = [];
-      document.querySelectorAll('.fis-checkbox:checked').forEach(cb => {
-        selectedFisIds.push(cb.dataset.fisId);
-      });
-      if (selectedFisIds.length > 0) {
-        window.open('/siparis_fisi/toplu_yazdir/' + selectedFisIds.join(','), '_blank');
-      }
-    }
+        function checkSelection(checkbox) {
+            if (checkbox.checked) {
+                selectedCount++;
+                if (selectedCount > maxSelection) {
+                    checkbox.checked = false;
+                    selectedCount--;
+                    alert('En fazla 10 fiş seçebilirsiniz!');
+                    return;
+                }
+            } else {
+                selectedCount--;
+            }
+            document.getElementById('printSelectedBtn').disabled = (selectedCount === 0);
+            updateCheckboxes();
+        }
+
+        function updateCheckboxes() {
+            const checkboxes = document.querySelectorAll('.fis-checkbox:not(:checked)');
+            checkboxes.forEach(cb => {
+                cb.disabled = selectedCount >= maxSelection;
+            });
+        }
+
+        function printSelected() {
+            const selectedFisIds = [];
+            document.querySelectorAll('.fis-checkbox:checked').forEach(cb => {
+                selectedFisIds.push(cb.value);
+            });
+            
+            if (selectedFisIds.length > 0) {
+                window.open(`/siparis_fisi/toplu_yazdir/${selectedFisIds.join(',')}`, '_blank');
+            } else {
+                alert('Lütfen yazdırılacak fişleri seçin!');
+            }
+        }
   </script>
 </body>
 </html>
