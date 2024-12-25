@@ -343,7 +343,7 @@ def siparis_fisi_olustur():
             cift_basi_fiyat=cift_basi_fiyat,
             toplam_adet=toplam_adet,
             toplam_fiyat=toplam_fiyat,
-            image_url=image_url
+            image_url=f"/static/images/{barcodes.get('37')}.jpg" if barcodes.get('37') else image_url
         )
         yeni_fis.created_date = datetime.now()
         db.session.add(yeni_fis)
