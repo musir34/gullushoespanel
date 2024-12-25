@@ -262,12 +262,14 @@ def teslimat_kaydi_ekle(siparis_id):
 # ==================================
 @siparis_fisi_bp.route("/siparis_fisi/olustur", methods=["GET", "POST"])
 def siparis_fisi_olustur():
-    # Ürünleri veritabanından çek
+    # Ürünleri veritabanından çek (sadece model kodu ve renk)
     urunler = Product.query.with_entities(
-        Product.barcode,
-        Product.title,
+        Product.product_main_id.label('title'),
         Product.color
-    ).distinct().all()
+    ).group_by(
+        Product.product_main_id,
+        Product.color
+    ).all()
 
     if request.method == "POST":
         # 1) Formdan "barcode" bilgisini alıp products tablosundan ürünü bulalım
