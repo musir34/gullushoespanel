@@ -1,0 +1,96 @@
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>İstatistikler</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            padding: 20px;
+        }
+        .stats-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .chart-container {
+            height: 300px;
+        }
+    </style>
+</head>
+<body>
+    <div class="stats-container">
+        <div class="stats-card">
+            <h3>Günlük Sipariş Sayısı</h3>
+            <canvas id="dailyOrdersChart"></canvas>
+        </div>
+        <div class="stats-card">
+            <h3>En Çok Satan Ürünler</h3>
+            <canvas id="topProductsChart"></canvas>
+        </div>
+        <div class="stats-card">
+            <h3>Kargo Durumu Dağılımı</h3>
+            <canvas id="shippingStatusChart"></canvas>
+        </div>
+    </div>
+
+    <script>
+        // Örnek veriler (backend'den gelecek)
+        const dailyData = {
+            labels: ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'],
+            data: [12, 19, 15, 17, 14, 15, 16]
+        };
+
+        const topProducts = {
+            labels: ['Ürün A', 'Ürün B', 'Ürün C', 'Ürün D', 'Ürün E'],
+            data: [50, 45, 40, 35, 30]
+        };
+
+        const shippingStatus = {
+            labels: ['Hazırlanıyor', 'Kargoda', 'Teslim Edildi'],
+            data: [30, 20, 50]
+        };
+
+        // Grafikleri oluştur
+        new Chart('dailyOrdersChart', {
+            type: 'line',
+            data: {
+                labels: dailyData.labels,
+                datasets: [{
+                    label: 'Sipariş Sayısı',
+                    data: dailyData.data,
+                    borderColor: '#4CAF50'
+                }]
+            }
+        });
+
+        new Chart('topProductsChart', {
+            type: 'bar',
+            data: {
+                labels: topProducts.labels,
+                datasets: [{
+                    label: 'Satış Adedi',
+                    data: topProducts.data,
+                    backgroundColor: '#2196F3'
+                }]
+            }
+        });
+
+        new Chart('shippingStatusChart', {
+            type: 'pie',
+            data: {
+                labels: shippingStatus.labels,
+                datasets: [{
+                    data: shippingStatus.data,
+                    backgroundColor: ['#FFC107', '#03A9F4', '#4CAF50']
+                }]
+            }
+        });
+    </script>
+</body>
+</html>
