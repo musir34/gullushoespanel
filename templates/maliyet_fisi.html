@@ -5,16 +5,172 @@
     <meta charset="UTF-8">
     <title>Maliyet Fişleri</title>
     <style>
-        /* siparis_fisi.html'den aynı stil kodlarını kullanıyoruz */
-        /* sadece renk şemasını değiştiriyoruz */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+        }
+
         .header {
             background: #2c3e50;
+            color: #fff;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 999;
         }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo {
+            width: 50px;
+            height: auto;
+            border-radius: 4px;
+        }
+
+        .left-btns a {
+            margin-right: 10px;
+            color: #fff;
+            text-decoration: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+
+        .left-btns a:hover {
+            background: #1b2c38;
+        }
+
+        .search-container {
+            padding: 20px;
+            background: #fff;
+            margin: 20px auto;
+            width: 90%;
+            max-width: 1200px;
+            border-radius: 6px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .search-form {
+            display: flex;
+            gap: 10px;
+        }
+
+        .search-form input {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .search-form button {
+            padding: 8px 16px;
+            background: #e67e22;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .search-form button:hover {
+            background: #d35400;
+        }
+
+        .content {
+            width: 90%;
+            max-width: 1200px;
+            margin: 20px auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background: #fff;
+            border-radius: 6px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            overflow: hidden;
+            transition: transform 0.2s;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+        }
+
+        .card-body {
+            padding: 15px;
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .card-text {
+            font-size: 0.9rem;
+            color: #666;
+            margin: 5px 0;
+        }
+
         .btn-detail {
-            background-color: #e67e22;
+            display: inline-block;
+            padding: 8px 16px;
+            background: #e67e22;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 4px;
+            margin-top: 10px;
+            transition: background-color 0.2s;
         }
+
         .btn-detail:hover {
-            background-color: #d35400;
+            background: #d35400;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .pagination a {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            text-decoration: none;
+            color: #e67e22;
+        }
+
+        .pagination a:hover {
+            background: #f5f5f5;
+        }
+
+        .pagination a.active {
+            background: #e67e22;
+            color: #fff;
+            border-color: #e67e22;
         }
     </style>
 </head>
@@ -51,6 +207,14 @@
                 <h5 class="card-title">{{ fis.urun_model_kodu }}</h5>
                 <p class="card-text">Renk: {{ fis.renk }}</p>
                 <p class="card-text">Toplam Adet: {{ fis.toplam_adet }}</p>
+                <p class="card-text">Malzeme Maliyetleri:</p>
+                <p class="card-text">- Deri: {{ "%.2f"|format(fis.deri_maliyeti) }} TL</p>
+                <p class="card-text">- Taban: {{ "%.2f"|format(fis.taban_maliyeti) }} TL</p>
+                <p class="card-text">- Aksesuar: {{ "%.2f"|format(fis.aksesuar_maliyeti) }} TL</p>
+                <p class="card-text">İşçilik Maliyetleri:</p>
+                <p class="card-text">- Kesim: {{ "%.2f"|format(fis.kesim_maliyeti) }} TL</p>
+                <p class="card-text">- Dikim: {{ "%.2f"|format(fis.dikim_maliyeti) }} TL</p>
+                <p class="card-text">- Montaj: {{ "%.2f"|format(fis.montaj_maliyeti) }} TL</p>
                 <p class="card-text">Birim Maliyet: {{ "%.2f"|format(fis.birim_maliyet) }} TL</p>
                 <p class="card-text">Toplam Maliyet: {{ "%.2f"|format(fis.toplam_maliyet) }} TL</p>
                 <div class="btn-actions">
@@ -84,7 +248,6 @@
 
     <script>
     function showDetails(maliyetId) {
-        // Detay modalı için JavaScript kodları buraya gelecek
         alert('Detay sayfası yapım aşamasında...');
     }
     </script>
