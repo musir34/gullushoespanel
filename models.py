@@ -9,22 +9,6 @@ import uuid
 db = SQLAlchemy()
 Base = declarative_base()
 
-class DailyStats(db.Model):
-    __tablename__ = 'daily_stats'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    date = db.Column(db.Date, nullable=False)
-    order_count = db.Column(db.Integer, default=0)
-    total_revenue = db.Column(db.Float, default=0.0)
-    total_products = db.Column(db.Integer, default=0)
-    product_stats = db.Column(db.JSON)  # En çok üretilen ürünlerin istatistikleri
-    color_stats = db.Column(db.JSON)    # Renk dağılımı istatistikleri
-    size_stats = db.Column(db.JSON)     # Beden dağılımı istatistikleri
-    daily_production = db.Column(db.Integer, default=0)  # Günlük üretim adedi
-    pending_orders = db.Column(db.Integer, default=0)    # Bekleyen sipariş sayısı
-    completed_orders = db.Column(db.Integer, default=0)  # Tamamlanan sipariş sayısı
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
 # Sipariş Fişi
 class SiparisFisi(db.Model):
     __tablename__ = 'siparis_fisi'
