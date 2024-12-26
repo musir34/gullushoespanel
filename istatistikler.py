@@ -87,6 +87,56 @@ def istatistikler():
     else:
         end_date = datetime.now().date()
 
+    # Sipariş istatistikleri
+    orders = Order.query.filter(
+        func.date(Order.order_date).between(start_date, end_date)
+    ).all()
+
+    # Üretim istatistikleri
+    production = SiparisFisi.query.filter(
+        func.date(SiparisFisi.created_date).between(start_date, end_date)
+    ).all()
+
+    # Günlük veriler
+    dates = []
+    order_counts = []
+    production_counts = []
+    revenues = []
+    
+    current_date = start_date
+    while current_date <= end_date:
+        dates.append(current_date.strftime('%Y-%m-%d'))
+        
+        # O günün siparişleri
+        daily_orders = [o for o in orders if o.order_date.date() == current_date]
+        order_counts.append(len(daily_orders))
+        
+        # O günün üretimi
+        daily_production = [p for p in production if p.created_date.date() == current_date]
+        production_count = sum(p.toplam_adet for p in daily_production)
+        production_counts.append(production_count)
+        
+        # O günün geliri
+        daily_revenue = sum(o.amount for o in daily_orders if o.amount)
+        revenues.append(daily_revenue)
+        
+        current_date += timedelta(days=1)
+
+    # Beden dağılımı
+    size_distribution = {
+        '35': sum(p.beden_35 for p in production),
+        '36': sum(p.beden_36 for p in production),
+        '37': sum(p.beden_37 for p in production),
+        '38': sum(p.beden_38 for p in production),
+        '39': sum(p.beden_39 for p in production),
+        '40': sum(p.beden_40 for p in production),
+        '41': sum(p.beden_41 for p in production)
+    }
+
+    # Sipariş durumları
+    total_pending = len([o for o in orders if o.status == 'pending'])
+    total_completed = len([o for o in orders if o.status == 'completed'])
+
     # İstatistikleri getir
     stats = DailyStats.query\
         .filter(DailyStats.date.between(start_date, end_date))\

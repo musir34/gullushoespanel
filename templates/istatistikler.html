@@ -84,7 +84,7 @@
     <div class="summary-stats">
         <div class="stat-box">
             <h4>Toplam Bekleyen Sipariş</h4>
-            <p>{{ total_pending }}</p>
+            <p>{{ total_pending if total_pending is not none else 0 }}</p>
         </div>
         <div class="stat-box">
             <h4>Tamamlanan Sipariş</h4>
