@@ -6,6 +6,8 @@
     <title>Maliyet Fişi</title>
     <style>
         @media print {
+            input { border: none; }
+            button { display: none; }
             @page {
                 size: A4;
                 margin: 0;
@@ -59,6 +61,12 @@
             padding: 8px;
             text-align: left;
         }
+
+        input {
+            width: 100%;
+            padding: 4px;
+            border: 1px solid #ddd;
+        }
         
         .total-section {
             margin-top: 20px;
@@ -77,9 +85,26 @@
             padding-top: 5px;
             text-align: center;
         }
+
+        .print-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .print-btn:hover {
+            background: #0056b3;
+        }
     </style>
 </head>
 <body>
+    <button onclick="window.print()" class="print-btn">Yazdır</button>
     <div class="header">
         <h2>MALİYET FİŞİ</h2>
         <p>Tarih: {{ fis.created_date.strftime('%d/%m/%Y') }}</p>
@@ -129,51 +154,51 @@
             <tr>
                 <td>Deri</td>
                 <td>m²</td>
-                <td></td>
-                <td></td>
+                <td><input type="number" step="0.01" placeholder="Birim fiyat"></td>
+                <td><input type="number" step="0.01" placeholder="Toplam"></td>
             </tr>
             <tr>
                 <td>Taban</td>
                 <td>çift</td>
-                <td></td>
-                <td></td>
+                <td><input type="number" step="0.01" placeholder="Birim fiyat"></td>
+                <td><input type="number" step="0.01" placeholder="Toplam"></td>
             </tr>
             <tr>
                 <td>Astar</td>
                 <td>m²</td>
-                <td></td>
-                <td></td>
+                <td><input type="number" step="0.01" placeholder="Birim fiyat"></td>
+                <td><input type="number" step="0.01" placeholder="Toplam"></td>
             </tr>
             <tr>
                 <td>Aksesuar</td>
                 <td>adet</td>
-                <td></td>
-                <td></td>
+                <td><input type="number" step="0.01" placeholder="Birim fiyat"></td>
+                <td><input type="number" step="0.01" placeholder="Toplam"></td>
             </tr>
             <tr>
                 <td>Kesim İşçiliği</td>
                 <td>çift</td>
-                <td></td>
-                <td></td>
+                <td><input type="number" step="0.01" placeholder="Birim fiyat"></td>
+                <td><input type="number" step="0.01" placeholder="Toplam"></td>
             </tr>
             <tr>
                 <td>Dikim İşçiliği</td>
                 <td>çift</td>
-                <td></td>
-                <td></td>
+                <td><input type="number" step="0.01" placeholder="Birim fiyat"></td>
+                <td><input type="number" step="0.01" placeholder="Toplam"></td>
             </tr>
             <tr>
                 <td>Montaj İşçiliği</td>
                 <td>çift</td>
-                <td></td>
-                <td></td>
+                <td><input type="number" step="0.01" placeholder="Birim fiyat"></td>
+                <td><input type="number" step="0.01" placeholder="Toplam"></td>
             </tr>
         </table>
     </div>
 
     <div class="total-section">
-        <p><strong>Toplam Maliyet:</strong> ________________ TL</p>
-        <p><strong>Birim Maliyet:</strong> ________________ TL</p>
+        <p><strong>Toplam Maliyet:</strong> <input type="number" step="0.01" placeholder="Toplam maliyet"> TL</p>
+        <p><strong>Birim Maliyet:</strong> <input type="number" step="0.01" placeholder="Birim maliyet"> TL</p>
     </div>
 
     <div class="signature-section">

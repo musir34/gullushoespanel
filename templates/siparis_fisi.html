@@ -319,6 +319,8 @@
                class="btn-detail">Detay</a>
             <a href="{{ url_for('siparis_fisi_bp.siparis_fisi_yazdir', siparis_id=fis.siparis_id) }}"
                class="btn-detail" target="_blank">Yazdır</a>
+            <a href="{{ url_for('siparis_fisi_bp.maliyet_fisi_yazdir', siparis_id=fis.siparis_id) }}"
+               class="btn-detail" target="_blank" style="background-color: #ffc107;">Maliyet</a>
             <button class="btn-delete" onclick="deleteFis({{ fis.siparis_id }})">Sil</button>
           </div>
         </div>
