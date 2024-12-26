@@ -1,0 +1,188 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Maliyet Fişi</title>
+    <style>
+        @media print {
+            @page {
+                size: A4;
+                margin: 0;
+            }
+            body {
+                margin: 1cm;
+            }
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 10px;
+            border-bottom: 2px solid #000;
+        }
+        
+        .company-info {
+            text-align: left;
+            margin-bottom: 20px;
+        }
+        
+        .product-info {
+            margin-bottom: 20px;
+        }
+        
+        .sizes-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        
+        .sizes-table th, .sizes-table td {
+            border: 1px solid #000;
+            padding: 8px;
+            text-align: center;
+        }
+        
+        .costs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        
+        .costs-table th, .costs-table td {
+            border: 1px solid #000;
+            padding: 8px;
+            text-align: left;
+        }
+        
+        .total-section {
+            margin-top: 20px;
+            text-align: right;
+        }
+        
+        .signature-section {
+            margin-top: 50px;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .signature-box {
+            border-top: 1px solid #000;
+            width: 200px;
+            padding-top: 5px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h2>MALİYET FİŞİ</h2>
+        <p>Tarih: {{ fis.created_date.strftime('%d/%m/%Y') }}</p>
+    </div>
+
+    <div class="company-info">
+        <p><strong>Firma:</strong> GÜLLÜ AYAKKABI</p>
+        <p><strong>Model Kodu:</strong> {{ fis.urun_model_kodu }}</p>
+        <p><strong>Renk:</strong> {{ fis.renk }}</p>
+    </div>
+
+    <div class="product-info">
+        <h3>Ürün Detayları</h3>
+        <table class="sizes-table">
+            <tr>
+                <th>35</th>
+                <th>36</th>
+                <th>37</th>
+                <th>38</th>
+                <th>39</th>
+                <th>40</th>
+                <th>41</th>
+                <th>Toplam</th>
+            </tr>
+            <tr>
+                <td>{{ fis.beden_35 }}</td>
+                <td>{{ fis.beden_36 }}</td>
+                <td>{{ fis.beden_37 }}</td>
+                <td>{{ fis.beden_38 }}</td>
+                <td>{{ fis.beden_39 }}</td>
+                <td>{{ fis.beden_40 }}</td>
+                <td>{{ fis.beden_41 }}</td>
+                <td>{{ fis.toplam_adet }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="costs-section">
+        <h3>Maliyet Kalemleri</h3>
+        <table class="costs-table">
+            <tr>
+                <th>Malzeme/İşçilik Türü</th>
+                <th>Birim</th>
+                <th>Birim Fiyat</th>
+                <th>Toplam</th>
+            </tr>
+            <tr>
+                <td>Deri</td>
+                <td>m²</td>
+                <td></td>
+                <td></td>
+            </tr>
+            <tr>
+                <td>Taban</td>
+                <td>çift</td>
+                <td></td>
+                <td></td>
+            </tr>
+            <tr>
+                <td>Astar</td>
+                <td>m²</td>
+                <td></td>
+                <td></td>
+            </tr>
+            <tr>
+                <td>Aksesuar</td>
+                <td>adet</td>
+                <td></td>
+                <td></td>
+            </tr>
+            <tr>
+                <td>Kesim İşçiliği</td>
+                <td>çift</td>
+                <td></td>
+                <td></td>
+            </tr>
+            <tr>
+                <td>Dikim İşçiliği</td>
+                <td>çift</td>
+                <td></td>
+                <td></td>
+            </tr>
+            <tr>
+                <td>Montaj İşçiliği</td>
+                <td>çift</td>
+                <td></td>
+                <td></td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="total-section">
+        <p><strong>Toplam Maliyet:</strong> ________________ TL</p>
+        <p><strong>Birim Maliyet:</strong> ________________ TL</p>
+    </div>
+
+    <div class="signature-section">
+        <div class="signature-box">
+            <p>Hazırlayan</p>
+        </div>
+        <div class="signature-box">
+            <p>Onaylayan</p>
+        </div>
+    </div>
+</body>
+</html>

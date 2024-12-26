@@ -347,6 +347,8 @@
 
     <!-- Geri Butonu -->
     <div class="section" style="text-align:center;">
+      <a href="{{ url_for('siparis_fisi_bp.siparis_fisi_yazdir', siparis_id=fis.siparis_id) }}" target="_blank" class="btn btn-primary">Teslimat Fişi</a>
+      <a href="{{ url_for('siparis_fisi_bp.maliyet_fisi_yazdir', siparis_id=fis.siparis_id) }}" target="_blank" class="btn btn-warning">Maliyet Fişi</a>
       <a href="{{ url_for('siparis_fisi_bp.siparis_fisi_sayfasi') }}" class="btn-back">
         Listeye Dön
       </a>

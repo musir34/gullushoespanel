@@ -497,6 +497,22 @@ def delete_siparis_fisi(siparis_id):
 
     db.session.delete(fis)
     db.session.commit()
+
+
+@siparis_fisi_bp.route("/maliyet_fisi/<int:siparis_id>/yazdir", methods=["GET"])
+def maliyet_fisi_yazdir(siparis_id):
+    """
+    Maliyet fişi yazdırma endpoint'i
+    """
+    fis = SiparisFisi.query.get(siparis_id)
+    if not fis:
+        return jsonify({"mesaj": "Sipariş fişi bulunamadı"}), 404
+
+    return render_template(
+        "maliyet_fisi_print.html",
+        fis=fis
+    )
+
     return jsonify({"mesaj": "Sipariş fişi silindi."}), 200
 @siparis_fisi_bp.route("/get_product_details/<model_code>")
 def get_product_details(model_code):
