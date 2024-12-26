@@ -1,0 +1,92 @@
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Maliyet Fişleri</title>
+    <style>
+        /* siparis_fisi.html'den aynı stil kodlarını kullanıyoruz */
+        /* sadece renk şemasını değiştiriyoruz */
+        .header {
+            background: #2c3e50;
+        }
+        .btn-detail {
+            background-color: #e67e22;
+        }
+        .btn-detail:hover {
+            background-color: #d35400;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="left-btns">
+            <a href="{{ url_for('home') }}">Anasayfa</a>
+            <a href="{{ url_for('maliyet_fisi_bp.maliyet_fisi_olustur') }}">Yeni Maliyet Fişi</a>
+        </div>
+        <div class="logo-container">
+            <img class="logo" src="{{ url_for('static', filename='logo/gullu.png') }}" alt="Logo">
+            <h1>Maliyet Fişleri</h1>
+        </div>
+    </div>
+
+    <div class="search-container">
+        <form method="GET" class="search-form">
+            <input type="text" name="model_kodu" placeholder="Model Kodu..." value="{{ request.args.get('model_kodu', '') }}">
+            <input type="text" name="renk" placeholder="Renk..." value="{{ request.args.get('renk', '') }}">
+            <button type="submit">Ara</button>
+            <a href="{{ url_for('maliyet_fisi_bp.maliyet_fisi_sayfasi') }}" class="clear-btn">Temizle</a>
+        </form>
+    </div>
+
+    <div class="content">
+        {% for fis in fisler %}
+        <div class="card">
+            {% if fis.image_url %}
+            <img src="{{ fis.image_url }}" alt="Ürün Görseli">
+            {% else %}
+            <img src="{{ url_for('static', filename='logo/gullu.png') }}" alt="Logo">
+            {% endif %}
+            <div class="card-body">
+                <h5 class="card-title">{{ fis.urun_model_kodu }}</h5>
+                <p class="card-text">Renk: {{ fis.renk }}</p>
+                <p class="card-text">Toplam Adet: {{ fis.toplam_adet }}</p>
+                <p class="card-text">Birim Maliyet: {{ "%.2f"|format(fis.birim_maliyet) }} TL</p>
+                <p class="card-text">Toplam Maliyet: {{ "%.2f"|format(fis.toplam_maliyet) }} TL</p>
+                <div class="btn-actions">
+                    <button class="btn-detail" onclick="showDetails({{ fis.maliyet_id }})">Detaylar</button>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if pagination %}
+    <div class="pagination">
+        {% if pagination.has_prev %}
+        <a href="{{ url_for('maliyet_fisi_bp.maliyet_fisi_sayfasi', page=pagination.prev_num) }}">&laquo; Önceki</a>
+        {% endif %}
+        
+        {% for page in pagination.iter_pages() %}
+        {% if page %}
+        <a href="{{ url_for('maliyet_fisi_bp.maliyet_fisi_sayfasi', page=page) }}"
+           {% if page == pagination.page %}class="active"{% endif %}>{{ page }}</a>
+        {% else %}
+        <span>...</span>
+        {% endif %}
+        {% endfor %}
+        
+        {% if pagination.has_next %}
+        <a href="{{ url_for('maliyet_fisi_bp.maliyet_fisi_sayfasi', page=pagination.next_num) }}">Sonraki &raquo;</a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <script>
+    function showDetails(maliyetId) {
+        // Detay modalı için JavaScript kodları buraya gelecek
+        alert('Detay sayfası yapım aşamasında...');
+    }
+    </script>
+</body>
+</html>

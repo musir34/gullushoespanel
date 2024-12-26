@@ -285,6 +285,44 @@ class Archive(db.Model):
         return f"<Archive {self.order_number}>"
         
 
+# Maliyet Fişi
+class MaliyetFisi(db.Model):
+    __tablename__ = 'maliyet_fisi'
+
+    maliyet_id = db.Column(db.Integer, primary_key=True)
+    urun_model_kodu = db.Column(db.String(255))
+    renk = db.Column(db.String(100))
+    
+    # Malzeme maliyetleri
+    deri_maliyeti = db.Column(db.Float, default=0)
+    taban_maliyeti = db.Column(db.Float, default=0)
+    aksesuar_maliyeti = db.Column(db.Float, default=0)
+    
+    # İşçilik maliyetleri
+    kesim_maliyeti = db.Column(db.Float, default=0)
+    dikim_maliyeti = db.Column(db.Float, default=0)
+    montaj_maliyeti = db.Column(db.Float, default=0)
+    
+    # Toplam maliyet
+    toplam_maliyet = db.Column(db.Float, default=0)
+    
+    # Beden adetleri
+    beden_35 = db.Column(db.Integer, default=0)
+    beden_36 = db.Column(db.Integer, default=0)
+    beden_37 = db.Column(db.Integer, default=0)
+    beden_38 = db.Column(db.Integer, default=0)
+    beden_39 = db.Column(db.Integer, default=0)
+    beden_40 = db.Column(db.Integer, default=0)
+    beden_41 = db.Column(db.Integer, default=0)
+    
+    toplam_adet = db.Column(db.Integer, default=0)
+    birim_maliyet = db.Column(db.Float, default=0)
+    
+    created_date = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Ürün görseli
+    image_url = db.Column(db.String)
+
 # Değişim Modeli
 class Degisim(db.Model):
     __tablename__ = 'degisim'
