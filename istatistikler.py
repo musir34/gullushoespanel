@@ -11,17 +11,25 @@ def save_daily_stats():
     """Günlük istatistikleri hesapla ve kaydet"""
     today = datetime.now().date()
     
-    # Günlük sipariş sayısı
-    order_count = db.session.query(func.count(Order.id))\
-        .filter(func.date(Order.order_date) == today).scalar()
-
+    # Günlük sipariş sayısı ve gelir
+    orders = db.session.query(Order).filter(func.date(Order.order_date) == today).all()
+    order_count = len(orders)
+    total_revenue = sum(order.amount for order in orders if order.amount)
+    
+    # Üretim istatistikleri
+    production = db.session.query(SiparisFisi).filter(
+        func.date(SiparisFisi.created_date) == today
+    ).all()
+    
+    daily_production = sum(p.toplam_adet for p in production)
+    
     # En çok üretilen ürünler
     top_products = db.session.query(
         SiparisFisi.urun_model_kodu,
         func.sum(SiparisFisi.toplam_adet).label('toplam')
     ).group_by(SiparisFisi.urun_model_kodu)\
      .order_by(func.sum(SiparisFisi.toplam_adet).desc())\
-     .limit(5).all()
+     .limit(10).all()
 
     # Renk dağılımı
     color_distribution = db.session.query(
@@ -30,19 +38,42 @@ def save_daily_stats():
     ).group_by(SiparisFisi.renk)\
      .order_by(func.sum(SiparisFisi.toplam_adet).desc()).all()
 
-    # İstatistikleri JSON formatında kaydet
+    # Beden dağılımı
+    size_stats = {
+        '35': sum(p.beden_35 for p in production),
+        '36': sum(p.beden_36 for p in production),
+        '37': sum(p.beden_37 for p in production),
+        '38': sum(p.beden_38 for p in production),
+        '39': sum(p.beden_39 for p in production),
+        '40': sum(p.beden_40 for p in production),
+        '41': sum(p.beden_41 for p in production)
+    }
+
+    # Sipariş durumları
+    pending_orders = db.session.query(func.count(Order.id))\
+        .filter(Order.status == 'pending').scalar() or 0
+    completed_orders = db.session.query(func.count(Order.id))\
+        .filter(Order.status == 'completed').scalar() or 0
+
+    # İstatistikleri kaydet
     stats = DailyStats(
         date=today,
         order_count=order_count,
+        total_revenue=total_revenue,
+        total_products=daily_production,
         product_stats=dict(top_products),
-        color_stats=dict(color_distribution)
+        color_stats=dict(color_distribution),
+        size_stats=size_stats,
+        daily_production=daily_production,
+        pending_orders=pending_orders,
+        completed_orders=completed_orders
     )
+    
     db.session.add(stats)
     db.session.commit()
 
 @istatistikler_bp.route('/istatistikler')
 def istatistikler():
-    # Filtreleme parametreleri
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
     
@@ -62,36 +93,38 @@ def istatistikler():
         .order_by(DailyStats.date.desc())\
         .all()
 
-    # Verileri topla
+    # Veri hazırlığı
     dates = []
     order_counts = []
-    product_totals = {}
-    color_totals = {}
+    revenues = []
+    production_counts = []
+    size_distribution = {str(i): 0 for i in range(35, 42)}
+    total_pending = 0
+    total_completed = 0
 
     for stat in stats:
         dates.append(stat.date.strftime('%Y-%m-%d'))
         order_counts.append(stat.order_count)
+        revenues.append(stat.total_revenue)
+        production_counts.append(stat.daily_production)
+        total_pending += stat.pending_orders
+        total_completed += stat.completed_orders
         
-        # Ürün istatistiklerini topla
-        for product, count in stat.product_stats.items():
-            product_totals[product] = product_totals.get(product, 0) + count
-            
-        # Renk istatistiklerini topla    
-        for color, count in stat.color_stats.items():
-            color_totals[color] = color_totals.get(color, 0) + count
+        # Beden dağılımını topla
+        for size, count in stat.size_stats.items():
+            size_distribution[size] += count
 
-    # En çok üretilen 5 ürün
-    top_products = sorted(product_totals.items(), key=lambda x: x[1], reverse=True)[:5]
-    
     return render_template('istatistikler.html',
-                         günlük_siparisler=list(zip(dates, order_counts)),
-                         top_products=top_products,
-                         color_distribution=color_totals.items(),
                          start_date=start_date,
-                         end_date=end_date)
+                         end_date=end_date,
+                         dates=dates,
+                         order_counts=order_counts,
+                         revenues=revenues,
+                         production_counts=production_counts,
+                         size_distribution=size_distribution,
+                         total_pending=total_pending,
+                         total_completed=total_completed)
 
-# Her gün gece yarısı çalışacak bir görev eklenebilir
-# Bu örnekte manuel olarak /save-stats endpoint'i ile kaydediyoruz
 @istatistikler_bp.route('/save-stats', methods=['POST'])
 def manual_save_stats():
     save_daily_stats()

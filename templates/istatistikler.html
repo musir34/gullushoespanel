@@ -6,11 +6,17 @@
     <title>İstatistikler</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
         .stats-container {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
             gap: 20px;
-            padding: 20px;
+            margin-top: 20px;
         }
         .stats-card {
             background: white;
@@ -18,19 +24,20 @@
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-        .chart-container {
-            height: 300px;
-        }
         .filter-form {
-            padding: 20px;
             background: white;
-            margin: 20px;
+            padding: 20px;
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
         }
         .filter-form input {
             padding: 8px;
-            margin-right: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
         }
         .filter-form button {
             padding: 8px 16px;
@@ -40,63 +47,153 @@
             border-radius: 4px;
             cursor: pointer;
         }
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .stat-box {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .stat-box h4 {
+            margin: 0;
+            color: #666;
+        }
+        .stat-box p {
+            margin: 10px 0 0 0;
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+        }
     </style>
 </head>
 <body>
     <form class="filter-form" method="GET">
-        <input type="date" name="start_date" value="{{ start_date }}" required>
-        <input type="date" name="end_date" value="{{ end_date }}" required>
+        <label for="start_date">Başlangıç:</label>
+        <input type="date" id="start_date" name="start_date" value="{{ start_date }}" required>
+        <label for="end_date">Bitiş:</label>
+        <input type="date" id="end_date" name="end_date" value="{{ end_date }}" required>
         <button type="submit">Filtrele</button>
     </form>
+
+    <div class="summary-stats">
+        <div class="stat-box">
+            <h4>Toplam Bekleyen Sipariş</h4>
+            <p>{{ total_pending }}</p>
+        </div>
+        <div class="stat-box">
+            <h4>Tamamlanan Sipariş</h4>
+            <p>{{ total_completed }}</p>
+        </div>
+        <div class="stat-box">
+            <h4>Toplam Üretim</h4>
+            <p>{{ production_counts|sum }}</p>
+        </div>
+        <div class="stat-box">
+            <h4>Toplam Gelir</h4>
+            <p>{{ "%.2f"|format(revenues|sum) }} ₺</p>
+        </div>
+    </div>
 
     <div class="stats-container">
         <div class="stats-card">
             <h3>Günlük Sipariş Sayısı</h3>
-            <canvas id="dailyOrdersChart"></canvas>
+            <canvas id="orderChart"></canvas>
         </div>
         <div class="stats-card">
-            <h3>En Çok Üretilen Ürünler</h3>
-            <canvas id="topProductsChart"></canvas>
+            <h3>Günlük Üretim</h3>
+            <canvas id="productionChart"></canvas>
         </div>
         <div class="stats-card">
-            <h3>Renk Dağılımı</h3>
-            <canvas id="colorDistributionChart"></canvas>
+            <h3>Günlük Gelir</h3>
+            <canvas id="revenueChart"></canvas>
+        </div>
+        <div class="stats-card">
+            <h3>Beden Dağılımı</h3>
+            <canvas id="sizeChart"></canvas>
         </div>
     </div>
 
     <script>
-        new Chart('dailyOrdersChart', {
+        // Sipariş Grafiği
+        new Chart('orderChart', {
             type: 'line',
             data: {
-                labels: {{ günlük_siparisler|map(attribute='0')|list|tojson }},
+                labels: {{ dates|tojson }},
                 datasets: [{
                     label: 'Sipariş Sayısı',
-                    data: {{ günlük_siparisler|map(attribute='1')|list|tojson }},
-                    borderColor: '#4CAF50'
+                    data: {{ order_counts|tojson }},
+                    borderColor: '#4CAF50',
+                    tension: 0.1
                 }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
             }
         });
 
-        new Chart('topProductsChart', {
+        // Üretim Grafiği
+        new Chart('productionChart', {
             type: 'bar',
             data: {
-                labels: {{ top_products|map(attribute='0')|list|tojson }},
+                labels: {{ dates|tojson }},
                 datasets: [{
                     label: 'Üretim Adedi',
-                    data: {{ top_products|map(attribute='1')|list|tojson }},
+                    data: {{ production_counts|tojson }},
                     backgroundColor: '#2196F3'
                 }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
             }
         });
 
-        new Chart('colorDistributionChart', {
+        // Gelir Grafiği
+        new Chart('revenueChart', {
+            type: 'line',
+            data: {
+                labels: {{ dates|tojson }},
+                datasets: [{
+                    label: 'Günlük Gelir (₺)',
+                    data: {{ revenues|tojson }},
+                    borderColor: '#FFC107',
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
+            }
+        });
+
+        // Beden Dağılımı Grafiği
+        new Chart('sizeChart', {
             type: 'pie',
             data: {
-                labels: {{ color_distribution|map(attribute='0')|list|tojson }},
+                labels: Object.keys({{ size_distribution|tojson }}),
                 datasets: [{
-                    data: {{ color_distribution|map(attribute='1')|list|tojson }},
-                    backgroundColor: ['#FFC107', '#03A9F4', '#4CAF50', '#E91E63', '#9C27B0', '#FF5722']
+                    data: Object.values({{ size_distribution|tojson }}),
+                    backgroundColor: [
+                        '#FF6384',
+                        '#36A2EB',
+                        '#FFCE56',
+                        '#4BC0C0',
+                        '#9966FF',
+                        '#FF9F40',
+                        '#FF6384'
+                    ]
                 }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
             }
         });
     </script>
