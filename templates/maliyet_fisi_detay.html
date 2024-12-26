@@ -1,0 +1,176 @@
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Maliyet Fişi Detay</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+        .logo {
+            width: 100px;
+            height: auto;
+            margin-right: 20px;
+        }
+        .product-image {
+            width: 200px;
+            height: auto;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .detail-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 4px;
+        }
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .detail-label {
+            font-weight: bold;
+            color: #666;
+        }
+        .btn-print {
+            background: #2c3e50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        .btn-print:hover {
+            background: #34495e;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="{{ url_for('static', filename='logo/gullu.png') }}" alt="Logo" class="logo">
+            <h1>Maliyet Fişi Detay</h1>
+        </div>
+
+        {% if fis.image_url %}
+        <img src="{{ fis.image_url }}" alt="Ürün Görseli" class="product-image">
+        {% endif %}
+
+        <div class="detail-section">
+            <h3>Ürün Bilgileri</h3>
+            <div class="detail-row">
+                <span class="detail-label">Model Kodu:</span>
+                <span>{{ fis.urun_model_kodu }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Renk:</span>
+                <span>{{ fis.renk }}</span>
+            </div>
+        </div>
+
+        <div class="detail-section">
+            <h3>Malzeme Maliyetleri</h3>
+            <div class="detail-row">
+                <span class="detail-label">Deri Maliyeti:</span>
+                <span>{{ "%.2f"|format(fis.deri_maliyeti) }} TL</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Taban Maliyeti:</span>
+                <span>{{ "%.2f"|format(fis.taban_maliyeti) }} TL</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Aksesuar Maliyeti:</span>
+                <span>{{ "%.2f"|format(fis.aksesuar_maliyeti) }} TL</span>
+            </div>
+        </div>
+
+        <div class="detail-section">
+            <h3>İşçilik Maliyetleri</h3>
+            <div class="detail-row">
+                <span class="detail-label">Kesim Maliyeti:</span>
+                <span>{{ "%.2f"|format(fis.kesim_maliyeti) }} TL</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Dikim Maliyeti:</span>
+                <span>{{ "%.2f"|format(fis.dikim_maliyeti) }} TL</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Montaj Maliyeti:</span>
+                <span>{{ "%.2f"|format(fis.montaj_maliyeti) }} TL</span>
+            </div>
+        </div>
+
+        <div class="detail-section">
+            <h3>Beden Adetleri</h3>
+            <div class="detail-row">
+                <span class="detail-label">35:</span>
+                <span>{{ fis.beden_35 }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">36:</span>
+                <span>{{ fis.beden_36 }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">37:</span>
+                <span>{{ fis.beden_37 }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">38:</span>
+                <span>{{ fis.beden_38 }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">39:</span>
+                <span>{{ fis.beden_39 }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">40:</span>
+                <span>{{ fis.beden_40 }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">41:</span>
+                <span>{{ fis.beden_41 }}</span>
+            </div>
+        </div>
+
+        <div class="detail-section">
+            <h3>Toplam Bilgiler</h3>
+            <div class="detail-row">
+                <span class="detail-label">Toplam Adet:</span>
+                <span>{{ fis.toplam_adet }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Birim Maliyet:</span>
+                <span>{{ "%.2f"|format(fis.birim_maliyet) }} TL</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Toplam Maliyet:</span>
+                <span>{{ "%.2f"|format(fis.toplam_maliyet) }} TL</span>
+            </div>
+        </div>
+
+        <button class="btn-print" onclick="window.location.href='{{ url_for('maliyet_fisi_bp.maliyet_fisi_yazdir', maliyet_id=fis.maliyet_id) }}'">Yazdır</button>
+    </div>
+</body>
+</html>

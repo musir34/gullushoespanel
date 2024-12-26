@@ -32,6 +32,20 @@ def maliyet_fisi_sayfasi():
     )
 
 @maliyet_fisi_bp.route("/maliyet_fisi/olustur", methods=["GET", "POST"])
+@maliyet_fisi_bp.route("/maliyet_fisi/<int:maliyet_id>/detay")
+def maliyet_fisi_detay(maliyet_id):
+    fis = MaliyetFisi.query.get(maliyet_id)
+    if not fis:
+        return jsonify({"mesaj": "Maliyet fişi bulunamadı"}), 404
+    return render_template("maliyet_fisi_detay.html", fis=fis)
+
+@maliyet_fisi_bp.route("/maliyet_fisi/<int:maliyet_id>/yazdir")
+def maliyet_fisi_yazdir(maliyet_id):
+    fis = MaliyetFisi.query.get(maliyet_id)
+    if not fis:
+        return jsonify({"mesaj": "Maliyet fişi bulunamadı"}), 404
+    return render_template("maliyet_fisi_print.html", fis=fis)
+
 def maliyet_fisi_olustur():
     if request.method == "POST":
         # Form verilerini al
