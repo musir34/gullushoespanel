@@ -30,64 +30,50 @@
             <canvas id="dailyOrdersChart"></canvas>
         </div>
         <div class="stats-card">
-            <h3>En Çok Satan Ürünler</h3>
+            <h3>En Çok Üretilen Ürünler</h3>
             <canvas id="topProductsChart"></canvas>
         </div>
         <div class="stats-card">
-            <h3>Kargo Durumu Dağılımı</h3>
-            <canvas id="shippingStatusChart"></canvas>
+            <h3>Renk Dağılımı</h3>
+            <canvas id="colorDistributionChart"></canvas>
         </div>
     </div>
 
     <script>
-        // Örnek veriler (backend'den gelecek)
-        const dailyData = {
-            labels: ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'],
-            data: [12, 19, 15, 17, 14, 15, 16]
-        };
-
-        const topProducts = {
-            labels: ['Ürün A', 'Ürün B', 'Ürün C', 'Ürün D', 'Ürün E'],
-            data: [50, 45, 40, 35, 30]
-        };
-
-        const shippingStatus = {
-            labels: ['Hazırlanıyor', 'Kargoda', 'Teslim Edildi'],
-            data: [30, 20, 50]
-        };
-
-        // Grafikleri oluştur
+        // Günlük siparişler grafiği
         new Chart('dailyOrdersChart', {
             type: 'line',
             data: {
-                labels: dailyData.labels,
+                labels: {{ günlük_siparisler|map(attribute='0')|map('string')|list|tojson }},
                 datasets: [{
                     label: 'Sipariş Sayısı',
-                    data: dailyData.data,
+                    data: {{ günlük_siparisler|map(attribute='1')|list|tojson }},
                     borderColor: '#4CAF50'
                 }]
             }
         });
 
+        // En çok üretilen ürünler grafiği
         new Chart('topProductsChart', {
             type: 'bar',
             data: {
-                labels: topProducts.labels,
+                labels: {{ top_products|map(attribute='0')|list|tojson }},
                 datasets: [{
-                    label: 'Satış Adedi',
-                    data: topProducts.data,
+                    label: 'Üretim Adedi',
+                    data: {{ top_products|map(attribute='1')|list|tojson }},
                     backgroundColor: '#2196F3'
                 }]
             }
         });
 
-        new Chart('shippingStatusChart', {
+        // Renk dağılımı grafiği
+        new Chart('colorDistributionChart', {
             type: 'pie',
             data: {
-                labels: shippingStatus.labels,
+                labels: {{ color_distribution|map(attribute='0')|list|tojson }},
                 datasets: [{
-                    data: shippingStatus.data,
-                    backgroundColor: ['#FFC107', '#03A9F4', '#4CAF50']
+                    data: {{ color_distribution|map(attribute='1')|list|tojson }},
+                    backgroundColor: ['#FFC107', '#03A9F4', '#4CAF50', '#E91E63', '#9C27B0', '#FF5722']
                 }]
             }
         });

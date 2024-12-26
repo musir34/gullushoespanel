@@ -1,6 +1,6 @@
 
 from flask import Blueprint, render_template
-from models import Order, db
+from models import Order, db, SiparisFisi
 from sqlalchemy import func
 from datetime import datetime, timedelta
 
@@ -15,5 +15,19 @@ def istatistikler():
         func.count(Order.id)
     ).filter(Order.order_date >= son_7_gun).group_by(func.date(Order.order_date)).all()
     
-    return render_template('istatistikler.html', 
-                         günlük_siparisler=günlük_siparisler)
+    # En çok üretilen ürünler
+    top_products = db.session.query(
+        SiparisFisi.urun_model_kodu,
+        func.sum(SiparisFisi.toplam_adet).label('toplam')
+    ).group_by(SiparisFisi.urun_model_kodu).order_by(func.sum(SiparisFisi.toplam_adet).desc()).limit(5).all()
+    
+    # Renklere göre dağılım
+    color_distribution = db.session.query(
+        SiparisFisi.renk,
+        func.sum(SiparisFisi.toplam_adet).label('toplam')
+    ).group_by(SiparisFisi.renk).order_by(func.sum(SiparisFisi.toplam_adet).desc()).all()
+    
+    return render_template('istatistikler.html',
+                         günlük_siparisler=günlük_siparisler,
+                         top_products=top_products,
+                         color_distribution=color_distribution)
