@@ -112,8 +112,8 @@
 
     <div class="company-info">
         <p><strong>Firma:</strong> GÜLLÜ AYAKKABI</p>
-        <p><strong>Model Kodu:</strong> {{ fis.urun_model_kodu }}</p>
-        <p><strong>Renk:</strong> {{ fis.renk }}</p>
+        <p><strong>Model Kodu:</strong> <input type="text" placeholder="Model kodu girin"></p>
+        <p><strong>Renk:</strong> <input type="text" placeholder="Renk girin"></p>
     </div>
 
     <div class="product-info">
@@ -130,16 +130,27 @@
                 <th>Toplam</th>
             </tr>
             <tr>
-                <td>{{ fis.beden_35 }}</td>
-                <td>{{ fis.beden_36 }}</td>
-                <td>{{ fis.beden_37 }}</td>
-                <td>{{ fis.beden_38 }}</td>
-                <td>{{ fis.beden_39 }}</td>
-                <td>{{ fis.beden_40 }}</td>
-                <td>{{ fis.beden_41 }}</td>
-                <td>{{ fis.toplam_adet }}</td>
+                <td><input type="number" min="0" value="0" onchange="calculateTotal()"></td>
+                <td><input type="number" min="0" value="0" onchange="calculateTotal()"></td>
+                <td><input type="number" min="0" value="0" onchange="calculateTotal()"></td>
+                <td><input type="number" min="0" value="0" onchange="calculateTotal()"></td>
+                <td><input type="number" min="0" value="0" onchange="calculateTotal()"></td>
+                <td><input type="number" min="0" value="0" onchange="calculateTotal()"></td>
+                <td><input type="number" min="0" value="0" onchange="calculateTotal()"></td>
+                <td id="totalAmount">0</td>
             </tr>
         </table>
+
+        <script>
+        function calculateTotal() {
+            const inputs = document.querySelectorAll('.sizes-table input[type="number"]');
+            let total = 0;
+            inputs.forEach(input => {
+                total += parseInt(input.value) || 0;
+            });
+            document.getElementById('totalAmount').textContent = total;
+        }
+        </script>
     </div>
 
     <div class="costs-section">
