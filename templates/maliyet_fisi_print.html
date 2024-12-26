@@ -1,224 +1,253 @@
-
 <!DOCTYPE html>
-<html>
+<html lang="tr">
 <head>
-    <meta charset="UTF-8">
-    <title>Maliyet Fişi</title>
-    <style>
-        @media print {
-            input { border: none; }
-            button { display: none; }
-            @page {
-                size: A4;
-                margin: 0;
-            }
-            body {
-                margin: 1cm;
-            }
-        }
-        
-        body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-        }
-        
-        .header {
-            text-align: center;
-            margin-bottom: 20px;
-            padding: 10px;
-            border-bottom: 2px solid #000;
-        }
-        
-        .company-info {
-            text-align: left;
-            margin-bottom: 20px;
-        }
-        
-        .product-info {
-            margin-bottom: 20px;
-        }
-        
-        .sizes-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 20px;
-        }
-        
-        .sizes-table th, .sizes-table td {
-            border: 1px solid #000;
-            padding: 8px;
-            text-align: center;
-        }
-        
-        .costs-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 20px;
-        }
-        
-        .costs-table th, .costs-table td {
-            border: 1px solid #000;
-            padding: 8px;
-            text-align: left;
-        }
+  <meta charset="UTF-8">
+  <title>Pastel Maliyet Fişleri (Tam 148×210 mm)</title>
+  <style>
+    /***** SAYFA AYARLARI *****/
+    @page {
+      /* İsterseniz doğrudan size: A5 de diyebilirsiniz */
+      size: 148mm 210mm; /* Tam A5 boyutu */
+      margin: 0;         /* Kenar boşluğu yok */
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      /* Tam 148×210 mm boyutlar */
+      width: 148mm;
+      height: 210mm;
+      box-sizing: border-box;
 
-        input {
-            width: 100%;
-            padding: 4px;
-            border: 1px solid #ddd;
-        }
-        
-        .total-section {
-            margin-top: 20px;
-            text-align: right;
-        }
-        
-        .signature-section {
-            margin-top: 50px;
-            display: flex;
-            justify-content: space-between;
-        }
-        
-        .signature-box {
-            border-top: 1px solid #000;
-            width: 200px;
-            padding-top: 5px;
-            text-align: center;
-        }
+      background: #fdf9f6;      /* Pastel arka plan rengi */
+      font-family: "Segoe UI", Tahoma, sans-serif;
+      color: #333;
+    }
 
-        .print-btn {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 10px 20px;
-            background: #007bff;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
+    :root {
+      --accent-color: #da627d;
+      --border-color: #ccc;
+      --text-dark: #333;
+      --text-light: #666;
+    }
 
-        .print-btn:hover {
-            background: #0056b3;
-        }
-    </style>
+    /***** SAYFA ÜST BAŞLIK (HEADER) *****/
+    .page-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #fff;
+      padding: 4mm 6mm;
+      border-radius: 6px;
+      margin-bottom: 8mm;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 6mm;
+    }
+    .header-left img {
+      height: 20mm;  /* Logo yüksekliği */
+      width: auto;
+    }
+    .header-title {
+      font-size: 16pt;
+      color: var(--accent-color);
+      margin: 0;
+      font-weight: bold;
+    }
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 4mm;
+      font-size: 10pt;
+    }
+    .date-line {
+      display: inline-block;
+      width: 46mm;
+      border-bottom: 1px solid var(--text-dark);
+      height: 4mm;
+      background-color: transparent;
+      text-align: center;
+    }
+
+    /***** FIŞLERİ GRID HALİNDE YERLEŞTİRME *****/
+    .fis-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr; /* 2 sütun */
+      grid-template-rows: repeat(3, auto); /* 3 satır (toplam 6 fiş) */
+      gap: 6mm;
+      /* İçerik üst kısımdan başlasın diye ufak margin-top kullanabilirsiniz */
+    }
+
+    /***** FİŞ KUTUSU *****/
+    .fis-container {
+      background: #ffffff;
+      border-radius: 6px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+      border: 1px solid #eee;
+      padding: 4mm;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      font-size: 9pt;
+    }
+
+    /***** FİŞ ÜST BİLGİ ALANI (Model & Renk) *****/
+    .fis-header {
+      display: flex;
+      flex-direction: column;
+      gap: 3mm;
+      margin-bottom: 4mm;
+    }
+    .input-group {
+      display: flex;
+      align-items: center;
+      gap: 3mm;
+    }
+    .input-label {
+      font-weight: bold;
+      color: var(--text-dark);
+      white-space: nowrap;
+    }
+    .input-line {
+      display: inline-block;
+      flex: 1;
+      border-bottom: 1px solid var(--accent-color);
+      height: 4mm;
+      min-width: 30mm;
+      background-color: #fefefe;
+    }
+
+    /***** MALİYET TABLOSU *****/
+    .maliyet-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 4mm;
+    }
+    .maliyet-table th,
+    .maliyet-table td {
+      border: 1px solid var(--border-color);
+      text-align: center;
+      padding: 1.5mm;
+    }
+    .maliyet-table th {
+      font-weight: bold;
+      background: #fae9ec; /* Pastel arka plan */
+      color: var(--text-dark);
+    }
+
+    /***** TOPLAM KISMI *****/
+    .fis-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid #ddd;
+      padding-top: 3mm;
+      margin-top: auto;
+    }
+    .fis-bottom .label {
+      font-weight: bold;
+      color: var(--text-dark);
+    }
+    .line-small {
+      display: inline-block;
+      width: 30mm;
+      border-bottom: 1px solid var(--accent-color);
+      height: 4mm;
+      background-color: #fefefe;
+      margin: 0 2mm;
+      text-align: center;
+    }
+    .line-wide {
+      width: 40mm;
+    }
+
+    /***** BASKI ANINDA GÖRÜNÜM *****/
+    @media print {
+      body {
+        background: #fff;
+      }
+      .page-header,
+      .fis-container {
+        box-shadow: none;
+        border: 1px solid #000; /* Yazıcıda netlik için isterseniz */
+      }
+    }
+  </style>
 </head>
 <body>
-    <button onclick="window.print()" class="print-btn">Yazdır</button>
-    <div class="header">
-        <h2>MALİYET FİŞİ</h2>
-        <p>Tarih: {% if fis %}{{ fis.created_date.strftime('%d/%m/%Y') }}{% else %}{{ now().strftime('%d/%m/%Y') }}{% endif %}</p>
+
+  <!-- Sayfa Üst Başlık -->
+  <div class="page-header">
+    <div class="header-left">
+      <!-- Logo yolunu kendi projenize göre ayarlayınız -->
+      <img src="{{ url_for('static', filename='logo/gullu.png') }}" alt="Logo">
+      <h1 class="header-title">Maliyet Fişi</h1>
     </div>
-
-    <div class="company-info">
-        <p><strong>Firma:</strong> GÜLLÜ AYAKKABI</p>
-        <p><strong>Model Kodu:</strong> <input type="text" placeholder="Model kodu girin"></p>
-        <p><strong>Renk:</strong> <input type="text" placeholder="Renk girin"></p>
+    <div class="header-right">
+      <strong>Tarih:</strong>
+      <span class="date-line"></span>
     </div>
+  </div>
 
-    <div class="product-info">
-        <h3>Ürün Detayları</h3>
-        <table class="sizes-table">
-            <tr>
-                <th>35</th>
-                <th>36</th>
-                <th>37</th>
-                <th>38</th>
-                <th>39</th>
-                <th>40</th>
-                <th>41</th>
-                <th>Toplam</th>
-            </tr>
-            <tr>
-                <td><input type="number" min="0" value="0" onchange="calculateTotal()"></td>
-                <td><input type="number" min="0" value="0" onchange="calculateTotal()"></td>
-                <td><input type="number" min="0" value="0" onchange="calculateTotal()"></td>
-                <td><input type="number" min="0" value="0" onchange="calculateTotal()"></td>
-                <td><input type="number" min="0" value="0" onchange="calculateTotal()"></td>
-                <td><input type="number" min="0" value="0" onchange="calculateTotal()"></td>
-                <td><input type="number" min="0" value="0" onchange="calculateTotal()"></td>
-                <td id="totalAmount">0</td>
-            </tr>
-        </table>
-
-        <script>
-        function calculateTotal() {
-            const inputs = document.querySelectorAll('.sizes-table input[type="number"]');
-            let total = 0;
-            inputs.forEach(input => {
-                total += parseInt(input.value) || 0;
-            });
-            document.getElementById('totalAmount').textContent = total;
-        }
-        </script>
-    </div>
-
-    <div class="costs-section">
-        <h3>Maliyet Kalemleri</h3>
-        <table class="costs-table">
-            <tr>
-                <th>Malzeme/İşçilik Türü</th>
-                <th>Birim</th>
-                <th>Birim Fiyat</th>
-                <th>Toplam</th>
-            </tr>
-            <tr>
-                <td>Deri</td>
-                <td>m²</td>
-                <td><input type="number" step="0.01" placeholder="Birim fiyat"></td>
-                <td><input type="number" step="0.01" placeholder="Toplam"></td>
-            </tr>
-            <tr>
-                <td>Taban</td>
-                <td>çift</td>
-                <td><input type="number" step="0.01" placeholder="Birim fiyat"></td>
-                <td><input type="number" step="0.01" placeholder="Toplam"></td>
-            </tr>
-            <tr>
-                <td>Astar</td>
-                <td>m²</td>
-                <td><input type="number" step="0.01" placeholder="Birim fiyat"></td>
-                <td><input type="number" step="0.01" placeholder="Toplam"></td>
-            </tr>
-            <tr>
-                <td>Aksesuar</td>
-                <td>adet</td>
-                <td><input type="number" step="0.01" placeholder="Birim fiyat"></td>
-                <td><input type="number" step="0.01" placeholder="Toplam"></td>
-            </tr>
-            <tr>
-                <td>Kesim İşçiliği</td>
-                <td>çift</td>
-                <td><input type="number" step="0.01" placeholder="Birim fiyat"></td>
-                <td><input type="number" step="0.01" placeholder="Toplam"></td>
-            </tr>
-            <tr>
-                <td>Dikim İşçiliği</td>
-                <td>çift</td>
-                <td><input type="number" step="0.01" placeholder="Birim fiyat"></td>
-                <td><input type="number" step="0.01" placeholder="Toplam"></td>
-            </tr>
-            <tr>
-                <td>Montaj İşçiliği</td>
-                <td>çift</td>
-                <td><input type="number" step="0.01" placeholder="Birim fiyat"></td>
-                <td><input type="number" step="0.01" placeholder="Toplam"></td>
-            </tr>
-        </table>
-    </div>
-
-    <div class="total-section">
-        <p><strong>Toplam Maliyet:</strong> <input type="number" step="0.01" placeholder="Toplam maliyet"> TL</p>
-        <p><strong>Birim Maliyet:</strong> <input type="number" step="0.01" placeholder="Birim maliyet"> TL</p>
-    </div>
-
-    <div class="signature-section">
-        <div class="signature-box">
-            <p>Hazırlayan</p>
+  <!-- Fişlerin Grid'i -->
+  <div class="fis-grid">
+    {% for i in range(6) %}
+    <div class="fis-container">
+      <!-- Fiş Üst Bilgileri -->
+      <div class="fis-header">
+        <div class="input-group">
+          <span class="input-label">Model:</span>
+          <span class="input-line"></span>
         </div>
-        <div class="signature-box">
-            <p>Onaylayan</p>
+        <div class="input-group">
+          <span class="input-label">Renk:</span>
+          <span class="input-line"></span>
         </div>
+      </div>
+
+      <!-- Maliyet Tablosu -->
+      <table class="maliyet-table">
+        <tr>
+          <th>Maliyet</th>
+          <th>Kesim</th>
+          <th>Dikim</th>
+          <th>Montaj</th>
+          <th>Taban</th>
+          <th>Astar</th>
+          <th>Aksesuar</th>
+          <th>Diğer</th>
+        </tr>
+        <tr>
+          <td>Tutar</td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+        </tr>
+      </table>
+
+      <!-- Toplam Alanı -->
+      <div class="fis-bottom">
+        <div></div>
+        <div>
+          <span class="label">Toplam:</span>
+          <span class="line-small"></span>
+        </div>
+      </div>
     </div>
+    {% endfor %}
+  </div>
+
+  <!-- Otomatik Baskı (isteğe bağlı) -->
+  <script>
+    window.onload = function() {
+      window.print();
+    };
+  </script>
 </body>
 </html>
