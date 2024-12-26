@@ -21,9 +21,34 @@
         .chart-container {
             height: 300px;
         }
+        .filter-form {
+            padding: 20px;
+            background: white;
+            margin: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .filter-form input {
+            padding: 8px;
+            margin-right: 10px;
+        }
+        .filter-form button {
+            padding: 8px 16px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
+    <form class="filter-form" method="GET">
+        <input type="date" name="start_date" value="{{ start_date }}" required>
+        <input type="date" name="end_date" value="{{ end_date }}" required>
+        <button type="submit">Filtrele</button>
+    </form>
+
     <div class="stats-container">
         <div class="stats-card">
             <h3>Günlük Sipariş Sayısı</h3>
@@ -40,11 +65,10 @@
     </div>
 
     <script>
-        // Günlük siparişler grafiği
         new Chart('dailyOrdersChart', {
             type: 'line',
             data: {
-                labels: {{ günlük_siparisler|map(attribute='0')|map('string')|list|tojson }},
+                labels: {{ günlük_siparisler|map(attribute='0')|list|tojson }},
                 datasets: [{
                     label: 'Sipariş Sayısı',
                     data: {{ günlük_siparisler|map(attribute='1')|list|tojson }},
@@ -53,7 +77,6 @@
             }
         });
 
-        // En çok üretilen ürünler grafiği
         new Chart('topProductsChart', {
             type: 'bar',
             data: {
@@ -66,7 +89,6 @@
             }
         });
 
-        // Renk dağılımı grafiği
         new Chart('colorDistributionChart', {
             type: 'pie',
             data: {

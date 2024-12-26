@@ -9,6 +9,16 @@ import uuid
 db = SQLAlchemy()
 Base = declarative_base()
 
+class DailyStats(db.Model):
+    __tablename__ = 'daily_stats'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    date = db.Column(db.Date, nullable=False)
+    order_count = db.Column(db.Integer, default=0)
+    product_stats = db.Column(db.JSON)  # En çok üretilen ürünlerin istatistikleri
+    color_stats = db.Column(db.JSON)    # Renk dağılımı istatistikleri
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
 # Sipariş Fişi
 class SiparisFisi(db.Model):
     __tablename__ = 'siparis_fisi'
