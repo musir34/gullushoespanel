@@ -107,7 +107,7 @@
     <button onclick="window.print()" class="print-btn">Yazdır</button>
     <div class="header">
         <h2>MALİYET FİŞİ</h2>
-        <p>Tarih: {{ fis.created_date.strftime('%d/%m/%Y') }}</p>
+        <p>Tarih: {% if fis %}{{ fis.created_date.strftime('%d/%m/%Y') }}{% else %}{{ now().strftime('%d/%m/%Y') }}{% endif %}</p>
     </div>
 
     <div class="company-info">
