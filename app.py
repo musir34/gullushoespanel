@@ -118,4 +118,4 @@ def check_authentication():
 
 if __name__ == '__main__':
     debug_mode = os.environ.get('FLASK_DEBUG', 'False') == 'True'
-    app.run(host='0.0.0.0', port=8080, debug=debug_mode, ssl_context='adhoc')
+    app.run(host='0.0.0.0', port=8080, debug=debug_mode)
