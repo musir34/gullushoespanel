@@ -1,201 +1,135 @@
+
 <!DOCTYPE html>
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
   <title>Pastel Maliyet Fişleri (Tam 148×210 mm)</title>
   <style>
-    /***** SAYFA AYARLARI *****/
     @page {
-      /* İsterseniz doğrudan size: A5 de diyebilirsiniz */
-      size: 148mm 210mm; /* Tam A5 boyutu */
-      margin: 0;         /* Kenar boşluğu yok */
+      size: 148mm 210mm;
+      margin: 0;
     }
     body {
       margin: 0;
-      padding: 0;
-      /* Tam 148×210 mm boyutlar */
-      width: 148mm;
-      height: 210mm;
+      padding: 4mm;
+      width: 140mm;
+      height: 202mm;
       box-sizing: border-box;
-
-      background: #fdf9f6;      /* Pastel arka plan rengi */
+      background: #fdf9f6;
       font-family: "Segoe UI", Tahoma, sans-serif;
       color: #333;
     }
-
-    :root {
-      --accent-color: #da627d;
-      --border-color: #ccc;
-      --text-dark: #333;
-      --text-light: #666;
-    }
-
-    /***** SAYFA ÜST BAŞLIK (HEADER) *****/
     .page-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
       background: #fff;
-      padding: 4mm 6mm;
-      border-radius: 6px;
-      margin-bottom: 8mm;
+      padding: 3mm;
+      border-radius: 4px;
+      margin-bottom: 6mm;
       box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
     .header-left {
       display: flex;
       align-items: center;
-      gap: 6mm;
+      gap: 4mm;
     }
     .header-left img {
-      height: 20mm;  /* Logo yüksekliği */
+      height: 15mm;
       width: auto;
     }
     .header-title {
-      font-size: 16pt;
-      color: var(--accent-color);
+      font-size: 14pt;
+      color: #da627d;
       margin: 0;
       font-weight: bold;
     }
-    .header-right {
-      display: flex;
-      align-items: center;
-      gap: 4mm;
-      font-size: 10pt;
-    }
-    .date-line {
-      display: inline-block;
-      width: 46mm;
-      border-bottom: 1px solid var(--text-dark);
-      height: 4mm;
-      background-color: transparent;
-      text-align: center;
-    }
-
-    /***** FIŞLERİ GRID HALİNDE YERLEŞTİRME *****/
     .fis-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr; /* 2 sütun */
-      grid-template-rows: repeat(3, auto); /* 3 satır (toplam 6 fiş) */
-      gap: 6mm;
-      /* İçerik üst kısımdan başlasın diye ufak margin-top kullanabilirsiniz */
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: repeat(3, 1fr);
+      gap: 4mm;
+      height: calc(100% - 30mm);
     }
-
-    /***** FİŞ KUTUSU *****/
     .fis-container {
       background: #ffffff;
-      border-radius: 6px;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.08);
-      border: 1px solid #eee;
-      padding: 4mm;
+      border-radius: 4px;
+      padding: 3mm;
       display: flex;
       flex-direction: column;
-      justify-content: space-between;
-      font-size: 9pt;
+      font-size: 8pt;
     }
-
-    /***** FİŞ ÜST BİLGİ ALANI (Model & Renk) *****/
     .fis-header {
       display: flex;
       flex-direction: column;
-      gap: 3mm;
-      margin-bottom: 4mm;
+      gap: 2mm;
+      margin-bottom: 3mm;
     }
     .input-group {
       display: flex;
       align-items: center;
-      gap: 3mm;
+      gap: 2mm;
     }
     .input-label {
       font-weight: bold;
-      color: var(--text-dark);
       white-space: nowrap;
     }
     .input-line {
-      display: inline-block;
       flex: 1;
-      border-bottom: 1px solid var(--accent-color);
-      height: 4mm;
-      min-width: 30mm;
-      background-color: #fefefe;
+      border-bottom: 1px solid #da627d;
+      height: 3mm;
+      min-width: 20mm;
     }
-
-    /***** MALİYET TABLOSU *****/
     .maliyet-table {
       width: 100%;
       border-collapse: collapse;
-      margin-bottom: 4mm;
+      margin-bottom: 3mm;
+      font-size: 7pt;
     }
     .maliyet-table th,
     .maliyet-table td {
-      border: 1px solid var(--border-color);
+      border: 1px solid #ccc;
       text-align: center;
-      padding: 1.5mm;
+      padding: 1mm;
     }
     .maliyet-table th {
-      font-weight: bold;
-      background: #fae9ec; /* Pastel arka plan */
-      color: var(--text-dark);
+      background: #fae9ec;
     }
-
-    /***** TOPLAM KISMI *****/
     .fis-bottom {
       display: flex;
-      justify-content: space-between;
-      align-items: center;
+      justify-content: flex-end;
       border-top: 1px solid #ddd;
-      padding-top: 3mm;
+      padding-top: 2mm;
       margin-top: auto;
-    }
-    .fis-bottom .label {
-      font-weight: bold;
-      color: var(--text-dark);
     }
     .line-small {
       display: inline-block;
-      width: 30mm;
-      border-bottom: 1px solid var(--accent-color);
-      height: 4mm;
-      background-color: #fefefe;
+      width: 25mm;
+      border-bottom: 1px solid #da627d;
+      height: 3mm;
       margin: 0 2mm;
-      text-align: center;
     }
-    .line-wide {
-      width: 40mm;
-    }
-
-    /***** BASKI ANINDA GÖRÜNÜM *****/
     @media print {
       body {
         background: #fff;
       }
-      .page-header,
       .fis-container {
-        box-shadow: none;
-        border: 1px solid #000; /* Yazıcıda netlik için isterseniz */
+        border: 0.5pt solid #000;
       }
     }
   </style>
 </head>
 <body>
-
-  <!-- Sayfa Üst Başlık -->
   <div class="page-header">
     <div class="header-left">
-      <!-- Logo yolunu kendi projenize göre ayarlayınız -->
       <img src="{{ url_for('static', filename='logo/gullu.png') }}" alt="Logo">
       <h1 class="header-title">Maliyet Fişi</h1>
     </div>
-    <div class="header-right">
-      <strong>Tarih:</strong>
-      <span class="date-line"></span>
-    </div>
   </div>
 
-  <!-- Fişlerin Grid'i -->
   <div class="fis-grid">
     {% for i in range(6) %}
     <div class="fis-container">
-      <!-- Fiş Üst Bilgileri -->
       <div class="fis-header">
         <div class="input-group">
           <span class="input-label">Model:</span>
@@ -207,7 +141,6 @@
         </div>
       </div>
 
-      <!-- Maliyet Tablosu -->
       <table class="maliyet-table">
         <tr>
           <th>Maliyet</th>
@@ -231,19 +164,14 @@
         </tr>
       </table>
 
-      <!-- Toplam Alanı -->
       <div class="fis-bottom">
-        <div></div>
-        <div>
-          <span class="label">Toplam:</span>
-          <span class="line-small"></span>
-        </div>
+        <span class="label">Toplam:</span>
+        <span class="line-small"></span>
       </div>
     </div>
     {% endfor %}
   </div>
 
-  <!-- Otomatik Baskı (isteğe bağlı) -->
   <script>
     window.onload = function() {
       window.print();
