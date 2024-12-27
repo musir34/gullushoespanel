@@ -70,27 +70,13 @@ except Exception as e:
     engine = None
 
 # Blueprint modüllerini import et
-from order_service import order_service_bp
-from update_service import update_service_bp
-from archive import archive_bp
-from order_list_service import order_list_service_bp
-from login_logout import login_logout_bp
-from degisim import degisim_bp
-from home import home_bp
-from get_products import get_products_bp
-from all_orders_service import all_orders_service_bp
-from new_orders_service import new_orders_service_bp
-from processed_orders_service import processed_orders_service_bp
-from iade_islemleri import iade_islemleri
-from siparis_fisi import siparis_fisi_bp
+[... mevcut blueprint importları ...]
 
 # Güvenli oturum kontrolü
 @app.before_request
 def check_authentication():
-    if not request.is_secure and os.environ.get('FLASK_ENV') != 'development':
-        if request.endpoint:
-            return redirect(url_for(request.endpoint, _external=True, _scheme='https'))
-        return redirect(request.url.replace('http://', 'https://', 1))
+    if not request.is_secure and app.env != 'development':
+        return redirect(url_for(request.endpoint, _external=True, _scheme='https'))
         
     allowed_routes = [
         'login_logout.login',
@@ -120,4 +106,4 @@ def check_authentication():
 
 if __name__ == '__main__':
     debug_mode = os.environ.get('FLASK_DEBUG', 'False') == 'True'
-    app.run(host='0.0.0.0', port=8080, debug=debug_mode)
+    app.run(host='0.0.0.0', port=8080, debug=debug_mode, ssl_context='adhoc')
