@@ -1,30 +1,37 @@
-
 <!DOCTYPE html>
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
   <title>Pastel Maliyet Fişleri (Tam 148×210 mm)</title>
   <style>
+    /* Sayfa Ayarları */
     @page {
-      size: 148mm 210mm;
-      margin: 0;
+      size: 148mm 210mm; /* A5 */
+      margin: 0;         /* Yazdırırken kenar boşluğu bırakmamak için */
     }
     body {
       margin: 0;
-      padding: 4mm;
-      width: 140mm;
-      height: 202mm;
+      padding: 5mm;
+      width: 138mm;  /* A5’in eninden, padding’leri düşerek kalan alan */
+      height: 200mm; /* A5’in boyundan, padding’leri düşerek kalan alan */
       box-sizing: border-box;
-      background: #fdf9f6;
+      /* Arka planda hafif bir renk gradyanı */
+      background: linear-gradient(to bottom right, #fff 0%, #fdf9f6 100%);
       font-family: "Segoe UI", Tahoma, sans-serif;
       color: #333;
+    }
+
+    /* Genel Stil */
+    h1, h2, h3, h4, h5, h6 {
+      margin: 0;
+      padding: 0;
     }
     .page-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
       background: #fff;
-      padding: 3mm;
+      padding: 4mm;
       border-radius: 4px;
       margin-bottom: 6mm;
       box-shadow: 0 1px 3px rgba(0,0,0,0.1);
@@ -32,104 +39,131 @@
     .header-left {
       display: flex;
       align-items: center;
-      gap: 4mm;
+      gap: 5mm;
     }
     .header-left img {
-      height: 15mm;
+      height: 18mm;
       width: auto;
     }
     .header-title {
-      font-size: 14pt;
+      font-size: 16pt;
       color: #da627d;
       margin: 0;
       font-weight: bold;
     }
+
+    /* Fiş Grid Yapısı */
     .fis-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      grid-template-rows: repeat(3, 1fr);
-      gap: 4mm;
-      height: calc(100% - 30mm);
+      grid-template-columns: 1fr 1fr;  /* 2 sütun */
+      grid-template-rows: repeat(3, 1fr); /* 3 satır */
+      gap: 6mm;
+      height: calc(100% - 35mm); /* Başlık alanından geriye kalanı doldursun */
     }
     .fis-container {
-      background: #ffffff;
-      border-radius: 4px;
-      padding: 3mm;
       display: flex;
       flex-direction: column;
+      background: #ffffffcc; /* Hafif şeffaf beyaz arka plan */
+      /* Çizgileri biraz koyulaştırıp kalınlaştırdık */
+      border: 1px solid #b84057; 
+      border-radius: 4px;
+      padding: 4mm;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
       font-size: 8pt;
     }
+
+    /* Fiş İçindeki Başlık Girişleri */
     .fis-header {
-      display: flex;
-      flex-direction: column;
-      gap: 2mm;
-      margin-bottom: 3mm;
+      margin-bottom: 4mm;
     }
     .input-group {
       display: flex;
       align-items: center;
-      gap: 2mm;
+      gap: 3mm;
+      margin-bottom: 2mm;
     }
     .input-label {
       font-weight: bold;
       white-space: nowrap;
+      color: #b84057;
+      min-width: 25mm;
     }
+    /* Doldurulacak çizgi - daha koyu renk ve 1px kalın */
     .input-line {
       flex: 1;
-      border-bottom: 1px solid #da627d;
-      height: 3mm;
+      border-bottom: 1px dashed #b84057; 
+      height: 2.5mm;
       min-width: 20mm;
     }
+
+    /* Maliyet Tablosu */
     .maliyet-table {
       width: 100%;
       border-collapse: collapse;
-      margin-bottom: 3mm;
+      margin-bottom: 4mm;
       font-size: 7pt;
     }
     .maliyet-table th,
     .maliyet-table td {
-      border: 1px solid #ccc;
+      /* Daha koyu sınırlar için renk ve kalınlık arttırıldı */
+      border: 1px solid #b84057; 
       text-align: center;
-      padding: 1mm;
+      padding: 2mm;
     }
     .maliyet-table th {
-      background: #fae9ec;
+      background: #fcdce1; /* Pastel pembe zemin */
+      color: #333;
+      font-weight: bold;
     }
+
+    /* Fiş Alt Kısmı */
     .fis-bottom {
+      margin-top: auto; /* Kalan boş alanı ittirir, tablo aşağıda sabitlenir */
+      border-top: 1px solid #b84057;
+      padding-top: 3mm;
       display: flex;
       justify-content: flex-end;
-      border-top: 1px solid #ddd;
-      padding-top: 2mm;
-      margin-top: auto;
+      align-items: center;
+      gap: 4mm;
+    }
+    .fis-bottom .label {
+      font-weight: bold;
+      color: #b84057;
     }
     .line-small {
       display: inline-block;
-      width: 25mm;
-      border-bottom: 1px solid #da627d;
+      width: 30mm;
+      border-bottom: 1px solid #b84057;
       height: 3mm;
-      margin: 0 2mm;
     }
+
+    /* Yazdırma Ayarları */
     @media print {
       body {
-        background: #fff;
+        background: #fff;  /* Yazdırırken normal beyaz zemin */
       }
       .fis-container {
-        border: 0.5pt solid #000;
+        box-shadow: none;
+        border: 0.5pt solid #000; /* İsterseniz yazdırırken daha net çıksın diye siyaha yakın seçebilirsiniz */
       }
     }
   </style>
 </head>
 <body>
+  <!-- Sayfa Başlığı -->
   <div class="page-header">
     <div class="header-left">
+      <!-- Logonuzu buraya koyabilirsiniz -->
       <img src="{{ url_for('static', filename='logo/gullu.png') }}" alt="Logo">
       <h1 class="header-title">Maliyet Fişi</h1>
     </div>
   </div>
 
+  <!-- Fişlerin Olduğu Grid -->
   <div class="fis-grid">
     {% for i in range(6) %}
     <div class="fis-container">
+      <!-- Model / Renk -->
       <div class="fis-header">
         <div class="input-group">
           <span class="input-label">Model:</span>
@@ -141,6 +175,7 @@
         </div>
       </div>
 
+      <!-- Maliyet Tablosu -->
       <table class="maliyet-table">
         <tr>
           <th>Maliyet</th>
@@ -164,6 +199,7 @@
         </tr>
       </table>
 
+      <!-- Toplam Alanı -->
       <div class="fis-bottom">
         <span class="label">Toplam:</span>
         <span class="line-small"></span>
@@ -171,7 +207,8 @@
     </div>
     {% endfor %}
   </div>
-  
+
+  <!-- Hazırlayan / Onaylayan -->
   <div style="display: flex; justify-content: space-between; margin-top: 10mm; padding: 0 10mm;">
     <div style="text-align: center;">
       <div style="border-top: 1px solid #000; width: 40mm; margin-top: 15mm;">
@@ -189,6 +226,7 @@
     window.onload = function() {
       window.print();
     };
+    */
   </script>
 </body>
 </html>
