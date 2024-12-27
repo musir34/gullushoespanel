@@ -87,7 +87,7 @@ from siparis_fisi import siparis_fisi_bp
 # Güvenli oturum kontrolü
 @app.before_request
 def check_authentication():
-    if not request.is_secure and app.env != 'development':
+    if not request.is_secure and os.environ.get('FLASK_ENV') != 'development':
         return redirect(url_for(request.endpoint, _external=True, _scheme='https'))
         
     allowed_routes = [
