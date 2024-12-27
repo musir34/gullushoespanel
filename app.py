@@ -88,7 +88,9 @@ from siparis_fisi import siparis_fisi_bp
 @app.before_request
 def check_authentication():
     if not request.is_secure and os.environ.get('FLASK_ENV') != 'development':
-        return redirect(url_for(request.endpoint, _external=True, _scheme='https'))
+        if request.endpoint:
+            return redirect(url_for(request.endpoint, _external=True, _scheme='https'))
+        return redirect(request.url.replace('http://', 'https://', 1))
         
     allowed_routes = [
         'login_logout.login',
