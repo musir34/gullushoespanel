@@ -5,7 +5,7 @@ import json
 from datetime import datetime, timedelta
 from trendyol_api import API_KEY, API_SECRET, SUPPLIER_ID
 from update_service import update_package_to_picking
-from models import db, Order
+from models import db, Order, Archive
 import traceback
 import asyncio
 import aiohttp
