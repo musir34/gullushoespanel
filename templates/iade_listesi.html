@@ -114,7 +114,7 @@
                         <th>İade Tarihi</th>
                         <th>Statü</th>
                         <th>Detaylar</th>
-                        <th>İşlemler</th>
+                        <th>İade Bilgileri</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -164,30 +164,12 @@
                             </button>
                         </td>
                         <td>
-                            <!-- İşlemler sütununda Onayla butonu ve yeni alanlar -->
-                            <form method="POST" action="{{ url_for('iade_islemleri.iade_onayla', claim_id=claim['id']) }}" class="d-inline">
-                                {% for product in claim.products %}
-                                    <input type="hidden" name="claim_line_item_ids" value="{{ product.claim_line_item_id }}">
-                                    <div class="mb-2">
-                                        <strong>İade Nedeni:</strong> {{ product.reason }}<br>
-                                        <strong>Müşteri Açıklaması:</strong> {{ product.customer_explanation }}
-                                    </div>
-                                {% endfor %}
-                                <input type="number" step="0.01" name="refund_amount" class="form-control form-control-sm mt-1" placeholder="İade Tutarı" required>
-                                <button class="btn btn-success btn-sm mt-2" type="submit">Onayla</button>
-                            </form>
-                            <!-- Durum Güncelleme Formu -->
-                            <form method="POST" action="{{ url_for('iade_islemleri.iade_guncelle', claim_id=claim.id) }}" class="d-inline">
-                                <div class="input-group">
-                                    <select class="form-select" name="status" required>
-                                        <option value="">Durum Seçin</option>
-                                        <option value="Accepted">Kabul Edildi</option>
-                                        <option value="Rejected">Reddedildi</option>
-                                        <option value="Cancelled">İptal Edildi</option>
-                                    </select>
-                                    <button class="btn btn-primary btn-sm" type="submit">Güncelle</button>
+                            {% for product in claim.products %}
+                                <div class="mb-2">
+                                    <strong>İade Nedeni:</strong> {{ product.reason }}<br>
+                                    <strong>Müşteri Açıklaması:</strong> {{ product.customer_explanation }}
                                 </div>
-                            </form>
+                            {% endfor %}
                         </td>
                     </tr>
                     <!-- Detaylar -->
