@@ -406,6 +406,7 @@
                                         <th>Stok Kodu</th>
                                         <th>Ürün Barkodu</th>
                                         <th>Görsel</th>
+                                        <th>Miktar</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -424,6 +425,7 @@
                                         <td>
                                             <img src="{{ detail.image_url }}" alt="Ürün Görseli" style="max-width: 100px;"/>
                                         </td>
+                                        <td>{{ detail.quantity }}</td>
                                     </tr>
                                     {% endfor %}
                                 </tbody>

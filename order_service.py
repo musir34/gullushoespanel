@@ -222,6 +222,7 @@ def update_existing_order(existing_order, order_data, status):
 def create_order_details(order_lines):
     details = []
     for line in order_lines:
+        quantity = int(line.get('quantity', 1))
         detail = {
             'line_id': str(line.get('id', '')),
             'sku': line.get('merchantSku', ''),
@@ -229,9 +230,10 @@ def create_order_details(order_lines):
             'original_barcode': line.get('barcode', ''),
             'productName': line.get('productName', ''),
             'productCode': str(line.get('productCode', '')),
-            'quantity': int(line.get('quantity', 1)),
+            'quantity': quantity,  # Miktarı doğru şekilde kaydet
             'productSize': line.get('productSize', ''),
             'productColor': line.get('productColor', ''),
+            'total_price': float(line.get('amount', 0)) * quantity  # Toplam fiyatı hesapla
         }
         details.append(detail)
     return details
@@ -256,7 +258,15 @@ def replace_turkish_characters(text):
 
 
 def combine_line_items(order_data, status):
-    original_barcodes = [line.get('barcode', '') for line in order_data['lines']]
+    # Miktar bilgisini koruyarak barkodları işle
+    barcodes_with_quantity = []
+    for line in order_data['lines']:
+        barcode = line.get('barcode', '')
+        quantity = line.get('quantity', 1)
+        # Her miktar için barkodu tekrarla
+        barcodes_with_quantity.extend([barcode] * quantity)
+    
+    original_barcodes = barcodes_with_quantity
     converted_barcodes = [replace_turkish_characters(barcode) for barcode in original_barcodes]
 
     # Sipariş detaylarını oluştur
