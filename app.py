@@ -113,8 +113,13 @@ def fetch_and_save_returns():
 
 def schedule_jobs(app):
     scheduler = BackgroundScheduler(timezone="Europe/Istanbul")
-    # Her gün 23:50'de çalışacak cron job
-    scheduler.add_job(func=fetch_and_save_returns, trigger='cron', hour=23, minute=50)
+    # Her saat başı 09:00-23:00 arası iadeleri güncelle
+    scheduler.add_job(
+        func=fetch_and_save_returns,
+        trigger='cron',
+        hour='9-23',
+        minute=0
+    )
     scheduler.start()
 
 # schedule_jobs fonksiyonunu app.run'dan önce çağır:
