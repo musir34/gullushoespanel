@@ -182,7 +182,7 @@ def process_all_orders(all_orders_data):
 def update_existing_order(existing_order, order_data, status):
     """
     Varolan sipariş kaydı üzerinde güncelleme yaparken
-    set() yerine liste kullandık ki tekrar eden ürünler de görünsün.
+    hem details'e hem de quantity kolonuna toplam adet bilgisini kaydediyoruz.
     """
     try:
         new_lines = order_data['lines']
@@ -193,7 +193,17 @@ def update_existing_order(existing_order, order_data, status):
         original_product_barcodes = existing_order.original_product_barcode.split(', ') if existing_order.original_product_barcode else []
         line_ids = existing_order.line_id.split(', ') if existing_order.line_id else []
 
+        # Toplam adet toplanacak
+        total_qty = 0
+
         for line in new_lines:
+            q = line.get('quantity', 1)
+            try:
+                q = int(q)
+            except:
+                q = 1
+            total_qty += q
+
             merchant_sku = line.get('merchantSku', '')
             barcode = replace_turkish_characters(line.get('barcode', ''))
             original_barcode = line.get('barcode', '')
@@ -208,6 +218,7 @@ def update_existing_order(existing_order, order_data, status):
             if line_id:
                 line_ids.append(line_id)
 
+        # Veritabanındaki sütunları güncelle
         existing_order.status = status
         existing_order.merchant_sku = ', '.join(merchant_skus)
         existing_order.product_barcode = ', '.join(product_barcodes)
@@ -218,6 +229,9 @@ def update_existing_order(existing_order, order_data, status):
         order_details = create_order_details(new_lines)
         existing_order.details = json.dumps(order_details, ensure_ascii=False)
 
+        # Toplam adet bilgisini de tabloya kaydet
+        existing_order.quantity = total_qty
+
         logger.info(f"Güncellenen sipariş: {existing_order.order_number}")
     except Exception as e:
         logger.error(f"Hata: update_existing_order - {e}")
@@ -225,28 +239,57 @@ def update_existing_order(existing_order, order_data, status):
 
 
 def create_order_details(order_lines):
-    details = []
+    details_dict = {}  # dict: (barkod, color, size) -> detail
+    total_quantity = 0  # Toplam miktar takibi
+
     for line in order_lines:
         try:
+            barcode = line.get('barcode', '')
+            product_color = line.get('productColor', '')
+            product_size = line.get('productSize', '')
+            merchant_sku = line.get('merchantSku', '')
+            product_name = line.get('productName', '')
+            product_code = str(line.get('productCode', ''))
             quantity = int(line.get('quantity', 1))
-            detail = {
-                'line_id': str(line.get('id', '')),
-                'sku': line.get('merchantSku', ''),
-                'quantity': quantity,
-                'barcode': replace_turkish_characters(line.get('barcode', '')),
-                'original_barcode': line.get('barcode', ''),
-                'productName': line.get('productName', ''),
-                'productCode': str(line.get('productCode', '')),
-                'productSize': line.get('productSize', ''),
-                'productColor': line.get('productColor', ''),
-                'total_price': float(line.get('amount', 0)) * quantity,
-                'image_url': ''
-            }
-            details.append(detail)
+            amount = float(line.get('amount', 0))
+
+            # Toplam miktarı güncelle
+            total_quantity += quantity
+
+            # Anahtar oluştur: (barkod, color, size)
+            key = (barcode, product_color, product_size)
+
+            if key not in details_dict:
+                # Yeni kayıt
+                details_dict[key] = {
+                    'barcode': barcode,
+                    'converted_barcode': replace_turkish_characters(barcode),
+                    'color': product_color,
+                    'size': product_size,
+                    'sku': merchant_sku,
+                    'productName': product_name,
+                    'productCode': product_code,
+                    'quantity': quantity,
+                    'total_price': amount * quantity,
+                    'image_url': ''
+                }
+            else:
+                # Mevcut kayıt, miktarı ekle
+                details_dict[key]['quantity'] += quantity
+                details_dict[key]['total_price'] += amount * quantity
+
         except Exception as e:
             logger.error(f"Sipariş detayı oluşturulurken hata: {e}")
             continue
-    return details
+
+    # Her bir siparişin total_quantity değerini details içine ekle
+    for detail in details_dict.values():
+        detail['total_quantity'] = total_quantity
+
+    # Sözlüğü liste olarak döndür
+    return list(details_dict.values())
+
+
 
 
 def replace_turkish_characters(text):
@@ -272,20 +315,23 @@ def replace_turkish_characters(text):
 
 
 def combine_line_items(order_data, status):
-    """
-    Yeni sipariş eklenirken set() yerine liste mantığı kullanıyoruz ki
-    aynı üründen birden fazla sipariş varsa tamamı kaydedilsin.
-    """
     # Miktar bilgisini koruyarak barkodları işle
     barcodes_with_quantity = []
+    total_qty = 0  # Toplam adet için
     for line in order_data['lines']:
         barcode = line.get('barcode', '')
         quantity = line.get('quantity', 1)
+        try:
+            quantity = int(quantity)
+        except:
+            quantity = 1
+        total_qty += quantity
+
         # Her miktar için barkodu tekrarla
         barcodes_with_quantity.extend([barcode] * quantity)
 
     original_barcodes = barcodes_with_quantity
-    converted_barcodes = [replace_turkish_characters(barcode) for barcode in original_barcodes]
+    converted_barcodes = [replace_turkish_characters(bc) for bc in original_barcodes]
 
     # Sipariş detaylarını oluştur
     order_details = create_order_details(order_data['lines'])
@@ -325,15 +371,15 @@ def combine_line_items(order_data, status):
         'shipment_package_id': str(order_data.get('shipmentPackageId', '')),
         'details': json.dumps(order_details, ensure_ascii=False),
         'archive_date': None,
-        'archive_reason': ''
+        'archive_reason': '',
+        # Yeni eklenen kolon verisi:
+        'quantity': total_qty
     }
     return combined_order
 
 
-# Sipariş listesi görüntüleme fonksiyonları
-# Her birinde process_order_details fonksiyonunu çağırıyoruz
+# ===== Sipariş listesi görüntüleme fonksiyonları =====
 
-# "Yeni" statüsündeki siparişleri filtreleyen fonksiyon
 @order_service_bp.route('/order-list/new', methods=['GET'])
 def get_new_orders():
     page = request.args.get('page', 1, type=int)
@@ -345,7 +391,6 @@ def get_new_orders():
     total_orders = paginated_orders.total
     total_pages = paginated_orders.pages
 
-    # Sipariş detaylarını işleme
     process_order_details(orders)
 
     return render_template(
@@ -357,7 +402,6 @@ def get_new_orders():
     )
 
 
-# "İşleme Alındı" statüsündeki siparişleri filtreleyen fonksiyon
 @order_service_bp.route('/order-list/processed', methods=['GET'])
 def get_processed_orders():
     page = request.args.get('page', 1, type=int)
@@ -369,7 +413,6 @@ def get_processed_orders():
     total_orders = paginated_orders.total
     total_pages = paginated_orders.pages
 
-    # Sipariş detaylarını işleme
     process_order_details(orders)
 
     return render_template(
@@ -381,7 +424,6 @@ def get_processed_orders():
     )
 
 
-# "Teslim Edildi" statüsündeki siparişleri filtreleyen fonksiyon
 @order_service_bp.route('/order-list/delivered', methods=['GET'])
 def get_delivered_orders():
     page = request.args.get('page', 1, type=int)
@@ -393,7 +435,6 @@ def get_delivered_orders():
     total_orders = paginated_orders.total
     total_pages = paginated_orders.pages
 
-    # Sipariş detaylarını işleme
     process_order_details(orders)
 
     return render_template(
@@ -405,7 +446,6 @@ def get_delivered_orders():
     )
 
 
-# "Kargoya Verildi" statüsündeki siparişleri filtreleyen fonksiyon
 @order_service_bp.route('/order-list/shipped', methods=['GET'])
 def get_shipped_orders():
     page = request.args.get('page', 1, type=int)
@@ -417,7 +457,6 @@ def get_shipped_orders():
     total_orders = paginated_orders.total
     total_pages = paginated_orders.pages
 
-    # Sipariş detaylarını işleme
     process_order_details(orders)
 
     return render_template(
