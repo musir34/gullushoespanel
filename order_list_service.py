@@ -117,11 +117,17 @@ def process_order_details(orders):
             for detail in details_list:
                 product_barcode = detail.get('barcode', '')
                 sku = detail.get('sku', 'Bilinmeyen SKU')
+                quantity = detail.get('quantity', 0)
+                color = detail.get('color', '')
+                size = detail.get('size', '')
                 image_url = get_product_image(product_barcode)
                 processed_details.append({
                     'sku': sku,
                     'barcode': product_barcode,
-                    'image_url': image_url
+                    'image_url': image_url,
+                    'quantity': quantity,
+                    'color': color,
+                    'size': size
                 })
             order.processed_details = processed_details
     except Exception as e:
