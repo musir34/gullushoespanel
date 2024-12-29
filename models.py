@@ -122,6 +122,9 @@ class ReturnOrder(Base):
     cargo_sender_number = Column(String)
     cargo_tracking_link = Column(String)
     processed_by = Column(String)  # İşlemi yapan kullanıcı
+    return_reason = Column(String)  # İade nedeni (Beden/Numara Uyumsuzluğu, Ürün Hasarlı, vs.)
+    customer_explanation = Column(String)  # Müşteri açıklaması
+    return_category = Column(String)  # İade kategorisi (Ürün Kaynaklı, Müşteri Kaynaklı, vs.)
     notes = Column(String)  # Ek notlar
     approval_reason = Column(String)  # Onay/red nedeni
     refund_amount = Column(Float)  # İade edilecek tutar
