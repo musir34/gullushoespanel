@@ -426,7 +426,15 @@
                         <!-- Toplam Adet Dairesi -->
                         <div class="quantity-badge-container">
                             <span class="quantity-badge" title="Bu siparişte toplam adet">
-                                {{ order.quantity if order.quantity else 0 }}
+                                {% set total_quantity = 0 %}
+                                {% if order.processed_details %}
+                                    {% for detail in order.processed_details %}
+                                        {% set total_quantity = total_quantity + detail.quantity %}
+                                    {% endfor %}
+                                    {{ total_quantity }}
+                                {% else %}
+                                    {{ order.quantity if order.quantity else 0 }}
+                                {% endif %}
                             </span>
                         </div>
 
