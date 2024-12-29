@@ -222,21 +222,25 @@ def update_existing_order(existing_order, order_data, status):
 def create_order_details(order_lines):
     details = []
     for line in order_lines:
-        quantity = int(line.get('quantity', 1))
-        detail = {
-            'line_id': str(line.get('id', '')),
-            'sku': line.get('merchantSku', ''),
-            'quantity': quantity,  # Miktar bilgisini ekle
-            'barcode': replace_turkish_characters(line.get('barcode', '')),
-            'original_barcode': line.get('barcode', ''),
-            'productName': line.get('productName', ''),
-            'productCode': str(line.get('productCode', '')),
-            'quantity': quantity,  # Miktarı doğru şekilde kaydet
-            'productSize': line.get('productSize', ''),
-            'productColor': line.get('productColor', ''),
-            'total_price': float(line.get('amount', 0)) * quantity  # Toplam fiyatı hesapla
-        }
-        details.append(detail)
+        try:
+            quantity = int(line.get('quantity', 1))
+            detail = {
+                'line_id': str(line.get('id', '')),
+                'sku': line.get('merchantSku', ''),
+                'quantity': quantity,
+                'barcode': replace_turkish_characters(line.get('barcode', '')),
+                'original_barcode': line.get('barcode', ''),
+                'productName': line.get('productName', ''),
+                'productCode': str(line.get('productCode', '')),
+                'productSize': line.get('productSize', ''),
+                'productColor': line.get('productColor', ''),
+                'total_price': float(line.get('amount', 0)) * quantity,
+                'image_url': ''
+            }
+            details.append(detail)
+        except Exception as e:
+            logger.error(f"Sipariş detayı oluşturulurken hata: {e}")
+            continue
     return details
 
 
