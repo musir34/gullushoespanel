@@ -327,6 +327,9 @@ def iade_onayla(claim_id):
     return_to_stock = request.form.getlist('return_to_stock')
     approval_reason = request.form.get('approval_reason')
     refund_amount = request.form.get('refund_amount')
+    return_category = request.form.get('return_category')
+    return_reason = request.form.get('return_reason')
+    customer_explanation = request.form.get('customer_explanation')
     
     if not claim_line_item_ids:
         flash('Onaylanacak ürün seçilmedi.', 'warning')
@@ -344,6 +347,9 @@ def iade_onayla(claim_id):
         return_order.processed_by = session.get('username')
         return_order.approval_reason = approval_reason
         return_order.refund_amount = float(refund_amount) if refund_amount else 0
+        return_order.return_category = return_category
+        return_order.return_reason = return_reason
+        return_order.customer_explanation = customer_explanation
         
         # Ürün detaylarını güncelle
         for i, claim_line_item_id in enumerate(claim_line_item_ids):
