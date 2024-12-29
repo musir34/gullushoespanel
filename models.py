@@ -1,7 +1,7 @@
 from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
-from sqlalchemy import create_engine, Column, String, DateTime, ForeignKey, Integer
+from sqlalchemy import create_engine, Column, String, DateTime, ForeignKey, Integer, Float, Boolean
 from sqlalchemy.ext.declarative import declarative_base
 import uuid
 
