@@ -226,6 +226,7 @@ def create_order_details(order_lines):
         detail = {
             'line_id': str(line.get('id', '')),
             'sku': line.get('merchantSku', ''),
+            'quantity': quantity,  # Miktar bilgisini ekle
             'barcode': replace_turkish_characters(line.get('barcode', '')),
             'original_barcode': line.get('barcode', ''),
             'productName': line.get('productName', ''),

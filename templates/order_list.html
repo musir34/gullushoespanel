@@ -413,19 +413,11 @@
                                     {% for detail in order.processed_details %}
                                     <tr>
                                         <td>{{ detail.sku }}</td>
-                                        <td>
-                                            {{ detail.barcode }}
-                                            <span class="copy-container">
-                                                <span class="clipboard-icon" onclick="copyToClipboard('{{ detail.barcode }}', this)">
-                                                    📋
-                                                </span>
-                                                <span class="copy-confirmation">✔️</span>
-                                            </span>
-                                        </td>
+                                        <td>{{ detail.barcode }}</td>
                                         <td>
                                             <img src="{{ detail.image_url }}" alt="Ürün Görseli" style="max-width: 100px;"/>
                                         </td>
-                                        <td>{{ detail.quantity }}</td>
+                                        <td><strong>{{ detail.quantity }}</strong></td>
                                     </tr>
                                     {% endfor %}
                                 </tbody>
