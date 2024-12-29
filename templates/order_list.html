@@ -239,6 +239,27 @@
             border-radius: 10px; /* İsteğe bağlı: Köşeleri yuvarlama */
         }
 
+        /* Adet Badgesi (Gri, Şeffaf Daire) */
+        .quantity-badge-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+
+        .quantity-badge {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            line-height: 40px;
+            text-align: center;
+            border: 2px solid #888;
+            border-radius: 50%;
+            background-color: rgba(128, 128, 128, 0.2); /* Şeffaf gri arka plan */
+            color: #333;
+            font-weight: bold;
+            font-size: 1rem;
+        }
+
         /* Responsive Ayarlar */
         @media (max-width: 768px) {
             .btn-group-top {
@@ -391,19 +412,34 @@
                                 </button>
                             </form>
                             <button class="btn btn-secondary mt-2" onclick="showArchiveModal('{{ order.order_number }}')">Arşivle</button>
-
                         </div>
                     </div>
                     <div class="card-body">
                         {% if translated_status in ['Yeni', 'İşleme Alındı'] %}
-                        <h6><strong>Kargoya Kalan Süre:</strong> <span class="remaining-time" id="remaining-time-{{ loop.index }}" data-end-time="{{ order.agreed_delivery_date or order.estimated_delivery_end }}">{{ order.remaining_time }}</span></h6>
+                        <h6><strong>Kargoya Kalan Süre:</strong> 
+                            <span class="remaining-time" id="remaining-time-{{ loop.index }}" data-end-time="{{ order.agreed_delivery_date or order.estimated_delivery_end }}">
+                                {{ order.remaining_time }}
+                            </span>
+                        </h6>
                         {% endif %}
-                        <button class="btn btn-outline-primary w-100 toggle-details mt-3" data-bs-toggle="collapse" data-bs-target="#details-{{ loop.index }}" aria-expanded="false" aria-controls="details-{{ loop.index }}">Ürün Detayları</button>
+
+                        <!-- Toplam Adet Dairesi -->
+                        <div class="quantity-badge-container">
+                            <span class="quantity-badge" title="Bu siparişte toplam adet">
+                                {{ order.quantity if order.quantity else 0 }}
+                            </span>
+                        </div>
+
+                        <button class="btn btn-outline-primary w-100 toggle-details mt-3" data-bs-toggle="collapse" data-bs-target="#details-{{ loop.index }}" aria-expanded="false" aria-controls="details-{{ loop.index }}">
+                            Ürün Detayları
+                        </button>
                         <div id="details-{{ loop.index }}" class="collapse details-section mt-3">
                             <table class="table table-bordered">
                                 <thead>
                                     <tr>
                                         <th>Stok Kodu</th>
+                                        <th>Renk</th>
+                                        <th>Beden</th>
                                         <th>Ürün Barkodu</th>
                                         <th>Görsel</th>
                                         <th>Miktar</th>
@@ -412,11 +448,24 @@
                                 <tbody>
                                     {% for detail in order.processed_details %}
                                     <tr>
+                                        <!-- detail.sku yerine 'Stok Kodu' -->
                                         <td>{{ detail.sku }}</td>
+
+                                        <!-- Renk -->
+                                        <td>{{ detail.color }}</td>
+
+                                        <!-- Beden -->
+                                        <td>{{ detail.size }}</td>
+
+                                        <!-- Barkod -->
                                         <td>{{ detail.barcode }}</td>
+
+                                        <!-- Ürün Görseli -->
                                         <td>
                                             <img src="{{ detail.image_url }}" alt="Ürün Görseli" style="max-width: 100px;"/>
                                         </td>
+
+                                        <!-- Miktar -->
                                         <td><strong>{{ detail.quantity }}</strong></td>
                                     </tr>
                                     {% endfor %}

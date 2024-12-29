@@ -191,6 +191,7 @@ class Order(db.Model):
     details = db.Column(db.Text)  # JSON formatında saklanacak
     archive_date = db.Column(db.DateTime)
     archive_reason = db.Column(db.String)
+    quantity = db.Column(db.Integer)  # adet
     
 
 
