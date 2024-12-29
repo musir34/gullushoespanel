@@ -318,11 +318,53 @@ def iade_listesi(db_session):
 @iade_islemleri.route('/iade-onayla/<claim_id>', methods=['POST'])
 def iade_onayla(claim_id):
     logger.info(f"İade onaylama işlemi başlatıldı (claim_id={claim_id})")
+    
+    # Form verilerini al
     claim_line_item_ids = request.form.getlist('claim_line_item_ids')
+    product_conditions = request.form.getlist('product_conditions')
+    damage_descriptions = request.form.getlist('damage_descriptions')
+    inspection_notes = request.form.getlist('inspection_notes')
+    return_to_stock = request.form.getlist('return_to_stock')
+    approval_reason = request.form.get('approval_reason')
+    refund_amount = request.form.get('refund_amount')
+    
     if not claim_line_item_ids:
         flash('Onaylanacak ürün seçilmedi.', 'warning')
         logger.debug("Onaylanacak ürün seçilmedi.")
         return redirect(url_for('iade_islemleri.iade_listesi'))
+        
+    Session = current_app.config['Session']
+    db_session = Session()
+    
+    try:
+        # İade kaydını güncelle
+        return_order = db_session.query(ReturnOrder).filter_by(id=claim_id).first()
+        return_order.status = 'Accepted'
+        return_order.process_date = datetime.now()
+        return_order.processed_by = session.get('username')
+        return_order.approval_reason = approval_reason
+        return_order.refund_amount = float(refund_amount) if refund_amount else 0
+        
+        # Ürün detaylarını güncelle
+        for i, claim_line_item_id in enumerate(claim_line_item_ids):
+            product = db_session.query(ReturnProduct).filter_by(claim_line_item_id=claim_line_item_id).first()
+            if product:
+                product.product_condition = product_conditions[i]
+                product.damage_description = damage_descriptions[i]
+                product.inspection_notes = inspection_notes[i]
+                product.return_to_stock = return_to_stock[i] == 'true'
+        
+        db_session.commit()
+        flash('İade başarıyla onaylandı ve detaylar kaydedildi.', 'success')
+        
+    except Exception as e:
+        db_session.rollback()
+        logger.error(f"İade onaylama sırasında hata: {e}")
+        flash('İade onaylama sırasında bir hata oluştu.', 'danger')
+    finally:
+        db_session.close()
+    
+    return redirect(url_for('iade_islemleri.iade_listesi'))
 
     url = f'https://api.trendyol.com/sapigw/claims/{claim_id}/items/approve'
     credentials = f'{API_KEY}:{API_SECRET}'

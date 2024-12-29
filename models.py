@@ -113,13 +113,18 @@ class ReturnOrder(Base):
     order_number = Column(String) 
     return_request_number = Column(String) 
     status = Column(String) 
-    return_date = Column(DateTime) 
+    return_date = Column(DateTime)
+    process_date = Column(DateTime)  # İşlem tarihi
     customer_first_name = Column(String) 
     customer_last_name = Column(String)
     cargo_tracking_number = Column(String)
     cargo_provider_name = Column(String)
     cargo_sender_number = Column(String)
     cargo_tracking_link = Column(String)
+    processed_by = Column(String)  # İşlemi yapan kullanıcı
+    notes = Column(String)  # Ek notlar
+    approval_reason = Column(String)  # Onay/red nedeni
+    refund_amount = Column(Float)  # İade edilecek tutar
 
 # İade ürünleri için veritabanı modeli 
 class ReturnProduct(Base):
@@ -133,7 +138,11 @@ class ReturnProduct(Base):
     color = Column(String)
     quantity = Column(Integer)
     reason = Column(String)
-    claim_line_item_id = Column(String)  # Yeni alan eklendi
+    claim_line_item_id = Column(String)
+    product_condition = Column(String)  # Ürün durumu (Hasarlı, Kullanılmış, Yeni gibi)
+    damage_description = Column(String)  # Hasar açıklaması
+    inspection_notes = Column(String)  # İnceleme notları
+    return_to_stock = Column(Boolean, default=False)  # Stoğa geri alınacak mı?
 
 
 
