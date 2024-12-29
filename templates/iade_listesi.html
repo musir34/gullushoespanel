@@ -169,35 +169,10 @@
                                 {% for product in claim.products %}
                                     <input type="hidden" name="claim_line_item_ids" value="{{ product.claim_line_item_id }}">
                                     <div class="mb-2">
-                                        <select name="product_conditions" class="form-select form-select-sm" required>
-                                            <option value="">Ürün Durumu</option>
-                                            <option value="Yeni">Yeni</option>
-                                            <option value="Hasarlı">Hasarlı</option>
-                                            <option value="Kullanılmış">Kullanılmış</option>
-                                        </select>
-                                        <input type="text" name="damage_descriptions" class="form-control form-control-sm mt-1" placeholder="Hasar Açıklaması">
-                                        <textarea name="inspection_notes" class="form-control form-control-sm mt-1" placeholder="İnceleme Notları"></textarea>
-                                        <div class="form-check mt-1">
-                                            <input type="checkbox" name="return_to_stock" class="form-check-input" value="true">
-                                            <label class="form-check-label">Stoğa Geri Al</label>
-                                        </div>
+                                        <strong>İade Nedeni:</strong> {{ product.reason }}<br>
+                                        <strong>Müşteri Açıklaması:</strong> {{ product.customer_explanation }}
                                     </div>
                                 {% endfor %}
-                                <input type="text" name="approval_reason" class="form-control form-control-sm mt-1" placeholder="Onay Nedeni" required>
-                                <select name="return_category" class="form-control form-control-sm mt-1" required>
-                                    <option value="">İade Kategorisi Seçin</option>
-                                    <option value="Ürün Kaynaklı">Ürün Kaynaklı</option>
-                                    <option value="Müşteri Kaynaklı">Müşteri Kaynaklı</option>
-                                    <option value="Kargo Kaynaklı">Kargo Kaynaklı</option>
-                                </select>
-                                <select name="return_reason" class="form-control form-control-sm mt-1" required>
-                                    <option value="">İade Nedeni Seçin</option>
-                                    <option value="Beden/Numara Uyumsuzluğu">Beden/Numara Uyumsuzluğu</option>
-                                    <option value="Ürün Hasarlı">Ürün Hasarlı</option>
-                                    <option value="Ürün Kalitesi Yetersiz">Ürün Kalitesi Yetersiz</option>
-                                    <option value="Yanlış Ürün Gönderimi">Yanlış Ürün Gönderimi</option>
-                                </select>
-                                <textarea name="customer_explanation" class="form-control form-control-sm mt-1" placeholder="Müşteri Açıklaması"></textarea>
                                 <input type="number" step="0.01" name="refund_amount" class="form-control form-control-sm mt-1" placeholder="İade Tutarı" required>
                                 <button class="btn btn-success btn-sm mt-2" type="submit">Onayla</button>
                             </form>
