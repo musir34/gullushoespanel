@@ -180,13 +180,18 @@ def process_all_orders(all_orders_data):
 
 
 def update_existing_order(existing_order, order_data, status):
+    """
+    Varolan sipariş kaydı üzerinde güncelleme yaparken
+    set() yerine liste kullandık ki tekrar eden ürünler de görünsün.
+    """
     try:
         new_lines = order_data['lines']
 
-        merchant_skus = set(existing_order.merchant_sku.split(', ')) if existing_order.merchant_sku else set()
-        product_barcodes = set(existing_order.product_barcode.split(', ')) if existing_order.product_barcode else set()
-        original_product_barcodes = set(existing_order.original_product_barcode.split(', ')) if existing_order.original_product_barcode else set()
-        line_ids = set(existing_order.line_id.split(', ')) if existing_order.line_id else set()
+        # Daha önce kaydedilmiş verileri liste olarak çek
+        merchant_skus = existing_order.merchant_sku.split(', ') if existing_order.merchant_sku else []
+        product_barcodes = existing_order.product_barcode.split(', ') if existing_order.product_barcode else []
+        original_product_barcodes = existing_order.original_product_barcode.split(', ') if existing_order.original_product_barcode else []
+        line_ids = existing_order.line_id.split(', ') if existing_order.line_id else []
 
         for line in new_lines:
             merchant_sku = line.get('merchantSku', '')
@@ -195,13 +200,13 @@ def update_existing_order(existing_order, order_data, status):
             line_id = str(line.get('id', ''))
 
             if merchant_sku:
-                merchant_skus.add(merchant_sku)
+                merchant_skus.append(merchant_sku)
             if barcode:
-                product_barcodes.add(barcode)
+                product_barcodes.append(barcode)
             if original_barcode:
-                original_product_barcodes.add(original_barcode)
+                original_product_barcodes.append(original_barcode)
             if line_id:
-                line_ids.add(line_id)
+                line_ids.append(line_id)
 
         existing_order.status = status
         existing_order.merchant_sku = ', '.join(merchant_skus)
@@ -245,6 +250,10 @@ def create_order_details(order_lines):
 
 
 def replace_turkish_characters(text):
+    """
+    Gelen barkod veya metinlerdeki Türkçe karakterleri başka karakterlerle değiştiren fonksiyon.
+    Sen kendi ihtiyacına göre düzenleyebilirsin.
+    """
     if isinstance(text, str):
         replacements = str.maketrans({
             'A': '1', 'a': '1', 'B': '2', 'b': '2', 'C': '3', 'c': '3',
@@ -263,6 +272,10 @@ def replace_turkish_characters(text):
 
 
 def combine_line_items(order_data, status):
+    """
+    Yeni sipariş eklenirken set() yerine liste mantığı kullanıyoruz ki
+    aynı üründen birden fazla sipariş varsa tamamı kaydedilsin.
+    """
     # Miktar bilgisini koruyarak barkodları işle
     barcodes_with_quantity = []
     for line in order_data['lines']:
@@ -270,7 +283,7 @@ def combine_line_items(order_data, status):
         quantity = line.get('quantity', 1)
         # Her miktar için barkodu tekrarla
         barcodes_with_quantity.extend([barcode] * quantity)
-    
+
     original_barcodes = barcodes_with_quantity
     converted_barcodes = [replace_turkish_characters(barcode) for barcode in original_barcodes]
 
@@ -280,34 +293,34 @@ def combine_line_items(order_data, status):
     combined_order = {
         'order_number': str(order_data.get('orderNumber', order_data['id'])),
         'order_date': datetime.utcfromtimestamp(order_data['orderDate'] / 1000) if order_data.get('orderDate') else None,
-        'merchant_sku': ', '.join(set(line.get('merchantSku', '') for line in order_data['lines'])),
-        'product_barcode': ', '.join(set(converted_barcodes)),
-        'original_product_barcode': ', '.join(set(original_barcodes)),
+        'merchant_sku': ', '.join([line.get('merchantSku', '') for line in order_data['lines']]),
+        'product_barcode': ', '.join(converted_barcodes),
+        'original_product_barcode': ', '.join(original_barcodes),
         'status': status,
-        'line_id': ', '.join(set(str(line.get('id', '')) for line in order_data['lines'])),
+        'line_id': ', '.join([str(line.get('id', '')) for line in order_data['lines']]),
         'match_status': '',
         'customer_name': order_data.get('shipmentAddress', {}).get('firstName', ''),
         'customer_surname': order_data.get('shipmentAddress', {}).get('lastName', ''),
         'customer_address': order_data.get('shipmentAddress', {}).get('fullAddress', ''),
         'shipping_barcode': order_data.get('cargoTrackingNumber', ''),
-        'product_name': ', '.join(set(line.get('productName', '') for line in order_data['lines'])),
-        'product_code': ', '.join(set(str(line.get('productCode', '')) for line in order_data['lines'])),
+        'product_name': ', '.join([line.get('productName', '') for line in order_data['lines']]),
+        'product_code': ', '.join([str(line.get('productCode', '')) for line in order_data['lines']]),
         'amount': sum(line.get('amount', 0) for line in order_data['lines']),
         'discount': sum(line.get('discount', 0) for line in order_data['lines']),
         'currency_code': order_data.get('currencyCode', 'TRY'),
         'vat_base_amount': sum(line.get('vatBaseAmount', 0) for line in order_data['lines']),
         'package_number': str(order_data.get('id', '')),
-        'stockCode': ', '.join(set(line.get('merchantSku', '') for line in order_data['lines'])),
+        'stockCode': ', '.join([line.get('merchantSku', '') for line in order_data['lines']]),
         'estimated_delivery_start': datetime.utcfromtimestamp(order_data.get('estimatedDeliveryStartDate', 0) / 1000) if order_data.get('estimatedDeliveryStartDate') else None,
         'images': '',
-        'product_model_code': ', '.join(set(line.get('merchantSku', '') for line in order_data['lines'])),
+        'product_model_code': ', '.join([line.get('merchantSku', '') for line in order_data['lines']]),
         'estimated_delivery_end': datetime.utcfromtimestamp(order_data.get('estimatedDeliveryEndDate', 0) / 1000) if order_data.get('estimatedDeliveryEndDate') else None,
         'origin_shipment_date': datetime.utcfromtimestamp(order_data.get('originShipmentDate', 0) / 1000) if order_data.get('originShipmentDate') else None,
-        'product_size': ', '.join(set(line.get('productSize', '') for line in order_data['lines'])),
-        'product_main_id': ', '.join(set(str(line.get('product_main_id', '')) for line in order_data['lines'])),
+        'product_size': ', '.join([line.get('productSize', '') for line in order_data['lines']]),
+        'product_main_id': ', '.join([str(line.get('product_main_id', '')) for line in order_data['lines']]),
         'cargo_provider_name': order_data.get('cargoProviderName', ''),
         'agreed_delivery_date': datetime.utcfromtimestamp(order_data.get('agreedDeliveryDate', 0) / 1000) if order_data.get('agreedDeliveryDate') else None,
-        'product_color': ', '.join(set(line.get('productColor', '') for line in order_data['lines'])),
+        'product_color': ', '.join([line.get('productColor', '') for line in order_data['lines']]),
         'cargo_tracking_link': order_data.get('cargoTrackingNumber', ''),
         'shipment_package_id': str(order_data.get('shipmentPackageId', '')),
         'details': json.dumps(order_details, ensure_ascii=False),
@@ -324,7 +337,7 @@ def combine_line_items(order_data, status):
 @order_service_bp.route('/order-list/new', methods=['GET'])
 def get_new_orders():
     page = request.args.get('page', 1, type=int)
-    per_page = 50
+    per_page = 100
 
     orders_query = Order.query.filter_by(status='Created').order_by(Order.order_date.desc())
     paginated_orders = orders_query.paginate(page=page, per_page=per_page, error_out=False)
@@ -343,11 +356,12 @@ def get_new_orders():
         total_orders_count=total_orders
     )
 
+
 # "İşleme Alındı" statüsündeki siparişleri filtreleyen fonksiyon
 @order_service_bp.route('/order-list/processed', methods=['GET'])
 def get_processed_orders():
     page = request.args.get('page', 1, type=int)
-    per_page = 50
+    per_page = 100
 
     orders_query = Order.query.filter_by(status='Picking').order_by(Order.order_date.desc())
     paginated_orders = orders_query.paginate(page=page, per_page=per_page, error_out=False)
@@ -366,11 +380,12 @@ def get_processed_orders():
         total_orders_count=total_orders
     )
 
+
 # "Teslim Edildi" statüsündeki siparişleri filtreleyen fonksiyon
 @order_service_bp.route('/order-list/delivered', methods=['GET'])
 def get_delivered_orders():
     page = request.args.get('page', 1, type=int)
-    per_page = 50
+    per_page = 100
 
     orders_query = Order.query.filter(Order.status.in_(['Delivered', 'Teslim Edildi'])).order_by(Order.order_date.desc())
     paginated_orders = orders_query.paginate(page=page, per_page=per_page, error_out=False)
@@ -389,11 +404,12 @@ def get_delivered_orders():
         total_orders_count=total_orders
     )
 
+
 # "Kargoya Verildi" statüsündeki siparişleri filtreleyen fonksiyon
 @order_service_bp.route('/order-list/shipped', methods=['GET'])
 def get_shipped_orders():
     page = request.args.get('page', 1, type=int)
-    per_page = 50
+    per_page = 100
 
     orders_query = Order.query.filter(Order.status.in_(['Shipped', 'Kargoya Verildi'])).order_by(Order.order_date.desc())
     paginated_orders = orders_query.paginate(page=page, per_page=per_page, error_out=False)
