@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="tr">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -55,14 +54,26 @@
             transform: translateY(-2px);
         }
 
+        /* Logo alanı */
+        .logo-container {
+            margin-top: 80px; /* Kullanıcı bilgisi ve butonların altında biraz boşluk */
+            text-align: center;
+        }
+
+        .logo-container img {
+            max-height: 80px;
+        }
+
         /* Sipariş Kartları */
         .order-container {
             display: flex;
             flex-wrap: wrap;
             gap: 20px;
             align-items: flex-start;
+            justify-content: center; /* Ortalamak istersen */
         }
 
+        /* 3 Sütun için col-md-4 kullandık */
         .card {
             width: 100%;
             max-width: 350px;
@@ -223,11 +234,11 @@
             color: white;
         }
 
-        /* Yeni Eklenen Stil - "Yazdır" Butonuna PNG Ekleme */
+        /* "Yazdır" Butonuna Yeni PNG Ekledik */
         .btn-warning-img {
             padding: 0;
-            width: 50px; /* Buton genişliğini isteğinize göre ayarlayabilirsiniz */
-            height: 50px; /* Buton yüksekliğini isteğinize göre ayarlayabilirsiniz */
+            width: 50px;
+            height: 50px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -236,28 +247,7 @@
         .btn-warning-img img {
             max-width: 100%;
             max-height: 100%;
-            border-radius: 10px; /* İsteğe bağlı: Köşeleri yuvarlama */
-        }
-
-        /* Adet Badgesi (Gri, Şeffaf Daire) */
-        .quantity-badge-container {
-            display: flex;
-            justify-content: center;
-            margin-bottom: 10px;
-        }
-
-        .quantity-badge {
-            display: inline-block;
-            width: 40px;
-            height: 40px;
-            line-height: 40px;
-            text-align: center;
-            border: 2px solid #888;
-            border-radius: 50%;
-            background-color: rgba(128, 128, 128, 0.2); /* Şeffaf gri arka plan */
-            color: #333;
-            font-weight: bold;
-            font-size: 1rem;
+            border-radius: 10px;
         }
 
         /* Responsive Ayarlar */
@@ -293,23 +283,28 @@
 </head>
 
 <body>
+    <!-- Kullanıcı Bilgisi -->
+    <div class="user-info">
+        Giriş Yapan: <strong>{{ session['first_name'] }} {{ session['last_name'] }}</strong>
+    </div>
+
+    <!-- Sağ Üst Köşedeki Butonlar -->
+    <div class="btn-group-top">
+        <form method="POST" action="{{ url_for('logout') }}">
+            <button type="submit" class="btn btn-danger">Çıkış Yap</button>
+        </form>
+        {% if session['role'] == 'admin' %}
+        <a href="{{ url_for('approve_users') }}" class="btn btn-warning">Kullanıcı Yönetimi</a>
+        {% endif %}
+        <a href="{{ url_for('home.home') }}" class="btn btn-secondary">Anasayfa</a>
+    </div>
+
+    <!-- Logo Ortada -->
+    <div class="logo-container">
+        <img src="/static/logo/gullu.png" alt="Güllü Logo">
+    </div>
+
     <div class="container">
-        <!-- Kullanıcı Bilgisi Sol Üstte -->
-        <div class="user-info">
-            Giriş Yapan: <strong>{{ session['first_name'] }} {{ session['last_name'] }}</strong>
-        </div>
-
-        <!-- Sağ Üst Köşede Butonlar -->
-        <div class="btn-group-top">
-            <form method="POST" action="{{ url_for('logout') }}">
-                <button type="submit" class="btn btn-danger">Çıkış Yap</button>
-            </form>
-            {% if session['role'] == 'admin' %}
-            <a href="{{ url_for('approve_users') }}" class="btn btn-warning">Kullanıcı Yönetimi</a>
-            {% endif %}
-            <a href="{{ url_for('home.home') }}" class="btn btn-secondary">Anasayfa</a>
-        </div>
-
         <!-- Sayfa Başlığı -->
         <div class="text-center mb-5">
             <h2>Sipariş Listesi</h2>
@@ -362,7 +357,8 @@
         <!-- Siparişlerin Listelendiği Kısım -->
         <div class="row order-container">
             {% for order in orders %}
-            <div class="col-md-6 col-lg-4">
+            <!-- 3 sütun için col-md-4 -->
+            <div class="col-sm-6 col-md-4 col-lg-4">
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-start">
                         <div>
@@ -400,6 +396,7 @@
                             </span>
                         </div>
                         <div>
+                            <!-- Kargo Yazdırma Butonu için yeni görsel -->
                             <form method="POST" action="{{ url_for('order_list_service.order_label') }}" target="_blank">
                                 <input type="hidden" name="order_number" value="{{ order.order_number }}">
                                 <input type="hidden" name="shipping_code" value="{{ order.shipping_barcode }}">
@@ -407,8 +404,8 @@
                                 <input type="hidden" name="customer_name" value="{{ order.customer_name }}">
                                 <input type="hidden" name="customer_surname" value="{{ order.customer_surname }}">
                                 <input type="hidden" name="customer_address" value="{{ order.customer_address }}">
-                                <button type="submit" class="cargo-button">
-                                    <img src="https://img.icons8.com/doodle/48/000000/delivery.png" class="truck-icon" alt="Kargo">
+                                <button type="submit" class="cargo-button btn-warning-img" style="border:none; background:none;">
+                                    <img src="/static/logo/kargo.png" class="truck-icon" alt="Kargo Yazdır">
                                 </button>
                             </form>
                             <button class="btn btn-secondary mt-2" onclick="showArchiveModal('{{ order.order_number }}')">Arşivle</button>
@@ -423,31 +420,21 @@
                         </h6>
                         {% endif %}
 
-                        <!-- Toplam Adet Dairesi -->
-                        <div class="quantity-badge-container">
-                            <span class="quantity-badge" title="Bu siparişte toplam adet">
-                                {% set total_quantity = 0 %}
-                                {% if order.processed_details %}
-                                    {% for detail in order.processed_details %}
-                                        {% set total_quantity = total_quantity + detail.quantity %}
-                                    {% endfor %}
-                                    {{ total_quantity }}
-                                {% else %}
-                                    {{ order.quantity if order.quantity else 0 }}
-                                {% endif %}
-                            </span>
-                        </div>
-
-                        <button class="btn btn-outline-primary w-100 toggle-details mt-3" data-bs-toggle="collapse" data-bs-target="#details-{{ loop.index }}" aria-expanded="false" aria-controls="details-{{ loop.index }}">
+                        <!-- Ürün Detayları Butonu -->
+                        <button class="btn btn-outline-primary w-100 toggle-details mt-3" 
+                                data-bs-toggle="collapse" 
+                                data-bs-target="#details-{{ loop.index }}" 
+                                aria-expanded="false" 
+                                aria-controls="details-{{ loop.index }}">
                             Ürün Detayları
                         </button>
+
+                        <!-- Detaylar Tablosu -->
                         <div id="details-{{ loop.index }}" class="collapse details-section mt-3">
                             <table class="table table-bordered">
                                 <thead>
                                     <tr>
                                         <th>Stok Kodu</th>
-                                        <th>Renk</th>
-                                        <th>Beden</th>
                                         <th>Ürün Barkodu</th>
                                         <th>Görsel</th>
                                         <th>Miktar</th>
@@ -456,24 +443,11 @@
                                 <tbody>
                                     {% for detail in order.processed_details %}
                                     <tr>
-                                        <!-- detail.sku yerine 'Stok Kodu' -->
                                         <td>{{ detail.sku }}</td>
-
-                                        <!-- Renk -->
-                                        <td>{{ detail.color }}</td>
-
-                                        <!-- Beden -->
-                                        <td>{{ detail.size }}</td>
-
-                                        <!-- Barkod -->
                                         <td>{{ detail.barcode }}</td>
-
-                                        <!-- Ürün Görseli -->
                                         <td>
                                             <img src="{{ detail.image_url }}" alt="Ürün Görseli" style="max-width: 100px;"/>
                                         </td>
-
-                                        <!-- Miktar -->
                                         <td><strong>{{ detail.quantity }}</strong></td>
                                     </tr>
                                     {% endfor %}
@@ -561,16 +535,13 @@
         }
 
         function showArchiveModal(order_number) {
-            // Sipariş numarasını modal içindeki input'a ekle
             document.getElementById('archiveOrderNumber').value = order_number;
-            // Modal penceresini aç
             var archiveModal = new bootstrap.Modal(document.getElementById('archiveModal'));
             archiveModal.show();
         }
 
-        // Arşivleme formunu yöneten kod
         $('#archiveForm').submit(function(event) {
-            event.preventDefault(); // Sayfanın yeniden yüklenmesini engelle
+            event.preventDefault();
             var order_number = $('#archiveOrderNumber').val();
             var archive_reason = $('#archiveReason').val();
 
@@ -579,13 +550,10 @@
                 return;
             }
 
-            // Sunucuya POST isteği gönder
             $.post('/archive_order', { order_number: order_number, archive_reason: archive_reason }, function(response) {
                 if (response.success) {
                     alert('Sipariş arşivlendi!');
-                    // Modalı kapat
                     $('#archiveModal').modal('hide');
-                    // Sayfayı yenile veya ana sayfaya yönlendir
                     window.location.href = '/';
                 } else {
                     alert('Sipariş arşivlenirken bir hata oluştu: ' + response.message);
@@ -595,12 +563,11 @@
             });
         });
 
-        // Kalan Süreyi Güncelleyen Fonksiyon
         function updateRemainingTime() {
             const remainingTimeElements = document.querySelectorAll('.remaining-time');
             const now = new Date();
             remainingTimeElements.forEach(element => {
-                const endTime = new Date(element.getAttribute('data-end-time') + "Z"); // Zulu zaman dilimi
+                const endTime = new Date(element.getAttribute('data-end-time') + "Z");
                 const timeDiff = endTime.getTime() - now.getTime();
                 if (timeDiff > 0) {
                     const totalMinutes = Math.floor(timeDiff / 60000);
@@ -611,22 +578,21 @@
                     if (days > 0) newTimeString += `${days} gün `;
                     if (hours > 0) newTimeString += `${hours} saat `;
                     newTimeString += `${minutes} dakika`;
-                    element.innerText = `${newTimeString}`;
-                    if (totalMinutes <= 600) { // 10 saatten az kaldıysa
+                    element.innerText = newTimeString;
+                    if (totalMinutes <= 600) {
                         element.classList.add('red');
                     } else {
                         element.classList.remove('red');
                     }
                 } else {
-                    element.innerText = `0 dakika`;
+                    element.innerText = '0 dakika';
                     element.classList.add('red');
                 }
             });
         }
 
-        setInterval(updateRemainingTime, 60000); // Her dakika güncelle
+        setInterval(updateRemainingTime, 60000);
         window.onload = updateRemainingTime;
     </script>
 </body>
-
 </html>

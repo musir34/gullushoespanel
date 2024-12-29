@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="tr">
-
 <head>
     <!-- Meta ve Stil Kodları -->
     <meta charset="UTF-8">
@@ -8,13 +7,25 @@
     <title>Anasayfa</title>
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+
     <style>
-        /* Genel Sayfa Ayarları */
+        /* Sayfa Düzeni */
         body {
-            background-color: #f5f5f5;
-            font-family: 'Roboto', sans-serif;
             margin: 0;
             padding: 0;
+            font-family: 'Roboto', sans-serif;
+            background-color: #f5f5f5;
+        }
+
+        /* Canvas tam ekran arkada */
+        #snowCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: -1; /* İçeriklerin arkasında olsun */
+            width: 100vw;
+            height: 100vh;
+            background: #2c3e50; /* Karanlık bir gece gökyüzü */
         }
 
         .container {
@@ -29,9 +40,16 @@
             z-index: 10;
             font-size: 14px;
             color: #333;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
-        /* Üstteki butonları sağ üst köşeye hizaladık */
+        .user-info img {
+            max-width: 100px; 
+            height: auto;
+        }
+
         .btn-group-top {
             position: fixed;
             top: 15px;
@@ -47,14 +65,12 @@
             font-size: 0.85rem;
             transition: all 0.3s ease;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            display: inline-block;
         }
 
         .btn:hover {
             transform: translateY(-2px);
         }
 
-        /* Sipariş kartları sol tarafa hizalı */
         .order-container {
             display: flex;
             flex-wrap: wrap;
@@ -94,7 +110,6 @@
             text-align: center;
         }
 
-        /* Form ve Input Alanları */
         .form-control {
             border-radius: 10px;
             padding: 8px;
@@ -102,7 +117,6 @@
             box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
         }
 
-        /* Barkod Uyarıları */
         .form-group {
             position: relative;
             margin-bottom: 35px;
@@ -139,7 +153,6 @@
             border: 1px solid #f5c6cb;
         }
 
-        /* Kopyalama İkonu */
         .copy-container {
             position: relative;
             cursor: pointer;
@@ -158,7 +171,6 @@
             display: inline-block;
         }
 
-        /* Alt Butonlar Sol Tarafa Hizalandı */
         .btn-bottom {
             max-width: 200px;
             margin: 10px 0;
@@ -179,7 +191,6 @@
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
         }
 
-        /* Modal Pencere Ayarları */
         .modal-content {
             border-radius: 15px;
             padding: 20px;
@@ -195,7 +206,6 @@
             justify-content: center;
         }
 
-        /* Responsive Ayarlar */
         @media (max-width: 768px) {
             .btn {
                 font-size: 0.8rem;
@@ -209,21 +219,27 @@
             .card-text {
                 font-size: 0.8rem;
             }
+
+            .user-info img {
+                max-width: 70px;
+            }
         }
     </style>
 </head>
 
 <body>
-    <!-- Kullanıcı bilgisi sol üstte -->
+    <!-- Canvas tabakası -->
+    <canvas id="snowCanvas"></canvas>
+
+    <!-- Kullanıcı bilgisi sol üstte + Logo -->
     <div class="user-info">
+        <img src="static/logo/gullu.png" alt="Güllü Shoes Logo">
         Giriş Yapan: <strong>{{ session['first_name'] }} {{ session['last_name'] }}</strong>
     </div>
 
     <!-- Sağ üst köşede butonlar -->
     <div class="btn-group-top">
-        <a href="{{ url_for('siparis_fisi_bp.siparis_fisi_sayfasi') }}" class="btn btn-primary">
-         Ürün Tedarik Sayfası
-        </a>
+        <a href="{{ url_for('siparis_fisi_bp.siparis_fisi_sayfasi') }}" class="btn btn-primary">Ürün Tedarik Sayfası</a>
         <a href="{{ url_for('approve_users') }}" class="btn btn-warning">Kullanıcı Yönetimi</a>
         <a href="{{ url_for('home.home') }}" class="btn btn-secondary">Anasayfa</a>
         <a href="{{ url_for('iade_listesi') }}" class="btn btn-secondary">İade Listesi</a>
@@ -241,7 +257,7 @@
         <form method="POST" action="{{ url_for('confirm_packing') }}" id="packingForm" autocomplete="off">
             <input type="hidden" name="order_number" value="{{ order_number }}">
 
-            <!-- Sipariş Kartları Sol Tarafa Hizalanmış -->
+            <!-- Sipariş Kartları -->
             <div class="order-container">
                 {% for product in products %}
                     <div class="col-sm-6 col-md-4 col-lg-2 col-xl-2">
@@ -250,12 +266,14 @@
                             <div class="card-body">
                                 <h5 class="card-title">{{ product.sku }}</h5>
                                 <p class="card-text">
+                                    <strong>Miktar:</strong> 
+                                    {{ product.quantity if product.quantity else 1 }}
+                                </p>
+                                <p class="card-text">
                                     <strong>Ürün Barkodu:</strong>
                                     <span id="productBarcode-{{ loop.index0 }}">{{ product.barcode }}</span>
                                     <span class="copy-container">
-                                        <span class="clipboard-icon" onclick="copyToClipboard('productBarcode-{{ loop.index0 }}', this)">
-                                            📋
-                                        </span>
+                                        <span class="clipboard-icon" onclick="copyToClipboard('productBarcode-{{ loop.index0 }}', this)">📋</span>
                                         <span class="copy-confirmation">✔️</span>
                                     </span>
                                 </p>
@@ -272,10 +290,10 @@
                             </div>
                         </div>
                     </div>
-                    {% endfor %}
-                </div>
+                {% endfor %}
+            </div>
 
-            <!-- Alt Butonlar Sol Tarafa Hizalandı -->
+            <!-- Alt Butonlar -->
             <div class="bottom-buttons">
                 <button type="submit" class="btn btn-primary btn-bottom disabled-btn" id="onaylaBtn" disabled>Paketlemeyi Onayla</button>
             </div>
@@ -343,143 +361,289 @@
             </div>
         </div>
 
-        <!-- JavaScript - Kopyalama ve Barkod Doğrulama -->
-        <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
-        <!-- Bootstrap JS -->
-        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.bundle.min.js"></script>
-        <script>
-            document.addEventListener('DOMContentLoaded', function () {
-                const barkodInputs = document.querySelectorAll('.barkod-input');
-                const onaylaBtn = document.getElementById('onaylaBtn');
-                const yazdirBtn = document.getElementById('yazdirBtn');
-                const yazdirForm = document.getElementById('yazdirForm');
-
-                // Ürün sayısını alıyoruz
-                const productCount = {{ products|length }};
-                let barkodDogruList = new Array(productCount).fill(false);
-
-                // İlk barkod alanına odaklan
-                if (barkodInputs.length > 0) {
-                    barkodInputs[0].focus();
-                }
-
-                barkodInputs.forEach((input, index) => {
-                    input.addEventListener('input', function () {
-                        const side = input.dataset.side;
-                        const productIndex = parseInt(input.dataset.productIndex);
-                        const expectedBarcode = document.getElementById(`expectedBarcode-${side}-${productIndex}`).value;
-                        const matchMessage = document.getElementById(`barkodMatchMessage-${side}-${productIndex}`);
-
-                        // Barkodları trim ile kontrol edelim ve log ekleyelim
-                        const inputValue = input.value.trim();
-                        const expectedValue = expectedBarcode.trim();
-                        console.log("Beklenen barkod:", expectedValue, "Girilen barkod:", inputValue);
-
-                        if (inputValue === expectedValue) {
-                            matchMessage.classList.remove('alert-danger');
-                            matchMessage.classList.add('alert-success', 'alert-show');
-                            matchMessage.textContent = `Barkod doğru!`;
-
-                            // Doğru ise bir sonraki barkod alanına odaklan
-                            const nextInput = barkodInputs[index + 1];
-                            if (nextInput) {
-                                setTimeout(() => nextInput.focus(), 100); // 100 ms gecikmeyle odaklan
-                            }
-                        } else {
-                            matchMessage.classList.remove('alert-success');
-                            matchMessage.classList.add('alert-danger', 'alert-show');
-                            matchMessage.textContent = `Barkod yanlış!`;
-                        }
-
-                        // Her ürün için sağ ve sol barkodların doğruluğunu kontrol edelim
-                        const rightInput = document.getElementById(`barkodInput-right-${productIndex}`);
-                        const leftInput = document.getElementById(`barkodInput-left-${productIndex}`);
-                        const expectedRight = document.getElementById(`expectedBarcode-right-${productIndex}`).value.trim();
-                        const expectedLeft = document.getElementById(`expectedBarcode-left-${productIndex}`).value.trim();
-
-                        if (rightInput.value.trim() === expectedRight && leftInput.value.trim() === expectedLeft) {
-                            // İki barkod da doğruysa, bu ürün için doğrulama tamam
-                            barkodDogruList[productIndex] = true;
-                        } else {
-                            barkodDogruList[productIndex] = false;
-                        }
-
-                        // Tüm ürünlerin barkodları doğruysa butonları etkinleştir ve zamanlayıcı başlat
-                        if (barkodDogruList.every(Boolean)) {
-                            onaylaBtn.classList.remove('disabled-btn');
-                            yazdirBtn.classList.remove('disabled-btn');
-                            onaylaBtn.disabled = false;
-                            yazdirBtn.disabled = false;
-
-                            setTimeout(() => {
-                                yazdirForm.submit();  // 5 saniye sonra yazdır
-                            }, 5000);
-
-                            setTimeout(() => {
-                                onaylaBtn.click();  // 15 saniye sonra onayla
-                            }, 15000);
-                        } else {
-                            onaylaBtn.classList.add('disabled-btn');
-                            yazdirBtn.classList.add('disabled-btn');
-                            onaylaBtn.disabled = true;
-                            yazdirBtn.disabled = true;
-                        }
-                    });
-                });
-            });
-
-            function copyToClipboard(elementId, element) {
-                const text = document.getElementById(elementId).innerText;
-                const tempInput = document.createElement('textarea');
-                tempInput.value = text;
-                document.body.appendChild(tempInput);
-                tempInput.select();
-                document.execCommand('copy');
-                document.body.removeChild(tempInput);
-
-                const confirmation = element.nextElementSibling;
-                confirmation.classList.add('show');
-                setTimeout(() => {
-                    confirmation.classList.remove('show');
-                }, 2000);
-            }
-
-            // Modal penceresini açan fonksiyon
-            function showArchiveModal(order_number) {
-                // Sipariş numarasını modal içindeki input'a ekle
-                document.getElementById('archiveOrderNumber').value = order_number;
-                // Modal penceresini aç
-                $('#archiveModal').modal('show');
-            }
-
-            // Arşivleme formunu yöneten kod
-            $('#archiveForm').submit(function(event) {
-                event.preventDefault(); // Sayfanın yeniden yüklenmesini engelle
-                var order_number = $('#archiveOrderNumber').val();
-                var archive_reason = $('#archiveReason').val();
-
-                if (!archive_reason) {
-                    alert('Lütfen bir sebep seçin.');
-                    return;
-                }
-
-                // Sunucuya POST isteği gönder
-                $.post('/archive_order', { order_number: order_number, archive_reason: archive_reason }, function(response) {
-                    if (response.success) {
-                        alert('Sipariş arşivlendi!');
-                        // Modalı kapat
-                        $('#archiveModal').modal('hide');
-                        // Sayfayı yenile veya ana sayfaya yönlendir
-                        window.location.href = '/';
-                    } else {
-                        alert('Sipariş arşivlenirken bir hata oluştu: ' + response.message);
-                    }
-                }).fail(function() {
-                    alert('Sipariş arşivlenirken bir hata oluştu.');
-                });
-            });
-        </script>
+        <!-- Bootstrap Toast (Güzel Mesaj) -->
+        <div class="toast" id="archiveSuccessToast" role="alert" aria-live="assertive" aria-atomic="true" 
+            data-delay="2000" 
+            style="position: fixed; top: 20px; right: 20px; z-index: 9999;">
+            <div class="toast-header">
+                <strong class="mr-auto text-success">Başarılı</strong>
+                <small>Şimdi</small>
+                <button type="button" class="ml-2 mb-1 close" data-dismiss="toast" aria-label="Kapat">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="toast-body">
+                Sipariş arşivlendi!
+            </div>
+        </div>
     </div>
-</body>
 
+    <!-- JS Kütüphaneleri -->
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Gelişmiş Kar Yağma Sistemi (Canvas) -->
+    <script>
+    // Canvas ayarı
+    const canvas = document.getElementById('snowCanvas');
+    const ctx = canvas.getContext('2d');
+
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    // Kar taneleri ve zemin
+    let snowflakes = [];
+    let ground = [];
+
+    // Ayarlar
+    const maxFlakes = 250; // Ekranda aynı anda uçuşacak kar tanesi sayısı
+    const cleanInterval = 10 * 60 * 1000; // 10 dakika
+    let lastCleanTime = performance.now();
+
+    // Rüzgar ayarları
+    let windActive = false;
+    let windStartTime = 0;
+    let windDuration = 0;
+    let nextWindTime = randomRange(4*60*1000, 5*60*1000); // ilk rüzgar için 4-5 dk rastgele
+
+    // Basit yardımcı fonksiyon
+    function randomRange(min, max) {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    // Kar tanesi oluştur
+    function createSnowflake() {
+        return {
+            x: Math.random() * canvas.width,
+            y: -10,
+            radius: 2 + Math.random() * 3,
+            speed: 0.5 + Math.random() * 1.5,  // Farklı hızlarda
+            drift: (Math.random() - 0.5) * 0.5, // X ekseninde küçük kayma
+        };
+    }
+
+    function addSnowflake() {
+        if (snowflakes.length < maxFlakes) {
+            snowflakes.push(createSnowflake());
+        }
+    }
+
+    // Kar tanesi zemine ulaştıysa ground dizisine ekleyip sabitliyoruz
+    function settleFlake(flake) {
+        ground.push({
+            x: flake.x,
+            y: flake.y,
+            radius: flake.radius
+        });
+    }
+
+    // Her 10 dakikada zemini sıfırlayalım
+    function checkCleanup(now) {
+        if (now - lastCleanTime >= cleanInterval) {
+            ground = [];
+            lastCleanTime = now;
+        }
+    }
+
+    // Rüzgar kontrol
+    function checkWind(now) {
+        // Rüzgarı başlatma
+        if (!windActive && now >= nextWindTime) {
+            windActive = true;
+            windStartTime = now;
+            windDuration = randomRange(10000, 15000); // 10-15 sn rüzgar
+        }
+        // Rüzgar devam mı bitiyor mu
+        if (windActive) {
+            if (now - windStartTime > windDuration) {
+                windActive = false;
+                // Bir sonraki rüzgar için yine 4-5 dk rastgele at
+                nextWindTime = now + randomRange(4*60*1000, 5*60*1000);
+            }
+        }
+    }
+
+    // Ana animasyon
+    function animate() {
+        requestAnimationFrame(animate);
+        const now = performance.now();
+
+        // Temizlik
+        checkCleanup(now);
+        // Rüzgar kontrol
+        checkWind(now);
+
+        // Yeni kar tanesi ekle
+        addSnowflake();
+
+        // Temizle
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Zemindeki karı çiz
+        ctx.fillStyle = "#ecf0f1";
+        ground.forEach(g => {
+            ctx.beginPath();
+            ctx.arc(g.x, g.y, g.radius, 0, 2*Math.PI);
+            ctx.fill();
+        });
+
+        // Kar tanelerini hareket ettir
+        snowflakes.forEach((flake) => {
+            // Rüzgar varsa x ekseni hızını biraz artır
+            const windForce = windActive ? (Math.random() * 1.5) : 0;
+            flake.x += flake.drift + windForce;
+            flake.y += flake.speed;
+
+            // Ekrandan çıktıysa veya zemine ulaştıysa
+            if (flake.y >= canvas.height - flake.radius) {
+                // Zemine sabitle
+                flake.y = canvas.height - flake.radius;
+                settleFlake(flake);
+
+                // Bu taneyi sıfırla (yukarıdan yeni doğsun)
+                Object.assign(flake, createSnowflake());
+            } 
+            else if (flake.x > canvas.width + flake.radius ||
+                     flake.x < -flake.radius) {
+                // Yanlardan çıktıysa da yeniden yarat
+                Object.assign(flake, createSnowflake());
+            }
+
+            // Kar tanesini çiz
+            ctx.beginPath();
+            ctx.arc(flake.x, flake.y, flake.radius, 0, 2*Math.PI);
+            ctx.fillStyle = "#ecf0f1";
+            ctx.fill();
+        });
+    }
+
+    // Çizim başlasın
+    animate();
+    </script>
+
+    <!-- Mevcut Barkod, Toast vb. kodlar -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const barkodInputs = document.querySelectorAll('.barkod-input');
+            const onaylaBtn = document.getElementById('onaylaBtn');
+            const yazdirBtn = document.getElementById('yazdirBtn');
+            const yazdirForm = document.getElementById('yazdirForm');
+
+            const productCount = {{ products|length }};
+            let barkodDogruList = new Array(productCount).fill(false);
+
+            // İlk input'a odaklansın
+            if (barkodInputs.length > 0) {
+                barkodInputs[0].focus();
+            }
+
+            barkodInputs.forEach((input, index) => {
+                input.addEventListener('input', function () {
+                    const side = input.dataset.side;
+                    const productIndex = parseInt(input.dataset.productIndex);
+                    const expectedBarcode = document.getElementById(`expectedBarcode-${side}-${productIndex}`).value;
+                    const matchMessage = document.getElementById(`barkodMatchMessage-${side}-${productIndex}`);
+                    const inputValue = input.value.trim();
+                    const expectedValue = expectedBarcode.trim();
+
+                    if (inputValue === expectedValue) {
+                        matchMessage.classList.remove('alert-danger');
+                        matchMessage.classList.add('alert-success', 'alert-show');
+                        matchMessage.textContent = 'Barkod doğru!';
+
+                        const nextInput = barkodInputs[index + 1];
+                        if (nextInput) {
+                            setTimeout(() => nextInput.focus(), 100);
+                        }
+                    } else {
+                        matchMessage.classList.remove('alert-success');
+                        matchMessage.classList.add('alert-danger', 'alert-show');
+                        matchMessage.textContent = 'Barkod yanlış!';
+                    }
+
+                    const rightInput = document.getElementById(`barkodInput-right-${productIndex}`);
+                    const leftInput = document.getElementById(`barkodInput-left-${productIndex}`);
+                    const expectedRight = document.getElementById(`expectedBarcode-right-${productIndex}`).value.trim();
+                    const expectedLeft = document.getElementById(`expectedBarcode-left-${productIndex}`).value.trim();
+
+                    if (rightInput.value.trim() === expectedRight && leftInput.value.trim() === expectedLeft) {
+                        barkodDogruList[productIndex] = true;
+                    } else {
+                        barkodDogruList[productIndex] = false;
+                    }
+
+                    if (barkodDogruList.every(Boolean)) {
+                        onaylaBtn.classList.remove('disabled-btn');
+                        yazdirBtn.classList.remove('disabled-btn');
+                        onaylaBtn.disabled = false;
+                        yazdirBtn.disabled = false;
+
+                        setTimeout(() => {
+                            yazdirForm.submit();  // 5 saniye sonra yazdır
+                        }, 5000);
+
+                        setTimeout(() => {
+                            onaylaBtn.click();  // 15 saniye sonra onayla
+                        }, 15000);
+                    } else {
+                        onaylaBtn.classList.add('disabled-btn');
+                        yazdirBtn.classList.add('disabled-btn');
+                        onaylaBtn.disabled = true;
+                        yazdirBtn.disabled = true;
+                    }
+                });
+            });
+        });
+
+        function copyToClipboard(elementId, element) {
+            const text = document.getElementById(elementId).innerText;
+            const tempInput = document.createElement('textarea');
+            tempInput.value = text;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempInput);
+
+            const confirmation = element.nextElementSibling;
+            confirmation.classList.add('show');
+            setTimeout(() => {
+                confirmation.classList.remove('show');
+            }, 2000);
+        }
+
+        function showArchiveModal(order_number) {
+            document.getElementById('archiveOrderNumber').value = order_number;
+            $('#archiveModal').modal('show');
+        }
+
+        $('#archiveForm').submit(function(event) {
+            event.preventDefault();
+            var order_number = $('#archiveOrderNumber').val();
+            var archive_reason = $('#archiveReason').val();
+
+            if (!archive_reason) {
+                alert('Lütfen bir sebep seçin.');
+                return;
+            }
+
+            $.post('/archive_order', { order_number: order_number, archive_reason: archive_reason }, function(response) {
+                if (response.success) {
+                    $('#archiveModal').modal('hide');
+                    $('#archiveSuccessToast').toast('show');
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 2000);
+                } else {
+                    alert('Sipariş arşivlenirken hata: ' + response.message);
+                }
+            }).fail(function() {
+                alert('Sipariş arşivlenirken bir hata oluştu.');
+            });
+        });
+    </script>
+</body>
 </html>
