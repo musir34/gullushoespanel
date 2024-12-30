@@ -218,7 +218,7 @@ def fetch_orders_from_api():
         print(f"API'den siparişler çekilirken hata oluştu: {response.status_code} - {response.text}")
         return []
 
-def update_package_to_picking(supplier_id, package_id, lines):
+def update_package_to_picking(supplier_id, package_id, line_id, quantity):
     url = f"{BASE_URL}suppliers/{supplier_id}/shipment-packages/{package_id}"
 
     headers = {
@@ -226,22 +226,11 @@ def update_package_to_picking(supplier_id, package_id, lines):
         "Authorization": f"Basic {base64.b64encode(f'{API_KEY}:{API_SECRET}'.encode()).decode()}"
     }
 
-    # Her line için line_id kontrolü
-    validated_lines = []
-    for line in lines:
-        line_id = line.get('lineId') or line.get('line_id')
-        if line_id:
-            validated_lines.append({
-                "lineId": int(line_id),
-                "quantity": int(line.get('quantity', 1))
-            })
-
-    if not validated_lines:
-        print("Geçerli line_id bulunamadı")
-        return False
-
     payload = {
-        "lines": validated_lines,
+        "lines": [{
+            "lineId": line_id,
+            "quantity": quantity
+        }],
         "params": {},
         "status": "Picking"
     }
