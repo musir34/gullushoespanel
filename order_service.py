@@ -265,6 +265,11 @@ def create_order_details(order_lines):
 
             if key not in details_dict:
                 # Yeni kayıt
+                line_id = line.get('id') or line.get('lineId')  # Try both possible fields
+                if line_id is None:
+                    print(f"Warning: No line_id found in line data: {line}")
+                    continue
+                    
                 details_dict[key] = {
                     'barcode': barcode,
                     'converted_barcode': replace_turkish_characters(barcode),
@@ -276,7 +281,7 @@ def create_order_details(order_lines):
                     'quantity': quantity,
                     'total_price': amount * quantity,
                     'image_url': '',
-                    'line_id': str(line.get('id', ''))
+                    'line_id': str(line_id)
                 }
             else:
                 # Mevcut kayıt, miktarı ekle
