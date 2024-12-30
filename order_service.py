@@ -282,7 +282,8 @@ def create_order_details(order_lines):
                     'quantity': quantity,
                     'total_price': amount * quantity,
                     'image_url': '',
-                    'line_id': str(line.get('id')) if line.get('id') else str(line.get('lineId', ''))
+                    'line_id': str(line.get('id') or line.get('lineId', '')),
+                    'shipmentPackageId': line.get('shipmentPackageId', '')
                 }
             else:
                 # Mevcut kayıt, miktarı ekle
