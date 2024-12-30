@@ -275,7 +275,8 @@ def create_order_details(order_lines):
                     'productCode': product_code,
                     'quantity': quantity,
                     'total_price': amount * quantity,
-                    'image_url': ''
+                    'image_url': '',
+                    'line_id': str(line.get('id', ''))
                 }
             else:
                 # Mevcut kayıt, miktarı ekle
