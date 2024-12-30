@@ -1,0 +1,26 @@
+INFO:root:Sipariş detayları: [{"barcode": "0799653335972", "converted_barcode": "0799653335972", "color": "Kırmızı", "size": "36", "sku": "099-36 Red", "productName": "Stiletto Kırmızı Kadın Topuklu Ayakkabı Konforlu Vegan Deri Günlük Ve Özel Gün 099, 36", "productCode": "722951637", "quantity": 1, "total_price": 768.71, "image_url": "", "total_quantity": 1}]
+INFO:werkzeug:172.31.196.29 - - [30/Dec/2024 08:48:51] "GET / HTTP/1.1" 200 -
+INFO:werkzeug:172.31.196.29 - - [30/Dec/2024 08:48:51] "GET /static/logo/gullu.png HTTP/1.1" 304 -
+INFO:werkzeug:172.31.196.29 - - [30/Dec/2024 08:48:52] "GET /static/images/0799653335972.jpg HTTP/1.1" 304 -
+Received order_number: 9894468391
+Received barcodes: ['0799653335972', '0799653335972']
+Received barcodes (repr): ["'0799653335972'", "'0799653335972'"]
+Parsed details: [{'barcode': '0799653335972', 'converted_barcode': '0799653335972', 'color': 'Kırmızı', 'size': '36', 'sku': '099-36 Red', 'productName': 'Stiletto Kırmızı Kadın Topuklu Ayakkabı Konforlu Vegan Deri Günlük Ve Özel Gün 099, 36', 'productCode': '722951637', 'quantity': 1, 'total_price': 768.71, 'image_url': '', 'total_quantity': 1}]
+Shipment Package IDs: {'2658254850'}
+Processing detail: {'barcode': '0799653335972', 'converted_barcode': '0799653335972', 'color': 'Kırmızı', 'size': '36', 'sku': '099-36 Red', 'productName': 'Stiletto Kırmızı Kadın Topuklu Ayakkabı Konforlu Vegan Deri Günlük Ve Özel Gün 099, 36', 'productCode': '722951637', 'quantity': 1, 'total_price': 768.71, 'image_url': '', 'total_quantity': 1}
+Adding 2 copies of barcode: 0799653335972
+Expected barcodes after processing details: ['0799653335972', '0799653335972']
+Expected barcodes (repr): ["'0799653335972'", "'0799653335972'"]
+Comparing received barcodes (2): ['0799653335972', '0799653335972']
+With expected barcodes (2): ['0799653335972', '0799653335972']
+Barcodes match.
+Updated order status to 'Picking' for order_number: 9894468391
+Supplier ID: 481286, Shipment Package IDs: {'2658254850'}
+Detail line_id: None, quantity: 1, shipmentPackageId: 2658254850
+'line_id' değeri bulunamadı.
+INFO:werkzeug:172.31.196.29 - - [30/Dec/2024 08:48:59] "POST /confirm_packing HTTP/1.1" 302 -
+INFO:root:En eski 'Created' statüsündeki sipariş işleniyor.
+INFO:root:Sipariş detayları: [{"barcode": "85556223", "converted_barcode": "85556223", "color": "Siyah-Süet", "size": "38", "sku": "259-38 Siyah-Süet", "productName": "Kadın Topuklu Ayakkabı Siyah Süet Stiletto Konforlu Vegan Deri Mat - Özel Gün Ve Günlük Kullanım 259, 38", "productCode": "971383088", "quantity": 1, "total_price": 671.55, "image_url": "", "total_quantity": 1}]
+INFO:werkzeug:172.31.196.29 - - [30/Dec/2024 08:49:00] "GET / HTTP/1.1" 200 -
+INFO:werkzeug:172.31.196.29 - - [30/Dec/2024 08:49:00] "GET /static/logo/gullu.png HTTP/1.1" 304 -
+INFO:werkzeug:172.31.196.29 - - [30/Dec/2024 08:49:00] "GET /static/images/85556223.jpg HTTP/1.1" 304 -
