@@ -256,6 +256,7 @@ def create_order_details(order_lines):
             product_code = str(line.get('productCode', ''))
             quantity = int(line.get('quantity', 1))
             amount = float(line.get('amount', 0))
+            line_id = line.get('id') or line.get('lineId')  # lineId veya id'den birini al
 
             # Toplam miktarı güncelle
             total_quantity += quantity
@@ -281,7 +282,7 @@ def create_order_details(order_lines):
                     'quantity': quantity,
                     'total_price': amount * quantity,
                     'image_url': '',
-                    'line_id': str(line_id)
+                    'line_id': str(line.get('id')) if line.get('id') else str(line.get('lineId', ''))
                 }
             else:
                 # Mevcut kayıt, miktarı ekle
