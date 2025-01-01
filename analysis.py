@@ -41,10 +41,10 @@ def analysis_page():
     seasonal_order_trends = seasonal_counts
     hour_based_orders = hour_counts
     # Müşteri analizi
-    from sqlalchemy import func, distinct
+    from sqlalchemy import func, distinct, text
     total_customers = db.session.query(func.count(distinct(Order.customer_name))).scalar()
     new_customers = db.session.query(func.count(distinct(Order.customer_name))).filter(
-        Order.order_date >= func.now() - func.interval('3 months')
+        Order.order_date >= func.now() - text('interval \'3 months\'')
     ).scalar()
     
     new_customers_ratio = new_customers / total_customers if total_customers > 0 else 0
