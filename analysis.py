@@ -14,37 +14,64 @@ def analysis_page():
     # ---------------------------------------------------
     # 1) Genel Bakış (Dashboard)
     # ---------------------------------------------------
-    seasonal_order_trends = {
-        'yaz': 1200,
-        'kis': 900,
-        'ilkbahar': 750,
-        'sonbahar': 800
-    }
-    hour_based_orders = {
-        '00-06': 50,
-        '06-12': 300,
-        '12-18': 500,
-        '18-24': 400
-    }
-    new_customers_ratio = 0.30   # %30
-    existing_customers_ratio = 0.70  # %70
+    # Mevsimsel sipariş trendleri
+    seasons = {1:'kis', 2:'kis', 3:'ilkbahar', 4:'ilkbahar', 5:'ilkbahar', 
+               6:'yaz', 7:'yaz', 8:'yaz', 9:'sonbahar', 10:'sonbahar', 
+               11:'sonbahar', 12:'kis'}
+    
+    orders = db.session.query(Order).all()
+    seasonal_counts = {'yaz': 0, 'kis': 0, 'ilkbahar': 0, 'sonbahar': 0}
+    hour_counts = {'00-06': 0, '06-12': 0, '12-18': 0, '18-24': 0}
+    
+    for order in orders:
+        if order.order_date:
+            season = seasons[order.order_date.month]
+            seasonal_counts[season] += 1
+            
+            hour = order.order_date.hour
+            if 0 <= hour < 6:
+                hour_counts['00-06'] += 1
+            elif 6 <= hour < 12:
+                hour_counts['06-12'] += 1
+            elif 12 <= hour < 18:
+                hour_counts['12-18'] += 1
+            else:
+                hour_counts['18-24'] += 1
 
-    # Kar oranı örneği
-    total_revenue = 50000
-    total_cost = 30000
-    if total_revenue > 0:
-        profit_ratio = (total_revenue - total_cost) / total_revenue * 100
-    else:
-        profit_ratio = 0
+    seasonal_order_trends = seasonal_counts
+    hour_based_orders = hour_counts
+    # Müşteri analizi
+    from sqlalchemy import func, distinct
+    total_customers = db.session.query(func.count(distinct(Order.customer_email))).scalar()
+    new_customers = db.session.query(func.count(distinct(Order.customer_email))).filter(
+        Order.order_date >= func.now() - func.interval('3 months')
+    ).scalar()
+    
+    new_customers_ratio = new_customers / total_customers if total_customers > 0 else 0
+    existing_customers_ratio = 1 - new_customers_ratio
+
+    # Finansal analiz
+    total_revenue = db.session.query(func.sum(Order.total_amount)).scalar() or 0
+    total_cost = total_revenue * 0.6  # Örnek maliyet oranı
+    profit_ratio = ((total_revenue - total_cost) / total_revenue * 100) if total_revenue > 0 else 0
 
     # ---------------------------------------------------
     # 2) Sipariş Analizi
     # ---------------------------------------------------
-    cancelled_orders_count = 100
+    # İptal analizi
+    cancelled_orders = db.session.query(Order).filter(Order.status == 'Cancelled').all()
+    cancelled_orders_count = len(cancelled_orders)
+    
+    cancelled_products = {}
+    for order in cancelled_orders:
+        if order.merchant_sku:
+            skus = order.merchant_sku.split(', ')
+            for sku in skus:
+                cancelled_products[sku] = cancelled_products.get(sku, 0) + 1
+    
     most_cancelled_products = [
-        {'product_name': 'Sistem Ürünü #1 (Barkod:1001, Renk:Siyah, Beden:37)', 'cancel_count': 10},
-        {'product_name': 'Sistem Ürünü #2 (Barkod:1002, Renk:Beyaz, Beden:38)', 'cancel_count': 8},
-        {'product_name': 'Sistem Ürünü #3 (Barkod:1003, Renk:Lacivert, Beden:36)', 'cancel_count': 6},
+        {'product_name': sku, 'cancel_count': count} 
+        for sku, count in sorted(cancelled_products.items(), key=lambda x: x[1], reverse=True)[:3]
     ]
     cancellation_reasons = {
         'Numara Uyumsuzluğu': 40,
