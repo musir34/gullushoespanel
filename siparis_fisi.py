@@ -317,8 +317,14 @@ def siparis_fisi_olustur():
 
     if request.method == "POST":
         # Get model code and color from form
-        model_code = request.form.get("model_code")
-        selected_color = request.form.get("color")
+        model_codes = request.form.getlist("model_codes[]")
+        colors = request.form.getlist("colors[]")
+        total_adet = 0
+        total_fiyat = 0
+        
+        for i in range(len(model_codes)):
+            model_code = model_codes[i]
+            selected_color = colors[i]
         
         if not model_code:
             return jsonify({"mesaj": "Model kodu gerekli!"}), 400
