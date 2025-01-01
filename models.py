@@ -57,27 +57,27 @@ class SiparisFisi(db.Model):
     
 
 # İade siparişleri için veritabanı modeli 
-class ReturnOrder(db.Model): 
+class ReturnOrder(Base): 
     __tablename__ = 'return_orders' 
-    id = db.Column(PG_UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    order_number = db.Column(db.String) 
-    return_request_number = db.Column(db.String) 
-    status = db.Column(db.String) 
-    return_date = db.Column(db.DateTime)
-    process_date = db.Column(db.DateTime)  # İşlem tarihi
-    customer_first_name = db.Column(db.String) 
-    customer_last_name = db.Column(db.String)
-    cargo_tracking_number = db.Column(db.String)
-    cargo_provider_name = db.Column(db.String)
-    cargo_sender_number = db.Column(db.String)
-    cargo_tracking_link = db.Column(db.String)
-    processed_by = db.Column(db.String)  # İşlemi yapan kullanıcı
-    return_reason = db.Column(db.String)  # İade nedeni (Beden/Numara Uyumsuzluğu, Ürün Hasarlı, vs.)
-    customer_explanation = db.Column(db.String)  # Müşteri açıklaması
-    return_category = db.Column(db.String)  # İade kategorisi (Ürün Kaynaklı, Müşteri Kaynaklı, vs.)
-    notes = db.Column(db.String)  # Ek notlar
-    approval_reason = db.Column(db.String)  # Onay/red nedeni
-    refund_amount = db.Column(db.Float)  # İade edilecek tutar
+    id = Column(PG_UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    order_number = Column(String) 
+    return_request_number = Column(String) 
+    status = Column(String) 
+    return_date = Column(DateTime)
+    process_date = Column(DateTime)  # İşlem tarihi
+    customer_first_name = Column(String) 
+    customer_last_name = Column(String)
+    cargo_tracking_number = Column(String)
+    cargo_provider_name = Column(String)
+    cargo_sender_number = Column(String)
+    cargo_tracking_link = Column(String)
+    processed_by = Column(String)  # İşlemi yapan kullanıcı
+    return_reason = Column(String)  # İade nedeni (Beden/Numara Uyumsuzluğu, Ürün Hasarlı, vs.)
+    customer_explanation = Column(String)  # Müşteri açıklaması
+    return_category = Column(String)  # İade kategorisi (Ürün Kaynaklı, Müşteri Kaynaklı, vs.)
+    notes = Column(String)  # Ek notlar
+    approval_reason = Column(String)  # Onay/red nedeni
+    refund_amount = Column(Float)  # İade edilecek tutar
 
 # İade ürünleri için veritabanı modeli 
 class ReturnProduct(Base):
