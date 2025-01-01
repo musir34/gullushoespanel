@@ -239,6 +239,8 @@ def teslimat_kaydi_ekle(siparis_id):
         # Yeni kaydı ekle
         yeni_kayit = {
             "tarih": datetime.now().strftime("%Y-%m-%d %H:%M"),
+            "model_code": model_code,
+            "color": color,
             "beden_35": beden_35,
             "beden_36": beden_36,
             "beden_37": beden_37,

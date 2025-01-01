@@ -17,6 +17,7 @@
     input[type="number"] { width: 60px; padding: 5px; }
     button { background: #007bff; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; }
     button:hover { background: #0056b3; }
+    .remaining { color: #666; font-size: 0.9em; }
   </style>
 </head>
 <body>
@@ -50,16 +51,6 @@
         <td>{{ kalem.beden_40 }}</td>
         <td>{{ kalem.beden_41 }}</td>
       </tr>
-      <tr>
-        <td>Barkod</td>
-        <td>{{ kalem.barkodlar.get('35', '-') }}</td>
-        <td>{{ kalem.barkodlar.get('36', '-') }}</td>
-        <td>{{ kalem.barkodlar.get('37', '-') }}</td>
-        <td>{{ kalem.barkodlar.get('38', '-') }}</td>
-        <td>{{ kalem.barkodlar.get('39', '-') }}</td>
-        <td>{{ kalem.barkodlar.get('40', '-') }}</td>
-        <td>{{ kalem.barkodlar.get('41', '-') }}</td>
-      </tr>
     </table>
 
     <p>Çift Başı Fiyat: {{ "%.2f"|format(kalem.cift_basi_fiyat) }} TL</p>
@@ -69,13 +60,24 @@
     <!-- Her model/renk için ayrı teslimat formu -->
     <div class="delivery-form">
       <h3>Teslimat Ekle</h3>
+      {% set teslim_edilen = {'35': 0, '36': 0, '37': 0, '38': 0, '39': 0, '40': 0, '41': 0} %}
+      {% if fis.teslim_kayitlari %}
+        {% set kayitlar = fis.teslim_kayitlari|json_loads %}
+        {% for kayit in kayitlar if kayit.model_code == kalem.model_code and kayit.color == kalem.color %}
+          {% for size in range(35, 42) %}
+            {% set _ = teslim_edilen.update({size|string: teslim_edilen[size|string] + kayit['beden_' ~ size]}) %}
+          {% endfor %}
+        {% endfor %}
+      {% endif %}
+
       <form action="{{ url_for('siparis_fisi_bp.teslimat_kaydi_ekle', siparis_id=fis.siparis_id) }}" method="POST">
         <input type="hidden" name="model_code" value="{{ kalem.model_code }}">
         <input type="hidden" name="color" value="{{ kalem.color }}">
         <div class="form-group">
           {% for size in range(35, 42) %}
-          <label>Beden {{ size }}:</label>
-          <input type="number" name="beden_{{ size }}" value="0" min="0">
+          {% set kalan = kalem['beden_' ~ size] - teslim_edilen[size|string] %}
+          <label>Beden {{ size }} (Kalan: {{ kalan }}):</label>
+          <input type="number" name="beden_{{ size }}" value="0" min="0" max="{{ kalan }}">
           {% endfor %}
           <button type="submit">Teslimat Ekle</button>
         </div>
