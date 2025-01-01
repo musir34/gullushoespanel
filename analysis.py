@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template
-from sqlalchemy import func
-from models import db, Order, Archive, Degisim, SiparisFisi
+from sqlalchemy import func, or_
+from models import db, Order, Archive, Degisim, SiparisFisi, Product
 from models import ReturnOrder, ReturnProduct  # Base ile tanımlanan
 
 analysis_bp = Blueprint('analysis_bp', __name__)
@@ -51,7 +51,7 @@ def analysis_page():
     existing_customers_ratio = 1 - new_customers_ratio
 
     # Finansal analiz
-    total_revenue = db.session.query(func.sum(Order.total_amount)).scalar() or 0
+    total_revenue = db.session.query(func.sum(Order.amount)).scalar() or 0
     total_cost = total_revenue * 0.6  # Örnek maliyet oranı
     profit_ratio = ((total_revenue - total_cost) / total_revenue * 100) if total_revenue > 0 else 0
 
