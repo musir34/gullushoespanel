@@ -17,6 +17,7 @@ class SiparisFisi(db.Model):
     siparis_id = db.Column(db.Integer, primary_key=True)
     urun_model_kodu = db.Column(db.String(255))
     renk = db.Column(db.String(100))
+    kalemler_json = db.Column(db.Text, default='[]')  # Her renk için ayrı kayıt
 
     # Yeni barkod alanları
     barkod_35 = db.Column(db.String(100))

@@ -1,120 +1,37 @@
+
 <!DOCTYPE html>
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
   <title>Fiş Detayı</title>
   <style>
-    /* Basit stiller */
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0; padding: 0; 
-      background: #f9f9f9;
-    }
-    .container {
-      width: 90%;
-      max-width: 900px;
-      margin: 20px auto;
-      background: #fff;
-      padding: 20px;
-      border-radius: 6px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-bottom: 15px;
-    }
-    th, td {
-      padding: 8px 10px;
-      border-bottom: 1px solid #ddd;
-      text-align: left;
-    }
-    th {
-      background-color: #f0f0f0;
-    }
-    tr:nth-child(even) { 
-      background-color: #fafafa; 
-    }
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f9f9f9; }
+    .container { width: 90%; max-width: 900px; margin: 20px auto; background: #fff; padding: 20px; border-radius: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
+    th, td { padding: 8px 10px; border-bottom: 1px solid #ddd; text-align: left; }
+    th { background-color: #f0f0f0; }
+    tr:nth-child(even) { background-color: #fafafa; }
+    .model-section { margin-bottom: 30px; padding: 15px; border: 1px solid #ddd; border-radius: 4px; }
+    .delivery-form { margin-top: 15px; padding: 15px; background: #f5f5f5; border-radius: 4px; }
+    .form-group { margin-bottom: 10px; }
+    input[type="number"] { width: 60px; padding: 5px; }
+    button { background: #007bff; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; }
+    button:hover { background: #0056b3; }
   </style>
 </head>
 <body>
 <div class="container">
   <h1>Fiş Detayı</h1>
-
-  <!-- Çoklu Model mi, Tek Model mi kontrolü -->
-  {% if fis.kalemler_json %}
-    <!-- ÇOKLU MODEL GÖRÜNÜMÜ -->
-    {% set kalemler = fis.kalemler_json | json_loads %}
-    <h2>Çoklu Model Bilgileri</h2>
+  
+  {% set kalemler = fis.kalemler_json|json_loads %}
+  {% for kalem in kalemler %}
+  <div class="model-section">
+    <h2>Model: {{ kalem.model_code }} - Renk: {{ kalem.color }}</h2>
+    
+    <!-- Model Detayları -->
     <table>
-      <thead>
-        <tr>
-          <th>Model Kodu</th>
-          <th>Renk</th>
-          <th>35</th>
-          <th>36</th>
-          <th>37</th>
-          <th>38</th>
-          <th>39</th>
-          <th>40</th>
-          <th>41</th>
-          <th>Fiyat</th>
-          <th>Toplam Adet</th>
-          <th>Satır Tutarı</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for kalem in kalemler %}
-          <tr>
-            <td>{{ kalem.model_code }}</td>
-            <td>{{ kalem.color }}</td>
-            <td>{{ kalem.beden_35 }}</td>
-            <td>{{ kalem.beden_36 }}</td>
-            <td>{{ kalem.beden_37 }}</td>
-            <td>{{ kalem.beden_38 }}</td>
-            <td>{{ kalem.beden_39 }}</td>
-            <td>{{ kalem.beden_40 }}</td>
-            <td>{{ kalem.beden_41 }}</td>
-            <td>{{ "%.2f"|format(kalem.cift_basi_fiyat) }}</td>
-            <td>{{ kalem.satir_toplam_adet }}</td>
-            <td>{{ "%.2f"|format(kalem.satir_toplam_fiyat) }}</td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-
-    <!-- Genel Özet Bilgiler -->
-    <h3>Toplam Adet: {{ fis.toplam_adet }}</h3>
-    <h3>Kalan Adet: {{ fis.kalan_adet }}</h3>
-    <h3>Toplam Fiyat: {{ "%.2f"|format(fis.toplam_fiyat) }} TL</h3>
-
-  {% else %}
-    <!-- TEK MODEL GÖRÜNÜMÜ -->
-    <h2>Tek Model Bilgileri</h2>
-    <table>
-      <tr><th>Fiş ID</th>         <td>{{ fis.siparis_id }}</td></tr>
-      <tr><th>Model Kodu</th>    <td>{{ fis.urun_model_kodu }}</td></tr>
-      <tr><th>Renk</th>          <td>{{ fis.renk }}</td></tr>
-      <tr><th>Beden 35</th>      <td>{{ fis.beden_35 }}</td></tr>
-      <tr><th>Beden 36</th>      <td>{{ fis.beden_36 }}</td></tr>
-      <tr><th>Beden 37</th>      <td>{{ fis.beden_37 }}</td></tr>
-      <tr><th>Beden 38</th>      <td>{{ fis.beden_38 }}</td></tr>
-      <tr><th>Beden 39</th>      <td>{{ fis.beden_39 }}</td></tr>
-      <tr><th>Beden 40</th>      <td>{{ fis.beden_40 }}</td></tr>
-      <tr><th>Beden 41</th>      <td>{{ fis.beden_41 }}</td></tr>
-      <tr><th>Çift Fiyat</th>    <td>{{ "%.2f"|format(fis.cift_basi_fiyat) }} TL</td></tr>
-      <tr><th>Toplam Adet</th>   <td>{{ fis.toplam_adet }}</td></tr>
-      <tr><th>Kalan Adet</th>    <td>{{ fis.kalan_adet }}</td></tr>
-      <tr><th>Toplam Fiyat</th>  <td>{{ "%.2f"|format(fis.toplam_fiyat) }} TL</td></tr>
-    </table>
-  {% endif %}
-
-  <!-- Teslimat Bilgileri -->
-  <h2>Teslimat Kayıtları</h2>
-  <table>
-    <thead>
       <tr>
-        <th>Tarih</th>
+        <th>Beden</th>
         <th>35</th>
         <th>36</th>
         <th>37</th>
@@ -122,43 +39,90 @@
         <th>39</th>
         <th>40</th>
         <th>41</th>
-        <th>Toplam</th>
       </tr>
-    </thead>
-    <tbody>
-    {% set kayitlar = fis.teslim_kayitlari | json_loads %}
-    {% if kayitlar %}
-      {% for kayit in kayitlar %}
+      <tr>
+        <td>Adet</td>
+        <td>{{ kalem.beden_35 }}</td>
+        <td>{{ kalem.beden_36 }}</td>
+        <td>{{ kalem.beden_37 }}</td>
+        <td>{{ kalem.beden_38 }}</td>
+        <td>{{ kalem.beden_39 }}</td>
+        <td>{{ kalem.beden_40 }}</td>
+        <td>{{ kalem.beden_41 }}</td>
+      </tr>
+      <tr>
+        <td>Barkod</td>
+        <td>{{ kalem.barkodlar.get('35', '-') }}</td>
+        <td>{{ kalem.barkodlar.get('36', '-') }}</td>
+        <td>{{ kalem.barkodlar.get('37', '-') }}</td>
+        <td>{{ kalem.barkodlar.get('38', '-') }}</td>
+        <td>{{ kalem.barkodlar.get('39', '-') }}</td>
+        <td>{{ kalem.barkodlar.get('40', '-') }}</td>
+        <td>{{ kalem.barkodlar.get('41', '-') }}</td>
+      </tr>
+    </table>
+
+    <p>Çift Başı Fiyat: {{ "%.2f"|format(kalem.cift_basi_fiyat) }} TL</p>
+    <p>Toplam Adet: {{ kalem.satir_toplam_adet }}</p>
+    <p>Toplam Tutar: {{ "%.2f"|format(kalem.satir_toplam_fiyat) }} TL</p>
+
+    <!-- Her model/renk için ayrı teslimat formu -->
+    <div class="delivery-form">
+      <h3>Teslimat Ekle</h3>
+      <form action="{{ url_for('siparis_fisi_bp.teslimat_kaydi_ekle', siparis_id=fis.siparis_id) }}" method="POST">
+        <input type="hidden" name="model_code" value="{{ kalem.model_code }}">
+        <input type="hidden" name="color" value="{{ kalem.color }}">
+        <div class="form-group">
+          {% for size in range(35, 42) %}
+          <label>Beden {{ size }}:</label>
+          <input type="number" name="beden_{{ size }}" value="0" min="0">
+          {% endfor %}
+          <button type="submit">Teslimat Ekle</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Teslimat Kayıtları -->
+    {% if fis.teslim_kayitlari %}
+    {% set teslimler = fis.teslim_kayitlari|json_loads %}
+    <h3>Teslimat Geçmişi</h3>
+    <table>
+      <thead>
         <tr>
-          <td>{{ kayit.tarih }}</td>
-          <td>{{ kayit.beden_35 }}</td>
-          <td>{{ kayit.beden_36 }}</td>
-          <td>{{ kayit.beden_37 }}</td>
-          <td>{{ kayit.beden_38 }}</td>
-          <td>{{ kayit.beden_39 }}</td>
-          <td>{{ kayit.beden_40 }}</td>
-          <td>{{ kayit.beden_41 }}</td>
-          <td>{{ kayit.toplam }}</td>
+          <th>Tarih</th>
+          <th>35</th>
+          <th>36</th>
+          <th>37</th>
+          <th>38</th>
+          <th>39</th>
+          <th>40</th>
+          <th>41</th>
+          <th>Toplam</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for teslim in teslimler if teslim.model_code == kalem.model_code and teslim.color == kalem.color %}
+        <tr>
+          <td>{{ teslim.tarih }}</td>
+          <td>{{ teslim.beden_35 }}</td>
+          <td>{{ teslim.beden_36 }}</td>
+          <td>{{ teslim.beden_37 }}</td>
+          <td>{{ teslim.beden_38 }}</td>
+          <td>{{ teslim.beden_39 }}</td>
+          <td>{{ teslim.beden_40 }}</td>
+          <td>{{ teslim.beden_41 }}</td>
+          <td>{{ teslim.toplam }}</td>
         </tr>
       {% endfor %}
-    {% else %}
-      <tr><td colspan="9" style="text-align:center;">Henüz teslimat kaydı yok.</td></tr>
+      </tbody>
+    </table>
     {% endif %}
-    </tbody>
-  </table>
+  </div>
+  {% endfor %}
 
-  <!-- Teslimat Ekleme Formu -->
-  <form action="{{ url_for('siparis_fisi_bp.teslimat_kaydi_ekle', siparis_id=fis.siparis_id) }}" method="POST">
-    <input type="number" name="beden_35" placeholder="Beden 35">
-    <input type="number" name="beden_36" placeholder="Beden 36">
-    <input type="number" name="beden_37" placeholder="Beden 37">
-    <input type="number" name="beden_38" placeholder="Beden 38">
-    <input type="number" name="beden_39" placeholder="Beden 39">
-    <input type="number" name="beden_40" placeholder="Beden 40">
-    <input type="number" name="beden_41" placeholder="Beden 41">
-    <button type="submit">Teslimat Ekle</button>
-  </form>
-
+  <h3>Genel Toplam: {{ "%.2f"|format(fis.toplam_fiyat) }} TL</h3>
+  <h3>Toplam Adet: {{ fis.toplam_adet }}</h3>
+  <h3>Kalan Adet: {{ fis.kalan_adet }}</h3>
 </div>
 </body>
 </html>

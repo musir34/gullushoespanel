@@ -219,6 +219,9 @@ def teslimat_kaydi_ekle(siparis_id):
 
         if not fis.teslim_kayitlari:
             fis.teslim_kayitlari = "[]"
+
+        model_code = request.form.get("model_code")
+        color = request.form.get("color")
             
         beden_35 = int(request.form.get("beden_35", 0))
         beden_36 = int(request.form.get("beden_36", 0))
