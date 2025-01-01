@@ -121,7 +121,7 @@ def process_all_orders(all_orders_data):
         # Mevcut siparişleri ve arşivdeki siparişleri al
         existing_orders = Order.query.all()
         existing_orders_dict = {order.order_number: order for order in existing_orders}
-        
+
         # Arşivdeki siparişleri kontrol et
         archived_orders = Archive.query.all()
         archived_orders_dict = {order.order_number: order for order in archived_orders}
@@ -136,7 +136,7 @@ def process_all_orders(all_orders_data):
                 if existing_order.status == 'Delivered':
                     # 'Delivered' siparişleri güncellemiyoruz
                     continue
-                # Siparişi güncelle
+                # Var olan siparişi güncelle
                 update_existing_order(existing_order, order_data, order_status)
             elif order_number not in archived_orders_dict:
                 # Sipariş arşivde değilse yeni sipariş olarak ekle
@@ -151,7 +151,7 @@ def process_all_orders(all_orders_data):
 
         db.session.commit()
 
-        # Veritabanında olmayan siparişleri sil, ancak 'Delivered' siparişleri silme
+        # Veritabanında olmayan siparişleri sil, ancak 'Delivered' olanları silme
         existing_order_numbers = set(existing_orders_dict.keys())
         orders_to_delete_numbers = existing_order_numbers - api_order_numbers
 
@@ -162,7 +162,6 @@ def process_all_orders(all_orders_data):
                 Order.status == 'Delivered'
             ).all()
             delivered_order_numbers = {order.order_number for order in delivered_orders}
-            # Silinecek sipariş numaralarını güncelle
             orders_to_delete_numbers = orders_to_delete_numbers - delivered_order_numbers
 
             if orders_to_delete_numbers:
@@ -191,14 +190,12 @@ def update_existing_order(existing_order, order_data, status):
     try:
         new_lines = order_data['lines']
 
-        # Daha önce kaydedilmiş verileri liste olarak çek
         merchant_skus = existing_order.merchant_sku.split(', ') if existing_order.merchant_sku else []
         product_barcodes = existing_order.product_barcode.split(', ') if existing_order.product_barcode else []
         original_product_barcodes = existing_order.original_product_barcode.split(', ') if existing_order.original_product_barcode else []
         line_ids = existing_order.line_id.split(', ') if existing_order.line_id else []
 
-        # Toplam adet toplanacak
-        total_qty = 0
+        total_qty = 0  # Toplam adet toplanacak
 
         for line in new_lines:
             q = line.get('quantity', 1)
@@ -222,14 +219,14 @@ def update_existing_order(existing_order, order_data, status):
             if line_id:
                 line_ids.append(line_id)
 
-        # Veritabanındaki sütunları güncelle
+        # Veritabanını güncelle
         existing_order.status = status
         existing_order.merchant_sku = ', '.join(merchant_skus)
         existing_order.product_barcode = ', '.join(product_barcodes)
         existing_order.original_product_barcode = ', '.join(original_product_barcodes)
         existing_order.line_id = ', '.join(line_ids)
 
-        # Yeni eklenen kod: Sipariş detaylarını güncelle
+        # Sipariş detaylarını güncelle (eski create_order_details’e benzer şekilde)
         order_details = create_order_details(new_lines)
         existing_order.details = json.dumps(order_details, ensure_ascii=False)
 
@@ -242,59 +239,26 @@ def update_existing_order(existing_order, order_data, status):
         traceback.print_exc()
 
 
+# ESKİ KODDAKİ line_id MANTIĞI
 def create_order_details(order_lines):
-    details_dict = {}  # dict: (barkod, color, size) -> detail
-    total_quantity = 0  # Toplam miktar takibi
-
+    """
+    Eski kod: Yalnızca line.get('id') ile line_id alınıyor.
+    """
+    details = []
     for line in order_lines:
-        try:
-            barcode = line.get('barcode', '')
-            product_color = line.get('productColor', '')
-            product_size = line.get('productSize', '')
-            merchant_sku = line.get('merchantSku', '')
-            product_name = line.get('productName', '')
-            product_code = str(line.get('productCode', ''))
-            quantity = int(line.get('quantity', 1))
-            amount = float(line.get('amount', 0))
-
-            # Toplam miktarı güncelle
-            total_quantity += quantity
-
-            # Anahtar oluştur: (barkod, color, size)
-            key = (barcode, product_color, product_size)
-
-            if key not in details_dict:
-                # Yeni kayıt
-                details_dict[key] = {
-                    'barcode': barcode,
-                    'converted_barcode': replace_turkish_characters(barcode),
-                    'color': product_color,
-                    'size': product_size,
-                    'sku': merchant_sku,
-                    'productName': product_name,
-                    'productCode': product_code,
-                    'quantity': quantity,
-                    'total_price': amount * quantity,
-                    'image_url': '',
-                    'line_id': str(line.get('id', ''))
-                }
-            else:
-                # Mevcut kayıt, miktarı ekle
-                details_dict[key]['quantity'] += quantity
-                details_dict[key]['total_price'] += amount * quantity
-
-        except Exception as e:
-            logger.error(f"Sipariş detayı oluşturulurken hata: {e}")
-            continue
-
-    # Her bir siparişin total_quantity değerini details içine ekle
-    for detail in details_dict.values():
-        detail['total_quantity'] = total_quantity
-
-    # Sözlüğü liste olarak döndür
-    return list(details_dict.values())
-
-
+        detail = {
+            'line_id': str(line.get('id', '')),  # Sadece 'id' kullanıyoruz
+            'sku': line.get('merchantSku', ''),
+            'barcode': replace_turkish_characters(line.get('barcode', '')),
+            'original_barcode': line.get('barcode', ''),
+            'productName': line.get('productName', ''),
+            'productCode': str(line.get('productCode', '')),
+            'quantity': int(line.get('quantity', 1)),
+            'productSize': line.get('productSize', ''),
+            'productColor': line.get('productColor', ''),
+        }
+        details.append(detail)
+    return details
 
 
 def replace_turkish_characters(text):
@@ -322,7 +286,7 @@ def replace_turkish_characters(text):
 def combine_line_items(order_data, status):
     # Miktar bilgisini koruyarak barkodları işle
     barcodes_with_quantity = []
-    total_qty = 0  # Toplam adet için
+    total_qty = 0
     for line in order_data['lines']:
         barcode = line.get('barcode', '')
         quantity = line.get('quantity', 1)
@@ -338,7 +302,7 @@ def combine_line_items(order_data, status):
     original_barcodes = barcodes_with_quantity
     converted_barcodes = [replace_turkish_characters(bc) for bc in original_barcodes]
 
-    # Sipariş detaylarını oluştur
+    # Sipariş detaylarını oluştur (yine eski create_order_details fonksiyonunu kullanarak)
     order_details = create_order_details(order_data['lines'])
 
     combined_order = {
@@ -377,7 +341,7 @@ def combine_line_items(order_data, status):
         'details': json.dumps(order_details, ensure_ascii=False),
         'archive_date': None,
         'archive_reason': '',
-        # Yeni eklenen kolon verisi:
+        # Yeni eklenen kolon:
         'quantity': total_qty
     }
     return combined_order
