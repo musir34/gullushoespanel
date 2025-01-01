@@ -1,13 +1,11 @@
+
 <!DOCTYPE html>
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
     <title>Sipariş Fişi</title>
     <style>
-        @page {
-            size: A5;
-            margin: 10mm;
-        }
+        @page { size: A4; margin: 10mm; }
         body {
             font-family: Arial, sans-serif;
             margin: 0;
@@ -15,10 +13,10 @@
             background: white;
         }
         .fis-container {
-            width: 148mm;
-            min-height: 210mm;
+            width: 210mm;
             padding: 10mm;
             box-sizing: border-box;
+            page-break-after: always;
         }
         .fis-header {
             text-align: center;
@@ -30,30 +28,20 @@
             max-width: 100px;
             height: auto;
         }
-        .info-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-            margin-bottom: 20px;
-            border: 1px solid #000;
-            padding: 10px;
+        .model-section {
+            margin-bottom: 30px;
+            border: 1px solid #ccc;
+            padding: 15px;
+            border-radius: 5px;
         }
-        .info-item {
-            display: flex;
-            border-bottom: 1px dotted #ccc;
-            padding: 5px 0;
-        }
-        .info-label {
-            font-weight: bold;
-            width: 120px;
-            color: #333;
-        }
-        .info-value {
-            flex: 1;
+        .model-header {
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
         }
         .beden-table {
             width: 100%;
-            margin: 20px 0;
+            margin: 10px 0;
             border-collapse: collapse;
         }
         .beden-table th, .beden-table td {
@@ -64,101 +52,83 @@
         .beden-table th {
             background-color: #f0f0f0;
         }
-        .fis-toplam {
-            margin-top: 20px;
-            border-top: 2px solid #000;
-            padding-top: 10px;
+        .toplam {
+            margin-top: 15px;
             text-align: right;
             font-weight: bold;
         }
-        .fis-toplam div {
-            margin: 5px 0;
-        }
-
-        /* --- Renkli Nokta İçin CSS Başlangıcı --- */
-        /* Normalde gizle */
         .print-indicator {
             display: none;
             width: 8px;
             height: 8px;
             border-radius: 50%;
-            position: absolute; /* Dilerseniz konum sabitlemek için */
+            position: absolute;
             top: 10px;
             right: 10px;
         }
-        /* Yalnızca yazdırırken göster */
         @media print {
-            .print-indicator {
-                display: block;
-            }
+            .print-indicator { display: block; }
         }
-        /* Tekli olduğu için yeşil nokta */
         .single-print {
             background-color: green;
         }
-        /* --- Renkli Nokta İçin CSS Sonu --- */
     </style>
 </head>
 <body>
-    <!-- Yeşil nokta göstergesi (tekli) -->
     <div class="print-indicator single-print"></div>
 
     <div class="fis-container">
         <div class="fis-header">
             <img src="{{ url_for('static', filename='logo/gullu.png') }}" alt="Logo">
             <h2>Sipariş Fişi</h2>
+            <div>Fiş No: {{ fis.siparis_id }}</div>
+            <div>Tarih: {{ fis.created_date.strftime('%d/%m/%Y %H:%M') if fis.created_date else 'Belirtilmemiş' }}</div>
         </div>
 
-        <div class="info-grid">
-            <div class="info-item">
-                <span class="info-label">Fiş No:</span>
-                <span class="info-value">{{ fis.siparis_id }}</span>
+        {% set kalemler = fis.kalemler_json|json_loads %}
+        {% for kalem in kalemler %}
+        <div class="model-section">
+            <div class="model-header">
+                <strong>Model:</strong> {{ kalem.model_code }}
+                <strong>Renk:</strong> {{ kalem.color }}
             </div>
-            <div class="info-item">
-                <span class="info-label">Model Kodu:</span>
-                <span class="info-value">{{ fis.urun_model_kodu }}</span>
-            </div>
-            <div class="info-item">
-                <span class="info-label">Renk:</span>
-                <span class="info-value">{{ fis.renk }}</span>
-            </div>
-            <div class="info-item">
-                <span class="info-label">Tarih:</span>
-                <span class="info-value">{{ fis.created_date.strftime('%d/%m/%Y %H:%M') if fis.created_date else 'Belirtilmemiş' }}</span>
-            </div>
-            <div class="info-item">
-                <span class="info-label">Yazdırma Tarihi:</span>
-                <span class="info-value">{{ fis.print_date.strftime('%d/%m/%Y %H:%M') if fis.print_date else 'Yazdırılmamış' }}</span>
+
+            <table class="beden-table">
+                <tr>
+                    <th>Beden</th>
+                    <th>35</th>
+                    <th>36</th>
+                    <th>37</th>
+                    <th>38</th>
+                    <th>39</th>
+                    <th>40</th>
+                    <th>41</th>
+                </tr>
+                <tr>
+                    <td>Adet</td>
+                    <td>{{ kalem.beden_35 }}</td>
+                    <td>{{ kalem.beden_36 }}</td>
+                    <td>{{ kalem.beden_37 }}</td>
+                    <td>{{ kalem.beden_38 }}</td>
+                    <td>{{ kalem.beden_39 }}</td>
+                    <td>{{ kalem.beden_40 }}</td>
+                    <td>{{ kalem.beden_41 }}</td>
+                </tr>
+            </table>
+
+            <div class="toplam">
+                <div>Çift Başı Fiyat: {{ "%.2f"|format(kalem.cift_basi_fiyat) }} TL</div>
+                <div>Toplam Adet: {{ kalem.satir_toplam_adet }}</div>
+                <div>Satır Toplamı: {{ "%.2f"|format(kalem.satir_toplam_fiyat) }} TL</div>
             </div>
         </div>
+        {% endfor %}
 
-        <table class="beden-table">
-            <tr>
-                <th>Beden</th>
-                <th>35</th>
-                <th>36</th>
-                <th>37</th>
-                <th>38</th>
-                <th>39</th>
-                <th>40</th>
-                <th>41</th>
-            </tr>
-            <tr>
-                <td>Adet</td>
-                <td>{{ fis.beden_35 }}</td>
-                <td>{{ fis.beden_36 }}</td>
-                <td>{{ fis.beden_37 }}</td>
-                <td>{{ fis.beden_38 }}</td>
-                <td>{{ fis.beden_39 }}</td>
-                <td>{{ fis.beden_40 }}</td>
-                <td>{{ fis.beden_41 }}</td>
-            </tr>
-        </table>
-
-        <div class="fis-toplam">
-            <div>Çift Başı Fiyat: {{ "%.2f"|format(fis.cift_basi_fiyat) }} TL</div>
-            <div>Toplam Adet: {{ fis.toplam_adet }}</div>
-            <div>Toplam Tutar: {{ "%.2f"|format(fis.toplam_fiyat) }} TL</div>
+        <div style="border-top: 2px solid #000; padding-top: 15px; margin-top: 30px;">
+            <div style="text-align: right; font-weight: bold; font-size: 1.2em;">
+                <div>Toplam Adet: {{ fis.toplam_adet }}</div>
+                <div>Genel Toplam: {{ "%.2f"|format(fis.toplam_fiyat) }} TL</div>
+            </div>
         </div>
     </div>
 
