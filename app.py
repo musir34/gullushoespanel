@@ -27,6 +27,10 @@ try:
 except Exception as e:
     logger.error(f"Veritabanı bağlantı hatası: {e}")
     engine = None
+    
+    with app.app_context():
+        # Eğer tablo yoksa oluştur (development için)
+        db.create_all()
 
 # Session nesnesini uygulama context'ine ekleyelim
 app.config['Session'] = Session
@@ -48,7 +52,7 @@ from new_orders_service import new_orders_service_bp
 from processed_orders_service import processed_orders_service_bp
 from iade_islemleri import iade_islemleri, fetch_data_from_api, save_to_database  # iade_islemleri'nden import ettiğimizi varsayıyorum
 from siparis_fisi import siparis_fisi_bp
-from analysis_service import analysis_bp
+from analysis import analysis_bp
 
 blueprints = [
     order_service_bp,

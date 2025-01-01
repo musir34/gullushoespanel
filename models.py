@@ -1,15 +1,13 @@
-from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
-from sqlalchemy import create_engine, Column, String, DateTime, ForeignKey, Integer, Float, Boolean
+from sqlalchemy import create_engine, Column, String, DateTime, ForeignKey, Integer, Float, Boolean, Text
 from sqlalchemy.ext.declarative import declarative_base
+from datetime import datetime
 import uuid
-
 
 db = SQLAlchemy()
 Base = declarative_base()
 
-# Sipariş Fişi
 # Sipariş Fişi
 class SiparisFisi(db.Model):
     __tablename__ = 'siparis_fisi'
@@ -54,32 +52,30 @@ class SiparisFisi(db.Model):
     image_url = db.Column(db.String)
 
 
-    
-
-# İade siparişleri için veritabanı modeli 
-class ReturnOrder(Base): 
-    __tablename__ = 'return_orders' 
+# İade siparişleri (Base kullanıyor!)
+class ReturnOrder(Base):
+    __tablename__ = 'return_orders'
     id = Column(PG_UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    order_number = Column(String) 
-    return_request_number = Column(String) 
-    status = Column(String) 
+    order_number = Column(String)
+    return_request_number = Column(String)
+    status = Column(String)
     return_date = Column(DateTime)
     process_date = Column(DateTime)  # İşlem tarihi
-    customer_first_name = Column(String) 
+    customer_first_name = Column(String)
     customer_last_name = Column(String)
     cargo_tracking_number = Column(String)
     cargo_provider_name = Column(String)
     cargo_sender_number = Column(String)
     cargo_tracking_link = Column(String)
     processed_by = Column(String)  # İşlemi yapan kullanıcı
-    return_reason = Column(String)  # İade nedeni (Beden/Numara Uyumsuzluğu, Ürün Hasarlı, vs.)
+    return_reason = Column(String)  # İade nedeni (Beden/Numara Uyumsuzluğu, vs.)
     customer_explanation = Column(String)  # Müşteri açıklaması
     return_category = Column(String)  # İade kategorisi (Ürün Kaynaklı, Müşteri Kaynaklı, vs.)
     notes = Column(String)  # Ek notlar
     approval_reason = Column(String)  # Onay/red nedeni
     refund_amount = Column(Float)  # İade edilecek tutar
 
-# İade ürünleri için veritabanı modeli 
+# İade ürünleri (Base kullanıyor!)
 class ReturnProduct(Base):
     __tablename__ = 'return_products'
     id = Column(PG_UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -98,7 +94,6 @@ class ReturnProduct(Base):
     return_to_stock = Column(Boolean, default=False)  # Stoğa geri alınacak mı?
 
 
-
 # Kullanıcı Modeli
 class User(db.Model):
     __tablename__ = 'users'
@@ -113,7 +108,7 @@ class User(db.Model):
     totp_secret = db.Column(db.String(16))  # 16 karakterlik base32 string
     totp_confirmed = db.Column(db.Boolean, default=False)
 
-# Modellerin tanımlanması
+# Sipariş Modeli
 class Order(db.Model):
     __tablename__ = 'orders'
 
@@ -153,11 +148,7 @@ class Order(db.Model):
     details = db.Column(db.Text)  # JSON formatında saklanacak
     archive_date = db.Column(db.DateTime)
     archive_reason = db.Column(db.String)
-    quantity = db.Column(db.Integer)  # adet
-    
-
-
-
+    quantity = db.Column(db.Integer)
 
 class Product(db.Model):
     __tablename__ = 'products'
@@ -199,9 +190,6 @@ class Product(db.Model):
         self.sale_price = sale_price
         self.list_price = list_price
         self.currency_type = currency_type
-
-
-
 
 # Arşiv Modeli
 class Archive(db.Model):
@@ -246,7 +234,6 @@ class Archive(db.Model):
 
     def __repr__(self):
         return f"<Archive {self.order_number}>"
-        
 
 # Değişim Modeli
 class Degisim(db.Model):
