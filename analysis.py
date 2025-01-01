@@ -44,7 +44,7 @@ def analysis_page():
     from sqlalchemy import func, distinct, text
     total_customers = db.session.query(func.count(distinct(Order.customer_name))).scalar()
     new_customers = db.session.query(func.count(distinct(Order.customer_name))).filter(
-        Order.order_date >= func.now() - text('interval \'3 months\'')
+        Order.order_date >= func.now() - text("interval '3 months'")
     ).scalar()
     
     new_customers_ratio = new_customers / total_customers if total_customers > 0 else 0
