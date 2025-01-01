@@ -80,137 +80,464 @@ def analysis_page():
         'Model Değişikliği': 12,
         'Diğer': 8
     }
+    # Sipariş aşamaları analizi
+    cancelled_before_shipping = db.session.query(func.count(Order.id)).filter(
+        Order.status == 'Cancelled',
+        Order.origin_shipment_date == None
+    ).scalar()
+    
+    cancelled_after_shipping = db.session.query(func.count(Order.id)).filter(
+        Order.status == 'Cancelled',
+        Order.origin_shipment_date != None
+    ).scalar()
+    
     cancellation_stages = {
-        'Kargo Öncesi': 70,
-        'Kargo Sonrası': 30
+        'Kargo Öncesi': cancelled_before_shipping,
+        'Kargo Sonrası': cancelled_after_shipping
     }
 
-    city_based_orders = {
-        'İstanbul': 400,
-        'Ankara': 200,
-        'İzmir': 150
+    # Şehir bazlı sipariş analizi
+    from sqlalchemy import func, desc
+    city_orders = db.session.query(
+        func.split_part(Order.customer_address, ',', -2).label('city'),
+        func.count(Order.id).label('count')
+    ).group_by('city').order_by(desc('count')).limit(10).all()
+    
+    city_based_orders = {city.strip(): count for city, count in city_orders}
+
+    # Tek ve çoklu ürün siparişleri
+    single_item_orders = db.session.query(func.count(Order.id)).filter(
+        ~Order.merchant_sku.like('%, %')
+    ).scalar()
+    
+    multi_item_orders = db.session.query(func.count(Order.id)).filter(
+        Order.merchant_sku.like('%, %')
+    ).scalar()
+
+    # Ürün kategorileri analizi
+    total_orders = single_item_orders + multi_item_orders
+    categories = {
+        'Günlük Ayakkabı': db.session.query(func.count(Order.id)).filter(Order.product_name.ilike('%günlük%')).scalar(),
+        'Spor Ayakkabı': db.session.query(func.count(Order.id)).filter(Order.product_name.ilike('%spor%')).scalar(),
+        'Bot/Çizme': db.session.query(func.count(Order.id)).filter(
+            or_(Order.product_name.ilike('%bot%'), Order.product_name.ilike('%çizme%'))
+        ).scalar(),
+        'Sandalet/Terlik': db.session.query(func.count(Order.id)).filter(
+            or_(Order.product_name.ilike('%sandalet%'), Order.product_name.ilike('%terlik%'))
+        ).scalar(),
+        'Klasik': db.session.query(func.count(Order.id)).filter(Order.product_name.ilike('%klasik%')).scalar()
     }
-    single_item_orders = 320
-    multi_item_orders = 180
+    
     product_categories_ratio = {
-        'Günlük Ayakkabı': 35,
-        'Spor Ayakkabı': 25,
-        'Bot/Çizme': 20,
-        'Sandalet/Terlik': 15,
-        'Klasik': 5
+        cat: round((count / total_orders * 100), 2) if total_orders > 0 else 0 
+        for cat, count in categories.items()
     }
-    discount_orders_ratio = 0.25  # %25
+
+    # İndirimli sipariş oranı
+    orders_with_discount = db.session.query(func.count(Order.id)).filter(Order.discount > 0).scalar()
+    discount_orders_ratio = orders_with_discount / total_orders if total_orders > 0 else 0
 
     # ---------------------------------------------------
     # 3) İade Analizi
     # ---------------------------------------------------
+    # İade analizleri
+    return_orders = db.session.query(ReturnOrder).all()
+    total_returns = len(return_orders)
+    
+    returns_by_cat = {}
+    for ret in return_orders:
+        products = db.session.query(ReturnProduct).filter_by(return_order_id=ret.id).all()
+        for prod in products:
+            if prod.model_number:  # Model numarasına göre kategori belirleme
+                cat = 'Diğer'
+                if 'spor' in prod.model_number.lower():
+                    cat = 'Spor Ayakkabı'
+                elif 'günlük' in prod.model_number.lower():
+                    cat = 'Günlük Ayakkabı'
+                elif 'bot' in prod.model_number.lower() or 'çizme' in prod.model_number.lower():
+                    cat = 'Bot/Çizme'
+                elif 'sandalet' in prod.model_number.lower() or 'terlik' in prod.model_number.lower():
+                    cat = 'Sandalet'
+                elif 'klasik' in prod.model_number.lower():
+                    cat = 'Klasik'
+                
+                returns_by_cat[cat] = returns_by_cat.get(cat, 0) + 1
+
     returns_by_category = {
-        'Günlük Ayakkabı': 0.08,   # %8
-        'Spor Ayakkabı': 0.12,     # %12
-        'Bot/Çizme': 0.15,         # %15
-        'Sandalet': 0.05,          # %5
-        'Klasik': 0.07             # %7
+        cat: count/total_returns if total_returns > 0 else 0 
+        for cat, count in returns_by_cat.items()
     }
-    average_return_cost = 250  # TL
-    avg_return_days = 5        # gün
-    top_return_locations = {
-        'İstanbul': 30,
-        'İzmir': 15,
-        'Ankara': 20
-    }
+
+    # Ortalama iade maliyeti ve süresi
+    total_refund = db.session.query(func.sum(ReturnOrder.refund_amount)).scalar() or 0
+    average_return_cost = total_refund / total_returns if total_returns > 0 else 0
+
+    # İade süreleri
+    return_durations = []
+    for ret in return_orders:
+        if ret.return_date and ret.process_date:
+            duration = (ret.process_date - ret.return_date).days
+            if duration >= 0:  # Negatif süreleri hariç tut
+                return_durations.append(duration)
+    
+    avg_return_days = sum(return_durations) / len(return_durations) if return_durations else 0
+
+    # İade lokasyonları
+    return_locations = {}
+    for ret in return_orders:
+        products = db.session.query(ReturnProduct).filter_by(return_order_id=ret.id).all()
+        for prod in products:
+            city = prod.shipping_address.split(',')[-2].strip() if prod.shipping_address else 'Belirsiz'
+            return_locations[city] = return_locations.get(city, 0) + 1
+    
+    top_return_locations = dict(sorted(
+        return_locations.items(), 
+        key=lambda x: x[1], 
+        reverse=True
+    )[:5])
 
     # ---------------------------------------------------
     # 4) Ürün/Stok Analizi
     # ---------------------------------------------------
-    critical_stocks = [
-        {'product': 'Spor Ayakkabı Model A (Siyah/Beyaz, 42-43-44)', 'stock': 5},
-        {'product': 'Günlük Bot Model B (Kahve, 38-39-40)', 'stock': 3},
-        {'product': 'Klasik Ayakkabı Model C (Siyah, 41-42)', 'stock': 4}
-    ]
-    restock_times = {
-        'Sistem Ürünü #6 (Barkod:3001, Renk:Kahve, Beden:38)': 15,
-        'Sistem Ürünü #7 (Barkod:3002, Renk:Beyaz, Beden:37)': 10
-    }
-    old_fashion_products = [
-        {'product': 'Sistem Ürünü #8 (Barkod:4001)', 'last_sale': '2024-08-01'},
-        {'product': 'Sistem Ürünü #9 (Barkod:4002)', 'last_sale': '2024-07-25'}
-    ]
-    low_selling_products = [
-        {'product': 'Sistem Ürünü #10 (Barkod:5001)', 'sales': 2},
-        {'product': 'Sistem Ürünü #11 (Barkod:5002)', 'sales': 0}
-    ]
+    # Kritik stok seviyesi (10'un altındaki ürünler)
+    critical_stocks = []
+    products = db.session.query(Product).filter(Product.quantity < 10).all()
+    for product in products:
+        critical_stocks.append({
+            'product': f"{product.title} ({product.color}, {product.size})",
+            'stock': product.quantity
+        })
+    # Stok yenileme süreleri analizi
+    from datetime import datetime, timedelta
+    restock_times = {}
+    products = db.session.query(Product).filter(Product.quantity < 20).all()
+    for product in products:
+        # Son siparişi bul
+        last_order = db.session.query(Order).filter(
+            Order.product_barcode == product.barcode
+        ).order_by(Order.order_date.desc()).first()
+        
+        if last_order:
+            # Tahmini yenileme süresi (gün)
+            days_since_last_order = (datetime.now() - last_order.order_date).days
+            restock_times[f"{product.title} ({product.color}, {product.size})"] = days_since_last_order
+
+    # Son 30 günde satışı olmayan ürünler
+    thirty_days_ago = datetime.now() - timedelta(days=30)
+    old_products = db.session.query(Product).filter(
+        ~Product.barcode.in_(
+            db.session.query(Order.product_barcode).filter(
+                Order.order_date > thirty_days_ago
+            )
+        )
+    ).all()
+
+    old_fashion_products = []
+    for product in old_products:
+        # Son satış tarihini bul
+        last_sale = db.session.query(Order).filter(
+            Order.product_barcode == product.barcode
+        ).order_by(Order.order_date.desc()).first()
+        
+        if last_sale:
+            old_fashion_products.append({
+                'product': f"{product.title} ({product.barcode})",
+                'last_sale': last_sale.order_date.strftime('%Y-%m-%d')
+            })
+
+    # Düşük satışlı ürünler
+    low_selling_products = []
+    for product in products:
+        sales_count = db.session.query(func.count(Order.id)).filter(
+            Order.product_barcode == product.barcode,
+            Order.order_date > thirty_days_ago
+        ).scalar()
+        
+        if sales_count < 5:  # Son 30 günde 5'ten az satış
+            low_selling_products.append({
+                'product': f"{product.title} ({product.barcode})",
+                'sales': sales_count
+            })
+
+    # Birlikte alınan ürünler analizi
+    product_combos = []
+    multi_orders = db.session.query(Order).filter(Order.merchant_sku.like('%, %')).all()
+    combo_counts = {}
+    
+    for order in multi_orders:
+        skus = order.merchant_sku.split(', ')
+        for i in range(len(skus)):
+            for j in range(i + 1, len(skus)):
+                combo = f"{skus[i]} + {skus[j]}"
+                combo_counts[combo] = combo_counts.get(combo, 0) + 1
+    
     product_combos = [
-        {'combo': 'Sistem Ürünü #12 + Sistem Ürünü #13', 'count': 20},
-        {'combo': 'Sistem Ürünü #14 + Sistem Ürünü #15', 'count': 15},
+        {'combo': combo, 'count': count}
+        for combo, count in sorted(combo_counts.items(), key=lambda x: x[1], reverse=True)[:5]
     ]
 
     # ---------------------------------------------------
     # 5) Finansal Analiz
     # ---------------------------------------------------
-    aov_trend = 350       # TL
-    average_margin = 0.20 # %20
-    net_income_loss_from_returns = 5000 # TL
-    tax_ratio = 0.18      # %18
-    best_campaign = "Sezon Sonu Bot ve Çizmelerde %40 İndirim"
-    best_campaign_revenue = 85000
+    # Ortalama sipariş değeri
+    total_orders_value = db.session.query(func.sum(Order.amount)).scalar() or 0
+    total_orders_count = db.session.query(func.count(Order.id)).scalar() or 1
+    aov_trend = total_orders_value / total_orders_count
+
+    # Kar marjı
+    total_cost = total_orders_value * 0.6  # Örnek maliyet oranı
+    total_revenue = total_orders_value
+    average_margin = (total_revenue - total_cost) / total_revenue if total_revenue > 0 else 0
+
+    # İadelerden kaynaklı gelir kaybı
+    net_income_loss_from_returns = db.session.query(
+        func.sum(ReturnOrder.refund_amount)
+    ).scalar() or 0
+
+    # Vergi oranı (sabit)
+    tax_ratio = 0.18
+
+    # En iyi kampanya analizi
+    best_campaign = "En çok satılan kategoride %40 indirim"
+    best_campaign_revenue = total_revenue * 0.4  # Örnek gelir
 
     # ---------------------------------------------------
     # 6) Müşteri Analizi
     # ---------------------------------------------------
-    segmented_customers = {
-        'Premium Müşteriler': 250,    # Yüksek değerli alışveriş yapanlar
-        'Düzenli Alıcılar': 450,      # Orta sıklıkta alışveriş yapanlar
-        'Sezonluk Alıcılar': 350,     # Sadece sezon geçişlerinde alışveriş yapanlar
-        'Yeni Müşteriler': 180        # Son 3 ayda kazanılan müşteriler
-    }
-    average_clv = 1200  # TL
-    abandoned_cart_ratio = 0.12  # %12
-    loyalty_users_count = 80
-    loyalty_contribution = 20000
+    from sqlalchemy import func, case, and_
+    
+    # Son 12 ay içindeki müşteri segmentasyonu
+    twelve_months_ago = datetime.now() - timedelta(days=365)
+    three_months_ago = datetime.now() - timedelta(days=90)
+    
+    customer_segments = db.session.query(
+        case(
+            (
+                func.sum(Order.amount) > 5000,
+                'Premium Müşteriler'
+            ),
+            (
+                func.count(Order.id) > 3,
+                'Düzenli Alıcılar'
+            ),
+            (
+                and_(
+                    Order.order_date >= three_months_ago,
+                    Order.order_date < twelve_months_ago
+                ),
+                'Sezonluk Alıcılar'
+            ),
+            else_='Yeni Müşteriler'
+        ).label('segment'),
+        func.count(distinct(Order.customer_email)).label('count')
+    ).filter(
+        Order.order_date >= twelve_months_ago
+    ).group_by('segment').all()
+    
+    segmented_customers = {segment: count for segment, count in customer_segments}
+
+    # Müşteri yaşam boyu değeri
+    total_customer_revenue = db.session.query(
+        func.avg(func.sum(Order.amount))
+    ).filter(
+        Order.order_date >= twelve_months_ago
+    ).group_by(Order.customer_email).scalar() or 0
+    
+    average_clv = total_customer_revenue
+
+    # Sepet terk oranı (sabit - gerçek veri yok)
+    abandoned_cart_ratio = 0.12
+
+    # Sadakat programı analizi (örnek)
+    loyalty_users_count = db.session.query(
+        func.count(distinct(Order.customer_email))
+    ).filter(
+        Order.order_date >= three_months_ago
+    ).scalar() or 0
+
+    loyalty_contribution = total_revenue * 0.3  # Sadık müşterilerin katkısı
 
     # ---------------------------------------------------
     # 7) Performans Analizi
     # ---------------------------------------------------
-    cargo_performance = {
-        'KargoA': {'hız': '1.5 gün', 'gecikme_orani': 0.05},
-        'KargoB': {'hız': '2 gün',   'gecikme_orani': 0.10},
-    }
-    avg_completion_time = 3
-    daily_processed_orders = 100
+    # Kargo performans analizi
+    cargo_stats = {}
+    cargo_providers = db.session.query(distinct(Order.cargo_provider_name)).all()
+    
+    for provider in cargo_providers:
+        if provider[0]:  # Boş değilse
+            provider_name = provider[0]
+            # Ortalama teslimat süresi
+            avg_delivery_time = db.session.query(
+                func.avg(
+                    func.extract('day', Order.agreed_delivery_date - Order.origin_shipment_date)
+                )
+            ).filter(
+                Order.cargo_provider_name == provider_name,
+                Order.origin_shipment_date != None,
+                Order.agreed_delivery_date != None
+            ).scalar() or 0
+            
+            # Gecikme oranı
+            total_deliveries = db.session.query(func.count(Order.id)).filter(
+                Order.cargo_provider_name == provider_name,
+                Order.origin_shipment_date != None,
+                Order.agreed_delivery_date != None
+            ).scalar() or 1
+            
+            delayed_deliveries = db.session.query(func.count(Order.id)).filter(
+                Order.cargo_provider_name == provider_name,
+                Order.origin_shipment_date != None,
+                Order.agreed_delivery_date != None,
+                Order.agreed_delivery_date > Order.estimated_delivery_end
+            ).scalar() or 0
+            
+            cargo_stats[provider_name] = {
+                'hız': f"{avg_delivery_time:.1f} gün",
+                'gecikme_orani': delayed_deliveries / total_deliveries
+            }
+    
+    cargo_performance = cargo_stats
+
+    # Ortalama sipariş tamamlama süresi
+    avg_completion_time = db.session.query(
+        func.avg(
+            func.extract('day', Order.agreed_delivery_date - Order.order_date)
+        )
+    ).filter(
+        Order.order_date != None,
+        Order.agreed_delivery_date != None
+    ).scalar() or 0
+
+    # Günlük işlenen sipariş sayısı
+    today = datetime.now().date()
+    daily_processed_orders = db.session.query(func.count(Order.id)).filter(
+        func.date(Order.order_date) == today
+    ).scalar() or 0
 
     # ---------------------------------------------------
     # 8) Kullanıcı Davranışları
     # ---------------------------------------------------
-    most_viewed_not_sold = [
-        {'product': 'Sistem Ürünü #16 (Barkod:6001)', 'views': 500, 'sales': 0},
-        {'product': 'Sistem Ürünü #17 (Barkod:6002)', 'views': 300, 'sales': 0},
+    # En çok görüntülenen ama az satılan ürünler
+    thirty_days_ago = datetime.now() - timedelta(days=30)
+    products = db.session.query(Product).all()
+    most_viewed_not_sold = []
+    
+    for product in products:
+        # Son 30 gündeki satışlar
+        sales = db.session.query(func.count(Order.id)).filter(
+            Order.product_barcode == product.barcode,
+            Order.order_date >= thirty_days_ago
+        ).scalar() or 0
+        
+        if sales < 5:  # Az satılan ürünler
+            most_viewed_not_sold.append({
+                'product': f"{product.title} ({product.barcode})",
+                'views': 500,  # Görüntülenme verisi yok, örnek değer
+                'sales': sales
+            })
+    
+    most_viewed_not_sold = sorted(most_viewed_not_sold, key=lambda x: x['views'], reverse=True)[:5]
+
+    # İndirim dönüşüm oranı
+    discounted_orders = db.session.query(func.count(Order.id)).filter(
+        Order.discount > 0
+    ).scalar() or 0
+    
+    total_orders = db.session.query(func.count(Order.id)).scalar() or 1
+    offer_conversion_ratio = discounted_orders / total_orders
+
+    # Popüler filtreler (en çok satılan özelliklere göre)
+    sizes = db.session.query(Order.product_size, func.count(Order.id)).group_by(
+        Order.product_size
+    ).order_by(func.count(Order.id).desc()).first()
+    
+    colors = db.session.query(Order.product_color, func.count(Order.id)).group_by(
+        Order.product_color
+    ).order_by(func.count(Order.id).desc()).first()
+    
+    popular_filters = [
+        'Fiyat Artan',
+        f'Beden: {sizes[0] if sizes else "38"}',
+        f'Renk: {colors[0] if colors else "Siyah"}'
     ]
-    offer_conversion_ratio = 0.25
-    popular_filters = ['Fiyat Artan', 'Beden 38', 'Renk: Siyah']
 
     # ---------------------------------------------------
     # 9) Tahmin ve Öneri Sistemleri
     # ---------------------------------------------------
-    predicted_next_month_sales = 60000
-    predicted_return_risk_products = [
-        {'product': 'Sistem Ürünü #18 (Barkod:7001)', 'risk': 'Yüksek'},
-        {'product': 'Sistem Ürünü #19 (Barkod:7002)', 'risk': 'Orta'}
-    ]
-    restock_suggestions = [
-        {'product': 'Sistem Ürünü #20 (Barkod:8001)', 'suggested_date': '2025-02-15'},
-        {'product': 'Sistem Ürünü #21 (Barkod:8002)', 'suggested_date': '2025-03-01'}
-    ]
+    # Gelecek ay satış tahmini (son 3 ayın ortalamasına göre)
+    three_months_ago = datetime.now() - timedelta(days=90)
+    last_three_months_sales = db.session.query(
+        func.sum(Order.amount)
+    ).filter(
+        Order.order_date >= three_months_ago
+    ).scalar() or 0
+    
+    predicted_next_month_sales = last_three_months_sales / 3
+
+    # İade riski yüksek ürünler
+    risky_products = db.session.query(
+        ReturnProduct.model_number,
+        func.count(ReturnProduct.id).label('return_count')
+    ).group_by(ReturnProduct.model_number).order_by(
+        func.count(ReturnProduct.id).desc()
+    ).limit(5).all()
+    
+    predicted_return_risk_products = []
+    for product, count in risky_products:
+        risk = 'Yüksek' if count > 5 else 'Orta'
+        predicted_return_risk_products.append({
+            'product': product,
+            'risk': risk
+        })
+
+    # Stok yenileme önerileri
+    low_stock_products = db.session.query(Product).filter(
+        Product.quantity < 10
+    ).order_by(Product.quantity).limit(5).all()
+    
+    restock_suggestions = []
+    for product in low_stock_products:
+        # Son siparişe göre tahmini yenileme tarihi
+        last_order = db.session.query(Order).filter(
+            Order.product_barcode == product.barcode
+        ).order_by(Order.order_date.desc()).first()
+        
+        if last_order:
+            suggested_date = (last_order.order_date + timedelta(days=30)).strftime('%Y-%m-%d')
+            restock_suggestions.append({
+                'product': f"{product.title} ({product.barcode})",
+                'suggested_date': suggested_date
+            })
 
     # ---------------------------------------------------
     # 10) Anlık Veri ve Canlı Takip
     # ---------------------------------------------------
-    current_processing_orders = 20
-    live_sales_data = [
-        {'hour': '09:00', 'sales': 5},
-        {'hour': '10:00', 'sales': 8},
-        {'hour': '11:00', 'sales': 12},
-    ]
-    shipping_in_transit = 15
+    # İşlemdeki siparişler
+    current_processing_orders = db.session.query(func.count(Order.id)).filter(
+        Order.status == 'Processing'
+    ).scalar() or 0
+
+    # Saatlik satış verisi
+    today = datetime.now().date()
+    hours = range(9, 12)  # 09:00-11:00 arası
+    live_sales_data = []
+    
+    for hour in hours:
+        sales_count = db.session.query(func.count(Order.id)).filter(
+            func.date(Order.order_date) == today,
+            func.extract('hour', Order.order_date) == hour
+        ).scalar() or 0
+        
+        live_sales_data.append({
+            'hour': f"{hour:02d}:00",
+            'sales': sales_count
+        })
+
+    # Kargodaki siparişler
+    shipping_in_transit = db.session.query(func.count(Order.id)).filter(
+        Order.status == 'Shipping'
+    ).scalar() or 0
 
     # Son olarak template'e gönderiyoruz
     return render_template(
