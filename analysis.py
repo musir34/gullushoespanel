@@ -1,6 +1,6 @@
 
 from flask import Blueprint, render_template
-from models import db, Order, Product, ReturnOrder
+from models import db, Order, Product, ReturnOrder, ReturnProduct
 from sqlalchemy import func
 from datetime import datetime, timedelta
 import json
