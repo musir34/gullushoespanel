@@ -47,10 +47,11 @@ def analysis_page():
         {'product_name': 'Sistem Ürünü #3 (Barkod:1003, Renk:Lacivert, Beden:36)', 'cancel_count': 6},
     ]
     cancellation_reasons = {
-        'Yanlış Adres': 12,
-        'Vazgeçti': 50,
-        'Fiyat Yüksek': 20,
-        'Diğer': 18
+        'Numara Uyumsuzluğu': 40,
+        'Renk Farklılığı': 25,
+        'Teslimat Süresi': 15,
+        'Model Değişikliği': 12,
+        'Diğer': 8
     }
     cancellation_stages = {
         'Kargo Öncesi': 70,
@@ -65,10 +66,11 @@ def analysis_page():
     single_item_orders = 320
     multi_item_orders = 180
     product_categories_ratio = {
-        'Ayakkabı': 40,
-        'Çanta': 30,
-        'Aksesuar': 20,
-        'Diğer': 10
+        'Günlük Ayakkabı': 35,
+        'Spor Ayakkabı': 25,
+        'Bot/Çizme': 20,
+        'Sandalet/Terlik': 15,
+        'Klasik': 5
     }
     discount_orders_ratio = 0.25  # %25
 
@@ -76,9 +78,11 @@ def analysis_page():
     # 3) İade Analizi
     # ---------------------------------------------------
     returns_by_category = {
-        'Ayakkabı': 0.15,   # %15
-        'Elektronik': 0.05, # Örnek
-        'Giyim': 0.10
+        'Günlük Ayakkabı': 0.08,   # %8
+        'Spor Ayakkabı': 0.12,     # %12
+        'Bot/Çizme': 0.15,         # %15
+        'Sandalet': 0.05,          # %5
+        'Klasik': 0.07             # %7
     }
     average_return_cost = 250  # TL
     avg_return_days = 5        # gün
@@ -92,8 +96,9 @@ def analysis_page():
     # 4) Ürün/Stok Analizi
     # ---------------------------------------------------
     critical_stocks = [
-        {'product': 'Sistem Ürünü #4 (Barkod:2001, Renk:Siyah, Beden:39)', 'stock': 5},
-        {'product': 'Sistem Ürünü #5 (Barkod:2002, Renk:Gri, Beden:36)', 'stock': 2},
+        {'product': 'Spor Ayakkabı Model A (Siyah/Beyaz, 42-43-44)', 'stock': 5},
+        {'product': 'Günlük Bot Model B (Kahve, 38-39-40)', 'stock': 3},
+        {'product': 'Klasik Ayakkabı Model C (Siyah, 41-42)', 'stock': 4}
     ]
     restock_times = {
         'Sistem Ürünü #6 (Barkod:3001, Renk:Kahve, Beden:38)': 15,
@@ -119,16 +124,17 @@ def analysis_page():
     average_margin = 0.20 # %20
     net_income_loss_from_returns = 5000 # TL
     tax_ratio = 0.18      # %18
-    best_campaign = "1 Alana 2. %50 İndirim"
-    best_campaign_revenue = 10000
+    best_campaign = "Sezon Sonu Bot ve Çizmelerde %40 İndirim"
+    best_campaign_revenue = 85000
 
     # ---------------------------------------------------
     # 6) Müşteri Analizi
     # ---------------------------------------------------
     segmented_customers = {
-        'Sadık Müşteriler': 150,
-        'Tek Seferlik': 300,
-        'Diğer': 50
+        'Premium Müşteriler': 250,    # Yüksek değerli alışveriş yapanlar
+        'Düzenli Alıcılar': 450,      # Orta sıklıkta alışveriş yapanlar
+        'Sezonluk Alıcılar': 350,     # Sadece sezon geçişlerinde alışveriş yapanlar
+        'Yeni Müşteriler': 180        # Son 3 ayda kazanılan müşteriler
     }
     average_clv = 1200  # TL
     abandoned_cart_ratio = 0.12  # %12
