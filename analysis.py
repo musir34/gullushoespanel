@@ -21,7 +21,7 @@ def analysis_page():
         
         # Performans için limit ekleyelim
         orders = db.session.query(Order).limit(1000).all()
-    seasonal_counts = {'yaz': 0, 'kis': 0, 'ilkbahar': 0, 'sonbahar': 0}
+        seasonal_counts = {'yaz': 0, 'kis': 0, 'ilkbahar': 0, 'sonbahar': 0}
     hour_counts = {'00-06': 0, '06-12': 0, '12-18': 0, '18-24': 0}
     
     for order in orders:
@@ -541,6 +541,10 @@ def analysis_page():
     ).scalar() or 0
 
     # Son olarak template'e gönderiyoruz
+    except Exception as e:
+        print(f"Analiz sayfası yüklenirken hata oluştu: {e}")
+        return render_template('error.html', error=str(e))
+        
     return render_template(
         'analysis.html',
 
