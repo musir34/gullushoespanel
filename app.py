@@ -17,16 +17,21 @@ app.secret_key = os.environ.get('SECRET_KEY', 'varsayılan_anahtar')
 # Veritabanı ayarları
 DATABASE_URI = os.environ.get('DATABASE_URL', 'postgresql+psycopg2://username:password@host:port/database_name')
 app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URI
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SQLALCHEMY_POOL_SIZE'] = 10
+app.config['SQLALCHEMY_MAX_OVERFLOW'] = 20
+app.config['SQLALCHEMY_POOL_TIMEOUT'] = 30
 
 # SQLAlchemy veritabanı motoru ve oturum oluşturma
 try:
-    engine = create_engine(DATABASE_URI)
+    engine = create_engine(DATABASE_URI, pool_pre_ping=True)
     Session = sessionmaker(bind=engine)
     Base.metadata.create_all(engine)
     logger.info("Veritabanına başarıyla bağlanıldı ve tablolar oluşturuldu.")
 except Exception as e:
     logger.error(f"Veritabanı bağlantı hatası: {e}")
     engine = None
+    raise Exception(f"Veritabanına bağlanılamadı: {e}")
     
     with app.app_context():
         # Eğer tablo yoksa oluştur (development için)
