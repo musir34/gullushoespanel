@@ -1,11 +1,10 @@
 <!DOCTYPE html>
 <html lang="tr">
-
 <head>
     <!-- Meta bilgiler ve stil tanımlamaları -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ürün Listesi - Trendyol</title>
+    <title>Ürün Listesi - Trendyol (Canlı Tasarım)</title>
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <!-- Font Awesome için ikonlar -->
@@ -13,27 +12,39 @@
 
     <style>
         body {
-            background-color: #f8f9fa;
+            background: linear-gradient(135deg, #fce3ec, #f8f9fa);
             font-family: 'Roboto', sans-serif;
+        }
+
+        h1, h5 {
+            color: #3b3b3b;
+            font-weight: 700;
+        }
+
+        .btn-secondary, .btn-primary, .btn-success, .btn-info, .btn-warning {
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        .btn-secondary:hover, .btn-primary:hover, .btn-success:hover, .btn-info:hover, .btn-warning:hover {
+            transform: translateY(-2px);
         }
 
         .product-card {
             border: none;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 8px 12px rgba(0, 0, 0, 0.07);
             transition: transform 0.2s ease, box-shadow 0.2s ease;
             padding: 15px;
             border-radius: 12px;
             margin-bottom: 20px;
-            height: 100%;
+            background-color: #ffffff;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            background-color: #fff;
         }
 
         .product-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+            transform: translateY(-4px);
+            box-shadow: 0 12px 20px rgba(0, 0, 0, 0.12);
         }
 
         .product-card img {
@@ -52,7 +63,7 @@
         .product-info h5 {
             margin-bottom: 8px;
             font-weight: bold;
-            color: #333;
+            color: #444;
         }
 
         .product-info p {
@@ -70,57 +81,51 @@
         .variant-details {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 5px;
             align-items: center;
+            margin-bottom: 5px;
+            flex-wrap: wrap;
         }
 
         .variant-details span {
-            font-weight: bold;
+            font-weight: 500;
         }
 
         .size {
-            color: #007bff;
+            color: #0069d9; /* Mavi */
+            margin-right: 10px;
         }
 
         .quantity {
-            color: #28a745;
+            color: #28a745; /* Yeşil */
+            margin-right: 10px;
         }
 
         .barcode {
-            color: #dc3545;
+            color: #dc3545; /* Kırmızı */
+            margin-right: 10px;
         }
 
         .copy-btn {
             background-color: transparent;
             border: none;
-            font-size: 20px;
+            font-size: 18px;
             cursor: pointer;
-            color: #007bff;
+            color: #6c757d;
+            transition: color 0.3s;
         }
-
         .copy-btn:hover {
-            color: #0056b3;
+            color: #343a40;
         }
 
         .copy-confirmation {
             display: none;
-            font-size: 20px;
+            font-size: 16px;
             color: green;
-            margin-left: 10px;
+            margin-left: 6px;
         }
 
         .copy-confirmation.show {
             display: inline-block;
-        }
-
-        .btn-info {
-            background-color: #017bff;
-            border-color: #017bff;
-        }
-
-        .btn-info:hover {
-            background-color: #0056b3;
-            border-color: #0056b3;
         }
 
         .btn-warning-img {
@@ -138,23 +143,35 @@
             border-radius: 8px;
         }
 
+        /* Form içi tablo */
+        .stock-update-form-inner table thead {
+            background-color: #f8f9fa;
+        }
+        .stock-update-form-inner table td, .stock-update-form-inner table th {
+            vertical-align: middle;
+        }
+
         /* Responsive Ayarlar */
         @media (max-width: 768px) {
             .product-card {
                 max-width: 100%;
             }
-
             .btn-warning-img {
                 width: 35px;
                 height: 35px;
             }
-
             .product-info h5 {
                 font-size: 1rem;
             }
-
             .product-info p {
                 font-size: 13px;
+            }
+            .variant-details {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .variant-details span, .variant-details button {
+                margin-bottom: 5px;
             }
         }
     </style>
@@ -191,7 +208,7 @@
         <!-- Arama Formu -->
         <form action="{{ url_for('get_products.search_products') }}" method="GET" class="text-center mb-4">
             <div class="form-group">
-                <div class="input-group">
+                <div class="input-group" style="max-width: 600px; margin: 0 auto;">
                     <input type="text" name="query" class="form-control" placeholder="Model koduna göre ara" required>
                     <div class="input-group-append">
                         <button type="submit" class="btn btn-info">
@@ -229,8 +246,8 @@
                                         data-color="{{ color }}">
                                         <i class="fas fa-edit mr-2"></i> Stokları Güncelle
                                     </button>
-                                    <!-- Stok güncelleme formu buraya eklenecek -->
                                     <div class="stock-update-form mt-3" style="display: none;"></div>
+
                                     <div class="variant-list">
                                         {% for product in product_group %}
                                             {% if product.barcode and product.barcode != 'undefined' %}
@@ -282,8 +299,8 @@
                                         data-color="{{ color }}">
                                         <i class="fas fa-edit mr-2"></i> Stokları Güncelle
                                     </button>
-                                    <!-- Stok güncelleme formu buraya eklenecek -->
                                     <div class="stock-update-form mt-3" style="display: none;"></div>
+
                                     <div class="variant-list">
                                         {% for product in product_group %}
                                             {% if product.barcode and product.barcode != 'undefined' %}
@@ -360,170 +377,154 @@
 
         <!-- Geçici Kopyalama Alanı -->
         <textarea id="temp-copier" style="position: absolute; top: -1000px;"></textarea>
+    </div>
 
-        <!-- JQuery ve Bootstrap JS -->
-        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <!-- JQuery ve Bootstrap JS -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 
-        <!-- JavaScript Kodları -->
-        <script>
-            $(document).ready(function () {
-                // Varyantları göster/gizle
-                $('#productContainer').on('click', '.toggle-variants', function () {
-                    var variantList = $(this).siblings('.variant-list');
-                    variantList.slideToggle();
-                    if ($(this).html().includes('Gizle')) {
-                        $(this).html('<i class="fas fa-chevron-down mr-2"></i> Tüm Varyantları Göster');
-                    } else {
-                        $(this).html('<i class="fas fa-chevron-up mr-2"></i> Varyantları Gizle');
-                    }
-                });
-
-                // Ürün seçme işlemi
-                $('#productContainer').on('click', '.select-product', function () {
-                    var barcode = $(this).data('barcode');
-                    var model = $(this).data('model');
-                    var color = $(this).data('color');
-                    var size = $(this).data('size');
-
-                    console.log("Select Product clicked:", { barcode, model, color, size });
-
-                    if (!barcode || barcode === 'undefined') {
-                        alert('Geçersiz barkod bilgisi.');
-                        console.warn('Geçersiz barkod:', barcode);
-                        return;
-                    }
-
-                    window.open(`/product_label?barcode=${barcode}&model=${model}&color=${color}&size=${size}`, '_blank');
-                });
-
-                // Stokları güncelleme işlemi
-                $('#productContainer').on('click', '.update-stocks', function () {
-                    var model = $(this).data('model');
-                    var color = $(this).data('color');
-                    var $stockFormContainer = $(this).siblings('.stock-update-form');
-
-                    console.log("Update Stocks clicked:", { model, color });
-
-                    if (!model || !color) {
-                        alert('Model veya renk bilgisi eksik!');
-                        return;
-                    }
-
-                    if ($stockFormContainer.is(':visible')) {
-                        $stockFormContainer.slideUp();
-                        $(this).html('<i class="fas fa-edit mr-2"></i> Stokları Güncelle');
-                        return;
-                    }
-
-                    $('.stock-update-form').not($stockFormContainer).slideUp();
-                    $('.update-stocks').not(this).html('<i class="fas fa-edit mr-2"></i> Stokları Güncelle');
-
-                    $(this).html('<i class="fas fa-times mr-2"></i> Güncellemeyi İptal Et');
-
-                    $.ajax({
-                        url: '{{ url_for("get_products.get_product_variants") }}',
-                        method: 'GET',
-                        data: { model: model, color: color },
-                        success: function (response) {
-                            console.log("AJAX GET response:", response);
-                            if (response.success && response.products) {
-                                var formHtml = `
-                                    <form class="stock-update-form-inner">
-                                        <table class="table table-bordered mt-3">
-                                            <thead>
-                                                <tr>
-                                                    <th>Beden</th>
-                                                    <th>Mevcut Stok</th>
-                                                    <th>Yeni Stok</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>`;
-
-                                response.products.forEach(function (product) {
-                                    if (product.original_product_barcode && product.original_product_barcode !== 'undefined') {
-                                        formHtml += `
-                                            <tr>
-                                                <td>${product.size}</td>
-                                                <td>${product.quantity}</td>
-                                                <td>
-                                                    <input type="number" name="${product.original_product_barcode}" value="${product.quantity}" min="0" class="form-control">
-                                                </td>
-                                            </tr>`;
-                                    }
-                                });
-
-                                formHtml += `
-                                            </tbody>
-                                        </table>
-                                        <button type="submit" class="btn btn-primary">Stokları Güncelle</button>
-                                    </form>`;
-                                $stockFormContainer.html(formHtml).slideDown();
-                            } else {
-                                alert('Varyantlar alınamadı.');
-                                console.warn('Yanıt beklenen formatta değil:', response);
-                            }
-                        },
-                        error: function (jqXHR, textStatus, errorThrown) {
-                            console.error("AJAX Error:", textStatus, errorThrown);
-                            alert('Sunucudan yanıt alınamadı.');
-                        }
-                    });
-                });
-
-                // Stok güncelleme formu gönderimi
-                $('#productContainer').on('submit', '.stock-update-form-inner', function (e) {
-                    e.preventDefault();
-                    var $form = $(this);
-                    var formData = $form.serialize();
-
-                    console.log("Submitting stock update form:", formData);
-
-                    $.ajax({
-                        url: '{{ url_for("get_products.update_stocks_ajax") }}',
-                        method: 'POST',
-                        data: formData,
-                        success: function (response) {
-                            console.log("Stock update response:", response);
-                            if (response.success) {
-                                alert('Stoklar başarıyla güncellendi.');
-                                $form.closest('.stock-update-form').slideUp();
-                                $form.closest('.product-info').find('.update-stocks').html('<i class="fas fa-edit mr-2"></i> Stokları Güncelle');
-                            } else {
-                                alert('Stok güncelleme sırasında bir hata oluştu.');
-                                console.warn('Yanıt:', response);
-                            }
-                        },
-                        error: function (jqXHR, textStatus, errorThrown) {
-                            console.error("Stock update error:", textStatus, errorThrown);
-                            alert('Sunucudan yanıt alınamadı.');
-                        }
-                    });
-                });
-
-                // Barkod kopyalama fonksiyonu
-                $('#productContainer').on('click', '.copy-btn', function () {
-                    var text = $(this).siblings('.barcode').text().replace('Barkod: ', '').trim();
-                    if (text && text !== 'undefined') {
-                        copyToClipboard(text, $(this));
-                    } else {
-                        alert('Kopyalanacak geçerli barkod bulunamadı.');
-                        console.warn('Geçersiz barkod:', text);
-                    }
-                });
-
-                function copyToClipboard(text, element) {
-                    const tempInput = document.getElementById('temp-copier');
-                    tempInput.value = text;
-                    tempInput.select();
-                    document.execCommand('copy');
-                    const confirmation = element.next('.copy-confirmation');
-                    confirmation.addClass('show');
-                    setTimeout(() => confirmation.removeClass('show'), 2000);
+    <!-- JavaScript Kodları -->
+    <script>
+        $(document).ready(function () {
+            // Varyantları göster/gizle
+            $('#productContainer').on('click', '.toggle-variants', function () {
+                var variantList = $(this).siblings('.variant-list');
+                variantList.slideToggle();
+                if ($(this).html().includes('Gizle')) {
+                    $(this).html('<i class="fas fa-chevron-down mr-2"></i> Tüm Varyantları Göster');
+                } else {
+                    $(this).html('<i class="fas fa-chevron-up mr-2"></i> Varyantları Gizle');
                 }
             });
-        </script>
-    </div>
-</body>
 
+            // Ürün seçme işlemi
+            $('#productContainer').on('click', '.select-product', function () {
+                var barcode = $(this).data('barcode');
+                var model = $(this).data('model');
+                var color = $(this).data('color');
+                var size = $(this).data('size');
+
+                if (!barcode || barcode === 'undefined') {
+                    alert('Geçersiz barkod bilgisi.');
+                    return;
+                }
+
+                window.open(`/product_label?barcode=${barcode}&model=${model}&color=${color}&size=${size}`, '_blank');
+            });
+
+            // Stokları güncelleme işlemi
+            $('#productContainer').on('click', '.update-stocks', function () {
+                var model = $(this).data('model');
+                var color = $(this).data('color');
+                var $stockFormContainer = $(this).siblings('.stock-update-form');
+
+                if (!model || !color) {
+                    alert('Model veya renk bilgisi eksik!');
+                    return;
+                }
+
+                if ($stockFormContainer.is(':visible')) {
+                    $stockFormContainer.slideUp();
+                    $(this).html('<i class="fas fa-edit mr-2"></i> Stokları Güncelle');
+                    return;
+                }
+
+                $('.stock-update-form').not($stockFormContainer).slideUp();
+                $('.update-stocks').not(this).html('<i class="fas fa-edit mr-2"></i> Stokları Güncelle');
+                $(this).html('<i class="fas fa-times mr-2"></i> Güncellemeyi İptal Et');
+
+                $.ajax({
+                    url: '{{ url_for("get_products.get_product_variants") }}',
+                    method: 'GET',
+                    data: { model: model, color: color },
+                    success: function (response) {
+                        if (response.success && response.products) {
+                            var formHtml = `
+                                <form class="stock-update-form-inner">
+                                    <table class="table table-bordered mt-3">
+                                        <thead>
+                                            <tr>
+                                                <th>Beden</th>
+                                                <th>Mevcut Stok</th>
+                                                <th>Yeni Stok</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>`;
+
+                            response.products.forEach(function (product) {
+                                if (product.original_product_barcode && product.original_product_barcode !== 'undefined') {
+                                    formHtml += `
+                                        <tr>
+                                            <td>${product.size}</td>
+                                            <td>${product.quantity}</td>
+                                            <td>
+                                                <input type="number" name="${product.original_product_barcode}" value="${product.quantity}" min="0" class="form-control">
+                                            </td>
+                                        </tr>`;
+                                }
+                            });
+
+                            formHtml += `
+                                        </tbody>
+                                    </table>
+                                    <button type="submit" class="btn btn-primary">Stokları Güncelle</button>
+                                </form>`;
+                            $stockFormContainer.html(formHtml).slideDown();
+                        } else {
+                            alert('Varyantlar alınamadı.');
+                        }
+                    },
+                    error: function () {
+                        alert('Sunucudan yanıt alınamadı.');
+                    }
+                });
+            });
+
+            // Stok güncelleme formu gönderimi
+            $('#productContainer').on('submit', '.stock-update-form-inner', function (e) {
+                e.preventDefault();
+                var $form = $(this);
+                var formData = $form.serialize();
+
+                $.ajax({
+                    url: '{{ url_for("get_products.update_stocks_ajax") }}',
+                    method: 'POST',
+                    data: formData,
+                    success: function (response) {
+                        if (response.success) {
+                            alert('Stoklar başarıyla güncellendi.');
+                            $form.closest('.stock-update-form').slideUp();
+                            $form.closest('.product-info').find('.update-stocks').html('<i class="fas fa-edit mr-2"></i> Stokları Güncelle');
+                        } else {
+                            alert('Stok güncelleme sırasında bir hata oluştu.');
+                        }
+                    },
+                    error: function () {
+                        alert('Sunucudan yanıt alınamadı.');
+                    }
+                });
+            });
+
+            // Barkod kopyalama fonksiyonu
+            $('#productContainer').on('click', '.copy-btn', function () {
+                var text = $(this).siblings('.barcode').text().replace('Barkod: ', '').trim();
+                if (text && text !== 'undefined') {
+                    copyToClipboard(text, $(this));
+                } else {
+                    alert('Kopyalanacak geçerli barkod bulunamadı.');
+                }
+            });
+
+            function copyToClipboard(text, element) {
+                const tempInput = document.getElementById('temp-copier');
+                tempInput.value = text;
+                tempInput.select();
+                document.execCommand('copy');
+                const confirmation = element.next('.copy-confirmation');
+                confirmation.addClass('show');
+                setTimeout(() => confirmation.removeClass('show'), 2000);
+            }
+        });
+    </script>
+</body>
 </html>
