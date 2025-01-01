@@ -64,7 +64,7 @@ def analysis():
         sales = Order.query.filter_by(product_barcode=product.barcode).count()
         revenue = Order.query.with_entities(func.sum(Order.amount))\
             .filter_by(product_barcode=product.barcode).scalar() or 0
-        return_count = ReturnOrder.query.filter_by(barcode=product.barcode).count()
+        return_count = ReturnProduct.query.filter_by(barcode=product.barcode).count()
         return_rate = (return_count / sales * 100) if sales > 0 else 0
         
         product_analysis.append({
