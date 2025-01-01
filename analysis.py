@@ -42,8 +42,8 @@ def analysis_page():
     hour_based_orders = hour_counts
     # Müşteri analizi
     from sqlalchemy import func, distinct
-    total_customers = db.session.query(func.count(distinct(Order.customer_email))).scalar()
-    new_customers = db.session.query(func.count(distinct(Order.customer_email))).filter(
+    total_customers = db.session.query(func.count(distinct(Order.customer_name))).scalar()
+    new_customers = db.session.query(func.count(distinct(Order.customer_name))).filter(
         Order.order_date >= func.now() - func.interval('3 months')
     ).scalar()
     
