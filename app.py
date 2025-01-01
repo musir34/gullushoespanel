@@ -48,8 +48,10 @@ from new_orders_service import new_orders_service_bp
 from processed_orders_service import processed_orders_service_bp
 from iade_islemleri import iade_islemleri, fetch_data_from_api, save_to_database  # iade_islemleri'nden import ettiğimizi varsayıyorum
 from siparis_fisi import siparis_fisi_bp
+from analysis import analysis_bp
 
 blueprints = [
+    analysis_bp,
     order_service_bp,
     update_service_bp,
     archive_bp,
