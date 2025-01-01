@@ -22,9 +22,9 @@ def analysis_page():
         # Performans için limit ekleyelim
         orders = db.session.query(Order).limit(1000).all()
         seasonal_counts = {'yaz': 0, 'kis': 0, 'ilkbahar': 0, 'sonbahar': 0}
-    hour_counts = {'00-06': 0, '06-12': 0, '12-18': 0, '18-24': 0}
+        hour_counts = {'00-06': 0, '06-12': 0, '12-18': 0, '18-24': 0}
     
-    for order in orders:
+        for order in orders:
         if order.order_date:
             season = seasons[order.order_date.month]
             seasonal_counts[season] += 1
