@@ -4,357 +4,161 @@
   <meta charset="UTF-8">
   <title>Fiş Detayı</title>
   <style>
-    /* Global reset ve temel ayarlar */
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+    /* Basit stiller */
     body {
-      background-color: #f9f9f9;
-      font-family: "Helvetica Neue", Arial, sans-serif;
-      color: #333;
+      font-family: Arial, sans-serif;
+      margin: 0; padding: 0; 
+      background: #f9f9f9;
     }
-
-    /* Animasyon keyframe tanımları */
-    @keyframes fadeIn {
-      0% {
-        opacity: 0;
-        transform: translateY(20px);
-      }
-      100% {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-    @keyframes rotateLogo {
-      0% {
-        transform: rotate(0deg);
-      }
-      100% {
-        transform: rotate(360deg);
-      }
-    }
-
-    /* Container: Ana kutu */
     .container {
+      width: 90%;
       max-width: 900px;
-      margin: 30px auto;
-      background-color: #fff;
-      border-radius: 8px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.07);
-      overflow: hidden;
-
-      /* Sayfa yüklendiğinde fade-in animasyonu */
-      animation: fadeIn 0.8s ease forwards;
-    }
-
-    /* Header: Logo + Başlık */
-    .header {
-      background-color: #3b6e70; /* Pastel teal */
-      color: #fff;
+      margin: 20px auto;
+      background: #fff;
       padding: 20px;
-      text-align: center;
-      position: relative;
+      border-radius: 6px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }
-    /* Logo */
-    .logo {
-      width: 150px; 
-      height: 150px;
-      object-fit: contain; /* Logo aspect ratio korunsun */
-      vertical-align: middle;
-      margin-right: 10px;
-      border-radius: 50%;
-      /* Mouse üzerine gelince logo dönsün */
-      transition: transform 0.5s ease;
-    }
-    .logo:hover {
-      animation: rotateLogo 1s linear infinite; /* Sonsuz döndürme animasyonu */
-    }
-
-    /* Başlık (H1) ve H2 */
-    h1, h2 {
-      margin: 0 0 10px;
-      font-weight: normal;
-    }
-    h1 {
-      font-size: 1.8rem;
-      display: inline-block;
-      vertical-align: middle; /* Logo ile hizalamak için */
-    }
-    .header-content {
-      display: inline-block;
-    }
-
-    h2 {
-      font-size: 1.4rem;
-      margin-bottom: 15px;
-      padding-bottom: 5px;
-      border-bottom: 2px solid #eee;
-      color: #444;
-    }
-
-    /* Ana bölümler */
-    .section {
-      padding: 20px;
-    }
-
-    /* Tablo container */
-    .table-container {
-      margin-bottom: 30px;
-      overflow-x: auto; /* Çok dar ekranlarda yatay scrollbar */
-    }
-
-    /* Tablo stilleri */
     table {
       width: 100%;
       border-collapse: collapse;
       margin-bottom: 15px;
-      min-width: 600px;
     }
     th, td {
-      padding: 12px 10px;
+      padding: 8px 10px;
       border-bottom: 1px solid #ddd;
       text-align: left;
-      white-space: nowrap;
     }
     th {
-      background-color: #f0f0f0; /* Başlık hücreleri için hafif gri */
-      font-weight: 500;
+      background-color: #f0f0f0;
     }
-    /* Zebra satırlar */
-    tr:nth-child(even) {
-      background-color: #f9f9f9;
-    }
-    /* Satır hover efekti (küçük bir arka plan değişimi) */
-    tr:hover {
-      background-color: #eefcfb;
-      transition: background-color 0.3s ease;
-    }
-
-    /* Teslimat Formu ve Butonu */
-    .delivery-form {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-bottom: 20px;
-    }
-    .delivery-form input {
-      padding: 8px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      max-width: 120px;
-      outline: none;
-      transition: border-color 0.2s ease;
-    }
-    .delivery-form input:focus {
-      border-color: #aaa;
-    }
-    .delivery-form button {
-      padding: 8px 16px;
-      background: #3b6e70;
-      color: #fff;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      transition: background-color 0.2s ease, transform 0.2s ease;
-    }
-    .delivery-form button:hover {
-      background-color: #355f60;
-      transform: scale(1.05);
-    }
-
-    .delivery-records {
-      max-height: 300px;
-      overflow-y: auto;
-      border: 1px solid #eee;
-      border-radius: 6px;
-    }
-
-    /* Geri Butonu */
-    .btn-back {
-      display: inline-block;
-      padding: 8px 14px;
-      background-color: #666;
-      color: #fff;
-      border-radius: 4px;
-      text-decoration: none;
-      transition: background-color 0.2s ease, transform 0.2s ease;
-    }
-    .btn-back:hover {
-      background-color: #4b4b4b;
-      transform: scale(1.05);
-    }
-
-    /* Küçük ekran uyumu */
-    @media (max-width: 600px) {
-      .delivery-form input {
-        flex: 1 0 48%;
-        margin-bottom: 5px;
-      }
-      .delivery-form button {
-        flex: 1 0 100%;
-      }
-      .logo, h1 {
-        display: block;
-        margin: 0 auto;
-      }
-      .header-content {
-        display: block;
-      }
+    tr:nth-child(even) { 
+      background-color: #fafafa; 
     }
   </style>
 </head>
 <body>
+<div class="container">
+  <h1>Fiş Detayı</h1>
 
-  <div class="container">
-    <!-- Üst Kısım (Başlık) -->
-    <div class="header">
-      <!-- Logo dosyanızı static/logo/gullu.png olarak ekliyoruz -->
-      <img src="{{ url_for('static', filename='logo/gullu.png') }}" alt="Logo" class="logo">
-      <div class="header-content">
-        <h1>Fiş Detayı</h1>
-      </div>
-    </div>
+  <!-- Çoklu Model mi, Tek Model mi kontrolü -->
+  {% if fis.kalemler_json %}
+    <!-- ÇOKLU MODEL GÖRÜNÜMÜ -->
+    {% set kalemler = fis.kalemler_json | json_loads %}
+    <h2>Çoklu Model Bilgileri</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Model Kodu</th>
+          <th>Renk</th>
+          <th>35</th>
+          <th>36</th>
+          <th>37</th>
+          <th>38</th>
+          <th>39</th>
+          <th>40</th>
+          <th>41</th>
+          <th>Fiyat</th>
+          <th>Toplam Adet</th>
+          <th>Satır Tutarı</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for kalem in kalemler %}
+          <tr>
+            <td>{{ kalem.model_code }}</td>
+            <td>{{ kalem.color }}</td>
+            <td>{{ kalem.beden_35 }}</td>
+            <td>{{ kalem.beden_36 }}</td>
+            <td>{{ kalem.beden_37 }}</td>
+            <td>{{ kalem.beden_38 }}</td>
+            <td>{{ kalem.beden_39 }}</td>
+            <td>{{ kalem.beden_40 }}</td>
+            <td>{{ kalem.beden_41 }}</td>
+            <td>{{ "%.2f"|format(kalem.cift_basi_fiyat) }}</td>
+            <td>{{ kalem.satir_toplam_adet }}</td>
+            <td>{{ "%.2f"|format(kalem.satir_toplam_fiyat) }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
 
-    <!-- Sipariş Bilgileri -->
-    <div class="section">
-      <h2>Sipariş Bilgileri</h2>
-      <div class="table-container">
-        <table>
-          <tr>
-            <th>Sipariş ID</th>
-            <td>{{ fis.siparis_id }}</td>
-          </tr>
-          <tr>
-            <th>Model Kodu</th>
-            <td>{{ fis.urun_model_kodu }}</td>
-          </tr>
-          <tr>
-            <th>Renk</th>
-            <td>{{ fis.renk }}</td>
-          </tr>
-          <tr>
-            <th>Beden 35</th>
-            <td>{{ fis.beden_35 }}</td>
-          </tr>
-          <tr>
-            <th>Beden 36</th>
-            <td>{{ fis.beden_36 }}</td>
-          </tr>
-          <tr>
-            <th>Beden 37</th>
-            <td>{{ fis.beden_37 }}</td>
-          </tr>
-          <tr>
-            <th>Beden 38</th>
-            <td>{{ fis.beden_38 }}</td>
-          </tr>
-          <tr>
-            <th>Beden 39</th>
-            <td>{{ fis.beden_39 }}</td>
-          </tr>
-          <tr>
-            <th>Beden 40</th>
-            <td>{{ fis.beden_40 }}</td>
-          </tr>
-          <tr>
-            <th>Beden 41</th>
-            <td>{{ fis.beden_41 }}</td>
-          </tr>
-          <tr>
-            <th>Çift Fiyat (TL)</th>
-            <td>{{ "%.2f"|format(fis.cift_basi_fiyat) }}</td>
-          </tr>
-          <tr>
-            <th>Toplam Adet</th>
-            <td>{{ fis.toplam_adet }}</td>
-          </tr>
-          <tr>
-            <th>Kalan Toplam</th>
-            <td>({{ fis.kalan_adet }})</td>
-          </tr>
-          <tr>
-            <th>Toplam Fiyat (TL)</th>
-            <td>{{ "%.2f"|format(fis.toplam_fiyat) }}</td>
-          </tr>
-        </table>
-      </div>
-    </div>
+    <!-- Genel Özet Bilgiler -->
+    <h3>Toplam Adet: {{ fis.toplam_adet }}</h3>
+    <h3>Kalan Adet: {{ fis.kalan_adet }}</h3>
+    <h3>Toplam Fiyat: {{ "%.2f"|format(fis.toplam_fiyat) }} TL</h3>
 
-    <!-- Teslimat Kayıtları -->
-    <div class="section">
-      <h2>Teslimat Kayıtları</h2>
+  {% else %}
+    <!-- TEK MODEL GÖRÜNÜMÜ -->
+    <h2>Tek Model Bilgileri</h2>
+    <table>
+      <tr><th>Fiş ID</th>         <td>{{ fis.siparis_id }}</td></tr>
+      <tr><th>Model Kodu</th>    <td>{{ fis.urun_model_kodu }}</td></tr>
+      <tr><th>Renk</th>          <td>{{ fis.renk }}</td></tr>
+      <tr><th>Beden 35</th>      <td>{{ fis.beden_35 }}</td></tr>
+      <tr><th>Beden 36</th>      <td>{{ fis.beden_36 }}</td></tr>
+      <tr><th>Beden 37</th>      <td>{{ fis.beden_37 }}</td></tr>
+      <tr><th>Beden 38</th>      <td>{{ fis.beden_38 }}</td></tr>
+      <tr><th>Beden 39</th>      <td>{{ fis.beden_39 }}</td></tr>
+      <tr><th>Beden 40</th>      <td>{{ fis.beden_40 }}</td></tr>
+      <tr><th>Beden 41</th>      <td>{{ fis.beden_41 }}</td></tr>
+      <tr><th>Çift Fiyat</th>    <td>{{ "%.2f"|format(fis.cift_basi_fiyat) }} TL</td></tr>
+      <tr><th>Toplam Adet</th>   <td>{{ fis.toplam_adet }}</td></tr>
+      <tr><th>Kalan Adet</th>    <td>{{ fis.kalan_adet }}</td></tr>
+      <tr><th>Toplam Fiyat</th>  <td>{{ "%.2f"|format(fis.toplam_fiyat) }} TL</td></tr>
+    </table>
+  {% endif %}
 
-      <!-- Teslimat Ekle Formu -->
-      <form class="delivery-form" 
-            action="{{ url_for('siparis_fisi_bp.teslimat_kaydi_ekle', siparis_id=fis.siparis_id) }}" 
-            method="POST">
+  <!-- Teslimat Bilgileri -->
+  <h2>Teslimat Kayıtları</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Tarih</th>
+        <th>35</th>
+        <th>36</th>
+        <th>37</th>
+        <th>38</th>
+        <th>39</th>
+        <th>40</th>
+        <th>41</th>
+        <th>Toplam</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% set kayitlar = fis.teslim_kayitlari | json_loads %}
+    {% if kayitlar %}
+      {% for kayit in kayitlar %}
+        <tr>
+          <td>{{ kayit.tarih }}</td>
+          <td>{{ kayit.beden_35 }}</td>
+          <td>{{ kayit.beden_36 }}</td>
+          <td>{{ kayit.beden_37 }}</td>
+          <td>{{ kayit.beden_38 }}</td>
+          <td>{{ kayit.beden_39 }}</td>
+          <td>{{ kayit.beden_40 }}</td>
+          <td>{{ kayit.beden_41 }}</td>
+          <td>{{ kayit.toplam }}</td>
+        </tr>
+      {% endfor %}
+    {% else %}
+      <tr><td colspan="9" style="text-align:center;">Henüz teslimat kaydı yok.</td></tr>
+    {% endif %}
+    </tbody>
+  </table>
 
-        <input type="number" name="beden_35" placeholder="35 Beden Adet" min="0">
-        <input type="number" name="beden_36" placeholder="36 Beden Adet" min="0">
-        <input type="number" name="beden_37" placeholder="37 Beden Adet" min="0">
-        <input type="number" name="beden_38" placeholder="38 Beden Adet" min="0">
-        <input type="number" name="beden_39" placeholder="39 Beden Adet" min="0">
-        <input type="number" name="beden_40" placeholder="40 Beden Adet" min="0">
-        <input type="number" name="beden_41" placeholder="41 Beden Adet" min="0">
+  <!-- Teslimat Ekleme Formu -->
+  <form action="{{ url_for('siparis_fisi_bp.teslimat_kaydi_ekle', siparis_id=fis.siparis_id) }}" method="POST">
+    <input type="number" name="beden_35" placeholder="Beden 35">
+    <input type="number" name="beden_36" placeholder="Beden 36">
+    <input type="number" name="beden_37" placeholder="Beden 37">
+    <input type="number" name="beden_38" placeholder="Beden 38">
+    <input type="number" name="beden_39" placeholder="Beden 39">
+    <input type="number" name="beden_40" placeholder="Beden 40">
+    <input type="number" name="beden_41" placeholder="Beden 41">
+    <button type="submit">Teslimat Ekle</button>
+  </form>
 
-        <button type="submit">Teslimat Ekle</button>
-      </form>
-
-      <!-- Teslimat Kayıtları Tablosu -->
-      <div class="delivery-records">
-        <table>
-          <thead>
-            <tr>
-              <th style="min-width:100px;">Tarih</th>
-              <th>35 ( {{ fis.beden_35 - (fis.teslim_kayitlari|json_loads|sum(attribute='beden_35') if fis.teslim_kayitlari else 0) }})</th>
-              <th>36 ( {{ fis.beden_36 - (fis.teslim_kayitlari|json_loads|sum(attribute='beden_36') if fis.teslim_kayitlari else 0) }})</th>
-              <th>37 ( {{ fis.beden_37 - (fis.teslim_kayitlari|json_loads|sum(attribute='beden_37') if fis.teslim_kayitlari else 0) }})</th>
-              <th>38 ( {{ fis.beden_38 - (fis.teslim_kayitlari|json_loads|sum(attribute='beden_38') if fis.teslim_kayitlari else 0) }})</th>
-              <th>39 ( {{ fis.beden_39 - (fis.teslim_kayitlari|json_loads|sum(attribute='beden_39') if fis.teslim_kayitlari else 0) }})</th>
-              <th>40 ( {{ fis.beden_40 - (fis.teslim_kayitlari|json_loads|sum(attribute='beden_40') if fis.teslim_kayitlari else 0) }})</th>
-              <th>41 ( {{ fis.beden_41 - (fis.teslim_kayitlari|json_loads|sum(attribute='beden_41') if fis.teslim_kayitlari else 0) }})</th>
-              <th>Toplam</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% if fis.teslim_kayitlari %}
-              {% for kayit in fis.teslim_kayitlari|json_loads %}
-                <tr>
-                  <td>{{ kayit.tarih }}</td>
-                  <td>{{ kayit.beden_35 }}</td>
-                  <td>{{ kayit.beden_36 }}</td>
-                  <td>{{ kayit.beden_37 }}</td>
-                  <td>{{ kayit.beden_38 }}</td>
-                  <td>{{ kayit.beden_39 }}</td>
-                  <td>{{ kayit.beden_40 }}</td>
-                  <td>{{ kayit.beden_41 }}</td>
-                  <td>{{ kayit.toplam }}</td>
-                </tr>
-              {% endfor %}
-            {% else %}
-              <tr>
-                <td colspan="9" style="text-align:center;">
-                  Henüz teslimat kaydı yok.
-                </td>
-              </tr>
-            {% endif %}
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- Geri Butonu -->
-    <div class="section" style="text-align:center;">
-      <a href="{{ url_for('siparis_fisi_bp.siparis_fisi_yazdir', siparis_id=fis.siparis_id) }}" target="_blank" class="btn btn-primary">Teslimat Fişi</a>
-      <a href="{{ url_for('siparis_fisi_bp.maliyet_fisi_yazdir', siparis_id=fis.siparis_id) }}" target="_blank" class="btn btn-warning">Maliyet Fişi</a>
-      <a href="{{ url_for('siparis_fisi_bp.siparis_fisi_sayfasi') }}" class="btn-back">
-        Listeye Dön
-      </a>
-    </div>
-
-  </div> <!-- container -->
-
+</div>
 </body>
 </html>

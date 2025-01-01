@@ -1,7 +1,9 @@
 from flask import Blueprint, render_template, request, redirect, url_for, jsonify
 import json
 from datetime import datetime
-from models import db, SiparisFisi, Product  # Product modelini de ekledik
+from models import db, SiparisFisi, Product
+from PIL import Image
+import os
 
 siparis_fisi_bp = Blueprint("siparis_fisi_bp", __name__)
 
@@ -192,21 +194,17 @@ def toplu_yazdir(fis_ids):
 # =====================
 @siparis_fisi_bp.route("/siparis_fisi/<int:siparis_id>/detay", methods=["GET"])
 def siparis_fisi_detay(siparis_id):
-    """
-    'siparis_fisi_detay.html' şablonunda, tek fişin
-    (siparis_id) ayrıntılı bilgilerini gösterir
-    """
     fis = SiparisFisi.query.get(siparis_id)
     if not fis:
         return jsonify({"mesaj": "Sipariş fişi bulunamadı"}), 404
 
-    # Örnek: teslim_kayitlari yoksa default değeri ver
     if not fis.teslim_kayitlari:
         fis.teslim_kayitlari = "[]"
         fis.kalan_adet = fis.toplam_adet
         db.session.commit()
 
     return render_template("siparis_fisi_detay.html", fis=fis)
+
 
 
 @siparis_fisi_bp.route("/siparis_fisi/<int:siparis_id>/teslimat", methods=["POST"])
@@ -296,174 +294,137 @@ def teslimat_kaydi_ekle(siparis_id):
 @siparis_fisi_bp.route("/siparis_fisi/olustur", methods=["GET", "POST"])
 def siparis_fisi_olustur():
     search_query = request.args.get('search', '').strip()
-    
+
     # Base query
     query = Product.query.with_entities(
         Product.product_main_id.label('title'),
         Product.color
     )
-    
-    # Apply search filter if query exists
+
+    # Filtre
     if search_query:
-        query = query.filter(
-            Product.product_main_id == search_query  # Exact match for model code
-        )
-    
-    # Group and get results
-    urunler = query.group_by(
-        Product.product_main_id,
-        Product.color
-    ).all()
+        query = query.filter(Product.product_main_id == search_query)  # Tam eşleşme
+
+    # Ürünleri gruplu çek
+    urunler = query.group_by(Product.product_main_id, Product.color).all()
 
     if request.method == "POST":
-        # Get model code and color from form
+        # Formdan birden çok model satırı al
         model_codes = request.form.getlist("model_codes[]")
         colors = request.form.getlist("colors[]")
+        cift_basi_fiyat_list = request.form.getlist("cift_basi_fiyat[]")  # her satır için fiyat
+        beden_35_list = request.form.getlist("beden_35[]")
+        beden_36_list = request.form.getlist("beden_36[]")
+        beden_37_list = request.form.getlist("beden_37[]")
+        beden_38_list = request.form.getlist("beden_38[]")
+        beden_39_list = request.form.getlist("beden_39[]")
+        beden_40_list = request.form.getlist("beden_40[]")
+        beden_41_list = request.form.getlist("beden_41[]")
+
+        kalemler = []
         total_adet = 0
         total_fiyat = 0
-        
-        all_orders = []
+
+        def parse_or_zero(lst, index):
+            """Liste dolu mu, eleman var mı, int dönüştürülebilir mi? Yoksa 0."""
+            if not lst or len(lst) <= index or not lst[index]:
+                return 0
+            try:
+                return int(lst[index])
+            except ValueError:
+                return 0
+
+        def parse_or_float_zero(lst, index):
+            """Benzer mantıkla float dönüştürülür, yoksa 0.0."""
+            if not lst or len(lst) <= index or not lst[index]:
+                return 0.0
+            try:
+                return float(lst[index])
+            except ValueError:
+                return 0.0
+
+        # Bütün satırları gez
         for i in range(len(model_codes)):
-            model_code = model_codes[i]
-            selected_color = colors[i]
-
-            if not model_code:
+            mcode = (model_codes[i] or "").strip()
+            clr = (colors[i] or "").strip()
+            if not mcode:
                 continue
 
-            # Her model için ayrı bedenler
-            beden_data = {
-                'beden_35': int(request.form.getlist("beden_35[]")[i]) if request.form.getlist("beden_35[]") else 0,
-                'beden_36': int(request.form.getlist("beden_36[]")[i]) if request.form.getlist("beden_36[]") else 0,
-                'beden_37': int(request.form.getlist("beden_37[]")[i]) if request.form.getlist("beden_37[]") else 0,
-                'beden_38': int(request.form.getlist("beden_38[]")[i]) if request.form.getlist("beden_38[]") else 0,
-                'beden_39': int(request.form.getlist("beden_39[]")[i]) if request.form.getlist("beden_39[]") else 0,
-                'beden_40': int(request.form.getlist("beden_40[]")[i]) if request.form.getlist("beden_40[]") else 0,
-                'beden_41': int(request.form.getlist("beden_41[]")[i]) if request.form.getlist("beden_41[]") else 0,
-            }
+            b35 = parse_or_zero(beden_35_list, i)
+            b36 = parse_or_zero(beden_36_list, i)
+            b37 = parse_or_zero(beden_37_list, i)
+            b38 = parse_or_zero(beden_38_list, i)
+            b39 = parse_or_zero(beden_39_list, i)
+            b40 = parse_or_zero(beden_40_list, i)
+            b41 = parse_or_zero(beden_41_list, i)
 
-            # Her model için ürün bilgilerini al
-            products = Product.query.filter_by(product_main_id=model_code, color=selected_color).all()
-            if not products:
-                continue
+            satir_toplam_adet = b35 + b36 + b37 + b38 + b39 + b40 + b41
+            cift_fiyat = parse_or_float_zero(cift_basi_fiyat_list, i)
+            satir_toplam_fiyat = satir_toplam_adet * cift_fiyat
 
-            # Barkodları al
-            barcodes = {}
-            for product in products:
-                if product.size and product.barcode:
-                    barcodes[product.size] = product.barcode
+            # Model + renk'e ait barkodları çekiyoruz (istersen kaydet)
+            products = Product.query.filter_by(product_main_id=mcode, color=clr).all()
+            barkodlar = {}
+            for p in products:
+                if p.size and p.barcode:
+                    barkodlar[p.size] = p.barcode
 
-            # Toplam adet ve fiyat hesapla
-            toplam_adet = sum(beden_data.values())
-            cift_basi_fiyat = float(request.form.get("cift_basi_fiyat", 0))
-            toplam_fiyat = float(toplam_adet) * cift_basi_fiyat
+            # Bu satırı ekle
+            kalemler.append({
+                "model_code": mcode,
+                "color": clr,
+                "beden_35": b35,
+                "beden_36": b36,
+                "beden_37": b37,
+                "beden_38": b38,
+                "beden_39": b39,
+                "beden_40": b40,
+                "beden_41": b41,
+                "cift_basi_fiyat": cift_fiyat,
+                "satir_toplam_adet": satir_toplam_adet,
+                "satir_toplam_fiyat": satir_toplam_fiyat,
+                "barkodlar": barkodlar
+            })
 
-            # Yeni fiş oluştur
-            yeni_fis = SiparisFisi(
-                urun_model_kodu=model_code,
-                renk=selected_color,
-                barkod_35=barcodes.get('35'),
-                barkod_36=barcodes.get('36'),
-                barkod_37=barcodes.get('37'),
-                barkod_38=barcodes.get('38'),
-                barkod_39=barcodes.get('39'),
-                barkod_40=barcodes.get('40'),
-                barkod_41=barcodes.get('41'),
-                **beden_data,
-                cift_basi_fiyat=cift_basi_fiyat,
-                toplam_adet=toplam_adet,
-                toplam_fiyat=toplam_fiyat,
-                image_url=f"/static/images/{barcodes.get('37')}.jpg" if barcodes.get('37') else ""
-            )
-            all_orders.append(yeni_fis)
+            total_adet += satir_toplam_adet
+            total_fiyat += satir_toplam_fiyat
 
-        if not all_orders:
-            return jsonify({"mesaj": "Geçerli bir sipariş bulunamadı!"}), 400
+        if not kalemler:
+            return jsonify({"mesaj": "Geçerli satır yok!"}), 400
 
-        # Tüm siparişleri kaydet
-        for order in all_orders:
-            order.created_date = datetime.now()
-            db.session.add(order)
-
-        db.session.commit()
-
-        # Find products by model code and color
-        products = Product.query.filter_by(product_main_id=model_code, color=selected_color).all()
-        if not products:
-            return jsonify({"mesaj": "Seçilen ürün bulunamadı!"}), 400
-
-        # Create barcode dictionary
-        barcodes = {}
-        for product in products:
-            if product.size and product.barcode:
-                barcodes[product.size] = product.barcode
-
-        # 3) Diğer form verileri (bedenler vb.)
-        beden_35 = int(request.form.get("beden_35", 0))
-        beden_36 = int(request.form.get("beden_36", 0))
-        beden_37 = int(request.form.get("beden_37", 0))
-        beden_38 = int(request.form.get("beden_38", 0))
-        beden_39 = int(request.form.get("beden_39", 0))
-        beden_40 = int(request.form.get("beden_40", 0))
-        beden_41 = int(request.form.get("beden_41", 0))
-
-        cift_basi_fiyat = float(request.form.get("cift_basi_fiyat", 0))
-        image_url = request.form.get("image_url", "")
-
-        # 4) Üründen gelen bilgileri (model kodu, renk vs.) sipariş fişine aktaralım
-        urun_model_kodu = product.product_main_id or "Model Bilgisi Yok"
-        renk = selected_color
-
-        # 5) Toplam adet ve fiyat hesapla
-        toplam_adet = (beden_35 + beden_36 + beden_37 + beden_38 +
-                       beden_39 + beden_40 + beden_41)
-        toplam_fiyat = float(toplam_adet) * cift_basi_fiyat
-
-        # 6) Yeni fiş nesnesi
+        # Tek sipariş fişi oluştur
         yeni_fis = SiparisFisi(
-            urun_model_kodu=urun_model_kodu,
-            renk=renk,
-            barkod_35=barcodes.get('35'),
-            barkod_36=barcodes.get('36'),
-            barkod_37=barcodes.get('37'),
-            barkod_38=barcodes.get('38'),
-            barkod_39=barcodes.get('39'),
-            barkod_40=barcodes.get('40'),
-            barkod_41=barcodes.get('41'),
-            beden_35=beden_35,
-            beden_36=beden_36,
-            beden_37=beden_37,
-            beden_38=beden_38,
-            beden_39=beden_39,
-            beden_40=beden_40,
-            beden_41=beden_41,
-            cift_basi_fiyat=cift_basi_fiyat,
-            toplam_adet=toplam_adet,
-            toplam_fiyat=toplam_fiyat,
-            image_url=f"/static/images/{barcodes.get('37')}.jpg" if barcodes.get('37') else image_url
+            urun_model_kodu="Çoklu Model",  # Burası istersen sabit
+            renk="Birden Fazla"
         )
-        
-        # Image resizing if image exists
-        if yeni_fis.image_url and yeni_fis.image_url.startswith('/static/images/'):
-            from PIL import Image
-            import os
-            
-            image_path = os.path.join('static', 'images', os.path.basename(yeni_fis.image_url))
-            if os.path.exists(image_path):
-                with Image.open(image_path) as img:
-                    img = img.convert('RGB')
-                    img = img.resize((250, 150), Image.Resampling.LANCZOS)
-                    img.save(image_path, 'JPEG', quality=85)
-        
+
+        yeni_fis.toplam_adet = total_adet
+        yeni_fis.toplam_fiyat = total_fiyat
         yeni_fis.created_date = datetime.now()
+
+        # kalemler_json diye bir sütun eklediğini varsayıyoruz
+        yeni_fis.kalemler_json = json.dumps(kalemler, ensure_ascii=False)
+
+        # Örnek bir image_url istersen
+        yeni_fis.image_url = "/static/images/default.jpg"
+
         db.session.add(yeni_fis)
         db.session.commit()
+
+        # Opsiyonel: Resim boyutlandırma
+        image_path = os.path.join('static', 'images', 'default.jpg')
+        if os.path.exists(image_path):
+            with Image.open(image_path) as img:
+                img = img.convert('RGB')
+                img = img.resize((250, 150), Image.Resampling.LANCZOS)
+                img.save(image_path, 'JPEG', quality=85)
 
         return redirect(url_for("siparis_fisi_bp.siparis_fisi_sayfasi"))
 
     else:
-        # GET isteği: form şablonunu açmadan önce, products tablosundaki ürünleri çekelim
-        #urunler = Product.query.filter_by(hidden=False).all()  # hidden=False olanlar
+        # GET isteği
         return render_template("siparis_fisi_olustur.html", urunler=urunler)
+
 
 
 # ===========================

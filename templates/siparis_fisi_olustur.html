@@ -60,6 +60,13 @@
       margin-bottom: 15px;
       display: inline-block;
     }
+    .product-entry {
+      margin: 20px 0;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      background: #fafafa;
+    }
   </style>
 </head>
 <body>
@@ -74,7 +81,7 @@
 
     <!-- Arama Formu -->
     <form method="GET" class="search-form" style="margin-bottom: 20px;">
-      <input type="text" name="search" placeholder="Model kodu veya renk ara..." value="{{ request.args.get('search', '') }}">
+      <input type="text" name="search" placeholder="Model kodu ara..." value="{{ request.args.get('search', '') }}">
       <button type="submit">Ara</button>
       {% if request.args.get('search') %}
         <a href="{{ url_for('siparis_fisi_bp.siparis_fisi_olustur') }}" class="clear-btn">Temizle</a>
@@ -83,8 +90,9 @@
 
     <!-- Form: POST metoduyla siparis_fisi_olustur endpointine gidecek -->
     <form method="POST">
-      <!-- ÇOKLU ÜRÜN SEÇİMİ -->
+      <!-- ÇOKLU ÜRÜN GİRİŞ ALANI -->
       <div id="products-container">
+        <!-- İlki örnek giriş satırı -->
         <div class="product-entry">
           <div class="form-group">
             <label>Model Kodu</label>
@@ -101,239 +109,115 @@
               <option value="" disabled selected>Önce model seçin</option>
             </select>
           </div>
+          <div class="form-group">
+            <label>Çift Başı Fiyat (TL)</label>
+            <input type="number" step="0.01" name="cift_basi_fiyat[]" value="0">
+          </div>
           <div class="beden-container" style="display: none;">
-            <!-- Bedenler buraya dinamik olarak eklenecek -->
+            <!-- Seçilen renk için her beden inputu buraya eklenecek -->
           </div>
         </div>
       </div>
+
+      <!-- Yeni satır ekleme butonu -->
       <button type="button" id="add-product" style="margin: 10px 0;">+ Yeni Model Ekle</button>
 
-      <!-- Bedenler ve Barkodlar -->
-      <div id="beden_barkod_container" style="display: none;">
-        <div class="form-group">
-          <label for="beden_35">Beden 35</label>
-          <input type="number" id="beden_35" name="beden_35" value="0">
-          <span id="barcode_35" class="barcode-info"></span>
-        </div>
-        <div class="form-group">
-          <label for="beden_36">Beden 36</label>
-          <input type="number" id="beden_36" name="beden_36" value="0">
-          <span id="barcode_36" class="barcode-info"></span>
-        </div>
-        <div class="form-group">
-          <label for="beden_37">Beden 37</label>
-          <input type="number" id="beden_37" name="beden_37" value="0">
-          <span id="barcode_37" class="barcode-info"></span>
-        </div>
-        <div class="form-group">
-          <label for="beden_38">Beden 38</label>
-          <input type="number" id="beden_38" name="beden_38" value="0">
-          <span id="barcode_38" class="barcode-info"></span>
-        </div>
-        <div class="form-group">
-          <label for="beden_39">Beden 39</label>
-          <input type="number" id="beden_39" name="beden_39" value="0">
-          <span id="barcode_39" class="barcode-info"></span>
-        </div>
-        <div class="form-group">
-          <label for="beden_40">Beden 40</label>
-          <input type="number" id="beden_40" name="beden_40" value="0">
-          <span id="barcode_40" class="barcode-info"></span>
-        </div>
-        <div class="form-group">
-          <label for="beden_41">Beden 41</label>
-          <input type="number" id="beden_41" name="beden_41" value="0">
-          <span id="barcode_41" class="barcode-info"></span>
-        </div>
-      </div>
-
-      <!-- Bedenler -->
-      <div id="sizes_container" style="display: none;">
-        <div class="form-group">
-          <label for="beden_35">Beden 35</label>
-          <input type="number" id="beden_35" name="beden_35" value="0">
-        </div>
-        <div class="form-group">
-          <label for="beden_36">Beden 36</label>
-          <input type="number" id="beden_36" name="beden_36" value="0">
-        </div>
-        <div class="form-group">
-          <label for="beden_37">Beden 37</label>
-          <input type="number" id="beden_37" name="beden_37" value="0">
-        </div>
-        <div class="form-group">
-          <label for="beden_38">Beden 38</label>
-          <input type="number" id="beden_38" name="beden_38" value="0">
-        </div>
-        <div class="form-group">
-          <label for="beden_39">Beden 39</label>
-          <input type="number" id="beden_39" name="beden_39" value="0">
-        </div>
-        <div class="form-group">
-          <label for="beden_40">Beden 40</label>
-          <input type="number" id="beden_40" name="beden_40" value="0">
-        </div>
-        <div class="form-group">
-          <label for="beden_41">Beden 41</label>
-          <input type="number" id="beden_41" name="beden_41" value="0">
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label for="cift_basi_fiyat">Çift Başı Fiyat (TL)</label>
-        <input type="number" step="0.01" id="cift_basi_fiyat" name="cift_basi_fiyat" value="0" required>
-      </div>
-
-      <div class="form-group">
-        <label for="image_url">Ürün Görsel URL (opsiyonel)</label>
-        <input type="text" id="image_url" name="image_url">
-
-<script>
-function initializeProductEntry(productEntry) {
-    const modelSelect = productEntry.querySelector('.model-select');
-    const colorSelect = productEntry.querySelector('.color-select');
-    const bedenContainer = productEntry.querySelector('.beden-container');
-
-    modelSelect.addEventListener('change', function() {
-        const selectedModel = this.value;
-        colorSelect.innerHTML = '<option value="" disabled selected>Renk Seçin</option>';
-        colorSelect.disabled = true;
-        bedenContainer.style.display = 'none';
-        
-        if (!selectedModel) return;
-        
-        fetch(`/get_product_details/${selectedModel}`)
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    data.colors.forEach(color => {
-                        const option = document.createElement('option');
-                        option.value = color;
-                        option.textContent = color;
-                        colorSelect.appendChild(option);
-                    });
-                    colorSelect.disabled = false;
-                    colorSelect.dataset.productData = JSON.stringify(data.product_data);
-                }
-            });
-    });
-
-    colorSelect.addEventListener('change', function() {
-        const selectedColor = this.value;
-        const productData = JSON.parse(this.dataset.productData || '{}');
-        
-        if (!selectedColor || !productData[selectedColor]) {
-            bedenContainer.style.display = 'none';
-            return;
-        }
-
-        bedenContainer.style.display = 'block';
-        bedenContainer.innerHTML = '';
-        
-        const barcodes = productData[selectedColor];
-        for (let size = 35; size <= 41; size++) {
-            const barcode = barcodes[size.toString()];
-            const div = document.createElement('div');
-            div.className = 'form-group';
-            div.innerHTML = `
-                <label>Beden ${size}</label>
-                <input type="number" name="beden_${size}[]" value="0" min="0">
-                ${barcode ? `<span class="barcode-info">Barkod: ${barcode}</span>` : ''}
-            `;
-            bedenContainer.appendChild(div);
-        }
-    });
-}
-
-document.getElementById('add-product').addEventListener('click', function() {
-    const container = document.getElementById('products-container');
-    const newEntry = container.children[0].cloneNode(true);
-    
-    // Reset values
-    newEntry.querySelectorAll('select').forEach(select => {
-        select.selectedIndex = 0;
-        if (select.classList.contains('color-select')) {
-            select.disabled = true;
-        }
-    });
-    newEntry.querySelector('.beden-container').style.display = 'none';
-    
-    container.appendChild(newEntry);
-    initializeProductEntry(newEntry);
-});
-
-// Initialize first product entry
-initializeProductEntry(document.querySelector('.product-entry'));
-</script>
-    const selectedModel = this.value;
-    const colorSelect = document.getElementById('color');
-    const bedenContainer = document.getElementById('beden_barkod_container');
-    
-    // Hide sizes when model changes
-    bedenContainer.style.display = 'none';
-    
-    // Reset color select
-    colorSelect.innerHTML = '<option value="" disabled selected>Renk Seçin</option>';
-    
-    // Reset all barcode spans
-    for (let size = 35; size <= 41; size++) {
-        const barcodeSpan = document.getElementById(`barcode_${size}`);
-        if (barcodeSpan) barcodeSpan.textContent = '';
-    }
-    
-    if (!selectedModel) return;
-    
-    // Fetch product details for selected model
-    fetch(`/get_product_details/${selectedModel}`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Populate color options
-                data.colors.forEach(color => {
-                    const option = document.createElement('option');
-                    option.value = color;
-                    option.textContent = color;
-                    colorSelect.appendChild(option);
-                });
-                
-                // Enable color select
-                colorSelect.disabled = false;
-                
-                // Store product data for later use
-                colorSelect.dataset.productData = JSON.stringify(data.product_data);
-            }
-        })
-        .catch(error => console.error('Error:', error));
-});
-
-document.getElementById('color').addEventListener('change', function() {
-    const selectedColor = this.value;
-    const productData = JSON.parse(this.dataset.productData || '{}');
-    const bedenContainer = document.getElementById('beden_barkod_container');
-    
-    if (!selectedColor || !productData[selectedColor]) {
-        bedenContainer.style.display = 'none';
-        return;
-    }
-    
-    bedenContainer.style.display = 'block';
-    const barcodes = productData[selectedColor];
-    
-    // Update barcode spans
-    for (let size = 35; size <= 41; size++) {
-        const barcodeSpan = document.getElementById(`barcode_${size}`);
-        if (barcodeSpan) {
-            const barcode = barcodes[size.toString()];
-            barcodeSpan.textContent = barcode ? `Barkod: ${barcode}` : '';
-        }
-    }
-});
-</script>
-
-      </div>
-
+      <!-- Formu Kaydet -->
       <button type="submit">Kaydet</button>
     </form>
   </div>
+
+  <script>
+  // Bu fonksiyon, her "ürün satırı" (product-entry) içindeki elementleri yönetiyor.
+  function initializeProductEntry(productEntry) {
+      const modelSelect = productEntry.querySelector('.model-select');
+      const colorSelect = productEntry.querySelector('.color-select');
+      const bedenContainer = productEntry.querySelector('.beden-container');
+
+      modelSelect.addEventListener('change', function() {
+          const selectedModel = this.value;
+          colorSelect.innerHTML = '<option value="" disabled selected>Renk Seçin</option>';
+          colorSelect.disabled = true;
+          bedenContainer.style.display = 'none';
+
+          if (!selectedModel) return;
+
+          // /get_product_details/<model_code> endpointinden verileri çek
+          fetch(`/get_product_details/${selectedModel}`)
+              .then(response => response.json())
+              .then(data => {
+                  if (data.success) {
+                      data.colors.forEach(color => {
+                          const option = document.createElement('option');
+                          option.value = color;
+                          option.textContent = color;
+                          colorSelect.appendChild(option);
+                      });
+                      colorSelect.disabled = false;
+                      // JSON'u attribute olarak saklayalım
+                      colorSelect.dataset.productData = JSON.stringify(data.product_data);
+                  }
+              })
+              .catch(err => console.error(err));
+      });
+
+      colorSelect.addEventListener('change', function() {
+          const selectedColor = this.value;
+          const productData = JSON.parse(this.dataset.productData || '{}');
+
+          // Renk seçili değilse bedenleri gizle
+          if (!selectedColor || !productData[selectedColor]) {
+              bedenContainer.style.display = 'none';
+              return;
+          }
+          bedenContainer.style.display = 'block';
+
+          // Mevcut beden-inputlarını temizle
+          bedenContainer.innerHTML = '';
+
+          const barcodes = productData[selectedColor];
+          // Bedenleri 35'ten 41'e kadar listeleyelim
+          for (let size = 35; size <= 41; size++) {
+              const barcode = barcodes[size.toString()];
+              const div = document.createElement('div');
+              div.className = 'form-group';
+              div.innerHTML = `
+                <label>Beden ${size}</label>
+                <input type="number" name="beden_${size}[]" value="0" min="0">
+                ${barcode ? `<span class="barcode-info">Barkod: ${barcode}</span>` : ''}
+              `;
+              bedenContainer.appendChild(div);
+          }
+      });
+  }
+
+  // Yeni satır ekleme butonuna tıklayınca, ilk satırı klonlayarak ekle
+  document.getElementById('add-product').addEventListener('click', function() {
+      const container = document.getElementById('products-container');
+      // container içindeki ilk product-entry'i klonlayalım
+      const firstEntry = container.querySelector('.product-entry');
+      const newEntry = firstEntry.cloneNode(true);
+
+      // Yeni satırdaki input/select alanlarını resetle
+      newEntry.querySelectorAll('select').forEach(select => {
+          select.selectedIndex = 0;
+          if (select.classList.contains('color-select')) {
+              select.disabled = true;
+              select.dataset.productData = '';
+          }
+      });
+      newEntry.querySelectorAll('input[type="number"]').forEach(inp => {
+          inp.value = 0;
+      });
+      newEntry.querySelector('.beden-container').style.display = 'none';
+      newEntry.querySelector('.beden-container').innerHTML = '';
+
+      container.appendChild(newEntry);
+      initializeProductEntry(newEntry);
+  });
+
+  // Sayfa yüklendiğinde, ilk satırı çalıştır
+  initializeProductEntry(document.querySelector('.product-entry'));
+  </script>
 </body>
 </html>

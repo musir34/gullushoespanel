@@ -10,6 +10,7 @@ db = SQLAlchemy()
 Base = declarative_base()
 
 # Sipariş Fişi
+# Sipariş Fişi
 class SiparisFisi(db.Model):
     __tablename__ = 'siparis_fisi'
 
@@ -51,58 +52,6 @@ class SiparisFisi(db.Model):
     # Ürün görseli
     image_url = db.Column(db.String)
 
-    def __init__(
-        self,
-        urun_model_kodu,
-        renk,
-        barkod_35,
-        barkod_36,
-        barkod_37,
-        barkod_38,
-        barkod_39,
-        barkod_40,
-        barkod_41,
-        beden_35,
-        beden_36,
-        beden_37,
-        beden_38,
-        beden_39,
-        beden_40,
-        beden_41,
-        cift_basi_fiyat,
-        toplam_adet,
-        toplam_fiyat,
-        image_url
-    ):
-        # Ürün bilgileri
-        self.urun_model_kodu = urun_model_kodu
-        self.renk = renk
-
-        # Barkodlar
-        self.barkod_35 = barkod_35
-        self.barkod_36 = barkod_36
-        self.barkod_37 = barkod_37
-        self.barkod_38 = barkod_38
-        self.barkod_39 = barkod_39
-        self.barkod_40 = barkod_40
-        self.barkod_41 = barkod_41
-
-        # Beden adetleri
-        self.beden_35 = beden_35
-        self.beden_36 = beden_36
-        self.beden_37 = beden_37
-        self.beden_38 = beden_38
-        self.beden_39 = beden_39
-        self.beden_40 = beden_40
-        self.beden_41 = beden_41
-
-        # Fiyat
-        self.cift_basi_fiyat = cift_basi_fiyat
-        self.toplam_adet = toplam_adet
-        self.toplam_fiyat = toplam_fiyat
-
-        # Görsel
-        self.image_url = image_url
 
     
 
