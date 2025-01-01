@@ -10,16 +10,17 @@ def analysis_page():
     """
     Tüm analiz sayfasını buradan döndürüyoruz.
     """
-
-    # ---------------------------------------------------
-    # 1) Genel Bakış (Dashboard)
-    # ---------------------------------------------------
-    # Mevsimsel sipariş trendleri
-    seasons = {1:'kis', 2:'kis', 3:'ilkbahar', 4:'ilkbahar', 5:'ilkbahar', 
-               6:'yaz', 7:'yaz', 8:'yaz', 9:'sonbahar', 10:'sonbahar', 
-               11:'sonbahar', 12:'kis'}
-    
-    orders = db.session.query(Order).all()
+    try:
+        # ---------------------------------------------------
+        # 1) Genel Bakış (Dashboard)
+        # ---------------------------------------------------
+        # Mevsimsel sipariş trendleri
+        seasons = {1:'kis', 2:'kis', 3:'ilkbahar', 4:'ilkbahar', 5:'ilkbahar', 
+                   6:'yaz', 7:'yaz', 8:'yaz', 9:'sonbahar', 10:'sonbahar', 
+                   11:'sonbahar', 12:'kis'}
+        
+        # Performans için limit ekleyelim
+        orders = db.session.query(Order).limit(1000).all()
     seasonal_counts = {'yaz': 0, 'kis': 0, 'ilkbahar': 0, 'sonbahar': 0}
     hour_counts = {'00-06': 0, '06-12': 0, '12-18': 0, '18-24': 0}
     
