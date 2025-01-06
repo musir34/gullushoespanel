@@ -214,7 +214,171 @@
             </div>
         </div>
     </div>
+
+    <!-- Yeni Analiz Kartları -->
+    <div class="row mt-4">
+        <!-- Müşteri Segmentleri -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <span>En İyi Müşteriler</span>
+                </div>
+                <div class="card-body">
+                    <canvas id="customerSegmentChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Şehir Bazlı Satışlar -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <span>Şehir Bazlı Satışlar</span>
+                </div>
+                <div class="card-body">
+                    <canvas id="cityChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ürün Kategorileri -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <span>Ürün Kategorileri</span>
+                </div>
+                <div class="card-body">
+                    <canvas id="categoryChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
+
+<script>
+// Diğer scriptler aynı kalacak, sadece yeni grafik fonksiyonları eklenecek
+function createCustomerSegmentChart(data) {
+    const ctx = document.getElementById('customerSegmentChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: data.customer_segments.map(c => c.name),
+            datasets: [{
+                label: 'Toplam Harcama',
+                data: data.customer_segments.map(c => c.total_spent),
+                backgroundColor: '#4CAF50'
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return formatCurrency(context.raw);
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return formatCurrency(value);
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+function createCityChart(data) {
+    const ctx = document.getElementById('cityChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: data.top_cities.map(c => c.city),
+            datasets: [{
+                data: data.top_cities.map(c => c.amount),
+                backgroundColor: [
+                    '#FF6384',
+                    '#36A2EB',
+                    '#FFCE56',
+                    '#4BC0C0',
+                    '#9966FF'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `${context.label}: ${formatCurrency(context.raw)}`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+function createCategoryChart(data) {
+    const ctx = document.getElementById('categoryChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: data.product_categories.map(c => c.category),
+            datasets: [{
+                data: data.product_categories.map(c => c.amount),
+                backgroundColor: [
+                    '#FF6384',
+                    '#36A2EB',
+                    '#FFCE56',
+                    '#4BC0C0',
+                    '#9966FF'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `${context.label}: ${formatCurrency(context.raw)}`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Mevcut updateCharts fonksiyonunu güncelle
+function updateCharts() {
+    const startDate = document.getElementById('startDate').value;
+    const endDate = document.getElementById('endDate').value;
+    
+    fetch(`/api/sales-stats?start_date=${startDate}&end_date=${endDate}`)
+        .then(response => response.json())
+        .then(data => {
+            salesData = data;
+            updateSummaryCards(data);
+            createDailyChart(data);
+            createProductChart(data);
+            createGrowthChart(data);
+            createCustomerSegmentChart(data);
+            createCityChart(data);
+            createCategoryChart(data);
+        });
+}
+</script>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
