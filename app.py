@@ -12,16 +12,28 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
+
+from flask_caching import Cache
+
+cache_config = {
+    "CACHE_TYPE": "redis",
+    "CACHE_REDIS_URL": os.environ.get('REDIS_URL', 'redis://localhost:6379/0'),
+    "CACHE_DEFAULT_TIMEOUT": 300
+}
+cache = Cache(config=cache_config)
+cache.init_app(app)
+
 app.secret_key = os.environ.get('SECRET_KEY', 'varsayılan_anahtar')
 
 # Veritabanı ayarları
 DATABASE_URI = os.environ.get('DATABASE_URL', 'postgresql+psycopg2://username:password@host:port/database_name')
 app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URI
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SQLALCHEMY_POOL_SIZE'] = 20
-app.config['SQLALCHEMY_MAX_OVERFLOW'] = 40
-app.config['SQLALCHEMY_POOL_TIMEOUT'] = 60
-app.config['SQLALCHEMY_POOL_RECYCLE'] = 299
+app.config['SQLALCHEMY_POOL_SIZE'] = 30
+app.config['SQLALCHEMY_MAX_OVERFLOW'] = 60
+app.config['SQLALCHEMY_POOL_TIMEOUT'] = 30
+app.config['SQLALCHEMY_POOL_RECYCLE'] = 180
+app.config['SQLALCHEMY_ECHO'] = False
 app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {'pool_pre_ping': True}
 
 # SQLAlchemy veritabanı motoru ve oturum oluşturma
@@ -35,6 +47,24 @@ except Exception as e:
     engine = None
     raise Exception(f"Veritabanına bağlanılamadı: {e}")
 
+
+
+@app.errorhandler(Exception)
+def handle_error(error):
+    logger.error(f"Beklenmeyen hata: {str(error)}")
+    return jsonify({
+        "success": False,
+        "error": "Bir hata oluştu",
+        "details": str(error)
+    }), 500
+
+@app.errorhandler(429)
+def ratelimit_handler(e):
+    return jsonify({
+        "success": False,
+        "error": "İstek limiti aşıldı",
+        "retry_after": e.description
+    }), 429
 
 # Session nesnesini uygulama context'ine ekleyelim
 app.config['Session'] = Session

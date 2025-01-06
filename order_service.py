@@ -7,6 +7,15 @@ from trendyol_api import API_KEY, API_SECRET, SUPPLIER_ID
 from update_service import update_package_to_picking
 from models import db, Order, Archive
 import traceback
+
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+
+limiter = Limiter(
+    key_func=get_remote_address,
+    default_limits=["200 per day", "50 per hour"]
+)
+
 import asyncio
 import aiohttp
 import os
