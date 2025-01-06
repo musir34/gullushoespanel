@@ -1,5 +1,6 @@
 import os
 from flask import Flask, request, url_for, redirect, flash, session
+from cache_config import redis_client, CACHE_TIMES
 from werkzeug.routing import BuildError
 from flask_sqlalchemy import SQLAlchemy
 from models import db, Base

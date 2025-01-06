@@ -8,6 +8,13 @@ def setup_logger(name, log_file, level=logging.INFO):
         '%(asctime)s %(levelname)s [%(name)s] %(message)s',
         datefmt='%Y-%m-%d %H:%M:%S'
     )
+    # Performans için buffer size artırılıyor
+    handler = logging.handlers.RotatingFileHandler(
+        log_file, 
+        maxBytes=5*1024*1024,  # 5MB
+        backupCount=3,
+        buffering=8192
+    )
     
     handler = logging.handlers.RotatingFileHandler(
         log_file, maxBytes=10000000, backupCount=5

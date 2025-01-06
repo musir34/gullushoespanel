@@ -111,7 +111,12 @@ class User(db.Model):
 # Sipariş Modeli
 class Order(db.Model):
     __tablename__ = 'orders'
-
+    __table_args__ = (
+        db.Index('idx_order_number', 'order_number'),
+        db.Index('idx_status', 'status'),
+        db.Index('idx_order_date', 'order_date'),
+    )
+    
     id = db.Column(db.Integer, primary_key=True)
     order_number = db.Column(db.String)
     order_date = db.Column(db.DateTime)
