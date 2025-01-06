@@ -4,6 +4,22 @@
 <div class="container mt-4">
     <h2>Satış Raporları</h2>
     
+    <!-- Tarih Aralığı Seçimi -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Tarih Aralığı</h5>
+                    <div class="d-flex">
+                        <input type="date" id="startDate" class="form-control mr-2">
+                        <input type="date" id="endDate" class="form-control ml-2">
+                        <button class="btn btn-primary ml-2" onclick="updateCharts()">Uygula</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
     <!-- Özet Kartları -->
     <div class="row mt-4">
         <div class="col-md-4">
@@ -63,9 +79,112 @@
             </div>
         </div>
     </div>
+    
+    <!-- Yeni Grafikler -->
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <span>Haftalık Büyüme</span>
+                </div>
+                <div class="card-body">
+                    <canvas id="growthChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <span>Ödeme Yöntemleri</span>
+                </div>
+                <div class="card-body">
+                    <canvas id="paymentChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+function updateCharts() {
+    const startDate = document.getElementById('startDate').value;
+    const endDate = document.getElementById('endDate').value;
+    
+    fetch(`/api/sales-stats?start_date=${startDate}&end_date=${endDate}`)
+        .then(response => response.json())
+        .then(data => {
+            salesData = data;
+            updateSummaryCards(data);
+            createDailyChart(data);
+            createProductChart(data);
+            createGrowthChart(data);
+            createPaymentChart(data);
+        });
+}
+
+function createGrowthChart(data) {
+    const ctx = document.getElementById('growthChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: data.weekly_growth.map(w => w.week),
+            datasets: [{
+                label: 'Haftalık Büyüme (%)',
+                data: data.weekly_growth.map(w => w.growth_rate),
+                borderColor: '#FF6384',
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: value => `%${value}`
+                    }
+                }
+            }
+        }
+    });
+}
+
+function createPaymentChart(data) {
+    const ctx = document.getElementById('paymentChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: data.payment_methods.map(p => p.method),
+            datasets: [{
+                data: data.payment_methods.map(p => p.amount),
+                backgroundColor: [
+                    '#FF6384',
+                    '#36A2EB',
+                    '#FFCE56',
+                    '#4BC0C0'
+                ]
+            }]
+        },
+        options: {
+            responsive: true
+        }
+    });
+}
+
+// Sayfa yüklendiğinde varsayılan tarihleri ayarla
+document.addEventListener('DOMContentLoaded', function() {
+    const today = new Date();
+    const thirtyDaysAgo = new Date(today);
+    thirtyDaysAgo.setDate(today.getDate() - 30);
+    
+    document.getElementById('endDate').value = today.toISOString().split('T')[0];
+    document.getElementById('startDate').value = thirtyDaysAgo.toISOString().split('T')[0];
+    
+    updateCharts();
+});
+</script>
 <script>
 let dailyChart = null;
 let productChart = null;

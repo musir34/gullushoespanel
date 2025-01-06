@@ -13,8 +13,15 @@ def analysis_page():
 
 @analysis_bp.route('/api/sales-stats')
 def sales_stats():
-    # Son 30 günlük istatistikler
-    thirty_days_ago = datetime.now() - timedelta(days=30)
+    start_date = request.args.get('start_date', None)
+    end_date = request.args.get('end_date', None)
+    
+    if start_date and end_date:
+        start_date = datetime.strptime(start_date, '%Y-%m-%d')
+        end_date = datetime.strptime(end_date, '%Y-%m-%d')
+    else:
+        end_date = datetime.now()
+        start_date = end_date - timedelta(days=30)
     
     # Günlük satış miktarları
     daily_sales = db.session.query(
