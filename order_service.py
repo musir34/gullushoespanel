@@ -109,23 +109,37 @@ async def fetch_trendyol_orders_async():
 
 async def fetch_orders_page(session, url, headers, params, semaphore):
     async with semaphore:
-        try:
-            async with session.get(url, headers=headers, params=params) as response:
-                if response.status != 200:
-                    print(f"API isteği başarısız oldu: {response.status} - {await response.text()}")
-                    return []
-                data = await response.json()
-                orders_data = data.get('content', [])
-                return orders_data
-        except Exception as e:
-            print(f"Hata: fetch_orders_page - {e}")
-            return []
+        retries = 3
+        for attempt in range(retries):
+            try:
+                async with session.get(url, headers=headers, params=params, timeout=30) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        return data.get('content', [])
+                    elif response.status == 429:  # Rate limit
+                        retry_after = int(response.headers.get('Retry-After', 60))
+                        await asyncio.sleep(retry_after)
+                        continue
+                    else:
+                        logger.error(f"API Hatası: {response.status} - {await response.text()}")
+                        return []
+            except asyncio.TimeoutError:
+                logger.warning(f"Zaman aşımı - Deneme {attempt + 1}/{retries}")
+                await asyncio.sleep(2 ** attempt)  # Exponential backoff
+            except Exception as e:
+                logger.error(f"Hata: fetch_orders_page - {e}")
+                return []
+        return []
 
 
 def process_all_orders(all_orders_data):
     try:
         api_order_numbers = set()
         new_orders = []
+        
+        # Performans için bulk işlem boyutu
+        BATCH_SIZE = 100
+        current_batch = []
 
         # Mevcut siparişleri ve arşivdeki siparişleri al
         existing_orders = Order.query.all()
