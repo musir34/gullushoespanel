@@ -46,7 +46,31 @@ def sales_stats():
         Order.product_name
     ).limit(10).all()
     
+    # Haftalık büyüme oranları
+    weekly_sales = db.session.query(
+        func.date_trunc('week', Order.order_date).label('week'),
+        func.sum(Order.amount).label('total_amount')
+    ).filter(
+        Order.order_date >= start_date,
+        Order.order_date <= end_date
+    ).group_by(
+        func.date_trunc('week', Order.order_date)
+    ).order_by(
+        func.date_trunc('week', Order.order_date)
+    ).all()
+
+    weekly_growth = []
+    for i in range(1, len(weekly_sales)):
+        prev_amount = float(weekly_sales[i-1].total_amount or 0)
+        curr_amount = float(weekly_sales[i].total_amount or 0)
+        growth_rate = ((curr_amount - prev_amount) / prev_amount * 100) if prev_amount > 0 else 0
+        weekly_growth.append({
+            'week': str(weekly_sales[i].week.date()),
+            'growth_rate': round(growth_rate, 2)
+        })
+
     return jsonify({
         'daily_sales': [{'date': str(d.date), 'count': d.count, 'amount': float(d.total_amount or 0)} for d in daily_sales],
-        'product_sales': [{'name': p.product_name, 'count': p.count, 'amount': float(p.total_amount or 0)} for p in product_sales]
+        'product_sales': [{'name': p.product_name, 'count': p.count, 'amount': float(p.total_amount or 0)} for p in product_sales],
+        'weekly_growth': weekly_growth
     })

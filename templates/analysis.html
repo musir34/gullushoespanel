@@ -90,10 +90,35 @@
 }
 
 .chart-container {
-    padding: 1rem;
+    padding: 1.5rem;
     background: white;
     border-radius: 15px;
     margin-bottom: 1.5rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    transition: transform 0.2s;
+}
+
+.chart-container:hover {
+    transform: translateY(-5px);
+}
+
+.chart-title {
+    font-size: 1.1rem;
+    color: #333;
+    margin-bottom: 1rem;
+    font-weight: 500;
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: 600;
+    color: #2193b0;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    color: #666;
+    margin-top: 0.5rem;
 }
 </style>
 
