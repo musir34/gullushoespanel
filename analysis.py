@@ -39,7 +39,7 @@ def sales_stats():
         Order.product_barcode,
         Order.merchant_sku,
         Order.product_size,
-        Order.color,
+        Order.product_color,
         Order.product_name,
         func.count(Order.id).label('count'),
         func.sum(Order.amount).label('total_amount')
