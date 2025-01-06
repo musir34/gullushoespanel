@@ -124,11 +124,11 @@ def sales_stats():
     return jsonify({
         'daily_sales': [{'date': str(d.date), 'count': d.count, 'amount': float(d.total_amount or 0)} for d in daily_sales],
         'product_sales': [{
-            'name': p.product_name,
-            'barcode': p.product_barcode,
-            'sku': p.merchant_sku,
-            'size': p.product_size,
-            'color': p.product_color,
+            'name': p.product_name or 'Bilinmeyen Ürün',
+            'barcode': p.product_barcode or '-',
+            'sku': p.merchant_sku or '-',
+            'size': p.product_size or '-',
+            'color': p.product_color or '-',
             'count': p.count,
             'amount': float(p.total_amount or 0)
         } for p in product_sales],
