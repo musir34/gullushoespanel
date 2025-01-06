@@ -239,7 +239,7 @@
 
     <!-- Sağ üst köşede butonlar -->
     <div class="btn-group-top">
-        <!-- <a href="#" class="btn btn-primary">Analiz Sayfası</a> -->
+        <a href="{{ url_for('analysis.analysis_page') }}" class="btn btn-primary">Analiz Sayfası</a>
         <a href="{{ url_for('siparis_fisi_bp.siparis_fisi_sayfasi') }}" class="btn btn-primary">Ürün Tedarik Sayfası</a>
         <a href="{{ url_for('approve_users') }}" class="btn btn-warning">Kullanıcı Yönetimi</a>
         <a href="{{ url_for('home.home') }}" class="btn btn-secondary">Anasayfa</a>
