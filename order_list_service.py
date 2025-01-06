@@ -116,15 +116,11 @@ def process_order_details(orders):
             processed_details = []
             for detail in details_list:
                 product_barcode = detail.get('barcode', '')
-                original_barcode = detail.get('original_barcode', product_barcode)
                 sku = detail.get('sku', 'Bilinmeyen SKU')
                 quantity = detail.get('quantity', 0)
                 color = detail.get('color', '')
                 size = detail.get('size', '')
-                image_path = f"static/images/{original_barcode}.jpg"
-                if not os.path.exists(image_path):
-                    image_path = "static/images/default.jpg"
-                image_url = image_path
+                image_url = get_product_image(product_barcode)
                 processed_details.append({
                     'sku': sku,
                     'barcode': product_barcode,

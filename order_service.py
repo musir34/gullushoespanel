@@ -5,17 +5,8 @@ import json
 from datetime import datetime, timedelta
 from trendyol_api import API_KEY, API_SECRET, SUPPLIER_ID
 from update_service import update_package_to_picking
-from models import db, Order, Archive
+from models import db, Order
 import traceback
-
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
-
-limiter = Limiter(
-    key_func=get_remote_address,
-    default_limits=["200 per day", "50 per hour"]
-)
-
 import asyncio
 import aiohttp
 import os
@@ -109,45 +100,27 @@ async def fetch_trendyol_orders_async():
 
 async def fetch_orders_page(session, url, headers, params, semaphore):
     async with semaphore:
-        retries = 3
-        for attempt in range(retries):
-            try:
-                async with session.get(url, headers=headers, params=params, timeout=30) as response:
-                    if response.status == 200:
-                        data = await response.json()
-                        return data.get('content', [])
-                    elif response.status == 429:  # Rate limit
-                        retry_after = int(response.headers.get('Retry-After', 60))
-                        await asyncio.sleep(retry_after)
-                        continue
-                    else:
-                        logger.error(f"API Hatası: {response.status} - {await response.text()}")
-                        return []
-            except asyncio.TimeoutError:
-                logger.warning(f"Zaman aşımı - Deneme {attempt + 1}/{retries}")
-                await asyncio.sleep(2 ** attempt)  # Exponential backoff
-            except Exception as e:
-                logger.error(f"Hata: fetch_orders_page - {e}")
-                return []
-        return []
+        try:
+            async with session.get(url, headers=headers, params=params) as response:
+                if response.status != 200:
+                    print(f"API isteği başarısız oldu: {response.status} - {await response.text()}")
+                    return []
+                data = await response.json()
+                orders_data = data.get('content', [])
+                return orders_data
+        except Exception as e:
+            print(f"Hata: fetch_orders_page - {e}")
+            return []
 
 
 def process_all_orders(all_orders_data):
     try:
         api_order_numbers = set()
         new_orders = []
-        
-        # Performans için bulk işlem boyutu
-        BATCH_SIZE = 100
-        current_batch = []
 
-        # Mevcut siparişleri ve arşivdeki siparişleri al
+        # Mevcut siparişleri al
         existing_orders = Order.query.all()
         existing_orders_dict = {order.order_number: order for order in existing_orders}
-
-        # Arşivdeki siparişleri kontrol et
-        archived_orders = Archive.query.all()
-        archived_orders_dict = {order.order_number: order for order in archived_orders}
 
         for order_data in all_orders_data:
             order_number = str(order_data.get('orderNumber') or order_data.get('id'))
@@ -159,10 +132,10 @@ def process_all_orders(all_orders_data):
                 if existing_order.status == 'Delivered':
                     # 'Delivered' siparişleri güncellemiyoruz
                     continue
-                # Var olan siparişi güncelle
+                # Siparişi güncelle
                 update_existing_order(existing_order, order_data, order_status)
-            elif order_number not in archived_orders_dict:
-                # Sipariş arşivde değilse yeni sipariş olarak ekle
+            else:
+                # Yeni siparişi ekle
                 combined_order = combine_line_items(order_data, order_status)
                 new_order = Order(**combined_order)
                 new_orders.append(new_order)
@@ -174,7 +147,7 @@ def process_all_orders(all_orders_data):
 
         db.session.commit()
 
-        # Veritabanında olmayan siparişleri sil, ancak 'Delivered' olanları silme
+        # Veritabanında olmayan siparişleri sil, ancak 'Delivered' siparişleri silme
         existing_order_numbers = set(existing_orders_dict.keys())
         orders_to_delete_numbers = existing_order_numbers - api_order_numbers
 
@@ -185,6 +158,7 @@ def process_all_orders(all_orders_data):
                 Order.status == 'Delivered'
             ).all()
             delivered_order_numbers = {order.order_number for order in delivered_orders}
+            # Silinecek sipariş numaralarını güncelle
             orders_to_delete_numbers = orders_to_delete_numbers - delivered_order_numbers
 
             if orders_to_delete_numbers:
@@ -213,12 +187,14 @@ def update_existing_order(existing_order, order_data, status):
     try:
         new_lines = order_data['lines']
 
+        # Daha önce kaydedilmiş verileri liste olarak çek
         merchant_skus = existing_order.merchant_sku.split(', ') if existing_order.merchant_sku else []
         product_barcodes = existing_order.product_barcode.split(', ') if existing_order.product_barcode else []
         original_product_barcodes = existing_order.original_product_barcode.split(', ') if existing_order.original_product_barcode else []
         line_ids = existing_order.line_id.split(', ') if existing_order.line_id else []
 
-        total_qty = 0  # Toplam adet toplanacak
+        # Toplam adet toplanacak
+        total_qty = 0
 
         for line in new_lines:
             q = line.get('quantity', 1)
@@ -242,14 +218,14 @@ def update_existing_order(existing_order, order_data, status):
             if line_id:
                 line_ids.append(line_id)
 
-        # Veritabanını güncelle
+        # Veritabanındaki sütunları güncelle
         existing_order.status = status
         existing_order.merchant_sku = ', '.join(merchant_skus)
         existing_order.product_barcode = ', '.join(product_barcodes)
         existing_order.original_product_barcode = ', '.join(original_product_barcodes)
         existing_order.line_id = ', '.join(line_ids)
 
-        # Sipariş detaylarını güncelle (eski create_order_details’e benzer şekilde)
+        # Yeni eklenen kod: Sipariş detaylarını güncelle
         order_details = create_order_details(new_lines)
         existing_order.details = json.dumps(order_details, ensure_ascii=False)
 
@@ -262,26 +238,58 @@ def update_existing_order(existing_order, order_data, status):
         traceback.print_exc()
 
 
-# ESKİ KODDAKİ line_id MANTIĞI
 def create_order_details(order_lines):
-    """
-    Eski kod: Yalnızca line.get('id') ile line_id alınıyor.
-    """
-    details = []
+    details_dict = {}  # dict: (barkod, color, size) -> detail
+    total_quantity = 0  # Toplam miktar takibi
+
     for line in order_lines:
-        detail = {
-            'line_id': str(line.get('id', '')),  # Sadece 'id' kullanıyoruz
-            'sku': line.get('merchantSku', ''),
-            'barcode': replace_turkish_characters(line.get('barcode', '')),
-            'original_barcode': line.get('barcode', ''),
-            'productName': line.get('productName', ''),
-            'productCode': str(line.get('productCode', '')),
-            'quantity': int(line.get('quantity', 1)),
-            'productSize': line.get('productSize', ''),
-            'productColor': line.get('productColor', ''),
-        }
-        details.append(detail)
-    return details
+        try:
+            barcode = line.get('barcode', '')
+            product_color = line.get('productColor', '')
+            product_size = line.get('productSize', '')
+            merchant_sku = line.get('merchantSku', '')
+            product_name = line.get('productName', '')
+            product_code = str(line.get('productCode', ''))
+            quantity = int(line.get('quantity', 1))
+            amount = float(line.get('amount', 0))
+
+            # Toplam miktarı güncelle
+            total_quantity += quantity
+
+            # Anahtar oluştur: (barkod, color, size)
+            key = (barcode, product_color, product_size)
+
+            if key not in details_dict:
+                # Yeni kayıt
+                details_dict[key] = {
+                    'barcode': barcode,
+                    'converted_barcode': replace_turkish_characters(barcode),
+                    'color': product_color,
+                    'size': product_size,
+                    'sku': merchant_sku,
+                    'productName': product_name,
+                    'productCode': product_code,
+                    'quantity': quantity,
+                    'total_price': amount * quantity,
+                    'image_url': ''
+                }
+            else:
+                # Mevcut kayıt, miktarı ekle
+                details_dict[key]['quantity'] += quantity
+                details_dict[key]['total_price'] += amount * quantity
+
+        except Exception as e:
+            logger.error(f"Sipariş detayı oluşturulurken hata: {e}")
+            continue
+
+    # Her bir siparişin total_quantity değerini details içine ekle
+    for detail in details_dict.values():
+        detail['total_quantity'] = total_quantity
+
+    # Sözlüğü liste olarak döndür
+    return list(details_dict.values())
+
+
 
 
 def replace_turkish_characters(text):
@@ -309,7 +317,7 @@ def replace_turkish_characters(text):
 def combine_line_items(order_data, status):
     # Miktar bilgisini koruyarak barkodları işle
     barcodes_with_quantity = []
-    total_qty = 0
+    total_qty = 0  # Toplam adet için
     for line in order_data['lines']:
         barcode = line.get('barcode', '')
         quantity = line.get('quantity', 1)
@@ -325,7 +333,7 @@ def combine_line_items(order_data, status):
     original_barcodes = barcodes_with_quantity
     converted_barcodes = [replace_turkish_characters(bc) for bc in original_barcodes]
 
-    # Sipariş detaylarını oluştur (yine eski create_order_details fonksiyonunu kullanarak)
+    # Sipariş detaylarını oluştur
     order_details = create_order_details(order_data['lines'])
 
     combined_order = {
@@ -364,7 +372,7 @@ def combine_line_items(order_data, status):
         'details': json.dumps(order_details, ensure_ascii=False),
         'archive_date': None,
         'archive_reason': '',
-        # Yeni eklenen kolon:
+        # Yeni eklenen kolon verisi:
         'quantity': total_qty
     }
     return combined_order
