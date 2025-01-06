@@ -1056,6 +1056,16 @@ MarkupSafe = ">=2.0"
 i18n = ["Babel (>=2.7)"]
 
 [[package]]
+name = "jsonify"
+version = "0.5"
+description = "A csv to json converter"
+optional = false
+python-versions = "*"
+files = [
+    {file = "jsonify-0.5.tar.gz", hash = "sha256:f340032753577575e9777835809b283fdc9b251867d5d5600389131647f8bfe1"},
+]
+
+[[package]]
 name = "kombu"
 version = "5.4.2"
 description = "Messaging library for Python."
@@ -2599,4 +2609,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10.0,<3.12"
-content-hash = "49be2693ec0506d6922d164f99b1fb13a513d8d9363928a5ca3005fae5897f86"
+content-hash = "8ea7344bf792181860440086eeb55d80a5f7dbacabfaae0bc9db3a011dd24888"
