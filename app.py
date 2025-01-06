@@ -103,7 +103,7 @@ blueprints = [
     processed_orders_service_bp,
     iade_islemleri,
     siparis_fisi_bp,
-    analysis_bp # analysis blueprint eklendi
+    analysis_bp,  # analysis blueprint eklendi
 ]
 
 for bp in blueprints:

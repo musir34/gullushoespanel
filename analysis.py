@@ -1,12 +1,12 @@
 
 from flask import Blueprint, render_template, jsonify
-from models import Order, Product, SiparisFisi
+from models import db, Order, Product, SiparisFisi
 from sqlalchemy import func
 from datetime import datetime, timedelta
 
-analysis_bp = Blueprint('analysis_bp', __name__)
+analysis_bp = Blueprint('analysis', __name__, url_prefix='/analysis')
 
-@analysis_bp.route('/analysis')
+@analysis_bp.route('/')
 def analysis_page():
     # Son 30 günlük siparişler
     thirty_days_ago = datetime.now() - timedelta(days=30)
