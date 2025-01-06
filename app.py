@@ -1,5 +1,5 @@
 import os
-from flask import Flask, request, url_for, redirect, flash, session, jsonify # jsonify import eklendi
+from flask import Flask, request, url_for, redirect, flash, session
 from werkzeug.routing import BuildError
 from flask_sqlalchemy import SQLAlchemy
 from models import db, Base
@@ -11,10 +11,7 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-app = Flask(__name__, 
-    static_url_path='',
-    static_folder='static'
-)
+app = Flask(__name__)
 
 from flask_caching import Cache
 
@@ -89,8 +86,6 @@ from new_orders_service import new_orders_service_bp
 from processed_orders_service import processed_orders_service_bp
 from iade_islemleri import iade_islemleri, fetch_data_from_api, save_to_database  # iade_islemleri'nden import ettiğimizi varsayıyorum
 from siparis_fisi import siparis_fisi_bp
-from analysis import analysis_bp # analysis blueprint import edildi
-
 
 blueprints = [
     order_service_bp,
@@ -105,8 +100,7 @@ blueprints = [
     new_orders_service_bp,
     processed_orders_service_bp,
     iade_islemleri,
-    siparis_fisi_bp,
-    analysis_bp,  # analysis blueprint eklendi
+    siparis_fisi_bp
 ]
 
 for bp in blueprints:
