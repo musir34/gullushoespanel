@@ -1,0 +1,69 @@
+
+{% extends "home.html" %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Satış Raporları</h2>
+    
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    Günlük Satışlar (Son 30 Gün)
+                </div>
+                <div class="card-body">
+                    <canvas id="dailySalesChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    En Çok Satan Ürünler
+                </div>
+                <div class="card-body">
+                    <canvas id="productSalesChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    fetch('/api/sales-stats')
+        .then(response => response.json())
+        .then(data => {
+            // Günlük satışlar grafiği
+            const dailyCtx = document.getElementById('dailySalesChart').getContext('2d');
+            new Chart(dailyCtx, {
+                type: 'line',
+                data: {
+                    labels: data.daily_sales.map(item => item.date),
+                    datasets: [{
+                        label: 'Satış Miktarı',
+                        data: data.daily_sales.map(item => item.amount),
+                        borderColor: '#4CAF50',
+                        tension: 0.1
+                    }]
+                }
+            });
+
+            // Ürün satışları grafiği
+            const productCtx = document.getElementById('productSalesChart').getContext('2d');
+            new Chart(productCtx, {
+                type: 'bar',
+                data: {
+                    labels: data.product_sales.map(item => item.name),
+                    datasets: [{
+                        label: 'Satış Miktarı',
+                        data: data.product_sales.map(item => item.amount),
+                        backgroundColor: '#2196F3'
+                    }]
+                }
+            });
+        });
+});
+</script>
+{% endblock %}
