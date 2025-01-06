@@ -645,7 +645,7 @@ function createProductChart(data, type = 'amount') {
     productChart = new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: data.product_sales.map(item => `${item.size || '-'} / ${item.color || '-'}`),
+            labels: data.product_sales.map(item => `${item.sku || '-'} - ${item.size || '-'} / ${item.color || '-'}`),
             datasets: [{
                 label: type === 'amount' ? 'Satış Tutarı' : 'Satış Adedi',
                 data: data.product_sales.map(item => type === 'amount' ? item.amount : item.count),
