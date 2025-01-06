@@ -34,10 +34,7 @@ except Exception as e:
     logger.error(f"Veritabanı bağlantı hatası: {e}")
     engine = None
     raise Exception(f"Veritabanına bağlanılamadı: {e}")
-    
-    with app.app_context():
-        # Eğer tablo yoksa oluştur (development için)
-        db.create_all()
+
 
 # Session nesnesini uygulama context'ine ekleyelim
 app.config['Session'] = Session

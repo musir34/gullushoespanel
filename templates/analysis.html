@@ -1,386 +1,316 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-  <meta charset="UTF-8" />
-  <title>Kapsamlı Analiz Raporu</title>
+  <meta charset="UTF-8">
+  <title>Satış Raporu</title>
   <style>
-    /* Genel Stil */
+    /* GENEL STİLLER */
     * {
-      margin: 0;
-      padding: 0;
+      margin: 0; 
+      padding: 0; 
       box-sizing: border-box;
     }
     body {
-      font-family: "Arial", sans-serif;
-      background-color: #f5f5f5;
+      font-family: 'Open Sans', sans-serif;
+      background-color: #f2f2f2;
       color: #333;
-      line-height: 1.6;
     }
-    h1, h2, h3 {
-      margin-bottom: 12px;
+    .navbar {
+      background-color: #ff6f00; 
+      color: #fff;
+      padding: 15px 20px;
     }
-    p, ul, li {
-      margin-bottom: 6px;
+    .navbar h1 {
+      font-size: 1.4rem;
     }
-    a {
-      text-decoration: none;
-      color: #1e88e5;
-    }
-    a:hover {
-      text-decoration: underline;
-    }
-
-    /* Ana Konteyner */
     .container {
       width: 90%;
       max-width: 1200px;
-      margin: 30px auto;
-    }
-
-    /* Başlık */
-    .main-title {
-      text-align: center;
-      margin-bottom: 40px;
-      color: #2c3e50;
-    }
-
-    /* Kartlar */
-    .card {
-      background: #fff;
+      margin: 20px auto;
+      background-color: #fff;
       border-radius: 8px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
       padding: 20px;
+      min-height: 80vh;
+    }
+    h1 {
+      text-align: center;
       margin-bottom: 20px;
-    }
-    .card h2 {
-      margin-bottom: 16px;
-      color: #2c3e50;
-    }
-    .card ul {
-      list-style-type: disc;
-      margin-left: 20px;
-      margin-bottom: 10px;
-    }
-    .card ul li {
-      margin-bottom: 4px;
-    }
-    /* İç başlıklar (h3) */
-    .card h3 {
-      margin-top: 10px;
-      margin-bottom: 6px;
-      font-size: 1.1rem;
       color: #444;
     }
 
-    /* Küçük Bilgi Paneli */
-    .info-box {
-      background-color: #eef;
-      padding: 10px;
-      border-left: 4px solid #1e88e5;
-      margin-bottom: 10px;
-      font-size: 0.95rem;
+    /* SEKMELER */
+    .tabs { 
+      display: flex; 
+      border-bottom: 2px solid #ddd; 
+      margin-bottom: 20px; 
+    }
+    .tab {
+      padding: 10px 15px;
+      cursor: pointer;
+      background: none;
+      border: none;
+      outline: none;
+      color: #555;
+      font-size: 1rem;
+      transition: background 0.3s;
+      border-bottom: 3px solid transparent;
+    }
+    .tab.active {
+      border-bottom-color: #ff6f00;
+      color: #ff6f00;
+      font-weight: 600;
+    }
+    .tab:hover {
+      background-color: #fafafa;
+    }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
     }
 
-    /* Tablo stili (örnek) */
+    /* KARTLAR */
+    .cards {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .card-item {
+      flex: 1;
+      min-width: 200px;
+      background: #fafafa;
+      border: 1px solid #eee;
+      border-radius: 6px;
+      padding: 15px;
+      text-align: center;
+    }
+    .card-item h3 {
+      font-size: 1rem;
+      margin-bottom: 6px;
+      color: #666;
+    }
+    .card-item .value {
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: #ff6f00;
+    }
+
+    /* TABLO */
     table {
       width: 100%;
       border-collapse: collapse;
       margin-bottom: 16px;
     }
-    table th,
-    table td {
-      border: 1px solid #ccc;
-      padding: 8px;
+    table th, table td {
+      padding: 10px;
+      border-bottom: 1px solid #eee;
       text-align: left;
     }
     table th {
-      background-color: #fafafa;
+      background-color: #f5f5f5;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      color: #777;
+    }
+    table tbody tr:hover {
+      background-color: #f9f9f9;
     }
 
-    /* Küçük rozet stili (yüzdeleri göstermede kullanabilirsin) */
-    .badge {
-      display: inline-block;
-      padding: 3px 6px;
-      border-radius: 4px;
-      background-color: #1e88e5;
+    /* CHART PLACEHOLDER (varsa) */
+    .chart-placeholder {
+      width: 100%;
+      height: 300px;
+      background: linear-gradient(135deg, #ffb84d 0%, #ff6f00 100%);
+      border-radius: 8px;
       color: #fff;
-      font-size: 0.8rem;
-      margin-left: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+      font-size: 1.2rem;
+      font-weight: bold;
     }
 
-    /* Flex satır - eğer yan yana kartlar istersen */
-    .flex-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-    .flex-col {
-      flex: 1;
-      min-width: 280px;
+    /* RESPONSIVE */
+    @media (max-width: 768px) {
+      .cards {
+        flex-direction: column;
+      }
     }
   </style>
 </head>
 <body>
-
+  <div class="navbar">
+    <h1>Satış Raporu</h1>
+  </div>
   <div class="container">
-    <h1 class="main-title">Kapsamlı Analiz Raporu</h1>
+    <!-- Sekmeler -->
+    <div class="tabs">
+      <button class="tab active" data-target="#tab-genel">Genel Bakış</button>
+      <button class="tab" data-target="#tab-satis">Satış Analizi</button>
+      <button class="tab" data-target="#tab-iade">İade Analizi</button>
+      <button class="tab" data-target="#tab-stok">Stok Analizi</button>
+    </div>
 
-    <!-- 1) Genel Bakış (Dashboard) -->
-    <div class="card">
-      <h2>1) Genel Bakış</h2>
-      <div class="info-box">
-        <strong>Mevsimsel Sipariş Eğilimleri:</strong><br/>
-        <ul>
-          {% for mevsim, siparis in seasonal_order_trends.items() %}
-          <li>{{ mevsim }}: {{ siparis }} sipariş</li>
-          {% endfor %}
-        </ul>
+    <!-- 1) GENEL BAKIŞ SEKME -->
+    <div id="tab-genel" class="tab-content active">
+      <h2>Genel Bilgiler</h2>
+      <div class="cards">
+        <div class="card-item">
+          <h3>Toplam Sipariş</h3>
+          <div class="value">{{ total_orders }}</div>
+        </div>
+        <div class="card-item">
+          <h3>Toplam Ürün</h3>
+          <div class="value">{{ total_products }}</div>
+        </div>
+        <div class="card-item">
+          <h3>Toplam İade</h3>
+          <div class="value">{{ total_returns }}</div>
+        </div>
+        <div class="card-item">
+          <h3>Müşteri Sayısı</h3>
+          <div class="value">{{ distinct_customers }}</div>
+        </div>
       </div>
-      <div class="info-box">
-        <strong>Saat Bazında Sipariş Trendi:</strong><br/>
-        <ul>
-          {% for zaman, adet in hour_based_orders.items() %}
-          <li>{{ zaman }} arası: {{ adet }} sipariş</li>
-          {% endfor %}
-        </ul>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Metric</th>
+            <th>Değer</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Toplam Gelir</td>
+            <td>{{ total_sales_amount }}</td>
+          </tr>
+          <tr>
+            <td>Ortalama Sipariş</td>
+            <td>{{ avg_order_amount|round(2) }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 2) SATIŞ ANALİZİ SEKME -->
+    <div id="tab-satis" class="tab-content">
+      <h2>Satış Analizi</h2>
+      <div class="cards">
+        <div class="card-item">
+          <h3>Bu Ayki Satış</h3>
+          <div class="value">{{ this_month_sales|round(2) }}</div>
+        </div>
+        <div class="card-item">
+          <h3>Toplam Satış</h3>
+          <div class="value">{{ total_sales_amount|round(2) }}</div>
+        </div>
+        <div class="card-item">
+          <h3>Ortalama Sipariş</h3>
+          <div class="value">{{ avg_order_amount|round(2) }}</div>
+        </div>
       </div>
-      <p>Yeni Müşteri Oranı: 
-        <span class="badge">
-          {{ (new_customers_ratio * 100)|round(1) }}%
-        </span>
-        &nbsp;|&nbsp; Mevcut Müşteri Oranı: 
-        <span class="badge">
-          {{ (existing_customers_ratio * 100)|round(1) }}%
-        </span>
-      </p>
-      <p>Sipariş Kar Oranı: 
-        <span class="badge">
-          {{ profit_ratio|round(2) }}%
-        </span>
-      </p>
-    </div>
 
-    <!-- 2) Sipariş Analizi -->
-    <div class="card">
-      <h2>2) Sipariş Analizi</h2>
-      <p>İptal Edilen Sipariş Sayısı: <strong>{{ cancelled_orders_count }}</strong></p>
-
-      <h3>En Sık İptal Edilen Ürünler</h3>
+      <!-- Top 5 Product Table -->
+      <h3>En Çok Satılan Ürünler</h3>
       <table>
-        <tr>
-          <th>Ürün</th>
-          <th>İptal Sayısı</th>
-        </tr>
-        {% for item in most_cancelled_products %}
-        <tr>
-          <td>{{ item.product_name }}</td>
-          <td>{{ item.cancel_count }}</td>
-        </tr>
-        {% endfor %}
+        <thead>
+          <tr>
+            <th>Barkod</th>
+            <th>Satılan Adet</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for barcode, qty_sold in top_products_query %}
+          <tr>
+            <td>{{ barcode }}</td>
+            <td>{{ qty_sold }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
       </table>
-
-      <h3>İptal Nedenleri</h3>
-      <ul>
-        {% for reason, count in cancellation_reasons.items() %}
-        <li>{{ reason }}: {{ count }}</li>
-        {% endfor %}
-      </ul>
-
-      <h3>İptallerin Aşamaları</h3>
-      <ul>
-        {% for stage, count in cancellation_stages.items() %}
-        <li>{{ stage }}: {{ count }}</li>
-        {% endfor %}
-      </ul>
-
-      <h3>Ülke/Şehir Bazında Sipariş Yoğunluğu</h3>
-      <ul>
-        {% for city, count in city_based_orders.items() %}
-        <li>{{ city }}: {{ count }} sipariş</li>
-        {% endfor %}
-      </ul>
-
-      <p>Tek Ürünlü Siparişler: <strong>{{ single_item_orders }}</strong></p>
-      <p>Çok Ürünlü Siparişler: <strong>{{ multi_item_orders }}</strong></p>
-
-      <h3>Ürün Kategorileri Oranları</h3>
-      <ul>
-        {% for cat, ratio in product_categories_ratio.items() %}
-        <li>{{ cat }}: <span class="badge">{{ ratio }}%</span></li>
-        {% endfor %}
-      </ul>
-
-      <p>İndirimli Sipariş Oranı: <span class="badge">{{ (discount_orders_ratio * 100)|round(1) }}%</span></p>
     </div>
 
-    <!-- 3) İade Analizi -->
-    <div class="card">
-      <h2>3) İade Analizi</h2>
-
-      <h3>İade Oranları (Kategori Bazında)</h3>
-      <ul>
-        {% for cat, oran in returns_by_category.items() %}
-        <li>{{ cat }}: <span class="badge">{{ (oran * 100)|round(1) }}%</span></li>
-        {% endfor %}
-      </ul>
-      <p>İade Edilen Ürünlerin Ortalama Maliyeti: <strong>{{ average_return_cost }}</strong></p>
-      <p>İade Kargosunun Ortalama Geri Dönme Süresi: <strong>{{ avg_return_days }} gün</strong></p>
-      <h3>İade Talep Eden Müşteri Lokasyonları</h3>
-      <ul>
-        {% for city, count in top_return_locations.items() %}
-        <li>{{ city }}: {{ count }} iade</li>
-        {% endfor %}
-      </ul>
+    <!-- 3) İADE ANALİZİ SEKME -->
+    <div id="tab-iade" class="tab-content">
+      <h2>İade Analizi</h2>
+      <div class="cards">
+        <div class="card-item">
+          <h3>Toplam İade Tutarı</h3>
+          <div class="value">{{ total_refund|round(2) }}</div>
+        </div>
+        <div class="card-item">
+          <h3>İade Oranı</h3>
+          <div class="value">{{ (refund_ratio * 100)|round(2) }}%</div>
+        </div>
+        <div class="card-item">
+          <h3>Bu Ayki İade Sayısı</h3>
+          <div class="value">{{ this_month_returns }}</div>
+        </div>
+        <div class="card-item">
+          <h3>Bu Ayki İade Tutarı</h3>
+          <div class="value">{{ this_month_refund_sum|round(2) }}</div>
+        </div>
+      </div>
+      <!-- İade Detay Tablon varsa ekleyebilirsin -->
     </div>
 
-    <!-- 4) Ürün/Stok Analizi -->
-    <div class="card">
-      <h2>4) Ürün & Stok Analizi</h2>
-      <h3>Kritik Stok Seviyesi</h3>
-      <ul>
-        {% for item in critical_stocks %}
-        <li>{{ item.product }} (Stok: {{ item.stock }})</li>
-        {% endfor %}
-      </ul>
-
-      <h3>Sık Tükenen Ürünlerin Yenilenme Süreleri</h3>
-      <ul>
-        {% for product, days in restock_times.items() %}
-        <li>{{ product }} ~ {{ days }} gün</li>
-        {% endfor %}
-      </ul>
-
-      <h3>Modası Geçmiş / Satışı Düşen Ürünler</h3>
-      <ul>
-        {% for item in old_fashion_products %}
-        <li>{{ item.product }} (Son satış: {{ item.last_sale }})</li>
-        {% endfor %}
-      </ul>
-
-      <h3>Satışta Başarılı Olmayan Ürünler</h3>
-      <ul>
-        {% for item in low_selling_products %}
-        <li>{{ item.product }} (Satış: {{ item.sales }})</li>
-        {% endfor %}
-      </ul>
-
-      <h3>Ürün Kombinasyonları (Birlikte Sık Alınanlar)</h3>
-      <ul>
-        {% for combo in product_combos %}
-        <li>{{ combo.combo }} - {{ combo.count }} kez birlikte sipariş</li>
-        {% endfor %}
-      </ul>
-    </div>
-
-    <!-- 5) Finansal Analiz -->
-    <div class="card">
-      <h2>5) Finansal Analiz</h2>
-      <p><strong>Ortalama Sipariş Değeri (AOV):</strong> {{ aov_trend }}</p>
-      <p><strong>Ortalama Kâr Marjı:</strong> <span class="badge">{{ (average_margin * 100)|round(1) }}%</span></p>
-      <p><strong>İadeler Nedeniyle Net Gelir Kaybı:</strong> {{ net_income_loss_from_returns }}</p>
-      <p><strong>Vergi Oranı:</strong> <span class="badge">{{ (tax_ratio * 100)|round(0) }}%</span></p>
-      <p><strong>En İyi Kampanya:</strong> {{ best_campaign }} (Gelir: {{ best_campaign_revenue }})</p>
-    </div>
-
-    <!-- 6) Müşteri Analizi -->
-    <div class="card">
-      <h2>6) Müşteri Analizi</h2>
-      <h3>Müşteri Segmentasyonu</h3>
-      <ul>
-        {% for seg, count in segmented_customers.items() %}
-        <li>{{ seg }}: {{ count }} müşteri</li>
-        {% endfor %}
-      </ul>
-      <p>Ortalama Müşteri Yaşam Boyu Değeri (CLV): <strong>{{ average_clv }}</strong></p>
-      <p>Terk Edilen Sepet Oranı: <span class="badge">{{ (abandoned_cart_ratio * 100)|round(1) }}%</span></p>
-      <p>Sadakat Programı Kullanıcı Sayısı: <strong>{{ loyalty_users_count }}</strong></p>
-      <p>Sadakat Programı Gelir Katkısı: <strong>{{ loyalty_contribution }}</strong></p>
-    </div>
-
-    <!-- 7) Performans Analizi -->
-    <div class="card">
-      <h2>7) Performans Analizi</h2>
-      <h3>Kargo Performansı</h3>
+    <!-- 4) STOK ANALİZİ SEKME -->
+    <div id="tab-stok" class="tab-content">
+      <h2>Stok Analizi</h2>
+      <div class="cards">
+        <div class="card-item">
+          <h3>Kritik Stok</h3>
+          <div class="value">{{ critical_products|length }} Ürün</div>
+        </div>
+      </div>
+      <!-- Kritik Stok Tablosu -->
+      {% if critical_products %}
       <table>
-        <tr>
-          <th>Kargo Firması</th>
-          <th>Hız</th>
-          <th>Gecikme Oranı</th>
-        </tr>
-        {% for kargo, data in cargo_performance.items() %}
-        <tr>
-          <td>{{ kargo }}</td>
-          <td>{{ data.hız }}</td>
-          <td>%{{ (data.gecikme_orani * 100)|round(1) }}</td>
-        </tr>
-        {% endfor %}
+        <thead>
+          <tr>
+            <th>Ürün</th>
+            <th>Stok</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for prod in critical_products %}
+          <tr>
+            <td>{{ prod.title }} ({{ prod.barcode }})</td>
+            <td>{{ prod.quantity }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
       </table>
-
-      <p>Ortalama Sipariş Tamamlama Süresi: <strong>{{ avg_completion_time }} gün</strong></p>
-      <p>Günlük İşleme Alınan Sipariş (Ortalama): <strong>{{ daily_processed_orders }}</strong></p>
+      {% else %}
+      <p>Kritik stokta ürün yok.</p>
+      {% endif %}
     </div>
+  </div>
 
-    <!-- 8) Kullanıcı Davranışları -->
-    <div class="card">
-      <h2>8) Kullanıcı Davranışları</h2>
-      <h3>En Çok Görüntülenip Satın Alınmayan Ürünler</h3>
-      <table>
-        <tr>
-          <th>Ürün</th>
-          <th>Görüntüleme</th>
-          <th>Satış</th>
-        </tr>
-        {% for item in most_viewed_not_sold %}
-        <tr>
-          <td>{{ item.product }}</td>
-          <td>{{ item.views }}</td>
-          <td>{{ item.sales }}</td>
-        </tr>
-        {% endfor %}
-      </table>
+  <!-- Sekme Geçişini Sağlayan Ufak JS -->
+  <script>
+    const tabs = document.querySelectorAll('.tab');
+    const contents = document.querySelectorAll('.tab-content');
 
-      <p>Teklif (İndirim) Dönüşüm Oranı: 
-        <span class="badge">{{ (offer_conversion_ratio * 100)|round(1) }}%</span>
-      </p>
-      <h3>Sık Kullanılan Filtreler</h3>
-      <ul>
-        {% for filt in popular_filters %}
-        <li>{{ filt }}</li>
-        {% endfor %}
-      </ul>
-    </div>
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        // Tüm tabları sıfırla
+        tabs.forEach(t => t.classList.remove('active'));
+        // Tüm içerikleri gizle
+        contents.forEach(c => c.classList.remove('active'));
 
-    <!-- 9) Tahmin ve Öneri Sistemleri -->
-    <div class="card">
-      <h2>9) Tahmin & Öneri Sistemleri</h2>
-      <p>Gelecek Ay Satış Tahmini: <strong>{{ predicted_next_month_sales }}</strong></p>
-      <h3>İade Riski Tahmini (Ürünler)</h3>
-      <ul>
-        {% for item in predicted_return_risk_products %}
-        <li>{{ item.product }} - Risk: {{ item.risk }}</li>
-        {% endfor %}
-      </ul>
-      <h3>Stok Yenileme Önerileri</h3>
-      <ul>
-        {% for item in restock_suggestions %}
-        <li>{{ item.product }} - Önerilen Tarih: {{ item.suggested_date }}</li>
-        {% endfor %}
-      </ul>
-    </div>
-
-    <!-- 10) Anlık Veri & Canlı Takip -->
-    <div class="card">
-      <h2>10) Anlık Veri ve Canlı Takip</h2>
-      <p>Anlık İşlenmekte Olan Siparişler: <strong>{{ current_processing_orders }}</strong></p>
-      <h3>Canlı Saatlik Satış Verisi</h3>
-      <ul>
-        {% for data in live_sales_data %}
-        <li>{{ data.hour }} - {{ data.sales }} satış</li>
-        {% endfor %}
-      </ul>
-      <p>Anlık Kargoda Olan Siparişler: <strong>{{ shipping_in_transit }}</strong></p>
-    </div>
-
-  </div> <!-- container -->
+        // Bu tıklanan tabı active yap
+        tab.classList.add('active');
+        // data-target'i al
+        const target = tab.getAttribute('data-target');
+        // İçeriği active yap
+        document.querySelector(target).classList.add('active');
+      });
+    });
+  </script>
 </body>
 </html>
