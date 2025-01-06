@@ -1,5 +1,6 @@
 from flask import Blueprint, render_template, jsonify, request
 from models import db, Order, Product
+import re
 from sqlalchemy import func
 from datetime import datetime, timedelta
 import json
@@ -11,6 +12,36 @@ TURKEY_CITIES_DISTRICTS = {
     "Adana": [
         "Aladağ", "Ceyhan", "Çukurova", "Feke", "İmamoğlu", "Karaisalı",
         "Karataş", "Kozan", "Pozantı", "Saimbeyli", "Sarıçam", "Seyhan",
+
+@analysis_bp.route('/api/update-address-info')
+def update_address_info():
+    orders = Order.query.all()
+    updated_count = 0
+    
+    for order in orders:
+        if order.customer_address:
+            # Split address by commas and get the last two parts
+            address_parts = [part.strip() for part in order.customer_address.split(',')]
+            
+            if len(address_parts) >= 2:
+                potential_city = address_parts[-1].upper()
+                potential_district = address_parts[-2].upper()
+                
+                # Check if the potential city exists in our dictionary
+                for city, districts in TURKEY_CITIES_DISTRICTS.items():
+                    if city.upper() in potential_city:
+                        order.customer_city = city
+                        # Check if any district matches
+                        for district in districts:
+                            if district.upper() in potential_district:
+                                order.customer_district = district
+                                break
+                        updated_count += 1
+                        break
+    
+    db.session.commit()
+    return jsonify({"success": True, "updated_records": updated_count})
+
         "Tufanbeyli", "Yumurtalık", "Yüreğir"
     ],
     "Adıyaman": [
