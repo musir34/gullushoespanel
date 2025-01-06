@@ -1,6 +1,102 @@
 
 {% extends "base.html" %}
 {% block content %}
+<style>
+.stats-container {
+    padding: 2rem 0;
+    background: #f8f9fa;
+}
+
+.card {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    transition: transform 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+}
+
+.bg-primary, .bg-success, .bg-info {
+    background: linear-gradient(45deg, #2193b0, #6dd5ed) !important;
+}
+
+.bg-success {
+    background: linear-gradient(45deg, #11998e, #38ef7d) !important;
+}
+
+.bg-info {
+    background: linear-gradient(45deg, #36d1dc, #5b86e5) !important;
+}
+
+.card-header {
+    background: none;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    padding: 1.5rem 1.5rem 1rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.card-body {
+    padding: 1.5rem;
+}
+
+.form-select {
+    border-radius: 20px;
+    padding: 0.375rem 1rem;
+    border: 1px solid #e0e0e0;
+    background-color: #f8f9fa;
+}
+
+.date-range-card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.date-range-card input[type="date"] {
+    border: 1px solid #e0e0e0;
+    border-radius: 20px;
+    padding: 0.5rem 1rem;
+}
+
+.btn-primary {
+    background: linear-gradient(45deg, #2193b0, #6dd5ed);
+    border: none;
+    border-radius: 20px;
+    padding: 0.5rem 1.5rem;
+    transition: all 0.3s;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(33, 147, 176, 0.3);
+}
+
+#totalSales, #totalOrders, #avgOrderAmount {
+    font-size: 1.8rem;
+    font-weight: 600;
+    margin-top: 0.5rem;
+}
+
+.card-title {
+    color: rgba(255,255,255,0.9);
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.chart-container {
+    padding: 1rem;
+    background: white;
+    border-radius: 15px;
+    margin-bottom: 1.5rem;
+}
+</style>
+
 <div class="container mt-4">
     <h2>Satış Raporları</h2>
     
