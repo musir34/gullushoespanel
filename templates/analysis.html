@@ -82,24 +82,13 @@
     
     <!-- Yeni Grafikler -->
     <div class="row mt-4">
-        <div class="col-md-6">
+        <div class="col-md-12">
             <div class="card">
                 <div class="card-header">
                     <span>Haftalık Büyüme</span>
                 </div>
                 <div class="card-body">
                     <canvas id="growthChart"></canvas>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <span>Ödeme Yöntemleri</span>
-                </div>
-                <div class="card-body">
-                    <canvas id="paymentChart"></canvas>
                 </div>
             </div>
         </div>
@@ -120,7 +109,6 @@ function updateCharts() {
             createDailyChart(data);
             createProductChart(data);
             createGrowthChart(data);
-            createPaymentChart(data);
         });
 }
 
