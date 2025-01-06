@@ -73,14 +73,6 @@ app.config['Session'] = Session
 # SQLAlchemy'yi uygulama ile başlat
 db.init_app(app)
 
-from flask import send_from_directory
-import os
-
-@app.route('/favicon.ico')
-def favicon():
-    return send_from_directory('static',
-                             'favicon.ico', mimetype='image/vnd.microsoft.icon')
-
 # Blueprint modüllerini import et
 from order_service import order_service_bp
 from update_service import update_service_bp
