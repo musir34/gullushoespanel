@@ -42,11 +42,6 @@ app.config['Session'] = Session
 # SQLAlchemy'yi uygulama ile başlat
 db.init_app(app)
 
-# CSS dosyalarını sunmak için statik rota
-@app.route('/static/css/<path:filename>')
-def serve_css(filename):
-    return app.send_from_directory('static/css', filename, mimetype='text/css')
-
 # Blueprint modüllerini import et
 from order_service import order_service_bp
 from update_service import update_service_bp
