@@ -4,11 +4,43 @@
 <div class="container mt-4">
     <h2>Satış Raporları</h2>
     
+    <!-- Özet Kartları -->
+    <div class="row mt-4">
+        <div class="col-md-4">
+            <div class="card text-white bg-primary">
+                <div class="card-body">
+                    <h5 class="card-title">Toplam Satış</h5>
+                    <h3 class="card-text" id="totalSales">-</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-white bg-success">
+                <div class="card-body">
+                    <h5 class="card-title">Toplam Sipariş</h5>
+                    <h3 class="card-text" id="totalOrders">-</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-white bg-info">
+                <div class="card-body">
+                    <h5 class="card-title">Ortalama Sipariş Tutarı</h5>
+                    <h3 class="card-text" id="avgOrderAmount">-</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    
     <div class="row mt-4">
         <div class="col-md-6">
             <div class="card">
-                <div class="card-header">
-                    Günlük Satışlar (Son 30 Gün)
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>Günlük Satışlar (Son 30 Gün)</span>
+                    <select class="form-select form-select-sm w-auto" id="dailyChartType">
+                        <option value="amount">Tutar</option>
+                        <option value="count">Adet</option>
+                    </select>
                 </div>
                 <div class="card-body">
                     <canvas id="dailySalesChart"></canvas>
@@ -18,8 +50,12 @@
         
         <div class="col-md-6">
             <div class="card">
-                <div class="card-header">
-                    En Çok Satan Ürünler
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>En Çok Satan Ürünler</span>
+                    <select class="form-select form-select-sm w-auto" id="productChartType">
+                        <option value="amount">Tutar</option>
+                        <option value="count">Adet</option>
+                    </select>
                 </div>
                 <div class="card-body">
                     <canvas id="productSalesChart"></canvas>
@@ -31,39 +67,134 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
+let dailyChart = null;
+let productChart = null;
+let salesData = null;
+
+function formatCurrency(amount) {
+    return new Intl.NumberFormat('tr-TR', {
+        style: 'currency',
+        currency: 'TRY'
+    }).format(amount);
+}
+
+function updateSummaryCards(data) {
+    const totalAmount = data.daily_sales.reduce((sum, item) => sum + item.amount, 0);
+    const totalCount = data.daily_sales.reduce((sum, item) => sum + item.count, 0);
+    const avgAmount = totalAmount / totalCount;
+
+    document.getElementById('totalSales').textContent = formatCurrency(totalAmount);
+    document.getElementById('totalOrders').textContent = totalCount;
+    document.getElementById('avgOrderAmount').textContent = formatCurrency(avgAmount);
+}
+
+function createDailyChart(data, type = 'amount') {
+    if (dailyChart) {
+        dailyChart.destroy();
+    }
+
+    const ctx = document.getElementById('dailySalesChart').getContext('2d');
+    dailyChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: data.daily_sales.map(item => item.date),
+            datasets: [{
+                label: type === 'amount' ? 'Satış Tutarı' : 'Sipariş Adedi',
+                data: data.daily_sales.map(item => type === 'amount' ? item.amount : item.count),
+                borderColor: '#4CAF50',
+                tension: 0.1,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let value = context.raw;
+                            return type === 'amount' ? formatCurrency(value) : `${value} adet`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return type === 'amount' ? formatCurrency(value) : value;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+function createProductChart(data, type = 'amount') {
+    if (productChart) {
+        productChart.destroy();
+    }
+
+    const ctx = document.getElementById('productSalesChart').getContext('2d');
+    productChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: data.product_sales.map(item => item.name),
+            datasets: [{
+                label: type === 'amount' ? 'Satış Tutarı' : 'Satış Adedi',
+                data: data.product_sales.map(item => type === 'amount' ? item.amount : item.count),
+                backgroundColor: '#2196F3'
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let value = context.raw;
+                            return type === 'amount' ? formatCurrency(value) : `${value} adet`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return type === 'amount' ? formatCurrency(value) : value;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     fetch('/api/sales-stats')
         .then(response => response.json())
         .then(data => {
-            // Günlük satışlar grafiği
-            const dailyCtx = document.getElementById('dailySalesChart').getContext('2d');
-            new Chart(dailyCtx, {
-                type: 'line',
-                data: {
-                    labels: data.daily_sales.map(item => item.date),
-                    datasets: [{
-                        label: 'Satış Miktarı',
-                        data: data.daily_sales.map(item => item.amount),
-                        borderColor: '#4CAF50',
-                        tension: 0.1
-                    }]
-                }
-            });
-
-            // Ürün satışları grafiği
-            const productCtx = document.getElementById('productSalesChart').getContext('2d');
-            new Chart(productCtx, {
-                type: 'bar',
-                data: {
-                    labels: data.product_sales.map(item => item.name),
-                    datasets: [{
-                        label: 'Satış Miktarı',
-                        data: data.product_sales.map(item => item.amount),
-                        backgroundColor: '#2196F3'
-                    }]
-                }
-            });
+            salesData = data;
+            updateSummaryCards(data);
+            createDailyChart(data);
+            createProductChart(data);
         });
+
+    document.getElementById('dailyChartType').addEventListener('change', function(e) {
+        if (salesData) {
+            createDailyChart(salesData, e.target.value);
+        }
+    });
+
+    document.getElementById('productChartType').addEventListener('change', function(e) {
+        if (salesData) {
+            createProductChart(salesData, e.target.value);
+        }
+    });
 });
 </script>
 {% endblock %}
