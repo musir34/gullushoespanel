@@ -79,20 +79,26 @@ def sales_stats():
             'growth_rate': round(growth_rate, 2)
         })
 
-    # Müşteri segmentleri analizi
+    # En iyi müşteriler analizi
     customer_segments = db.session.query(
         Order.customer_name,
         Order.customer_surname,
         func.count(Order.id).label('order_count'),
-        func.sum(Order.amount).label('total_spent')
+        func.sum(Order.amount).label('total_spent'),
+        func.avg(Order.amount).label('avg_order_value')
     ).filter(
         Order.order_date >= start_date,
-        Order.order_date <= end_date
+        Order.order_date <= end_date,
+        Order.customer_name != '',  # Boş müşteri isimlerini filtrele
+        Order.customer_surname != '' # Boş müşteri soyadlarını filtrele
     ).group_by(
         Order.customer_name,
         Order.customer_surname
+    ).having(
+        func.count(Order.id) > 1  # En az 2 sipariş vermiş olanlar
     ).order_by(
-        func.sum(Order.amount).desc()
+        func.count(Order.id).desc(),  # Önce sipariş sayısına göre
+        func.sum(Order.amount).desc()  # Sonra toplam tutara göre sırala
     ).limit(10).all()
 
     # En çok satın alım yapan şehirler
@@ -136,9 +142,10 @@ def sales_stats():
         } for p in product_sales],
         'weekly_growth': weekly_growth,
         'customer_segments': [{
-            'name': f"{c.customer_name} {c.customer_surname} ({c.order_count})",
+            'name': f"{c.customer_name} {c.customer_surname}",
             'order_count': c.order_count,
-            'total_spent': float(c.total_spent or 0)
+            'total_spent': float(c.total_spent or 0),
+            'avg_order': float(c.avg_order_value or 0)
         } for c in customer_segments],
         'top_cities': [{
             'city': str(c.city).strip(),
