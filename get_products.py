@@ -553,13 +553,20 @@ async def update_stocks_ajax():
 @get_products_bp.route('/search', methods=['GET'])
 def search_products():
     """
-    Ürün arama fonksiyonu.
+    Ürün arama fonksiyonu. Model kodu veya barkod ile arama yapar.
     """
     query = request.args.get('query', '').strip()
     if not query:
         return redirect(url_for('get_products.product_list'))
 
-    products = Product.query.filter(Product.product_main_id == query).all()
+    # Hem model kodu hem de barkod ile arama yap
+    products = Product.query.filter(
+        db.or_(
+            Product.product_main_id == query,
+            Product.barcode == query,
+            Product.original_product_barcode == query
+        )
+    ).all()
     if not products:
         flash("Arama kriterlerine uygun ürün bulunamadı.", "warning")
         return redirect(url_for('get_products.product_list'))
