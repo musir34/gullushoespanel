@@ -103,7 +103,10 @@ def sales_stats():
 
     # En çok satın alım yapan şehirler
     top_cities = db.session.query(
-        func.substring(Order.customer_address, '([^,]+)(?:,[^,]+)*$').label('city'),
+        func.regexp_replace(
+            func.substring(Order.customer_address, '([^,]+)(?:,[^,]+)*$'),
+            '\\s*\\([^)]*\\)\\s*', ''  # Remove anything in parentheses
+        ).label('city'),
         func.count(Order.id).label('order_count'),
         func.sum(Order.amount).label('total_amount')
     ).filter(
@@ -158,3 +161,10 @@ def sales_stats():
             'amount': float(c.total_amount or 0)
         } for c in product_categories]
     })
+@analysis_bp.route('/api/districts/<city>')
+def get_districts(city):
+    city_obj = City.query.filter(func.lower(City.name) == func.lower(city)).first()
+    if city_obj:
+        districts = District.query.filter_by(city_id=city_obj.id).all()
+        return jsonify([{'id': d.id, 'name': d.name} for d in districts])
+    return jsonify([])
