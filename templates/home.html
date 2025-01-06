@@ -239,7 +239,7 @@
 
     <!-- Sağ üst köşede butonlar -->
     <div class="btn-group-top">
-        <a href="{{ url_for('analysis_bp.analysis_page') }}" class="btn btn-primary">Analiz Sayfası</a>
+        <a href="{{ url_for('analysis.analysis_page') }}" class="btn btn-primary">Analiz Sayfası</a>
         <a href="{{ url_for('siparis_fisi_bp.siparis_fisi_sayfasi') }}" class="btn btn-primary">Ürün Tedarik Sayfası</a>
         <a href="{{ url_for('approve_users') }}" class="btn btn-warning">Kullanıcı Yönetimi</a>
         <a href="{{ url_for('home.home') }}" class="btn btn-secondary">Anasayfa</a>
@@ -248,7 +248,7 @@
         <a href="{{ url_for('order_list_all') }}" class="btn btn-secondary">Sipariş Listesi</a>
         <a href="{{ url_for('display_archive') }}" class="btn btn-secondary">Arşiv</a>
         <a href="{{ url_for('degisim_talep') }}" class="btn btn-secondary">Değişim Talepleri</a>
-        <a href="{{ url_for('analysis_bp.analysis_page') }}" class="btn btn-info">Analizler</a>
+        <a href="{{ url_for('analysis.analysis_page') }}" class="btn btn-info">Analizler</a>
         <form method="POST" action="{{ url_for('logout') }}">
             <button type="submit" class="btn btn-danger">Çıkış Yap</button>
         </form>
