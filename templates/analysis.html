@@ -1,4 +1,3 @@
-
 {% extends "base.html" %}
 {% block content %}
 <style>
@@ -272,27 +271,97 @@ function createCustomerSegmentChart(data) {
             }]
         },
         options: {
-            responsive: true,
-            plugins: {
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return formatCurrency(context.raw);
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            font: {
+                                size: 14,
+                                weight: 'bold'
+                            }
+                        }
+                    },
+                    title: {
+                        display: true,
+                        text: 'Müşteri Bazlı Toplam Harcama Analizi',
+                        font: {
+                            size: 16,
+                            weight: 'bold'
+                        },
+                        padding: 20
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `Toplam Harcama: ${formatCurrency(context.raw)}`;
+                            },
+                            afterLabel: function(context) {
+                                const customer = data.customer_segments[context.dataIndex];
+                                return `Sipariş Sayısı: ${customer.order_count}`;
+                            }
+                        },
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        padding: 12,
+                        titleFont: {
+                            size: 14
+                        },
+                        bodyFont: {
+                            size: 13
                         }
                     }
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        callback: function(value) {
-                            return formatCurrency(value);
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return formatCurrency(value);
+                            },
+                            font: {
+                                size: 12
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Toplam Harcama Tutarı',
+                            font: {
+                                size: 14,
+                                weight: 'bold'
+                            }
                         }
+                    },
+                    x: {
+                        ticks: {
+                            font: {
+                                size: 12
+                            },
+                            maxRotation: 45,
+                            minRotation: 45
+                        },
+                        title: {
+                            display: true,
+                            text: 'Müşteri İsimleri',
+                            font: {
+                                size: 14,
+                                weight: 'bold'
+                            }
+                        }
+                    }
+                },
+                animation: {
+                    duration: 1000,
+                    easing: 'easeInOutQuart'
+                },
+                layout: {
+                    padding: {
+                        left: 15,
+                        right: 15,
+                        top: 15,
+                        bottom: 15
                     }
                 }
             }
-        }
     });
 }
 
@@ -316,13 +385,53 @@ function createCityChart(data) {
         options: {
             responsive: true,
             plugins: {
+                legend: {
+                    position: 'right',
+                    labels: {
+                        font: {
+                            size: 13
+                        },
+                        padding: 20
+                    }
+                },
+                title: {
+                    display: true,
+                    text: 'Şehirlere Göre Satış Dağılımı',
+                    font: {
+                        size: 16,
+                        weight: 'bold'
+                    },
+                    padding: 20
+                },
                 tooltip: {
                     callbacks: {
                         label: function(context) {
-                            return `${context.label}: ${formatCurrency(context.raw)}`;
+                            const city = data.top_cities[context.dataIndex];
+                            const percentage = (context.raw / data.top_cities.reduce((a, b) => a + b.amount, 0) * 100).toFixed(1);
+                            return [
+                                `Şehir: ${context.label}`,
+                                `Tutar: ${formatCurrency(context.raw)}`,
+                                `Oran: %${percentage}`,
+                                `Sipariş Sayısı: ${city.order_count}`
+                            ];
                         }
+                    },
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    padding: 12,
+                    titleFont: {
+                        size: 14
+                    },
+                    bodyFont: {
+                        size: 13
                     }
                 }
+            },
+            layout: {
+                padding: 20
+            },
+            animation: {
+                animateScale: true,
+                animateRotate: true
             }
         }
     });
