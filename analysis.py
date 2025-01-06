@@ -34,8 +34,12 @@ def sales_stats():
         func.date(Order.order_date)
     ).all()
     
-    # Ürün bazlı satışlar
+    # Ürün bazlı detaylı satışlar
     product_sales = db.session.query(
+        Order.product_barcode,
+        Order.merchant_sku,
+        Order.product_size,
+        Order.color,
         Order.product_name,
         func.count(Order.id).label('count'),
         func.sum(Order.amount).label('total_amount')
@@ -43,7 +47,13 @@ def sales_stats():
         Order.order_date >= start_date,
         Order.order_date <= end_date
     ).group_by(
+        Order.product_barcode,
+        Order.merchant_sku,
+        Order.product_size,
+        Order.color,
         Order.product_name
+    ).order_by(
+        func.count(Order.id).desc()
     ).limit(10).all()
     
     # Haftalık büyüme oranları
