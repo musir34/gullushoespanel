@@ -416,13 +416,13 @@ def siparis_fisi_olustur():
         db.session.add(yeni_fis)
         db.session.commit()
 
-        # Opsiyonel: Resim boyutlandırma
-        image_path = os.path.join('static', 'images', 'default.jpg')
+        # Opsiyonel: Logo resmi boyutlandırma
+        image_path = os.path.join('static', 'logo', 'gullu.png')
         if os.path.exists(image_path):
             with Image.open(image_path) as img:
                 img = img.convert('RGB')
                 img = img.resize((250, 150), Image.Resampling.LANCZOS)
-                img.save(image_path, 'JPEG', quality=85)
+                img.save(image_path.replace('.png', '_resized.png'), 'PNG', quality=85)
 
         return redirect(url_for("siparis_fisi_bp.siparis_fisi_sayfasi"))
 
