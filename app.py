@@ -52,6 +52,8 @@ except Exception as e:
 
 @app.errorhandler(Exception)
 def handle_error(error):
+    if str(error).startswith('404 Not Found') and request.path == '/favicon.ico':
+        return '', 204  # Return empty response for favicon requests
     logger.error(f"Beklenmeyen hata: {str(error)}")
     return jsonify({
         "success": False,
