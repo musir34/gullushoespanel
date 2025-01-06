@@ -1,4 +1,3 @@
-
 from flask import Blueprint, render_template, jsonify, request
 from models import db, Order, Product
 from sqlalchemy import func
@@ -29,7 +28,8 @@ def sales_stats():
         func.count(Order.id).label('count'),
         func.sum(Order.amount).label('total_amount')
     ).filter(
-        Order.order_date >= thirty_days_ago
+        Order.order_date >= start_date,
+        Order.order_date <= end_date
     ).group_by(
         func.date(Order.order_date)
     ).all()
@@ -40,7 +40,8 @@ def sales_stats():
         func.count(Order.id).label('count'),
         func.sum(Order.amount).label('total_amount')
     ).filter(
-        Order.order_date >= thirty_days_ago
+        Order.order_date >= start_date,
+        Order.order_date <= end_date
     ).group_by(
         Order.product_name
     ).limit(10).all()
