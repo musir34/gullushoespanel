@@ -119,11 +119,28 @@
     color: #666;
     margin-top: 0.5rem;
 }
+
+/* Tablo için ek stil */
+.table thead th {
+    background-color: #f0f0f0;
+    font-weight: 600;
+}
+
+.table-hover tbody tr:hover {
+    background-color: #f7f7f7;
+    cursor: pointer;
+}
+
+.modal-header {
+    background-color: #2193b0;
+    color: #fff;
+}
+
 </style>
 
 <div class="container mt-4">
     <h2>Satış Raporları</h2>
-    
+
     <!-- Tarih Aralığı Seçimi -->
     <div class="row mb-4">
         <div class="col-md-6">
@@ -139,7 +156,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Özet Kartları -->
     <div class="row mt-4">
         <div class="col-md-4">
@@ -167,7 +184,8 @@
             </div>
         </div>
     </div>
-    
+
+    <!-- Grafikler -->
     <div class="row mt-4">
         <div class="col-md-6">
             <div class="card">
@@ -183,7 +201,7 @@
                 </div>
             </div>
         </div>
-        
+
         <div class="col-md-6">
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
@@ -199,7 +217,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Yeni Grafikler -->
     <div class="row mt-4">
         <div class="col-md-12">
@@ -227,7 +245,7 @@
                 </div>
             </div>
         </div>
-        
+
         <!-- Şehir Bazlı Satışlar -->
         <div class="col-md-6">
             <div class="card">
@@ -254,327 +272,78 @@
             </div>
         </div>
     </div>
+
+    <!-- Günlük Satış Detayları Tablosu -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <h4>Günlük Satış Detayları</h4>
+            <table class="table table-striped table-hover" id="dailySalesTable">
+                <thead>
+                    <tr>
+                        <th>Tarih</th>
+                        <th>Satış Adedi</th>
+                        <th>Satış Tutarı</th>
+                        <th>Detay</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- JS ile doldurulacak -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Ürün Satış Detayları Tablosu -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <h4>Ürün Satış Detayları</h4>
+            <table class="table table-striped table-hover" id="productSalesTable">
+                <thead>
+                    <tr>
+                        <th>Ürün Adı</th>
+                        <th>SKU</th>
+                        <th>Renk</th>
+                        <th>Beden</th>
+                        <th>Satış Adedi</th>
+                        <th>Satış Tutarı</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- JS ile doldurulacak -->
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
 
-<script>
-// Diğer scriptler aynı kalacak, sadece yeni grafik fonksiyonları eklenecek
-function createCustomerSegmentChart(data) {
-    const ctx = document.getElementById('customerSegmentChart').getContext('2d');
-    new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: data.customer_segments.map(c => c.name),
-            datasets: [{
-                label: 'Toplam Harcama',
-                data: data.customer_segments.map(c => c.total_spent),
-                backgroundColor: '#4CAF50'
-            }]
-        },
-        options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        position: 'top',
-                        labels: {
-                            font: {
-                                size: 14,
-                                weight: 'bold'
-                            }
-                        }
-                    },
-                    title: {
-                        display: true,
-                        text: 'Müşteri Bazlı Toplam Harcama Analizi',
-                        font: {
-                            size: 16,
-                            weight: 'bold'
-                        },
-                        padding: 20
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                return `Toplam Harcama: ${formatCurrency(context.raw)}`;
-                            },
-                            afterLabel: function(context) {
-                                const customer = data.customer_segments[context.dataIndex];
-                                return `Sipariş Sayısı: ${customer.order_count}`;
-                            }
-                        },
-                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                        padding: 12,
-                        titleFont: {
-                            size: 14
-                        },
-                        bodyFont: {
-                            size: 13
-                        }
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            callback: function(value) {
-                                return formatCurrency(value);
-                            },
-                            font: {
-                                size: 12
-                            }
-                        },
-                        title: {
-                            display: true,
-                            text: 'Toplam Harcama Tutarı',
-                            font: {
-                                size: 14,
-                                weight: 'bold'
-                            }
-                        }
-                    },
-                    x: {
-                        ticks: {
-                            font: {
-                                size: 12
-                            },
-                            maxRotation: 45,
-                            minRotation: 45
-                        },
-                        title: {
-                            display: true,
-                            text: 'Müşteri İsimleri',
-                            font: {
-                                size: 14,
-                                weight: 'bold'
-                            }
-                        }
-                    }
-                },
-                animation: {
-                    duration: 1000,
-                    easing: 'easeInOutQuart'
-                },
-                layout: {
-                    padding: {
-                        left: 15,
-                        right: 15,
-                        top: 15,
-                        bottom: 15
-                    }
-                }
-            }
-    });
-}
-
-function createCityChart(data) {
-    const ctx = document.getElementById('cityChart').getContext('2d');
-    new Chart(ctx, {
-        type: 'pie',
-        data: {
-            labels: data.top_cities.map(c => c.city),
-            datasets: [{
-                data: data.top_cities.map(c => c.amount),
-                backgroundColor: [
-                    '#FF6384',
-                    '#36A2EB',
-                    '#FFCE56',
-                    '#4BC0C0',
-                    '#9966FF'
-                ]
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    position: 'right',
-                    labels: {
-                        font: {
-                            size: 13
-                        },
-                        padding: 20
-                    }
-                },
-                title: {
-                    display: true,
-                    text: 'Şehirlere Göre Satış Dağılımı',
-                    font: {
-                        size: 16,
-                        weight: 'bold'
-                    },
-                    padding: 20
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            const city = data.top_cities[context.dataIndex];
-                            const percentage = (context.raw / data.top_cities.reduce((a, b) => a + b.amount, 0) * 100).toFixed(1);
-                            return [
-                                `Şehir: ${context.label}`,
-                                `Tutar: ${formatCurrency(context.raw)}`,
-                                `Oran: %${percentage}`,
-                                `Sipariş Sayısı: ${city.order_count}`
-                            ];
-                        }
-                    },
-                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                    padding: 12,
-                    titleFont: {
-                        size: 14
-                    },
-                    bodyFont: {
-                        size: 13
-                    }
-                }
-            },
-            layout: {
-                padding: 20
-            },
-            animation: {
-                animateScale: true,
-                animateRotate: true
-            }
-        }
-    });
-}
-
-function createCategoryChart(data) {
-    const ctx = document.getElementById('categoryChart').getContext('2d');
-    new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            labels: data.product_categories.map(c => c.category),
-            datasets: [{
-                data: data.product_categories.map(c => c.amount),
-                backgroundColor: [
-                    '#FF6384',
-                    '#36A2EB',
-                    '#FFCE56',
-                    '#4BC0C0',
-                    '#9966FF'
-                ]
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return `${context.label}: ${formatCurrency(context.raw)}`;
-                        }
-                    }
-                }
-            }
-        }
-    });
-}
-
-// Mevcut updateCharts fonksiyonunu güncelle
-function updateCharts() {
-    const startDate = document.getElementById('startDate').value;
-    const endDate = document.getElementById('endDate').value;
-    
-    fetch(`/api/sales-stats?start_date=${startDate}&end_date=${endDate}`)
-        .then(response => response.json())
-        .then(data => {
-            salesData = data;
-            updateSummaryCards(data);
-            createDailyChart(data);
-            createProductChart(data);
-            createGrowthChart(data);
-            createCustomerSegmentChart(data);
-            createCityChart(data);
-            createCategoryChart(data);
-        });
-}
-</script>
+<!-- Detay Modal (isteğe bağlı örnek) -->
+<div class="modal fade" id="orderDetailsModal" tabindex="-1" aria-labelledby="orderDetailsModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="orderDetailsModalLabel">Sipariş Detayları</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+      </div>
+      <div class="modal-body">
+        <p id="orderDetailsContent">Sipariş detay bilgisi burada görüntülenecek.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-function updateCharts() {
-    const startDate = document.getElementById('startDate').value;
-    const endDate = document.getElementById('endDate').value;
-    
-    fetch(`/api/sales-stats?start_date=${startDate}&end_date=${endDate}`)
-        .then(response => response.json())
-        .then(data => {
-            salesData = data;
-            updateSummaryCards(data);
-            createDailyChart(data);
-            createProductChart(data);
-            createGrowthChart(data);
-            createCustomerSegmentChart(data);
-            createCityChart(data);
-            createCategoryChart(data);
-        });
-}
+<!-- Bootstrap 5 veya 4 kullanıyorsanız (örnek Bootstrap 5) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
 
-function createGrowthChart(data) {
-    const ctx = document.getElementById('growthChart').getContext('2d');
-    new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: data.weekly_growth.map(w => w.week),
-            datasets: [{
-                label: 'Haftalık Büyüme (%)',
-                data: data.weekly_growth.map(w => w.growth_rate),
-                borderColor: '#FF6384',
-                tension: 0.1
-            }]
-        },
-        options: {
-            responsive: true,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        callback: value => `%${value}`
-                    }
-                }
-            }
-        }
-    });
-}
-
-function createPaymentChart(data) {
-    const ctx = document.getElementById('paymentChart').getContext('2d');
-    new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            labels: data.payment_methods.map(p => p.method),
-            datasets: [{
-                data: data.payment_methods.map(p => p.amount),
-                backgroundColor: [
-                    '#FF6384',
-                    '#36A2EB',
-                    '#FFCE56',
-                    '#4BC0C0'
-                ]
-            }]
-        },
-        options: {
-            responsive: true
-        }
-    });
-}
-
-// Sayfa yüklendiğinde varsayılan tarihleri ayarla
-document.addEventListener('DOMContentLoaded', function() {
-    const today = new Date();
-    const thirtyDaysAgo = new Date(today);
-    thirtyDaysAgo.setDate(today.getDate() - 30);
-    
-    document.getElementById('endDate').value = today.toISOString().split('T')[0];
-    document.getElementById('startDate').value = thirtyDaysAgo.toISOString().split('T')[0];
-    
-    updateCharts();
-});
-</script>
 <script>
 let dailyChart = null;
 let productChart = null;
 let salesData = null;
 
+// Para formatlaması
 function formatCurrency(amount) {
     return new Intl.NumberFormat('tr-TR', {
         style: 'currency',
@@ -582,16 +351,18 @@ function formatCurrency(amount) {
     }).format(amount);
 }
 
+// Özet Kartlarını Güncelle
 function updateSummaryCards(data) {
     const totalAmount = data.daily_sales.reduce((sum, item) => sum + item.amount, 0);
     const totalCount = data.daily_sales.reduce((sum, item) => sum + item.count, 0);
-    const avgAmount = totalAmount / totalCount;
+    const avgAmount = totalCount === 0 ? 0 : (totalAmount / totalCount);
 
     document.getElementById('totalSales').textContent = formatCurrency(totalAmount);
     document.getElementById('totalOrders').textContent = totalCount;
     document.getElementById('avgOrderAmount').textContent = formatCurrency(avgAmount);
 }
 
+// Günlük Satışlar Grafiği
 function createDailyChart(data, type = 'amount') {
     if (dailyChart) {
         dailyChart.destroy();
@@ -636,6 +407,7 @@ function createDailyChart(data, type = 'amount') {
     });
 }
 
+// En Çok Satan Ürünler Grafiği
 function createProductChart(data, type = 'amount') {
     if (productChart) {
         productChart.destroy();
@@ -645,7 +417,14 @@ function createProductChart(data, type = 'amount') {
     productChart = new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: data.product_sales.map(item => `${item.sku || '-'} - ${item.size || '-'} / ${item.color || '-'}`),
+            labels: data.product_sales.map(item => {
+                // Ürün adının yanında beden ve renk bilgileri de gösterilebilir
+                const name = item.product_name || 'Ürün';
+                const sku = item.sku || '-';
+                const size = item.size || '-';
+                const color = item.color || '-';
+                return `${name} (${sku}) - ${size} / ${color}`;
+            }),
             datasets: [{
                 label: type === 'amount' ? 'Satış Tutarı' : 'Satış Adedi',
                 data: data.product_sales.map(item => type === 'amount' ? item.amount : item.count),
@@ -654,6 +433,7 @@ function createProductChart(data, type = 'amount') {
         },
         options: {
             responsive: true,
+            indexAxis: 'y',
             plugins: {
                 tooltip: {
                     callbacks: {
@@ -666,7 +446,9 @@ function createProductChart(data, type = 'amount') {
             },
             scales: {
                 y: {
-                    beginAtZero: true,
+                    beginAtZero: true
+                },
+                x: {
                     ticks: {
                         callback: function(value) {
                             return type === 'amount' ? formatCurrency(value) : value;
@@ -678,16 +460,253 @@ function createProductChart(data, type = 'amount') {
     });
 }
 
-document.addEventListener('DOMContentLoaded', function() {
-    fetch('/api/sales-stats')
+// Haftalık Büyüme Grafiği
+function createGrowthChart(data) {
+    const ctx = document.getElementById('growthChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: data.weekly_growth.map(w => w.week),
+            datasets: [{
+                label: 'Haftalık Büyüme (%)',
+                data: data.weekly_growth.map(w => w.growth_rate),
+                borderColor: '#FF6384',
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: value => `%${value}`
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Müşteri Segmentleri Grafiği
+function createCustomerSegmentChart(data) {
+    const ctx = document.getElementById('customerSegmentChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: data.customer_segments.map(c => c.name),
+            datasets: [{
+                label: 'Toplam Harcama',
+                data: data.customer_segments.map(c => c.total_spent),
+                backgroundColor: '#4CAF50'
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top'
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `Toplam Harcama: ${formatCurrency(context.raw)}`;
+                        },
+                        afterLabel: function(context) {
+                            const customer = data.customer_segments[context.dataIndex];
+                            return `Sipariş Sayısı: ${customer.order_count}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return formatCurrency(value);
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Şehir Bazlı Satışlar Grafiği
+function createCityChart(data) {
+    const ctx = document.getElementById('cityChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: data.top_cities.map(c => c.city),
+            datasets: [{
+                data: data.top_cities.map(c => c.amount),
+                backgroundColor: [
+                    '#FF6384',
+                    '#36A2EB',
+                    '#FFCE56',
+                    '#4BC0C0',
+                    '#9966FF'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const city = data.top_cities[context.dataIndex];
+                            const total = data.top_cities.reduce((a, b) => a + b.amount, 0);
+                            const percentage = (context.raw / total * 100).toFixed(1);
+                            return [
+                                `Şehir: ${context.label}`,
+                                `Tutar: ${formatCurrency(context.raw)}`,
+                                `Oran: %${percentage}`,
+                                `Sipariş Sayısı: ${city.order_count}`
+                            ];
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Ürün Kategorileri Grafiği
+function createCategoryChart(data) {
+    const ctx = document.getElementById('categoryChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: data.product_categories.map(c => c.category),
+            datasets: [{
+                data: data.product_categories.map(c => c.amount),
+                backgroundColor: [
+                    '#FF6384',
+                    '#36A2EB',
+                    '#FFCE56',
+                    '#4BC0C0',
+                    '#9966FF'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `${context.label}: ${formatCurrency(context.raw)}`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+/* --- Tablo Veri Doldurma Fonksiyonları --- */
+// Günlük Satışlar Tablosu
+function populateDailySalesTable(data) {
+    const tableBody = document.getElementById('dailySalesTable').querySelector('tbody');
+    tableBody.innerHTML = ''; // Mevcut satırları temizle
+
+    data.daily_sales.forEach(item => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${item.date}</td>
+            <td>${item.count}</td>
+            <td>${formatCurrency(item.amount)}</td>
+            <td>
+                <button class="btn btn-sm btn-info" onclick="showOrderDetailsModal('${item.date}')">
+                    Detay
+                </button>
+            </td>
+        `;
+        tableBody.appendChild(row);
+    });
+}
+
+// Ürün Satışları Tablosu
+function populateProductSalesTable(data) {
+    const tableBody = document.getElementById('productSalesTable').querySelector('tbody');
+    tableBody.innerHTML = ''; // Mevcut satırları temizle
+
+    data.product_sales.forEach(item => {
+        const row = document.createElement('tr');
+
+        // Değerler yoksa '-' şeklinde gösterelim
+        const productName = item.product_name || 'N/A';
+        const sku = item.sku || '-';
+        const color = item.color || '-';
+        const size = item.size || '-';
+        const count = item.count;
+        const amount = formatCurrency(item.amount);
+
+        row.innerHTML = `
+            <td>${productName}</td>
+            <td>${sku}</td>
+            <td>${color}</td>
+            <td>${size}</td>
+            <td>${count}</td>
+            <td>${amount}</td>
+        `;
+        tableBody.appendChild(row);
+    });
+}
+
+// Detay Modal'i göstermek için örnek fonksiyon
+function showOrderDetailsModal(date) {
+    const modalEl = document.getElementById('orderDetailsModal');
+    const modalBody = document.getElementById('orderDetailsContent');
+
+    // Burada seçilen tarih ile ilgili daha detaylı bilgi fetch edebilirsiniz
+    // veya data.daily_sales içinden ilgili öğeyi bulup gösterebilirsiniz.
+    modalBody.innerText = date + " tarihli satış detayları burada gösterilecek.";
+
+    // Bootstrap modal açma
+    const modal = new bootstrap.Modal(modalEl);
+    modal.show();
+}
+
+// API'den veri çekip tüm bileşenleri güncelleyen fonksiyon
+function updateCharts() {
+    const startDate = document.getElementById('startDate').value;
+    const endDate = document.getElementById('endDate').value;
+
+    fetch(`/api/sales-stats?start_date=${startDate}&end_date=${endDate}`)
         .then(response => response.json())
         .then(data => {
             salesData = data;
+            // Özet kartları
             updateSummaryCards(data);
-            createDailyChart(data);
-            createProductChart(data);
+            // Grafikleri oluştur/güncelle
+            createDailyChart(data, document.getElementById('dailyChartType').value);
+            createProductChart(data, document.getElementById('productChartType').value);
+            createGrowthChart(data);
+            createCustomerSegmentChart(data);
+            createCityChart(data);
+            createCategoryChart(data);
+            // Tabloları güncelle
+            populateDailySalesTable(data);
+            populateProductSalesTable(data);
         });
+}
 
+// Sayfa yüklendiğinde varsayılan tarihleri ayarla
+document.addEventListener('DOMContentLoaded', function() {
+    const today = new Date();
+    const thirtyDaysAgo = new Date(today);
+    thirtyDaysAgo.setDate(today.getDate() - 30);
+
+    document.getElementById('endDate').value = today.toISOString().split('T')[0];
+    document.getElementById('startDate').value = thirtyDaysAgo.toISOString().split('T')[0];
+
+    updateCharts(); // Varsayılan olarak son 30 günlük veriyi yükle
+
+    // Chart tiplerini seçince grafiği yenile
     document.getElementById('dailyChartType').addEventListener('change', function(e) {
         if (salesData) {
             createDailyChart(salesData, e.target.value);
