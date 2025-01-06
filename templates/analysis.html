@@ -370,7 +370,7 @@ function createCityChart(data) {
     new Chart(ctx, {
         type: 'pie',
         data: {
-            labels: data.top_cities.map(c => c.city),
+            labels: data.top_cities.map(c => `${c.city} (${c.order_count} Sipariş)`),
             datasets: [{
                 data: data.top_cities.map(c => c.amount),
                 backgroundColor: [
