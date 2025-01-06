@@ -82,13 +82,15 @@ def sales_stats():
     # Müşteri segmentleri analizi
     customer_segments = db.session.query(
         Order.customer_name,
+        Order.customer_surname,
         func.count(Order.id).label('order_count'),
         func.sum(Order.amount).label('total_spent')
     ).filter(
         Order.order_date >= start_date,
         Order.order_date <= end_date
     ).group_by(
-        Order.customer_name
+        Order.customer_name,
+        Order.customer_surname
     ).order_by(
         func.sum(Order.amount).desc()
     ).limit(10).all()
@@ -134,7 +136,7 @@ def sales_stats():
         } for p in product_sales],
         'weekly_growth': weekly_growth,
         'customer_segments': [{
-            'name': c.customer_name,
+            'name': f"{c.customer_name} {c.customer_surname} ({c.order_count})",
             'order_count': c.order_count,
             'total_spent': float(c.total_spent or 0)
         } for c in customer_segments],
