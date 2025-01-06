@@ -410,8 +410,8 @@ def siparis_fisi_olustur():
         # kalemler_json diye bir sütun eklediğini varsayıyoruz
         yeni_fis.kalemler_json = json.dumps(kalemler, ensure_ascii=False)
 
-        # Örnek bir image_url istersen
-        yeni_fis.image_url = "/static/images/default.jpg"
+        # Varsayılan resim yolu
+        yeni_fis.image_url = "/static/logo/gullu.png"
 
         db.session.add(yeni_fis)
         db.session.commit()
