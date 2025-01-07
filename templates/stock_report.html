@@ -1,244 +1,98 @@
-
 {% extends "base.html" %}
 {% block content %}
-<style>
-.stats-container {
-    padding: 2rem 0;
-    background: #f8f9fa;
-}
 
-.filter-card {
-    background: white;
-    border-radius: 15px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-    padding: 1.5rem;
-    margin-bottom: 2rem;
-}
+<div class="container mt-4">
+    <h2>Stok Raporu</h2>
 
-.metric-card {
-    background: white;
-    border-radius: 15px;
-    padding: 1.5rem;
-    margin-bottom: 1rem;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-    transition: transform 0.2s;
-}
-
-.metric-card:hover {
-    transform: translateY(-5px);
-}
-
-.metric-value {
-    font-size: 2rem;
-    font-weight: 600;
-    color: #2193b0;
-}
-
-.metric-label {
-    font-size: 0.9rem;
-    color: #666;
-    margin-top: 0.5rem;
-}
-
-.table {
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-    margin-bottom: 2rem;
-}
-
-.table thead th {
-    background: linear-gradient(45deg, #2193b0, #6dd5ed);
-    color: white;
-    font-weight: 600;
-    padding: 15px;
-    font-size: 0.95rem;
-    border: none;
-}
-
-.export-btn {
-    background: linear-gradient(45deg, #11998e, #38ef7d);
-    border: none;
-    color: white;
-    padding: 0.5rem 1rem;
-    border-radius: 20px;
-    margin-right: 1rem;
-    transition: all 0.3s;
-}
-
-.export-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 15px rgba(17, 153, 142, 0.3);
-}
-</style>
-
-<div class="container-fluid mt-4">
-    <div class="row mb-4">
-        <div class="col-12">
-            <h2 class="mb-4">Detaylı Stok Analizi</h2>
-            
-            <!-- Filtreler -->
-            <div class="filter-card">
-                <div class="row">
-                    <div class="col-md-3">
-                        <label>Kategori</label>
-                        <select class="form-select" id="categoryFilter">
-                            <option value="">Tümü</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <label>Stok Durumu</label>
-                        <select class="form-select" id="stockStatusFilter">
-                            <option value="">Tümü</option>
-                            <option value="critical">Kritik</option>
-                            <option value="out">Stok Dışı</option>
-                            <option value="healthy">Yeterli</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <label>Sıralama</label>
-                        <select class="form-select" id="sortFilter">
-                            <option value="quantity_asc">Miktar (Azalan)</option>
-                            <option value="quantity_desc">Miktar (Artan)</option>
-                            <option value="price_asc">Fiyat (Azalan)</option>
-                            <option value="price_desc">Fiyat (Artan)</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <label>Arama</label>
-                        <input type="text" class="form-control" id="searchFilter" placeholder="Ürün adı, barkod...">
-                    </div>
+    <!-- Filtreler -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <label>Stok Durumu</label>
+                    <select class="form-select" id="stockFilter">
+                        <option value="all">Tümü</option>
+                        <option value="low">Kritik Stok</option>
+                        <option value="out">Stok Yok</option>
+                        <option value="healthy">Yeterli Stok</option>
+                    </select>
                 </div>
-            </div>
-
-            <!-- Export Butonları -->
-            <div class="mb-4">
-                <button class="export-btn" onclick="exportToExcel()">
-                    <i class="fas fa-file-excel"></i> Excel'e Aktar
-                </button>
-                <button class="export-btn" onclick="exportToPDF()">
-                    <i class="fas fa-file-pdf"></i> PDF'e Aktar
-                </button>
+                <div class="col-md-4">
+                    <label>Arama</label>
+                    <input type="text" class="form-control" id="searchFilter" placeholder="Ürün adı, barkod veya SKU">
+                </div>
+                <div class="col-md-4">
+                    <label>&nbsp;</label>
+                    <button class="btn btn-primary d-block" onclick="loadStockReport()">Filtrele</button>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Özet Metrikler -->
+    <!-- Özet Kartları -->
     <div class="row mb-4">
         <div class="col-md-3">
-            <div class="metric-card">
-                <div class="metric-value" id="totalProducts">-</div>
-                <div class="metric-label">Toplam Ürün</div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="metric-card">
-                <div class="metric-value" id="totalValue">-</div>
-                <div class="metric-label">Toplam Stok Değeri</div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="metric-card">
-                <div class="metric-value" id="avgRotation">-</div>
-                <div class="metric-label">Ortalama Stok Rotasyonu</div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="metric-card">
-                <div class="metric-value" id="criticalStock">-</div>
-                <div class="metric-label">Kritik Stok Sayısı</div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Grafikler -->
-    <div class="row mb-4">
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h5>Kategori Bazlı Stok Dağılımı</h5>
-                </div>
+            <div class="card bg-success text-white">
                 <div class="card-body">
-                    <canvas id="categoryChart"></canvas>
+                    <h6 class="card-title">Toplam Ürün</h6>
+                    <h3 id="totalProducts">-</h3>
                 </div>
             </div>
         </div>
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h5>Stok Durumu Dağılımı</h5>
-                </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
                 <div class="card-body">
-                    <canvas id="stockStatusChart"></canvas>
+                    <h6 class="card-title">Kritik Stok</h6>
+                    <h3 id="lowStockCount">-</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-danger text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Stok Yok</h6>
+                    <h3 id="outOfStockCount">-</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Toplam Stok Değeri</h6>
+                    <h3 id="totalStockValue">-</h3>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Stok Tabloları -->
-    <div class="row">
-        <div class="col-12">
-            <h4>Kritik Stok Ürünleri</h4>
+    <!-- Stok Tablosu -->
+    <div class="card">
+        <div class="card-body">
             <div class="table-responsive">
-                <table class="table table-hover" id="criticalStockTable">
+                <table class="table table-hover" id="stockTable">
                     <thead>
                         <tr>
-                            <th>Ürün</th>
+                            <th>Ürün Adı</th>
                             <th>Barkod</th>
-                            <th>Kategori</th>
-                            <th>Miktar</th>
-                            <th>Min. Stok</th>
-                            <th>Beden</th>
+                            <th>SKU</th>
                             <th>Renk</th>
-                            <th>Satış Fiyatı</th>
+                            <th>Beden</th>
+                            <th>Stok</th>
+                            <th>Birim Fiyat</th>
                             <th>Toplam Değer</th>
-                            <th>Son Hareket</th>
                             <th>Durum</th>
                         </tr>
                     </thead>
-                    <tbody></tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    <div class="row mt-4">
-        <div class="col-12">
-            <h4>Genel Stok Durumu</h4>
-            <div class="table-responsive">
-                <table class="table table-hover" id="generalStockTable">
-                    <thead>
-                        <tr>
-                            <th>Ürün</th>
-                            <th>Barkod</th>
-                            <th>Kategori</th>
-                            <th>Miktar</th>
-                            <th>Min. Stok</th>
-                            <th>Beden</th>
-                            <th>Renk</th>
-                            <th>Satış Fiyatı</th>
-                            <th>Toplam Değer</th>
-                            <th>Rotasyon</th>
-                            <th>Son Hareket</th>
-                            <th>Durum</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
+                    <tbody>
+                        <!-- JavaScript ile doldurulacak -->
+                    </tbody>
                 </table>
             </div>
         </div>
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
-
 <script>
-let categoryChart = null;
-let stockStatusChart = null;
-
-// Para formatlaması
 function formatCurrency(amount) {
     return new Intl.NumberFormat('tr-TR', {
         style: 'currency',
@@ -246,263 +100,61 @@ function formatCurrency(amount) {
     }).format(amount);
 }
 
-// Tarih formatlaması
-function formatDate(date) {
-    return new Date(date).toLocaleDateString('tr-TR', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-    });
-}
-
-// Grafikleri oluştur
-function createCharts(data) {
-    // Kategori grafiği
-    const ctxCategory = document.getElementById('categoryChart').getContext('2d');
-    if (categoryChart) {
-        categoryChart.destroy();
-    }
-    categoryChart = new Chart(ctxCategory, {
-        type: 'doughnut',
-        data: {
-            labels: data.categories.map(c => c.name),
-            datasets: [{
-                data: data.categories.map(c => c.count),
-                backgroundColor: [
-                    '#FF6384',
-                    '#36A2EB',
-                    '#FFCE56',
-                    '#4BC0C0',
-                    '#9966FF'
-                ]
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    position: 'right'
-                }
-            }
-        }
-    });
-
-    // Stok durumu grafiği
-    const ctxStock = document.getElementById('stockStatusChart').getContext('2d');
-    if (stockStatusChart) {
-        stockStatusChart.destroy();
-    }
-    stockStatusChart = new Chart(ctxStock, {
-        type: 'pie',
-        data: {
-            labels: ['Kritik Stok', 'Stok Dışı', 'Yeterli Stok'],
-            datasets: [{
-                data: [
-                    data.stock_status.critical,
-                    data.stock_status.out,
-                    data.stock_status.healthy
-                ],
-                backgroundColor: ['#FFA500', '#FF0000', '#00FF00']
-            }]
-        },
-        options: {
-            responsive: true
-        }
-    });
-}
-
-// Tabloları doldur
-function populateTables(data) {
-    const criticalTable = document.getElementById('criticalStockTable').querySelector('tbody');
-    const generalTable = document.getElementById('generalStockTable').querySelector('tbody');
-    
-    criticalTable.innerHTML = '';
-    generalTable.innerHTML = '';
-
-    // Kritik stok tablosu
-    data.critical_products.forEach(product => {
-        criticalTable.innerHTML += `
-            <tr>
-                <td>${product.title}</td>
-                <td>${product.barcode}</td>
-                <td>${product.category}</td>
-                <td>${product.quantity}</td>
-                <td>${product.min_stock}</td>
-                <td>${product.size}</td>
-                <td>${product.color}</td>
-                <td>${formatCurrency(product.sale_price)}</td>
-                <td>${formatCurrency(product.total_value)}</td>
-                <td>${formatDate(product.last_movement)}</td>
-                <td>
-                    <span class="badge bg-warning">Kritik</span>
-                </td>
-            </tr>
-        `;
-    });
-
-    // Genel stok tablosu
-    data.all_products.forEach(product => {
-        generalTable.innerHTML += `
-            <tr>
-                <td>${product.title}</td>
-                <td>${product.barcode}</td>
-                <td>${product.category}</td>
-                <td>${product.quantity}</td>
-                <td>${product.min_stock}</td>
-                <td>${product.size}</td>
-                <td>${product.color}</td>
-                <td>${formatCurrency(product.sale_price)}</td>
-                <td>${formatCurrency(product.total_value)}</td>
-                <td>${product.rotation_rate}%</td>
-                <td>${formatDate(product.last_movement)}</td>
-                <td>
-                    <span class="badge ${getStockStatusClass(product.status)}">
-                        ${product.status}
-                    </span>
-                </td>
-            </tr>
-        `;
-    });
-}
-
-// Stok durumu badge renkleri
-function getStockStatusClass(status) {
-    switch(status) {
-        case 'Kritik': return 'bg-warning';
-        case 'Stok Dışı': return 'bg-danger';
-        case 'Yeterli': return 'bg-success';
-        default: return 'bg-secondary';
-    }
-}
-
-// Özet metrikleri güncelle
-function updateMetrics(data) {
-    document.getElementById('totalProducts').textContent = data.total_products;
-    document.getElementById('totalValue').textContent = formatCurrency(data.total_value);
-    document.getElementById('avgRotation').textContent = `${data.avg_rotation}%`;
-    document.getElementById('criticalStock').textContent = data.critical_count;
-}
-
-// Excel'e aktar
-function exportToExcel() {
-    const wb = XLSX.utils.book_new();
-    
-    // Kritik stok verilerini al
-    const criticalData = Array.from(document.getElementById('criticalStockTable').querySelectorAll('tr'))
-        .map(row => Array.from(row.cells).map(cell => cell.textContent.trim()));
-    
-    // Genel stok verilerini al
-    const generalData = Array.from(document.getElementById('generalStockTable').querySelectorAll('tr'))
-        .map(row => Array.from(row.cells).map(cell => cell.textContent.trim()));
-    
-    // Worksheetler oluştur
-    const wsCritical = XLSX.utils.aoa_to_sheet([['Kritik Stok Raporu'], [], ...criticalData]);
-    const wsGeneral = XLSX.utils.aoa_to_sheet([['Genel Stok Raporu'], [], ...generalData]);
-    
-    // Worksheetleri ekle
-    XLSX.utils.book_append_sheet(wb, wsCritical, "Kritik Stok");
-    XLSX.utils.book_append_sheet(wb, wsGeneral, "Genel Stok");
-    
-    // Excel dosyasını indir
-    XLSX.writeFile(wb, `Stok_Raporu_${new Date().toISOString().split('T')[0]}.xlsx`);
-}
-
-// PDF'e aktar
-function exportToPDF() {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-    
-    doc.text("Stok Raporu", 14, 15);
-    doc.autoTable({ 
-        html: '#criticalStockTable',
-        startY: 20,
-        theme: 'striped',
-        headStyles: { fillColor: [33, 150, 243] }
-    });
-    
-    doc.addPage();
-    doc.text("Genel Stok", 14, 15);
-    doc.autoTable({ 
-        html: '#generalStockTable',
-        startY: 20,
-        theme: 'striped',
-        headStyles: { fillColor: [33, 150, 243] }
-    });
-    
-    doc.save(`Stok_Raporu_${new Date().toISOString().split('T')[0]}.pdf`);
-}
-
-// Verileri yükle
 async function loadStockReport() {
     try {
-        console.log('Stok raporu yükleniyor...');
-        const response = await fetch('/api/stock-report-data');
-        console.log('API yanıtı:', response.status);
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
+        const stockFilter = document.getElementById('stockFilter').value;
+        const searchQuery = document.getElementById('searchFilter').value;
+
+        const response = await fetch(`/api/stock-report-data?filter=${stockFilter}&search=${searchQuery}`);
         const data = await response.json();
-        console.log('Alınan veri:', data);
-        
-        if (!data || typeof data !== 'object') {
-            throw new Error('Geçersiz veri formatı');
-        }
 
-        // Grafikleri oluştur
-        try {
-            console.log('Grafikler oluşturuluyor...');
-            createCharts(data);
-        } catch (chartError) {
-            console.error('Grafik oluşturma hatası:', chartError);
-        }
+        // Özet kartlarını güncelle
+        document.getElementById('totalProducts').textContent = data.summary.total_products;
+        document.getElementById('lowStockCount').textContent = data.summary.low_stock_count;
+        document.getElementById('outOfStockCount').textContent = data.summary.out_of_stock_count;
+        document.getElementById('totalStockValue').textContent = formatCurrency(data.summary.total_value);
 
-        // Tabloları doldur
-        try {
-            console.log('Tablolar dolduruluyor...');
-            populateTables(data);
-        } catch (tableError) {
-            console.error('Tablo doldurma hatası:', tableError);
-        }
+        // Tabloyu güncelle
+        const tableBody = document.getElementById('stockTable').querySelector('tbody');
+        tableBody.innerHTML = '';
 
-        // Metrikleri güncelle
-        try {
-            console.log('Metrikler güncelleniyor...');
-            updateMetrics(data);
-        } catch (metricError) {
-            console.error('Metrik güncelleme hatası:', metricError);
-        }
+        data.products.forEach(product => {
+            const row = document.createElement('tr');
+            const stockStatus = getStockStatus(product.quantity);
+
+            row.innerHTML = `
+                <td>${product.title}</td>
+                <td>${product.barcode}</td>
+                <td>${product.sku || '-'}</td>
+                <td>${product.color || '-'}</td>
+                <td>${product.size || '-'}</td>
+                <td>${product.quantity}</td>
+                <td>${formatCurrency(product.sale_price)}</td>
+                <td>${formatCurrency(product.total_value)}</td>
+                <td><span class="badge ${stockStatus.class}">${stockStatus.text}</span></td>
+            `;
+
+            tableBody.appendChild(row);
+        });
 
     } catch (error) {
-        console.error('Veri yükleme hatası:', error);
-        alert('Veri yüklenirken bir hata oluştu: ' + error.message);
+        console.error('Stok raporu yüklenirken hata:', error);
+        alert('Stok raporu yüklenirken bir hata oluştu.');
     }
 }
 
-// Sayfa yüklendiğinde çalıştır
-document.addEventListener('DOMContentLoaded', () => {
-    console.log('Sayfa yüklendi, stok raporu yükleniyor...');
-    loadStockReport();
-});
+function getStockStatus(quantity) {
+    if (!quantity || quantity === 0) {
+        return { text: 'Stok Yok', class: 'bg-danger' };
+    } else if (quantity < 10) {
+        return { text: 'Kritik Stok', class: 'bg-warning' };
+    } else {
+        return { text: 'Yeterli', class: 'bg-success' };
+    }
+}
 
-// Sayfa yüklendiğinde verileri getir
-document.addEventListener('DOMContentLoaded', () => {
-    loadStockReport();
-    
-    // Filtre değişikliklerini dinle
-    document.getElementById('categoryFilter').addEventListener('change', loadStockReport);
-    document.getElementById('stockStatusFilter').addEventListener('change', loadStockReport);
-    document.getElementById('sortFilter').addEventListener('change', loadStockReport);
-    
-    // Arama filtresini debounce ile dinle
-    let timeout = null;
-    document.getElementById('searchFilter').addEventListener('input', (e) => {
-        clearTimeout(timeout);
-        timeout = setTimeout(() => {
-            loadStockReport();
-        }, 500);
-    });
-});
+// Sayfa yüklendiğinde raporu getir
+document.addEventListener('DOMContentLoaded', loadStockReport);
 </script>
+
 {% endblock %}
