@@ -58,7 +58,6 @@ def stock_report_data():
         product_list.append({
             'title': product.title,
             'barcode': product.barcode,
-            'sku': product.merchant_sku,
             'color': product.color,
             'size': product.size,
             'quantity': quantity,
