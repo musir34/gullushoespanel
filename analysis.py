@@ -394,14 +394,38 @@ def analysis_page():
 
 @analysis_bp.route('/api/inventory-stats')
 def inventory_stats():
-    """Stok durumu analizi"""
+    """Detaylı stok durumu analizi"""
     products = Product.query.all()
+    
     stock_levels = {
         'low_stock': len([p for p in products if p.quantity and p.quantity < 10]),
         'out_of_stock': len([p for p in products if not p.quantity or p.quantity == 0]),
         'healthy_stock': len([p for p in products if p.quantity and p.quantity >= 10])
     }
-    return jsonify(stock_levels)
+
+    low_stock_products = [{
+        'title': p.title,
+        'barcode': p.barcode,
+        'quantity': p.quantity,
+        'size': p.size,
+        'color': p.color,
+        'sale_price': p.sale_price
+    } for p in products if p.quantity and p.quantity < 10]
+
+    out_stock_products = [{
+        'title': p.title,
+        'barcode': p.barcode,
+        'quantity': p.quantity or 0,
+        'size': p.size,
+        'color': p.color,
+        'sale_price': p.sale_price
+    } for p in products if not p.quantity or p.quantity == 0]
+
+    return jsonify({
+        'summary': stock_levels,
+        'low_stock_products': low_stock_products,
+        'out_stock_products': out_stock_products
+    })
 
 @analysis_bp.route('/api/shipping-performance')
 def shipping_performance():

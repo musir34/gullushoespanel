@@ -277,8 +277,11 @@
     <div class="row mt-4">
         <div class="col-md-6">
             <div class="card">
-                <div class="card-header">
+                <div class="card-header d-flex justify-content-between">
                     <span>Stok Durumu Analizi</span>
+                    <button class="btn btn-sm btn-primary" onclick="showStockDetails()">
+                        Stok Detayları
+                    </button>
                 </div>
                 <div class="card-body">
                     <canvas id="stockChart"></canvas>
@@ -820,3 +823,81 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 {% endblock %}
+
+<!-- Stok Detay Modal -->
+<div class="modal fade" id="stockDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Stok Detayları</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <h6>Kritik Stok Ürünler</h6>
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Ürün</th>
+                            <th>Barkod</th>
+                            <th>Miktar</th>
+                            <th>Beden</th>
+                            <th>Renk</th>
+                            <th>Satış Fiyatı</th>
+                        </tr>
+                    </thead>
+                    <tbody id="lowStockTable"></tbody>
+                </table>
+
+                <h6 class="mt-4">Stok Dışı Ürünler</h6>
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Ürün</th>
+                            <th>Barkod</th>
+                            <th>Miktar</th>
+                            <th>Beden</th>
+                            <th>Renk</th>
+                            <th>Satış Fiyatı</th>
+                        </tr>
+                    </thead>
+                    <tbody id="outStockTable"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+async function showStockDetails() {
+    const response = await fetch('/api/inventory-stats');
+    const data = await response.json();
+    
+    const lowStockTable = document.getElementById('lowStockTable');
+    const outStockTable = document.getElementById('outStockTable');
+    
+    lowStockTable.innerHTML = data.low_stock_products.map(product => `
+        <tr>
+            <td>${product.title}</td>
+            <td>${product.barcode}</td>
+            <td>${product.quantity}</td>
+            <td>${product.size}</td>
+            <td>${product.color}</td>
+            <td>${formatCurrency(product.sale_price)}</td>
+        </tr>
+    `).join('');
+    
+    outStockTable.innerHTML = data.out_stock_products.map(product => `
+        <tr>
+            <td>${product.title}</td>
+            <td>${product.barcode}</td>
+            <td>${product.quantity}</td>
+            <td>${product.size}</td>
+            <td>${product.color}</td>
+            <td>${formatCurrency(product.sale_price)}</td>
+        </tr>
+    `).join('');
+    
+    const modal = new bootstrap.Modal(document.getElementById('stockDetailsModal'));
+    modal.show();
+}
+</script>
