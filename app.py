@@ -56,6 +56,7 @@ from processed_orders_service import processed_orders_service_bp
 from iade_islemleri import iade_islemleri, fetch_data_from_api, save_to_database  # iade_islemleri'nden import ettiğimizi varsayıyorum
 from siparis_fisi import siparis_fisi_bp
 from analysis import analysis_bp
+from stock_report import stock_report_bp # Added import for the new blueprint
 
 blueprints = [
     order_service_bp,
@@ -71,7 +72,8 @@ blueprints = [
     new_orders_service_bp,
     processed_orders_service_bp,
     iade_islemleri,
-    siparis_fisi_bp
+    siparis_fisi_bp,
+    stock_report_bp # Added stock_report_bp to the blueprints list
 ]
 
 for bp in blueprints:

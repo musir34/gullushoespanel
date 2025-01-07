@@ -1,0 +1,98 @@
+
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Stok Raporu</h2>
+    
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Kritik Stok Ürünler</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Ürün</th>
+                                <th>Barkod</th>
+                                <th>Miktar</th>
+                                <th>Beden</th>
+                                <th>Renk</th>
+                                <th>Satış Fiyatı</th>
+                            </tr>
+                        </thead>
+                        <tbody id="lowStockTable"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Stok Dışı Ürünler</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Ürün</th>
+                                <th>Barkod</th>
+                                <th>Miktar</th>
+                                <th>Beden</th>
+                                <th>Renk</th>
+                                <th>Satış Fiyatı</th>
+                            </tr>
+                        </thead>
+                        <tbody id="outStockTable"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+async function loadStockReport() {
+    const response = await fetch('/api/stock-report-data');
+    const data = await response.json();
+    
+    const lowStockTable = document.getElementById('lowStockTable');
+    const outStockTable = document.getElementById('outStockTable');
+    
+    function formatCurrency(amount) {
+        return new Intl.NumberFormat('tr-TR', {
+            style: 'currency',
+            currency: 'TRY'
+        }).format(amount);
+    }
+    
+    lowStockTable.innerHTML = data.low_stock_products.map(product => `
+        <tr>
+            <td>${product.title}</td>
+            <td>${product.barcode}</td>
+            <td>${product.quantity}</td>
+            <td>${product.size}</td>
+            <td>${product.color}</td>
+            <td>${formatCurrency(product.sale_price)}</td>
+        </tr>
+    `).join('');
+    
+    outStockTable.innerHTML = data.out_stock_products.map(product => `
+        <tr>
+            <td>${product.title}</td>
+            <td>${product.barcode}</td>
+            <td>${product.quantity}</td>
+            <td>${product.size}</td>
+            <td>${product.color}</td>
+            <td>${formatCurrency(product.sale_price)}</td>
+        </tr>
+    `).join('');
+}
+
+document.addEventListener('DOMContentLoaded', loadStockReport);
+</script>
+{% endblock %}
