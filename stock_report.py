@@ -58,7 +58,7 @@ def stock_report_data():
         product_list.append({
             'title': product.title,
             'barcode': product.barcode,
-            'model': product.product_main_id,
+            'model': product.product_main_id if product.product_main_id else "Model Yok",
             'color': product.color,
             'size': product.size,
             'quantity': quantity,
