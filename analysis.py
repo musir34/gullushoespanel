@@ -392,6 +392,86 @@ def get_turkey_cities_districts():
 def analysis_page():
     return render_template('analysis.html')
 
+@analysis_bp.route('/api/inventory-stats')
+def inventory_stats():
+    """Stok durumu analizi"""
+    products = Product.query.all()
+    stock_levels = {
+        'low_stock': len([p for p in products if p.stock_quantity < 10]),
+        'out_of_stock': len([p for p in products if p.stock_quantity == 0]),
+        'healthy_stock': len([p for p in products if p.stock_quantity >= 10])
+    }
+    return jsonify(stock_levels)
+
+@analysis_bp.route('/api/shipping-performance')
+def shipping_performance():
+    """Kargo performans analizi"""
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    
+    if start_date and end_date:
+        start_date = datetime.strptime(start_date, '%Y-%m-%d')
+        end_date = datetime.strptime(end_date, '%Y-%m-%d')
+    else:
+        end_date = datetime.now()
+        start_date = end_date - timedelta(days=30)
+    
+    orders = Order.query.filter(
+        Order.order_date.between(start_date, end_date)
+    ).all()
+    
+    performance_data = {
+        'on_time_delivery': 0,
+        'late_delivery': 0,
+        'avg_delivery_time': 0
+    }
+    
+    delivery_times = []
+    for order in orders:
+        if order.delivery_date and order.order_date:
+            delivery_time = (order.delivery_date - order.order_date).days
+            delivery_times.append(delivery_time)
+            
+            if delivery_time <= 3:  # 3 gün ve altı zamanında teslimat sayılır
+                performance_data['on_time_delivery'] += 1
+            else:
+                performance_data['late_delivery'] += 1
+    
+    if delivery_times:
+        performance_data['avg_delivery_time'] = sum(delivery_times) / len(delivery_times)
+    
+    return jsonify(performance_data)
+
+@analysis_bp.route('/api/sales-prediction')
+def sales_prediction():
+    """Basit satış tahminleme"""
+    last_30_days = datetime.now() - timedelta(days=30)
+    
+    daily_sales = db.session.query(
+        func.date(Order.order_date).label('date'),
+        func.count(Order.id).label('count')
+    ).filter(
+        Order.order_date >= last_30_days
+    ).group_by(
+        func.date(Order.order_date)
+    ).all()
+    
+    # Son 30 günün ortalamasını al
+    total_sales = sum(day.count for day in daily_sales)
+    avg_daily_sales = total_sales / 30 if daily_sales else 0
+    
+    # Gelecek 7 gün için tahmin
+    prediction = []
+    current_date = datetime.now()
+    for i in range(7):
+        future_date = current_date + timedelta(days=i)
+        prediction.append({
+            'date': future_date.strftime('%Y-%m-%d'),
+            'predicted_sales': round(avg_daily_sales * (1 + (i * 0.02)), 2)  # Her gün %2 artış varsayımı
+        })
+    
+    return jsonify(prediction)
+
 @analysis_bp.route('/api/sales-stats')
 def sales_stats():
     start_date = request.args.get('start_date', None)

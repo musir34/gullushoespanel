@@ -273,6 +273,46 @@
         </div>
     </div>
 
+    <!-- Stok Durumu -->
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <span>Stok Durumu Analizi</span>
+                </div>
+                <div class="card-body">
+                    <canvas id="stockChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Kargo Performansı -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <span>Kargo Performansı</span>
+                </div>
+                <div class="card-body">
+                    <canvas id="shippingChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Satış Tahminleri -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <span>Gelecek 7 Gün Satış Tahmini</span>
+                </div>
+                <div class="card-body">
+                    <canvas id="predictionChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Günlük Satış Detayları Tablosu -->
     <div class="row mt-4">
         <div class="col-md-12">
@@ -607,6 +647,60 @@ function createCategoryChart(data) {
     });
 }
 
+//Yeni Grafik Fonksiyonları
+function createStockChart(data) {
+    const ctx = document.getElementById('stockChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: ['Kritik Stok', 'Stok Yok', 'Yeterli Stok'],
+            datasets: [{
+                data: [
+                    data.low_stock,
+                    data.out_of_stock,
+                    data.healthy_stock
+                ],
+                backgroundColor: ['#FFA500', '#FF0000', '#00FF00']
+            }]
+        }
+    });
+}
+
+function createShippingChart(data) {
+    const ctx = document.getElementById('shippingChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Zamanında Teslimat', 'Geç Teslimat'],
+            datasets: [{
+                label: 'Teslimat Performansı',
+                data: [
+                    data.on_time_delivery,
+                    data.late_delivery
+                ],
+                backgroundColor: ['#4CAF50', '#f44336']
+            }]
+        }
+    });
+}
+
+function createPredictionChart(data) {
+    const ctx = document.getElementById('predictionChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: data.map(d => d.date),
+            datasets: [{
+                label: 'Tahmini Satış',
+                data: data.map(d => d.predicted_sales),
+                borderColor: '#2196F3',
+                fill: false
+            }]
+        }
+    });
+}
+
+
 /* --- Tablo Veri Doldurma Fonksiyonları --- */
 // Günlük Satışlar Tablosu
 function populateDailySalesTable(data) {
@@ -672,27 +766,32 @@ function showOrderDetailsModal(date) {
 }
 
 // API'den veri çekip tüm bileşenleri güncelleyen fonksiyon
-function updateCharts() {
+async function updateCharts() {
     const startDate = document.getElementById('startDate').value;
     const endDate = document.getElementById('endDate').value;
 
-    fetch(`/api/sales-stats?start_date=${startDate}&end_date=${endDate}`)
-        .then(response => response.json())
-        .then(data => {
-            salesData = data;
-            // Özet kartları
-            updateSummaryCards(data);
-            // Grafikleri oluştur/güncelle
-            createDailyChart(data, document.getElementById('dailyChartType').value);
-            createProductChart(data, document.getElementById('productChartType').value);
-            createGrowthChart(data);
-            createCustomerSegmentChart(data);
-            createCityChart(data);
-            createCategoryChart(data);
-            // Tabloları güncelle
-            populateDailySalesTable(data);
-            populateProductSalesTable(data);
-        });
+    const salesResponse = await fetch(`/api/sales-stats?start_date=${startDate}&end_date=${endDate}`);
+    const salesData = await salesResponse.json();
+
+    const stockData = await fetch('/api/inventory-stats').then(r => r.json());
+    const shippingData = await fetch('/api/shipping-performance').then(r => r.json());
+    const predictionData = await fetch('/api/sales-prediction').then(r => r.json());
+
+    // Özet kartları
+    updateSummaryCards(salesData);
+    // Grafikleri oluştur/güncelle
+    createDailyChart(salesData, document.getElementById('dailyChartType').value);
+    createProductChart(salesData, document.getElementById('productChartType').value);
+    createGrowthChart(salesData);
+    createCustomerSegmentChart(salesData);
+    createCityChart(salesData);
+    createCategoryChart(salesData);
+    createStockChart(stockData);
+    createShippingChart(shippingData);
+    createPredictionChart(predictionData);
+    // Tabloları güncelle
+    populateDailySalesTable(salesData);
+    populateProductSalesTable(salesData);
 }
 
 // Sayfa yüklendiğinde varsayılan tarihleri ayarla
