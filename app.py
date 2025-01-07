@@ -35,6 +35,12 @@ app.config['Session'] = Session
 # SQLAlchemy'yi uygulama ile başlat
 db.init_app(app)
 
+with app.app_context():
+    # Eksik sütunu ekle
+    from sqlalchemy import text
+    db.session.execute(text('ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_date TIMESTAMP'))
+    db.session.commit()
+
 # Blueprint modüllerini import et
 from order_service import order_service_bp
 from update_service import update_service_bp
