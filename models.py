@@ -116,7 +116,7 @@ class Order(db.Model):
         db.Index('idx_status', 'status'),
         db.Index('idx_order_date', 'order_date'),
     )
-    
+
     id = db.Column(db.Integer, primary_key=True)
     order_number = db.Column(db.String)
     order_date = db.Column(db.DateTime)
@@ -154,6 +154,7 @@ class Order(db.Model):
     archive_date = db.Column(db.DateTime)
     archive_reason = db.Column(db.String)
     quantity = db.Column(db.Integer)
+    delivery_date = db.Column(db.DateTime)
 
 class Product(db.Model):
     __tablename__ = 'products'

@@ -417,19 +417,21 @@ def shipping_performance():
         start_date = end_date - timedelta(days=30)
     
     orders = Order.query.filter(
-        Order.order_date.between(start_date, end_date)
+        Order.order_date.between(start_date, end_date),
+        Order.status == 'Delivered'
     ).all()
     
     performance_data = {
         'on_time_delivery': 0,
         'late_delivery': 0,
-        'avg_delivery_time': 0
+        'avg_delivery_time': 0,
+        'total_orders': len(orders)
     }
     
     delivery_times = []
     for order in orders:
-        if order.delivery_date and order.order_date:
-            delivery_time = (order.delivery_date - order.order_date).days
+        if order.agreed_delivery_date and order.order_date:
+            delivery_time = (order.agreed_delivery_date - order.order_date).days
             delivery_times.append(delivery_time)
             
             if delivery_time <= 3:  # 3 gün ve altı zamanında teslimat sayılır
@@ -438,7 +440,7 @@ def shipping_performance():
                 performance_data['late_delivery'] += 1
     
     if delivery_times:
-        performance_data['avg_delivery_time'] = sum(delivery_times) / len(delivery_times)
+        performance_data['avg_delivery_time'] = round(sum(delivery_times) / len(delivery_times), 1)
     
     return jsonify(performance_data)
 
