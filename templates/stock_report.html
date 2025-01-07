@@ -435,16 +435,56 @@ function exportToPDF() {
 // Verileri yükle
 async function loadStockReport() {
     try {
+        console.log('Stok raporu yükleniyor...');
         const response = await fetch('/api/stock-report-data');
-        const data = await response.json();
+        console.log('API yanıtı:', response.status);
         
-        createCharts(data);
-        populateTables(data);
-        updateMetrics(data);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('Alınan veri:', data);
+        
+        if (!data || typeof data !== 'object') {
+            throw new Error('Geçersiz veri formatı');
+        }
+
+        // Grafikleri oluştur
+        try {
+            console.log('Grafikler oluşturuluyor...');
+            createCharts(data);
+        } catch (chartError) {
+            console.error('Grafik oluşturma hatası:', chartError);
+        }
+
+        // Tabloları doldur
+        try {
+            console.log('Tablolar dolduruluyor...');
+            populateTables(data);
+        } catch (tableError) {
+            console.error('Tablo doldurma hatası:', tableError);
+        }
+
+        // Metrikleri güncelle
+        try {
+            console.log('Metrikler güncelleniyor...');
+            updateMetrics(data);
+        } catch (metricError) {
+            console.error('Metrik güncelleme hatası:', metricError);
+        }
+
     } catch (error) {
         console.error('Veri yükleme hatası:', error);
+        alert('Veri yüklenirken bir hata oluştu: ' + error.message);
     }
 }
+
+// Sayfa yüklendiğinde çalıştır
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('Sayfa yüklendi, stok raporu yükleniyor...');
+    loadStockReport();
+});
 
 // Sayfa yüklendiğinde verileri getir
 document.addEventListener('DOMContentLoaded', () => {
