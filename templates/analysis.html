@@ -120,15 +120,57 @@
     margin-top: 0.5rem;
 }
 
-/* Tablo için ek stil */
+/* Modern Tablo Stilleri */
+.table {
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    margin-bottom: 2rem;
+}
+
 .table thead th {
-    background-color: #f0f0f0;
+    background: linear-gradient(45deg, #2193b0, #6dd5ed);
+    color: white;
     font-weight: 600;
+    padding: 15px;
+    font-size: 0.95rem;
+    border: none;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.table tbody td {
+    padding: 12px 15px;
+    border: none;
+    border-bottom: 1px solid #f0f0f0;
+    color: #333;
+    font-size: 0.9rem;
+    vertical-align: middle;
+}
+
+.table tbody tr:last-child td {
+    border-bottom: none;
 }
 
 .table-hover tbody tr:hover {
-    background-color: #f7f7f7;
-    cursor: pointer;
+    background-color: rgba(33, 147, 176, 0.05);
+    transform: scale(1.01);
+    transition: all 0.2s ease;
+}
+
+.table .btn-info {
+    background: linear-gradient(45deg, #36d1dc, #5b86e5);
+    border: none;
+    padding: 5px 15px;
+    color: white;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    transition: all 0.3s ease;
+}
+
+.table .btn-info:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(54, 209, 220, 0.3);
 }
 
 .modal-header {
@@ -273,24 +315,9 @@
         </div>
     </div>
 
-    <!-- Stok Durumu -->
+    <!-- Kargo Performansı -->
     <div class="row mt-4">
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between">
-                    <span>Stok Durumu Analizi</span>
-                    <button class="btn btn-sm btn-primary" onclick="showStockDetails()">
-                        Stok Detayları
-                    </button>
-                </div>
-                <div class="card-body">
-                    <canvas id="stockChart"></canvas>
-                </div>
-            </div>
-        </div>
-
-        <!-- Kargo Performansı -->
-        <div class="col-md-6">
+        <div class="col-md-12">
             <div class="card">
                 <div class="card-header">
                     <span>Kargo Performansı</span>
