@@ -25,7 +25,7 @@ def get_product_image(barcode):
         image_path = os.path.join(images_folder, image_filename)
         if os.path.exists(image_path):
             return f"/static/images/{image_filename}"
-    return "/static/images/default.jpg"
+    return "/static/logo/gullu.png"
 
 def get_order_list():
     """
