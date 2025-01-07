@@ -397,9 +397,9 @@ def inventory_stats():
     """Stok durumu analizi"""
     products = Product.query.all()
     stock_levels = {
-        'low_stock': len([p for p in products if p.stock_quantity < 10]),
-        'out_of_stock': len([p for p in products if p.stock_quantity == 0]),
-        'healthy_stock': len([p for p in products if p.stock_quantity >= 10])
+        'low_stock': len([p for p in products if p.quantity and p.quantity < 10]),
+        'out_of_stock': len([p for p in products if not p.quantity or p.quantity == 0]),
+        'healthy_stock': len([p for p in products if p.quantity and p.quantity >= 10])
     }
     return jsonify(stock_levels)
 
