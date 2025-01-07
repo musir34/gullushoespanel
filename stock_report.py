@@ -1,5 +1,5 @@
 
-from flask import Blueprint, jsonify
+from flask import Blueprint, jsonify, render_template
 from models import db, Product, Order
 from sqlalchemy import func
 from datetime import datetime, timedelta
