@@ -1,6 +1,7 @@
 import asyncio
 import aiohttp
 from trendyol_api import API_KEY, SUPPLIER_ID, API_SECRET, BASE_URL
+from models import Product, ProductArchive
 from sqlalchemy.dialects.postgresql import insert
 import os
 import base64
@@ -437,7 +438,7 @@ async def fetch_products_route():
             await save_products_to_db_async(products)
             flash('Ürünler başarıyla güncellendi.', 'success')
         else:
-            flash('Ürünler bulunamadı veya güncelleme sırasında bir hata oluştu.', 'danfrom models import Product, ProductArchive
+            flash('Ürünler bulunamadı veya güncelleme sırasında bir hata oluştu.', 'danger')
     except Exception as e:
         logger.error(f"fetch_products_route hata: {e}")
         flash('Ürünler güncellenirken bir hata oluştu.', 'danger')
