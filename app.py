@@ -39,6 +39,12 @@ with app.app_context():
     # Eksik sütunu ekle
     from sqlalchemy import text
     db.session.execute(text('ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_date TIMESTAMP'))
+    
+    # ProductArchive tablosunu oluştur
+    from models import ProductArchive
+    if not ProductArchive.__table__.exists(db.engine):
+        ProductArchive.__table__.create(db.engine)
+    
     db.session.commit()
 
 # Blueprint modüllerini import et
