@@ -376,6 +376,33 @@
         <!-- JavaScript Kodları -->
         <script>
             $(document).ready(function () {
+            // Arşivleme butonu click eventi
+            $('#productContainer').on('click', '.archive-product', function() {
+                const modelId = $(this).data('model');
+                if (!modelId) {
+                    alert('Model kodu bulunamadı!');
+                    return;
+                }
+
+                if (confirm('Bu ürünü arşivlemek istediğinize emin misiniz?')) {
+                    $.ajax({
+                        url: '/archive_product',
+                        method: 'POST',
+                        data: { product_main_id: modelId },
+                        success: function(response) {
+                            if (response.success) {
+                                alert('Ürün başarıyla arşivlendi!');
+                                location.reload();
+                            } else {
+                                alert(response.message || 'Arşivleme sırasında bir hata oluştu.');
+                            }
+                        },
+                        error: function() {
+                            alert('İşlem sırasında bir hata oluştu.');
+                        }
+                    });
+                }
+            });
                 // Varyantları göster/gizle
                 $('#productContainer').on('click', '.toggle-variants', function () {
                     var variantList = $(this).siblings('.variant-list');
