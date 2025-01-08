@@ -42,7 +42,9 @@ with app.app_context():
     
     # ProductArchive tablosunu oluştur
     from models import ProductArchive
-    if not db.engine.dialect.has_table(db.engine, 'product_archive'):
+    from sqlalchemy import inspect
+    inspector = inspect(db.engine)
+    if not inspector.has_table('product_archive'):
         ProductArchive.__table__.create(db.engine)
     
     db.session.commit()
