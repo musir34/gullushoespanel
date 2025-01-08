@@ -590,22 +590,3 @@ def search_products():
 @get_products_bp.route('/product_label')
 def product_label():
     return render_template('product_label.html')
-@get_products_bp.route('/hide_product', methods=['POST'])
-def hide_product():
-    """
-    Ürünü gizle/pasifleştir
-    """
-    barcode = request.form.get('barcode')
-    if not barcode:
-        return jsonify({'success': False, 'message': 'Barkod gerekli'})
-
-    try:
-        product = Product.query.get(barcode)
-        if product:
-            product.hidden = True
-            db.session.commit()
-            return jsonify({'success': True})
-        return jsonify({'success': False, 'message': 'Ürün bulunamadı'})
-    except Exception as e:
-        logger.error(f"Ürün gizleme hatası: {e}")
-        return jsonify({'success': False, 'message': 'Bir hata oluştu'})

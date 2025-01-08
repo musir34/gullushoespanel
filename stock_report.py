@@ -14,8 +14,8 @@ def stock_report_data():
     stock_filter = request.args.get('filter', 'all')
     search = request.args.get('search', '')
 
-    # Ana sorgu (gizli olmayan ürünler)
-    query = Product.query.filter_by(hidden=False)
+    # Ana sorgu
+    query = Product.query
 
     # Arama filtresi
     if search:
