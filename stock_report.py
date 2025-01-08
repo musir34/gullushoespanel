@@ -23,7 +23,7 @@ def stock_report_data():
             or_(
                 Product.title.ilike(f'%{search}%'),
                 Product.barcode.ilike(f'%{search}%'),
-                Product.merchant_sku.ilike(f'%{search}%')
+                Product.product_main_id.ilike(f'%{search}%')  # merchant_sku yerine product_main_id
             )
         )
 
@@ -58,7 +58,7 @@ def stock_report_data():
         product_list.append({
             'title': product.title,
             'barcode': product.barcode,
-            'model': product.product_main_id,
+            'model': product.product_main_id,  # merchant_sku yerine product_main_id
             'color': product.color,
             'size': product.size,
             'quantity': quantity,

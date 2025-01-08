@@ -1,6 +1,101 @@
 {% extends "base.html" %}
 {% block content %}
 
+<style>
+/* Genel Sayfa Düzeni */
+.container {
+    max-width: 1400px;
+}
+
+/* Kartların görünümü */
+.card {
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Tablo Başlıklarını Sabitleme ve Genişletme */
+.table-responsive {
+    max-height: 600px; /* Büyük veri setlerinde dikey scroll */
+    overflow: auto;
+    border: 1px solid #dee2e6;
+    border-radius: 5px;
+}
+
+/* Zebra şerit ve hover efekti */
+.table thead th {
+    background-color: #343a40;
+    color: #fff;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    white-space: nowrap; 
+    text-align: center;
+}
+.table tbody tr:nth-child(even) {
+    background-color: #f8f9fa;
+}
+.table tbody tr:hover {
+    background-color: #e2e6ea;
+}
+
+/* Tablo Hücreleri */
+.table td, .table th {
+    vertical-align: middle;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    padding: 12px;
+}
+.table td {
+    white-space: nowrap; /* Büyük veri setlerinde yatay kaydırma için */
+}
+
+/* Durum Badgeleri */
+.badge {
+    font-size: 0.9rem;
+    padding: 6px 10px;
+    border-radius: 4px;
+}
+
+.bg-success {
+    background-color: #28a745 !important;
+}
+.bg-warning {
+    background-color: #ffc107 !important;
+    color: #212529 !important;
+}
+.bg-danger {
+    background-color: #dc3545 !important;
+}
+.bg-info {
+    background-color: #17a2b8 !important;
+}
+
+/* Küçük ekranlar için responsive ayarlar */
+@media (max-width: 768px) {
+    .container {
+        margin-top: 1rem;
+        padding: 0 1rem;
+    }
+    .table thead {
+        display: none; /* Mobilde tabloyu daha compact göstermek için */
+    }
+    .table, .table tbody, .table tr, .table td {
+        display: block;
+        width: 100%;
+    }
+    .table td {
+        white-space: normal;
+        border-bottom: 1px solid #dee2e6;
+    }
+    .table tbody tr {
+        margin-bottom: 1rem;
+    }
+    .card-body h3 {
+        font-size: 1.5rem;
+    }
+}
+</style>
+
 <div class="container mt-4">
     <h2>Stok Raporu</h2>
 
@@ -8,7 +103,7 @@
     <div class="card mb-4">
         <div class="card-body">
             <div class="row">
-                <div class="col-md-4">
+                <div class="col-md-4 mb-2">
                     <label>Stok Durumu</label>
                     <select class="form-select" id="stockFilter">
                         <option value="all">Tümü</option>
@@ -17,13 +112,13 @@
                         <option value="healthy">Yeterli Stok</option>
                     </select>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-4 mb-2">
                     <label>Arama</label>
                     <input type="text" class="form-control" id="searchFilter" placeholder="Ürün adı, barkod veya SKU">
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-4 mb-2 d-grid">
                     <label>&nbsp;</label>
-                    <button class="btn btn-primary d-block" onclick="loadStockReport()">Filtrele</button>
+                    <button class="btn btn-primary" onclick="loadStockReport()">Filtrele</button>
                 </div>
             </div>
         </div>
@@ -31,33 +126,33 @@
 
     <!-- Özet Kartları -->
     <div class="row mb-4">
-        <div class="col-md-3">
+        <div class="col-md-3 mb-2">
             <div class="card bg-success text-white">
-                <div class="card-body">
+                <div class="card-body text-center">
                     <h6 class="card-title">Toplam Ürün</h6>
                     <h3 id="totalProducts">-</h3>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-3 mb-2">
             <div class="card bg-warning text-white">
-                <div class="card-body">
+                <div class="card-body text-center">
                     <h6 class="card-title">Kritik Stok</h6>
                     <h3 id="lowStockCount">-</h3>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-3 mb-2">
             <div class="card bg-danger text-white">
-                <div class="card-body">
+                <div class="card-body text-center">
                     <h6 class="card-title">Stok Yok</h6>
                     <h3 id="outOfStockCount">-</h3>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-3 mb-2">
             <div class="card bg-info text-white">
-                <div class="card-body">
+                <div class="card-body text-center">
                     <h6 class="card-title">Toplam Stok Değeri</h6>
                     <h3 id="totalStockValue">-</h3>
                 </div>
@@ -69,7 +164,7 @@
     <div class="card">
         <div class="card-body">
             <div class="table-responsive">
-                <table class="table table-hover" id="stockTable">
+                <table class="table table-hover align-middle" id="stockTable">
                     <thead>
                         <tr>
                             <th>Ürün Adı</th>
@@ -93,6 +188,9 @@
 </div>
 
 <script>
+/**
+ * Belirli bir miktarı (örneğin 'sale_price') Türk Lirası formatına çevirir.
+ */
 function formatCurrency(amount) {
     return new Intl.NumberFormat('tr-TR', {
         style: 'currency',
@@ -100,49 +198,9 @@ function formatCurrency(amount) {
     }).format(amount);
 }
 
-async function loadStockReport() {
-    try {
-        const stockFilter = document.getElementById('stockFilter').value;
-        const searchQuery = document.getElementById('searchFilter').value;
-
-        const response = await fetch(`/api/stock-report-data?filter=${stockFilter}&search=${searchQuery}`);
-        const data = await response.json();
-
-        // Özet kartlarını güncelle
-        document.getElementById('totalProducts').textContent = data.summary.total_products;
-        document.getElementById('lowStockCount').textContent = data.summary.low_stock_count;
-        document.getElementById('outOfStockCount').textContent = data.summary.out_of_stock_count;
-        document.getElementById('totalStockValue').textContent = formatCurrency(data.summary.total_value);
-
-        // Tabloyu güncelle
-        const tableBody = document.getElementById('stockTable').querySelector('tbody');
-        tableBody.innerHTML = '';
-
-        data.products.forEach(product => {
-            const row = document.createElement('tr');
-            const stockStatus = getStockStatus(product.quantity);
-
-            row.innerHTML = `
-                <td>${product.title}</td>
-                <td>${product.barcode}</td>
-                <td>${product.sku || '-'}</td>
-                <td>${product.color || '-'}</td>
-                <td>${product.size || '-'}</td>
-                <td>${product.quantity}</td>
-                <td>${formatCurrency(product.sale_price)}</td>
-                <td>${formatCurrency(product.total_value)}</td>
-                <td><span class="badge ${stockStatus.class}">${stockStatus.text}</span></td>
-            `;
-
-            tableBody.appendChild(row);
-        });
-
-    } catch (error) {
-        console.error('Stok raporu yüklenirken hata:', error);
-        alert('Stok raporu yüklenirken bir hata oluştu.');
-    }
-}
-
+/**
+ * Stok durumuna göre badge rengi ve metni döndürür.
+ */
 function getStockStatus(quantity) {
     if (!quantity || quantity === 0) {
         return { text: 'Stok Yok', class: 'bg-danger' };
@@ -153,7 +211,74 @@ function getStockStatus(quantity) {
     }
 }
 
-// Sayfa yüklendiğinde raporu getir
+/**
+ * API'den verileri çekerek tabloya ve özet kartlarına basar.
+ * Ayrıca, ürünler tabloya eklenmeden önce model -> renk -> beden sıralaması yapılır.
+ */
+async function loadStockReport() {
+    try {
+        const stockFilter = document.getElementById('stockFilter').value;
+        const searchQuery = document.getElementById('searchFilter').value;
+
+        const response = await fetch(`/api/stock-report-data?filter=${stockFilter}&search=${searchQuery}`);
+        if (!response.ok) {
+            throw new Error('Sunucudan veri alınamadı.');
+        }
+        const data = await response.json();
+
+        // 1) Özet kartlarını güncelle
+        document.getElementById('totalProducts').textContent = data.summary.total_products;
+        document.getElementById('lowStockCount').textContent = data.summary.low_stock_count;
+        document.getElementById('outOfStockCount').textContent = data.summary.out_of_stock_count;
+        document.getElementById('totalStockValue').textContent = formatCurrency(data.summary.total_value);
+
+        // 2) Gelen ürün verilerini sıralama
+        /**
+         * Önce 'model', sonra 'color', en son 'size' alanlarına göre sıralıyoruz.
+         * localeCompare, Türkçe karakter uyumluluğu için kullanılabilir.
+         * Yoksa boş string verilebilecek alanları (örneğin 'model || ""') kontrol ediyoruz.
+         */
+        data.products.sort((a, b) => {
+            const modelCompare = (a.model || '').localeCompare(b.model || '');
+            if (modelCompare !== 0) return modelCompare;
+
+            const colorCompare = (a.color || '').localeCompare(b.color || '');
+            if (colorCompare !== 0) return colorCompare;
+
+            return (a.size || '').localeCompare(b.size || '');
+        });
+
+        // 3) Tabloyu güncelle
+        const tableBody = document.getElementById('stockTable').querySelector('tbody');
+        tableBody.innerHTML = '';
+
+        data.products.forEach(product => {
+            const row = document.createElement('tr');
+            const stockStatus = getStockStatus(product.quantity);
+
+            row.innerHTML = `
+                <td>${product.title}</td>
+                <td>${product.barcode}</td>
+                <td>${product.model || '-'}</td>
+                <td>${product.color || '-'}</td>
+                <td>${product.size || '-'}</td>
+                <td>${product.quantity}</td>
+                <td>${formatCurrency(product.sale_price)}</td>
+                <td>${formatCurrency(product.total_value)}</td>
+                <td><span class="badge ${stockStatus.class}">${stockStatus.text}</span></td>
+            `;
+            tableBody.appendChild(row);
+        });
+
+    } catch (error) {
+        console.error('Stok raporu yüklenirken hata:', error);
+        alert('Stok raporu yüklenirken bir hata oluştu: ' + error.message);
+    }
+}
+
+/**
+ * Sayfa yüklendiğinde ilk verileri getirin.
+ */
 document.addEventListener('DOMContentLoaded', loadStockReport);
 </script>
 
