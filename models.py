@@ -162,7 +162,7 @@ class Product(db.Model):
     barcode = db.Column(db.String, primary_key=True)
     original_product_barcode = db.Column(db.String)
     title = db.Column(db.String)
-    hidden = db.Column(db.Boolean, default=False)
+    hidden = db.Column(db.Boolean, default=False, nullable=False)
     product_main_id = db.Column(db.String)
     quantity = db.Column(db.Integer)
     images = db.Column(db.String)
