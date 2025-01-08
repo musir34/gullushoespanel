@@ -537,44 +537,53 @@ def product_list():
     Ürün listesini sayfalar halinde gösterir.
     """
     try:
-        products = Product.query.all()
+        page = request.args.get('page', 1, type=int)
+        per_page = 12
+
+        # Tüm ürünleri çek ve grupla
+        base_query = Product.query
+        products = base_query.all()
+        grouped_products = group_products_by_model_and_color(products)
+
+        # Model ve renge göre sırala
+        sorted_keys = sorted(grouped_products.keys(), key=lambda x: (x[0].lower(), x[1].lower()))
+        total_groups = len(sorted_keys)
+
+        # Sayfalama için indeksler
+        start_idx = (page - 1) * per_page
+        end_idx = min(start_idx + per_page, total_groups)
+        
+        # Mevcut sayfa için ürünleri al
+        current_page_keys = sorted_keys[start_idx:end_idx]
+        current_page_products = {key: sort_variants_by_size(grouped_products[key]) 
+                               for key in current_page_keys}
+
+        # Toplam sayfa sayısı
+        total_pages = (total_groups + per_page - 1) // per_page
+
+        # Pagination nesnesini oluştur
+        pagination = {
+            'page': page,
+            'per_page': per_page,
+            'total': total_groups,
+            'pages': total_pages,
+            'has_prev': page > 1,
+            'has_next': page < total_pages,
+            'iter_pages': lambda left_edge=2, right_edge=2, left_current=2, right_current=2: 
+                range(1, total_pages + 1)
+        }
+
     except Exception as e:
         logger.error(f"Ürünler veritabanından çekilirken bir hata oluştu: {e}")
         flash("Ürünler bulunamadı veya veritabanı okunamadı.", "danger")
         return render_template('error.html', message="Ürün bulunamadı.")
 
-    grouped_products = group_products_by_model_and_color(products)
-
-    page = request.args.get('page', 1, type=int)
-    per_page = 12
-    total_groups = len(grouped_products)
-
-    # Model ve renge göre sıralama
-    sorted_keys = sorted(grouped_products.keys(), key=lambda x: (x[0], x[1]))
-    
-    # Sayfalama için başlangıç ve bitiş indekslerini hesapla
-    start_idx = (page - 1) * per_page
-    end_idx = start_idx + per_page
-    
-    # Sayfalanmış anahtarları al
-    paginated_keys = sorted_keys[start_idx:end_idx]
-    
-    # Sayfalanmış ürün gruplarını oluştur
-    paginated_product_groups = {key: sort_variants_by_size(grouped_products[key]) for key in paginated_keys}
-
-    # Toplam sayfa sayısını hesapla
-    total_pages = (total_groups + per_page - 1) // per_page
-
     return render_template(
         'product_list.html',
-        grouped_products=paginated_product_groups,
-        page=page,
-        per_page=per_page,
+        grouped_products=current_page_products,
+        pagination=pagination,
         total_pages=total_pages,
-        search_mode=False,
-        current_page=page,
-        has_next=page < total_pages,
-        has_prev=page > 1
+        search_mode=False
     )
 
 @get_products_bp.route('/get_product_variants', methods=['GET'])
