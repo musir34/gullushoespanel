@@ -156,6 +156,27 @@ class Order(db.Model):
     quantity = db.Column(db.Integer)
     delivery_date = db.Column(db.DateTime)
 
+class ProductArchive(db.Model):
+    __tablename__ = 'product_archive'
+    
+    barcode = db.Column(db.String, primary_key=True)
+    original_product_barcode = db.Column(db.String)
+    title = db.Column(db.String)
+    product_main_id = db.Column(db.String)
+    quantity = db.Column(db.Integer)
+    images = db.Column(db.String)
+    variants = db.Column(db.String)
+    size = db.Column(db.String)
+    color = db.Column(db.String)
+    archived = db.Column(db.Boolean)
+    locked = db.Column(db.Boolean)
+    on_sale = db.Column(db.Boolean)
+    reject_reason = db.Column(db.String)
+    sale_price = db.Column(db.Float)
+    list_price = db.Column(db.Float)
+    currency_type = db.Column(db.String)
+    archive_date = db.Column(db.DateTime, default=datetime.utcnow)
+
 class Product(db.Model):
     __tablename__ = 'products'
 

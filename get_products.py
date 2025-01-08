@@ -234,6 +234,12 @@ def background_download_images(image_downloads):
 
 async def save_products_to_db_async(products):
     products = [product for product in products if isinstance(product, dict)]
+    
+    # Arşivdeki ürün barkodlarını al
+    archived_barcodes = set(p.original_product_barcode for p in ProductArchive.query.all())
+    
+    # Arşivde olan ürünleri filtrele
+    products = [p for p in products if p.get('barcode') not in archived_barcodes]
 
     if not products:
         logger.warning("Kaydedilecek ürün yok.")
@@ -437,6 +443,92 @@ async def fetch_products_route():
         flash('Ürünler güncellenirken bir hata oluştu.', 'danger')
 
     return redirect(url_for('get_products.product_list'))
+
+@get_products_bp.route('/archive_product', methods=['POST'])
+def archive_product():
+    try:
+        product_main_id = request.form.get('product_main_id')
+        if not product_main_id:
+            return jsonify({'success': False, 'message': 'Model kodu gerekli'})
+
+        # Model koduna ait tüm ürünleri bul
+        products = Product.query.filter_by(product_main_id=product_main_id).all()
+        
+        if not products:
+            return jsonify({'success': False, 'message': 'Ürün bulunamadı'})
+
+        # Ürünleri arşive taşı
+        for product in products:
+            archive_product = ProductArchive(
+                barcode=product.barcode,
+                original_product_barcode=product.original_product_barcode,
+                title=product.title,
+                product_main_id=product.product_main_id,
+                quantity=product.quantity,
+                images=product.images,
+                variants=product.variants,
+                size=product.size,
+                color=product.color,
+                archived=True,
+                locked=product.locked,
+                on_sale=product.on_sale,
+                reject_reason=product.reject_reason,
+                sale_price=product.sale_price,
+                list_price=product.list_price,
+                currency_type=product.currency_type
+            )
+            db.session.add(archive_product)
+            db.session.delete(product)
+
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'Ürünler başarıyla arşivlendi'})
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)})
+
+@get_products_bp.route('/restore_from_archive', methods=['POST'])
+def restore_from_archive():
+    try:
+        product_main_id = request.form.get('product_main_id')
+        if not product_main_id:
+            return jsonify({'success': False, 'message': 'Model kodu gerekli'})
+
+        # Arşivden ürünleri bul
+        archived_products = ProductArchive.query.filter_by(product_main_id=product_main_id).all()
+        
+        if not archived_products:
+            return jsonify({'success': False, 'message': 'Arşivde ürün bulunamadı'})
+
+        # Ürünleri arşivden çıkar
+        for archived in archived_products:
+            product = Product(
+                barcode=archived.barcode,
+                original_product_barcode=archived.original_product_barcode,
+                title=archived.title,
+                product_main_id=archived.product_main_id,
+                quantity=archived.quantity,
+                images=archived.images,
+                variants=archived.variants,
+                size=archived.size,
+                color=archived.color,
+                archived=False,
+                locked=archived.locked,
+                on_sale=archived.on_sale,
+                reject_reason=archived.reject_reason,
+                sale_price=archived.sale_price,
+                list_price=archived.list_price,
+                currency_type=archived.currency_type
+            )
+            db.session.add(product)
+            db.session.delete(archived)
+
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'Ürünler başarıyla arşivden çıkarıldı'})
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)})
 
 @get_products_bp.route('/product_list')
 def product_list():
