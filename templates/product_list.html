@@ -229,6 +229,11 @@
                                         data-color="{{ color }}">
                                         <i class="fas fa-edit mr-2"></i> Stokları Güncelle
                                     </button>
+                                    <button class="btn btn-danger btn-sm mt-2 toggle-visibility"
+                                        data-model="{{ model_id }}"
+                                        data-color="{{ color }}">
+                                        <i class="fas fa-eye-slash mr-2"></i> Ürünü Gizle
+                                    </button>
                                     <!-- Stok güncelleme formu buraya eklenecek -->
                                     <div class="stock-update-form mt-3" style="display: none;"></div>
                                     <div class="variant-list">
@@ -281,6 +286,11 @@
                                         data-model="{{ model_id }}"
                                         data-color="{{ color }}">
                                         <i class="fas fa-edit mr-2"></i> Stokları Güncelle
+                                    </button>
+                                    <button class="btn btn-danger btn-sm mt-2 toggle-visibility"
+                                        data-model="{{ model_id }}"
+                                        data-color="{{ color }}">
+                                        <i class="fas fa-eye-slash mr-2"></i> Ürünü Gizle
                                     </button>
                                     <!-- Stok güncelleme formu buraya eklenecek -->
                                     <div class="stock-update-form mt-3" style="display: none;"></div>
@@ -368,6 +378,38 @@
         <!-- JavaScript Kodları -->
         <script>
             $(document).ready(function () {
+                // Ürün gizleme/gösterme işlemi
+                $('#productContainer').on('click', '.toggle-visibility', function() {
+                    var model = $(this).data('model');
+                    var color = $(this).data('color');
+                    var $button = $(this);
+                    var $card = $button.closest('.product-card');
+
+                    $.ajax({
+                        url: '/toggle_product_visibility',
+                        method: 'POST',
+                        data: { model: model, color: color },
+                        success: function(response) {
+                            if (response.success) {
+                                $card.fadeOut();
+                                flash('Ürün başarıyla gizlendi');
+                            } else {
+                                alert('Ürün gizleme işlemi başarısız oldu');
+                            }
+                        },
+                        error: function() {
+                            alert('Bir hata oluştu');
+                        }
+                    });
+                });
+
+                function flash(message) {
+                    var $flash = $('<div class="alert alert-success">' + message + '</div>');
+                    $('.container').prepend($flash);
+                    setTimeout(function() {
+                        $flash.fadeOut();
+                    }, 3000);
+                }
                 // Varyantları göster/gizle
                 $('#productContainer').on('click', '.toggle-variants', function () {
                     var variantList = $(this).siblings('.variant-list');
