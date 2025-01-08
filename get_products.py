@@ -546,13 +546,23 @@ def product_list():
     grouped_products = group_products_by_model_and_color(products)
 
     page = request.args.get('page', 1, type=int)
-    per_page = 9
+    per_page = 12
     total_groups = len(grouped_products)
 
-    sorted_keys = sorted(grouped_products.keys())
-    paginated_keys = sorted_keys[(page - 1) * per_page: page * per_page]
+    # Model ve renge göre sıralama
+    sorted_keys = sorted(grouped_products.keys(), key=lambda x: (x[0], x[1]))
+    
+    # Sayfalama için başlangıç ve bitiş indekslerini hesapla
+    start_idx = (page - 1) * per_page
+    end_idx = start_idx + per_page
+    
+    # Sayfalanmış anahtarları al
+    paginated_keys = sorted_keys[start_idx:end_idx]
+    
+    # Sayfalanmış ürün gruplarını oluştur
     paginated_product_groups = {key: sort_variants_by_size(grouped_products[key]) for key in paginated_keys}
 
+    # Toplam sayfa sayısını hesapla
     total_pages = (total_groups + per_page - 1) // per_page
 
     return render_template(
@@ -561,7 +571,10 @@ def product_list():
         page=page,
         per_page=per_page,
         total_pages=total_pages,
-        search_mode=False
+        search_mode=False,
+        current_page=page,
+        has_next=page < total_pages,
+        has_prev=page > 1
     )
 
 @get_products_bp.route('/get_product_variants', methods=['GET'])
