@@ -438,34 +438,13 @@ async def fetch_products_route():
 
     return redirect(url_for('get_products.product_list'))
 
-@get_products_bp.route('/toggle_product_visibility', methods=['POST'])
-def toggle_product_visibility():
-    try:
-        model = request.form.get('model')
-        color = request.form.get('color')
-        
-        if not model or not color:
-            return jsonify({'success': False, 'message': 'Model ve renk bilgisi gerekli'})
-            
-        # İlgili ürünleri bul ve güncelle
-        products = Product.query.filter_by(product_main_id=model, color=color).all()
-        for product in products:
-            product.hidden = True
-        
-        db.session.commit()
-        return jsonify({'success': True})
-        
-    except Exception as e:
-        logger.error(f"Ürün gizleme hatası: {e}")
-        return jsonify({'success': False, 'message': str(e)})
-
 @get_products_bp.route('/product_list')
 def product_list():
     """
     Ürün listesini sayfalar halinde gösterir.
     """
     try:
-        products = Product.query.filter_by(hidden=False).all()
+        products = Product.query.all()
     except Exception as e:
         logger.error(f"Ürünler veritabanından çekilirken bir hata oluştu: {e}")
         flash("Ürünler bulunamadı veya veritabanı okunamadı.", "danger")
