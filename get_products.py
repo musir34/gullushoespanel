@@ -437,7 +437,7 @@ async def fetch_products_route():
             await save_products_to_db_async(products)
             flash('Ürünler başarıyla güncellendi.', 'success')
         else:
-            flash('Ürünler bulunamadı veya güncelleme sırasında bir hata oluştu.', 'danger')
+            flash('Ürünler bulunamadı veya güncelleme sırasında bir hata oluştu.', 'danfrom models import Product, ProductArchive
     except Exception as e:
         logger.error(f"fetch_products_route hata: {e}")
         flash('Ürünler güncellenirken bir hata oluştu.', 'danger')
