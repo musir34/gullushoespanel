@@ -160,53 +160,6 @@
         </div>
     </div>
 
-    <!-- Stok Devir Hızı Analizi -->
-    <div class="card mb-4">
-        <div class="card-header">
-            <h5 class="mb-0">Stok Devir Hızı Analizi</h5>
-        </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-6">
-                    <h6 class="text-success">Yüksek Devir Hızlı Ürünler</h6>
-                    <div class="table-responsive">
-                        <table class="table table-sm" id="highTurnoverTable">
-                            <thead>
-                                <tr>
-                                    <th>Ürün</th>
-                                    <th>Renk</th>
-                                    <th>Beden</th>
-                                    <th>Mevcut Stok</th>
-                                    <th>Satılan</th>
-                                    <th>Devir Hızı</th>
-                                </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <h6 class="text-danger">Düşük Devir Hızlı Ürünler</h6>
-                    <div class="table-responsive">
-                        <table class="table table-sm" id="lowTurnoverTable">
-                            <thead>
-                                <tr>
-                                    <th>Ürün</th>
-                                    <th>Renk</th>
-                                    <th>Beden</th>
-                                    <th>Mevcut Stok</th>
-                                    <th>Satılan</th>
-                                    <th>Devir Hızı</th>
-                                </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Stok Tablosu -->
     <div class="card">
         <div class="card-body">
@@ -326,55 +279,7 @@ async function loadStockReport() {
 /**
  * Sayfa yüklendiğinde ilk verileri getirin.
  */
-async function loadInventoryTurnover() {
-    try {
-        const response = await fetch('/api/inventory-turnover');
-        if (!response.ok) {
-            throw new Error('Stok devir hızı verileri alınamadı.');
-        }
-        const data = await response.json();
-        
-        // Yüksek devir hızlı ürünler tablosu
-        const highTurnoverBody = document.querySelector('#highTurnoverTable tbody');
-        highTurnoverBody.innerHTML = '';
-        data.high_turnover_products.forEach(product => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${product.title}</td>
-                <td>${product.color}</td>
-                <td>${product.size}</td>
-                <td>${product.current_stock}</td>
-                <td>${product.total_sold}</td>
-                <td>${product.turnover_rate}</td>
-            `;
-            highTurnoverBody.appendChild(row);
-        });
-        
-        // Düşük devir hızlı ürünler tablosu
-        const lowTurnoverBody = document.querySelector('#lowTurnoverTable tbody');
-        lowTurnoverBody.innerHTML = '';
-        data.low_turnover_products.forEach(product => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${product.title}</td>
-                <td>${product.color}</td>
-                <td>${product.size}</td>
-                <td>${product.current_stock}</td>
-                <td>${product.total_sold}</td>
-                <td>${product.turnover_rate}</td>
-            `;
-            lowTurnoverBody.appendChild(row);
-        });
-    } catch (error) {
-        console.error('Stok devir hızı yüklenirken hata:', error);
-        alert('Stok devir hızı verisi yüklenirken bir hata oluştu: ' + error.message);
-    }
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-    loadStockReport();
-    loadInventoryTurnover();
-});
+document.addEventListener('DOMContentLoaded', loadStockReport);
 </script>
 
 {% endblock %}
