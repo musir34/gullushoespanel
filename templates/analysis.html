@@ -863,8 +863,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
-{% endblock %}
-
 <!-- Stok Detay Modal -->
 <div class="modal fade" id="stockDetailsModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
@@ -912,10 +910,10 @@ document.addEventListener('DOMContentLoaded', function() {
 async function showStockDetails() {
     const response = await fetch('/api/inventory-stats');
     const data = await response.json();
-    
+
     const lowStockTable = document.getElementById('lowStockTable');
     const outStockTable = document.getElementById('outStockTable');
-    
+
     lowStockTable.innerHTML = data.low_stock_products.map(product => `
         <tr>
             <td>${product.title}</td>
@@ -926,7 +924,7 @@ async function showStockDetails() {
             <td>${formatCurrency(product.sale_price)}</td>
         </tr>
     `).join('');
-    
+
     outStockTable.innerHTML = data.out_stock_products.map(product => `
         <tr>
             <td>${product.title}</td>
@@ -937,8 +935,102 @@ async function showStockDetails() {
             <td>${formatCurrency(product.sale_price)}</td>
         </tr>
     `).join('');
-    
+
     const modal = new bootstrap.Modal(document.getElementById('stockDetailsModal'));
     modal.show();
 }
 </script>
+
+<!-- Stok Devir Hızı Analizi -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Stok Devir Hızı Analizi</h5>
+        </div>
+        <div class="card-body">
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <h6>Hızlı Dönen Ürünler</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm" id="highTurnoverTable">
+                            <thead>
+                                <tr>
+                                    <th>Model Kodu</th>
+                                    <th>Renk</th>
+                                    <th>Beden</th>
+                                    <th>Satış Adedi</th>
+                                    <th>Mevcut Stok</th>
+                                    <th>Devir Hızı</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <h6>Yavaş Dönen Ürünler</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm" id="lowTurnoverTable">
+                            <thead>
+                                <tr>
+                                    <th>Model Kodu</th>
+                                    <th>Renk</th>
+                                    <th>Beden</th>
+                                    <th>Satış Adedi</th>
+                                    <th>Mevcut Stok</th>
+                                    <th>Devir Hızı</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Stok devir hızı verilerini yükle
+        function loadInventoryTurnover() {
+            fetch('/api/inventory-turnover')
+                .then(response => response.json())
+                .then(data => {
+                    // Hızlı dönen ürünler tablosunu doldur
+                    const highTurnoverBody = document.querySelector('#highTurnoverTable tbody');
+                    highTurnoverBody.innerHTML = '';
+                    data.high_turnover_products.forEach(product => {
+                        highTurnoverBody.innerHTML += `
+                            <tr>
+                                <td>${product.product_main_id}</td>
+                                <td>${product.color}</td>
+                                <td>${product.size}</td>
+                                <td>${product.total_sold}</td>
+                                <td>${product.current_stock}</td>
+                                <td>${product.turnover_rate.toFixed(2)}</td>
+                            </tr>
+                        `;
+                    });
+
+                    // Yavaş dönen ürünler tablosunu doldur
+                    const lowTurnoverBody = document.querySelector('#lowTurnoverTable tbody');
+                    lowTurnoverBody.innerHTML = '';
+                    data.low_turnover_products.forEach(product => {
+                        lowTurnoverBody.innerHTML += `
+                            <tr>
+                                <td>${product.product_main_id}</td>
+                                <td>${product.color}</td>
+                                <td>${product.size}</td>
+                                <td>${product.total_sold}</td>
+                                <td>${product.current_stock}</td>
+                                <td>${product.turnover_rate.toFixed(2)}</td>
+                            </tr>
+                        `;
+                    });
+                })
+                .catch(error => console.error('Stok devir hızı verisi yüklenirken hata:', error));
+        }
+
+        // Sayfa yüklendiğinde verileri yükle
+        document.addEventListener('DOMContentLoaded', loadInventoryTurnover);
+    </script>
+</body>
+</html>

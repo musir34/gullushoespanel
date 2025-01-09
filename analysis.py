@@ -498,6 +498,90 @@ def sales_prediction():
     
     return jsonify(prediction)
 
+@analysis_bp.route('/api/inventory-turnover')
+def inventory_turnover():
+    """Stok Devir Hızı Analizi"""
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    
+    if start_date and end_date:
+        start_date = datetime.strptime(start_date, '%Y-%m-%d')
+        end_date = datetime.strptime(end_date, '%Y-%m-%d')
+    else:
+        end_date = datetime.now()
+        start_date = end_date - timedelta(days=30)
+
+    # Satış miktarları analizi
+    sales_data = db.session.query(
+        Order.product_main_id,
+        Order.product_color,
+        Order.product_size,
+        func.sum(Order.quantity).label('total_sold')
+    ).filter(
+        Order.order_date.between(start_date, end_date),
+        Order.status != 'Cancelled'
+    ).group_by(
+        Order.product_main_id,
+        Order.product_color,
+        Order.product_size
+    ).all()
+
+    # Stok durumu analizi
+    current_stock = db.session.query(
+        Product.product_main_id,
+        Product.color,
+        Product.size,
+        func.sum(Product.quantity).label('current_stock')
+    ).group_by(
+        Product.product_main_id,
+        Product.color,
+        Product.size
+    ).all()
+
+    # Analiz sonuçlarını hazırla
+    turnover_results = {}
+    high_turnover = []
+    low_turnover = []
+    
+    for stock in current_stock:
+        key = (stock.product_main_id, stock.color, stock.size)
+        sales = next((s for s in sales_data 
+                     if s.product_main_id == stock.product_main_id 
+                     and s.product_color == stock.color
+                     and s.product_size == stock.size), None)
+        
+        if sales and stock.current_stock > 0:
+            # Stok devir hızı hesapla (aylık)
+            turnover_rate = (sales.total_sold / stock.current_stock) * (30 / (end_date - start_date).days)
+            
+            result = {
+                'product_main_id': stock.product_main_id,
+                'color': stock.color,
+                'size': stock.size,
+                'total_sold': sales.total_sold if sales else 0,
+                'current_stock': stock.current_stock,
+                'turnover_rate': round(turnover_rate, 2)
+            }
+            
+            if turnover_rate >= 1.0:  # Ayda 1 veya daha fazla devir
+                high_turnover.append(result)
+            else:
+                low_turnover.append(result)
+
+    # Sonuçları devir hızına göre sırala
+    high_turnover.sort(key=lambda x: x['turnover_rate'], reverse=True)
+    low_turnover.sort(key=lambda x: x['turnover_rate'])
+
+    return jsonify({
+        'high_turnover_products': high_turnover[:10],  # En yüksek 10
+        'low_turnover_products': low_turnover[:10],    # En düşük 10
+        'analysis_period': {
+            'start_date': start_date.strftime('%Y-%m-%d'),
+            'end_date': end_date.strftime('%Y-%m-%d'),
+            'days': (end_date - start_date).days
+        }
+    })
+
 @analysis_bp.route('/api/sales-stats')
 def sales_stats():
     start_date = request.args.get('start_date', None)
