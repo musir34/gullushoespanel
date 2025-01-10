@@ -103,7 +103,8 @@
     <div class="card mb-4">
         <div class="card-body">
             <div class="row">
-                <div class="col-md-4 mb-2">
+                <!-- Stok Durumu -->
+                <div class="col-md-3 mb-2">
                     <label>Stok Durumu</label>
                     <select class="form-select" id="stockFilter">
                         <option value="all">Tümü</option>
@@ -112,12 +113,24 @@
                         <option value="healthy">Yeterli Stok</option>
                     </select>
                 </div>
-                <div class="col-md-4 mb-2">
+                <!-- Arama -->
+                <div class="col-md-3 mb-2">
                     <label>Arama</label>
                     <input type="text" class="form-control" id="searchFilter" placeholder="Ürün adı, barkod veya SKU">
                 </div>
-                <div class="col-md-4 mb-2 d-grid">
-                    <label>&nbsp;</label>
+                <!-- Başlangıç Tarihi -->
+                <div class="col-md-3 mb-2">
+                    <label>Başlangıç Tarihi</label>
+                    <input type="date" class="form-control" id="startDate">
+                </div>
+                <!-- Bitiş Tarihi -->
+                <div class="col-md-3 mb-2">
+                    <label>Bitiş Tarihi</label>
+                    <input type="date" class="form-control" id="endDate">
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-md-12 d-grid">
                     <button class="btn btn-primary" onclick="loadStockReport()">Filtrele</button>
                 </div>
             </div>
@@ -175,6 +188,11 @@
                             <th>Stok</th>
                             <th>Birim Fiyat</th>
                             <th>Toplam Değer</th>
+                            <!-- Yeni Analiz Sütunları -->
+                            <th>Satılan Adet</th>
+                            <th>Günlük Satış</th>
+                            <th>Devir Hızı</th>
+                            <th>Tahmini Bitme (gün)</th>
                             <th>Durum</th>
                         </tr>
                     </thead>
@@ -199,6 +217,17 @@ function formatCurrency(amount) {
 }
 
 /**
+ * Ondalıklı sayıları virgülle biçimlendirme (örn. 1.23 -> "1,23").
+ */
+function formatNumber(num, fractionDigits = 2) {
+    if (num === null || num === undefined) return '-';
+    return num.toLocaleString('tr-TR', {
+        minimumFractionDigits: fractionDigits,
+        maximumFractionDigits: fractionDigits
+    });
+}
+
+/**
  * Stok durumuna göre badge rengi ve metni döndürür.
  */
 function getStockStatus(quantity) {
@@ -219,8 +248,19 @@ async function loadStockReport() {
     try {
         const stockFilter = document.getElementById('stockFilter').value;
         const searchQuery = document.getElementById('searchFilter').value;
+        const startDate = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate').value;
 
-        const response = await fetch(`/api/stock-report-data?filter=${stockFilter}&search=${searchQuery}`);
+        // API endpoint'ine parametreleri ekliyoruz
+        let apiUrl = `/api/stock-report-data?filter=${stockFilter}&search=${searchQuery}`;
+        if (startDate) {
+            apiUrl += `&start_date=${startDate}`;
+        }
+        if (endDate) {
+            apiUrl += `&end_date=${endDate}`;
+        }
+
+        const response = await fetch(apiUrl);
         if (!response.ok) {
             throw new Error('Sunucudan veri alınamadı.');
         }
@@ -232,12 +272,7 @@ async function loadStockReport() {
         document.getElementById('outOfStockCount').textContent = data.summary.out_of_stock_count;
         document.getElementById('totalStockValue').textContent = formatCurrency(data.summary.total_value);
 
-        // 2) Gelen ürün verilerini sıralama
-        /**
-         * Önce 'model', sonra 'color', en son 'size' alanlarına göre sıralıyoruz.
-         * localeCompare, Türkçe karakter uyumluluğu için kullanılabilir.
-         * Yoksa boş string verilebilecek alanları (örneğin 'model || ""') kontrol ediyoruz.
-         */
+        // 2) Gelen ürün verilerini sıralama (model -> color -> size)
         data.products.sort((a, b) => {
             const modelCompare = (a.model || '').localeCompare(b.model || '');
             if (modelCompare !== 0) return modelCompare;
@@ -256,6 +291,13 @@ async function loadStockReport() {
             const row = document.createElement('tr');
             const stockStatus = getStockStatus(product.quantity);
 
+            /**
+             * Yeni Alanlar:
+             * - product.sold_quantity
+             * - product.daily_sold
+             * - product.turnover_ratio
+             * - product.days_to_out
+             */
             row.innerHTML = `
                 <td>${product.title}</td>
                 <td>${product.barcode}</td>
@@ -265,6 +307,12 @@ async function loadStockReport() {
                 <td>${product.quantity}</td>
                 <td>${formatCurrency(product.sale_price)}</td>
                 <td>${formatCurrency(product.total_value)}</td>
+                <td>${product.sold_quantity || 0}</td>
+                <td>${formatNumber(product.daily_sold, 2)}</td>
+                <td>${formatNumber(product.turnover_ratio, 2)}</td>
+                <td>${product.days_to_out !== null && product.days_to_out !== undefined 
+                        ? formatNumber(product.days_to_out, 1) 
+                        : '-'}</td>
                 <td><span class="badge ${stockStatus.class}">${stockStatus.text}</span></td>
             `;
             tableBody.appendChild(row);
@@ -278,6 +326,8 @@ async function loadStockReport() {
 
 /**
  * Sayfa yüklendiğinde ilk verileri getirin.
+ * Varsayılan olarak son 30 gün için backend'de ayarlandığı için
+ * startDate ve endDate boş kalırsa otomatik 30 günlük sonuç dönecek.
  */
 document.addEventListener('DOMContentLoaded', loadStockReport);
 </script>
