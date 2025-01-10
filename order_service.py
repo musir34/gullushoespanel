@@ -335,23 +335,23 @@ def combine_line_items(order_data, status):
 
     # Sipariş detaylarını oluştur
     # Sipariş detaylarına line_id ekle
-    order_details = []
-    for line in order_data['lines']:
-        detail = {
-            'barcode': line.get('barcode', ''),
-            'converted_barcode': replace_turkish_characters(line.get('barcode', '')),
-            'color': line.get('productColor', ''),
-            'size': line.get('productSize', ''),
-            'sku': line.get('merchantSku', ''),
-            'productName': line.get('productName', ''),
-            'productCode': str(line.get('productCode', '')),
-            'quantity': int(line.get('quantity', 1)),
-            'total_price': float(line.get('amount', 0)) * int(line.get('quantity', 1)),
-            'image_url': '',
-            'total_quantity': int(line.get('quantity', 1)),
-            'line_id': str(line.get('id', ''))  # Line ID eklendi
-        }
-        order_details.append(detail)
+order_details = []
+for line in order_data['lines']:
+    detail = {
+        'barcode': line.get('barcode', ''),
+        'converted_barcode': replace_turkish_characters(line.get('barcode', '')),
+        'color': line.get('productColor', ''),
+        'size': line.get('productSize', ''),
+        'sku': line.get('merchantSku', ''),
+        'productName': line.get('productName', ''),
+        'productCode': str(line.get('productCode', '')),
+        'quantity': int(line.get('quantity', 1)),
+        'total_price': float(line.get('amount', 0)) * int(line.get('quantity', 1)),
+        'image_url': '',
+        'total_quantity': int(line.get('quantity', 1)),
+        'line_id': str(line.get('id', ''))  # Line ID eklendi
+    }
+    order_details.append(detail)
 
     combined_order = {
         'order_number': str(order_data.get('orderNumber', order_data['id'])),
@@ -389,6 +389,7 @@ def combine_line_items(order_data, status):
         'details': json.dumps(order_details, ensure_ascii=False),
         'archive_date': None,
         'archive_reason': '',
+        # Yeni eklenen kolon verisi:
         'quantity': total_qty
     }
     return combined_order
