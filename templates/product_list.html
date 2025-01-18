@@ -455,7 +455,8 @@
                       <div class="variant-details">
                         <span class="size">Beden: {{ product.size }}</span>
                         <span class="quantity">Stok: {{ product.quantity }}</span>
-                        <span class="barcode">Barkod: {{ product.barcode }}</span>
+                        <span class="barcode">Barkod: {{ product.display_barcode }}</span>
+                        <input type="hidden" name="api_barcode" value="{{ product.api_barcode }}">
                         <button
                           class="btn btn-info btn-sm select-product"
                           data-barcode="{{ product.barcode }}"
@@ -529,7 +530,8 @@
                       <div class="variant-details">
                         <span class="size">Beden: {{ product.size }}</span>
                         <span class="quantity">Stok: {{ product.quantity }}</span>
-                        <span class="barcode">Barkod: {{ product.barcode }}</span>
+                        <span class="barcode">Barkod: {{ product.display_barcode }}</span>
+                        <input type="hidden" name="api_barcode" value="{{ product.api_barcode }}">
                         <button
                           class="btn btn-info btn-sm select-product"
                           data-barcode="{{ product.barcode }}"
