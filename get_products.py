@@ -65,9 +65,9 @@ def generate_qr():
 def group_products_by_model_and_color(products):
     grouped_products = {}
     for product in products:
-        # API için dönüştürülmüş barkodu, görüntüleme için orjinal barkodu kullan
-        product.display_barcode = product.original_product_barcode
-        product.api_barcode = product.barcode
+        # Orjinal barkodu saklayıp, görüntüleme için dönüştürülmüş barkodu kullan
+        product.display_barcode = product.barcode
+        product.api_barcode = product.original_product_barcode
         key = (product.product_main_id or '', product.color or '')
         grouped_products.setdefault(key, []).append(product)
     return grouped_products
