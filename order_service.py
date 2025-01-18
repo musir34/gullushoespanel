@@ -239,8 +239,8 @@ def update_existing_order(existing_order, order_data, status):
 
 
 def create_order_details(order_lines):
-    details_dict = {}  # dict: (barkod, color, size) -> detail
-    total_quantity = 0  # Toplam miktar takibi
+    details_dict = {}
+    total_quantity = 0
 
     for line in order_lines:
         try:
@@ -253,14 +253,14 @@ def create_order_details(order_lines):
             quantity = int(line.get('quantity', 1))
             amount = float(line.get('amount', 0))
 
-            # Toplam miktarı güncelle
+            # Önce 'lineId' varsa onu al, yoksa 'id' alanına bak
+            line_id = str(line.get('lineId', line.get('id', '')))
+
             total_quantity += quantity
 
-            # Anahtar oluştur: (barkod, color, size)
             key = (barcode, product_color, product_size)
 
             if key not in details_dict:
-                # Yeni kayıt
                 details_dict[key] = {
                     'barcode': barcode,
                     'converted_barcode': replace_turkish_characters(barcode),
@@ -271,12 +271,16 @@ def create_order_details(order_lines):
                     'productCode': product_code,
                     'quantity': quantity,
                     'total_price': amount * quantity,
-                    'image_url': ''
+                    'image_url': '',
+                    'line_id': line_id
                 }
             else:
-                # Mevcut kayıt, miktarı ekle
+                # Aynı barkod + renk + bedende miktarı topla
                 details_dict[key]['quantity'] += quantity
                 details_dict[key]['total_price'] += amount * quantity
+
+                # line_id birden çok ise birleştirmek isterseniz:
+                # details_dict[key]['line_id'] += f",{line_id}"
 
         except Exception as e:
             logger.error(f"Sipariş detayı oluşturulurken hata: {e}")
@@ -286,7 +290,6 @@ def create_order_details(order_lines):
     for detail in details_dict.values():
         detail['total_quantity'] = total_quantity
 
-    # Sözlüğü liste olarak döndür
     return list(details_dict.values())
 
 
@@ -334,24 +337,7 @@ def combine_line_items(order_data, status):
     converted_barcodes = [replace_turkish_characters(bc) for bc in original_barcodes]
 
     # Sipariş detaylarını oluştur
-    # Sipariş detaylarına line_id ekle
-order_details = []
-for line in order_data['lines']:
-    detail = {
-        'barcode': line.get('barcode', ''),
-        'converted_barcode': replace_turkish_characters(line.get('barcode', '')),
-        'color': line.get('productColor', ''),
-        'size': line.get('productSize', ''),
-        'sku': line.get('merchantSku', ''),
-        'productName': line.get('productName', ''),
-        'productCode': str(line.get('productCode', '')),
-        'quantity': int(line.get('quantity', 1)),
-        'total_price': float(line.get('amount', 0)) * int(line.get('quantity', 1)),
-        'image_url': '',
-        'total_quantity': int(line.get('quantity', 1)),
-        'line_id': str(line.get('id', ''))  # Line ID eklendi
-    }
-    order_details.append(detail)
+    order_details = create_order_details(order_data['lines'])
 
     combined_order = {
         'order_number': str(order_data.get('orderNumber', order_data['id'])),
