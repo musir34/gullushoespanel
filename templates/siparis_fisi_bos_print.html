@@ -11,18 +11,18 @@
     }
     body {
       margin: 0;
-      padding: 6mm;
+      padding: 4mm;                /* Dış kenar boşluğunu azalttık */
       width: 148mm;
       height: 210mm;
       box-sizing: border-box;
-      background: #fdf9f6;      /* Pastel arka plan rengi */
+      background: #fdf9f6;         /* Pastel arka plan rengi */
       font-family: "Segoe UI", Tahoma, sans-serif;
       color: #333;
     }
 
     /***** GENEL KULLANILACAK RENKLER *****/
     :root {
-      --accent-color: #da627d;  /* Pastel kırmızımsı ton */
+      --accent-color: #da627d;     /* Pastel kırmızımsı ton */
       --border-color: #ccc;
       --text-dark: #333;
       --text-light: #666;
@@ -34,22 +34,22 @@
       align-items: center;
       justify-content: space-between;
       background: #fff;
-      padding: 4mm 6mm;
+      padding: 3mm 4mm;           /* İç boşluğu biraz düşürdük */
       border-radius: 6px;
-      margin-bottom: 8mm;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      margin-bottom: 4mm;         /* Alt boşluğu azalttık */
+      box-shadow: 0 1px 2px rgba(0,0,0,0.1);
     }
     .header-left {
       display: flex;
       align-items: center;
-      gap: 6mm;
+      gap: 4mm;
     }
     .header-left img {
-      height: 20mm;  /* BÜYÜK LOGO */
+      height: 18mm;  /* Logo boyutu */
       width: auto;
     }
     .header-title {
-      font-size: 16pt;
+      font-size: 14pt;
       color: var(--accent-color);
       margin: 0;
       font-weight: bold;
@@ -57,50 +57,50 @@
     .header-right {
       display: flex;
       align-items: center;
-      gap: 4mm;
-      font-size: 10pt;
+      gap: 3mm;
+      font-size: 9pt;
     }
     .date-line {
       display: inline-block;
       width: 46mm;
       border-bottom: 1px solid var(--text-dark);
       height: 4mm;
-      background-color: transparent;
       text-align: center;
+      background-color: transparent;
     }
 
-    /***** FIŞLERİ GRID HALİNDE YERLEŞTİRME *****/
+    /***** FİŞLERİ GRID HALİNDE YERLEŞTİRME *****/
     .fis-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr; /* 2 sütun */
+      grid-template-columns: 1fr 1fr;  /* 2 sütun */
       grid-template-rows: repeat(3, auto); /* 3 satır (toplam 6 fiş) */
-      gap: 6mm;
+      gap: 4mm;                        /* Kartlar arası boşluğu azalttık */
     }
 
     /***** FİŞ KUTUSU *****/
     .fis-container {
       background: #ffffff;
-      border-radius: 6px;
+      border-radius: 5px;
       box-shadow: 0 1px 2px rgba(0,0,0,0.08);
       border: 1px solid #eee;
       padding: 4mm;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      font-size: 9pt;
+      font-size: 8.5pt;  /* Biraz ufalttık */
     }
 
-    /***** FİŞ ÜST BİLGİ ALANI (Model & Renk) *****/
+    /***** FİŞ ÜST BİLGİ ALANI (Model, Renk, Tarih) *****/
     .fis-header {
       display: flex;
       flex-direction: column;
-      gap: 3mm;    /* Satırlar arası boşluk */
-      margin-bottom: 4mm;
+      gap: 2mm;    /* Satırlar arası boşluk */
+      margin-bottom: 3mm;
     }
     .input-group {
       display: flex;
       align-items: center;
-      gap: 3mm;
+      gap: 2mm;
     }
     .input-label {
       font-weight: bold;
@@ -109,7 +109,7 @@
     }
     .input-line {
       display: inline-block;
-      flex: 1;               /* Renk için uzun satır */
+      flex: 1;
       border-bottom: 1px solid var(--accent-color);
       height: 4mm;
       min-width: 30mm;
@@ -120,18 +120,22 @@
     .beden-table {
       width: 100%;
       border-collapse: collapse;
-      margin-bottom: 4mm;
+      margin-bottom: 3mm;
     }
     .beden-table th,
     .beden-table td {
       border: 1px solid var(--border-color);
       text-align: center;
-      padding: 1.5mm;
+      padding: 1mm;
     }
     .beden-table th {
       font-weight: bold;
       background: #fae9ec; /* Pastel arka plan */
       color: var(--text-dark);
+      font-size: 8pt;
+    }
+    .beden-table td {
+      font-size: 8pt;
     }
 
     /***** TOPLAM KISMI *****/
@@ -140,25 +144,25 @@
       justify-content: space-between;
       align-items: center;
       border-top: 1px solid #ddd;
-      padding-top: 3mm;
+      padding-top: 2mm;
       margin-top: auto;
     }
     .fis-bottom .label {
       font-weight: bold;
       color: var(--text-dark);
+      margin-right: 2mm;
     }
     .line-small {
       display: inline-block;
-      width: 30mm;
+      width: 25mm;
       border-bottom: 1px solid var(--accent-color);
       height: 4mm;
       background-color: #fefefe;
       margin: 0 2mm;
       text-align: center;
     }
-    /* 5 haneli sayı için geniş yer açtık */
     .line-wide {
-      width: 40mm; 
+      width: 35mm; 
     }
 
     /***** BASKI ANINDA GÖRÜNÜM *****/
@@ -169,7 +173,7 @@
       .page-header,
       .fis-container {
         box-shadow: none;
-        border: 1px solid #000; /* Yazıcıda netlik için isterseniz */
+        border: 1px solid #000; /* İsterseniz yazıcıda daha net görünmesi için */
       }
     }
   </style>
@@ -184,7 +188,7 @@
       <h1 class="header-title">Sipariş Fişi</h1>
     </div>
     <div class="header-right">
-      <strong>Tarih:</strong>
+      <strong>Sayfa Tarihi:</strong>
       <span class="date-line"></span>
     </div>
   </div>
@@ -196,11 +200,16 @@
       <!-- Fiş Üst Bilgileri -->
       <div class="fis-header">
         <div class="input-group">
-          <span class="input-label">Model:</span>
+          <span class="input-label">İşleyen:</span>
           <span class="input-line"></span>
         </div>
         <div class="input-group">
-          <span class="input-label">Renk:</span>
+          <span class="input-label">Tarih:</span>
+          <span class="input-line"></span>
+        </div>
+        <!-- Her fiş için Gün/Ay şeklinde tarih alanı -->
+        <div class="input-group">
+          <span class="input-label">Model/Renk:</span>
           <span class="input-line"></span>
         </div>
       </div>
@@ -218,7 +227,7 @@
           <th>41</th>
         </tr>
         <tr>
-          <td>Adet</td>
+          <td>Çift</td>
           <td></td>
           <td></td>
           <td></td>
@@ -232,9 +241,8 @@
       <!-- Toplam Alanı -->
       <div class="fis-bottom">
         <div>
-          <span class="label">Çift</span>
+          <span class="label">Çift:</span>
           <span class="line-wide"></span> 
-          <span>:</span>
         </div>
         <div>
           <span class="label">Toplam:</span>
