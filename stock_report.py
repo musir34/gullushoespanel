@@ -68,7 +68,7 @@ def stock_report_data():
     #   Burada Order tablosunda "product_barcode" ve "quantity" alanlarının var olduğu varsayılıyor.
     #   Daha profesyonel senaryolarda OrderItem gibi bir tablo da devreye girer.
     # - Sorguyu toplu yapmak için product_barcode bazlı group_by kullanırız.
-    product_barcodes = [p.barcode for p in products if p.barcode]
+    product_barcodes = [p.original_product_barcode for p in products if p.original_product_barcode]
 
     # Eğer product_barcodes boşsa, sorgu gereksiz - directly tüm rapor 0 döner.
     sold_quantities = {}
@@ -85,7 +85,11 @@ def stock_report_data():
 
         # sales_data bir list of tuples (barcode, total_sold) döner
         for sd in sales_data:
-            sold_quantities[sd.product_barcode] = sd.total_sold or 0
+            if sd.product_barcode:
+                # Orijinal barkodları kullan
+                product = Product.query.filter_by(original_product_barcode=sd.product_barcode).first()
+                if product and product.original_product_barcode:
+                    sold_quantities[product.original_product_barcode] = sd.total_sold or 0
 
     # Satılan toplam gün sayısı (end_date - start_date).days
     # Eğer 0 ise (aynı gün?), 1 diyelim.
