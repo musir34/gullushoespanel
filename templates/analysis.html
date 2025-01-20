@@ -819,7 +819,34 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('endDate').value = today.toISOString().split('T')[0];
     document.getElementById('startDate').value = thirtyDaysAgo.toISOString().split('T')[0];
 
-    updateCharts(); // Varsayılan olarak son 30 günlük veriyi yükle
+    // Stok Durumu Grafiği
+function createStockChart(data) {
+    const ctx = document.getElementById('stockChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: ['Kritik Stok', 'Stok Yok', 'Yeterli Stok'],
+            datasets: [{
+                data: [
+                    data.summary.low_stock,
+                    data.summary.out_of_stock,
+                    data.summary.healthy_stock
+                ],
+                backgroundColor: ['#FFA500', '#FF0000', '#00FF00']
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+}
+
+updateCharts(); // Varsayılan olarak son 30 günlük veriyi yükle
 
     // Chart tiplerini seçince grafiği yenile
     document.getElementById('dailyChartType').addEventListener('change', function(e) {
