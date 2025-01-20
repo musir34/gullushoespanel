@@ -38,15 +38,15 @@ def stock_report_data():
         end_date = datetime.now()
         start_date = end_date - timedelta(days=30)
 
-    # 2) Ürünleri çekmek için ana sorgu - sadece benzersiz orijinal barkodları al
-    query = Product.query.distinct(Product.original_product_barcode)
+    # 2) Ürünleri çekmek için ana sorgu
+    query = Product.query
 
-    # 3) Arama (title, original_product_barcode, product_main_id)
+    # 3) Arama (title, barcode, product_main_id)
     if search:
         query = query.filter(
             or_(
                 Product.title.ilike(f'%{search}%'),
-                Product.original_product_barcode.ilike(f'%{search}%'),
+                Product.barcode.ilike(f'%{search}%'),
                 Product.product_main_id.ilike(f'%{search}%')
             )
         )
@@ -68,7 +68,7 @@ def stock_report_data():
     #   Burada Order tablosunda "product_barcode" ve "quantity" alanlarının var olduğu varsayılıyor.
     #   Daha profesyonel senaryolarda OrderItem gibi bir tablo da devreye girer.
     # - Sorguyu toplu yapmak için product_barcode bazlı group_by kullanırız.
-    product_barcodes = [p.original_product_barcode for p in products if p.original_product_barcode]
+    product_barcodes = [p.barcode for p in products if p.barcode]
 
     # Eğer product_barcodes boşsa, sorgu gereksiz - directly tüm rapor 0 döner.
     sold_quantities = {}
@@ -85,30 +85,19 @@ def stock_report_data():
 
         # sales_data bir list of tuples (barcode, total_sold) döner
         for sd in sales_data:
-            if sd.product_barcode:
-                # Orijinal barkodları kullan
-                product = Product.query.filter_by(original_product_barcode=sd.product_barcode).first()
-                if product and product.original_product_barcode:
-                    sold_quantities[product.original_product_barcode] = sd.total_sold or 0
+            sold_quantities[sd.product_barcode] = sd.total_sold or 0
 
     # Satılan toplam gün sayısı (end_date - start_date).days
     # Eğer 0 ise (aynı gün?), 1 diyelim.
     total_days = max(1, (end_date - start_date).days)
 
-    # 7) Ürün detaylarını hazırlama - benzersiz orijinal barkodlar için
+    # 7) Ürün detaylarını hazırlama
     product_list = []
     total_value = 0
     low_stock_count = 0
     out_of_stock_count = 0
 
-    processed_barcodes = set()  # İşlenmiş barkodları takip et
-
     for product in products:
-        # Eğer bu orijinal barkod zaten işlendiyse atla
-        if product.original_product_barcode in processed_barcodes:
-            continue
-
-        processed_barcodes.add(product.original_product_barcode)
         quantity = product.quantity or 0
         sale_price = product.sale_price or 0
         total_product_value = quantity * sale_price
@@ -148,15 +137,17 @@ def stock_report_data():
 
         product_list.append({
             'title': product.title,
-            'model': product.product_main_id,
+            'original_product_barcode': product.original_product_barcode,
+            'model': product.product_main_id,  # merchant_sku yerine product_main_id
             'color': product.color,
-            'quantity': product.total_quantity,
-            'sale_price': product.sale_price,
-            'total_value': product.total_quantity * product.sale_price,
-            'sold_quantity': int(sold_quantities.get(product.product_main_id, 0)),
-            'daily_sold': round(daily_sold, 2),
-            'turnover_ratio': round(turnover_ratio, 2) if turnover_ratio > 0 else 0,
-            'days_to_out': days_to_out if days_to_out and days_to_out > 0 else None
+            'size': product.size,
+            'quantity': quantity,
+            'sale_price': sale_price,
+            'total_value': total_product_value,
+            'sold_quantity': int(sold_quantity),   # ilgili tarih aralığında satılan adet
+            'daily_sold': round(daily_sold, 2),    # günlük ortalama satış
+            'turnover_ratio': round(turnover_ratio, 2),
+            'days_to_out': days_to_out
         })
 
     # 8) Genel özet (summary) döndürelim
