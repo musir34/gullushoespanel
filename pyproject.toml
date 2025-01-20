@@ -37,6 +37,7 @@ redis = "^5.2.1"
 flask-limiter = "^3.10.0"
 aioredis = "^2.0.1"
 jsonify = "^0.5"
+numpy = "^2.2.2"
 
 [tool.pyright]
 # https://github.com/microsoft/pyright/blob/main/docs/configuration.md

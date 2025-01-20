@@ -470,33 +470,127 @@ def shipping_performance():
 
 @analysis_bp.route('/api/sales-prediction')
 def sales_prediction():
-    """Basit satış tahminleme"""
-    last_30_days = datetime.now() - timedelta(days=30)
+    """Gelişmiş talep tahmini"""
+    # Son 90 günlük veriyi al (daha uzun dönem analizi için)
+    last_90_days = datetime.now() - timedelta(days=90)
     
     daily_sales = db.session.query(
         func.date(Order.order_date).label('date'),
-        func.count(Order.id).label('count')
+        func.count(Order.id).label('count'),
+        func.sum(Order.amount).label('total_amount')
     ).filter(
-        Order.order_date >= last_30_days
+        Order.order_date >= last_90_days
     ).group_by(
         func.date(Order.order_date)
+    ).order_by(
+        func.date(Order.order_date)
     ).all()
-    
-    # Son 30 günün ortalamasını al
-    total_sales = sum(day.count for day in daily_sales)
-    avg_daily_sales = total_sales / 30 if daily_sales else 0
-    
-    # Gelecek 7 gün için tahmin
-    prediction = []
-    current_date = datetime.now()
-    for i in range(7):
-        future_date = current_date + timedelta(days=i)
-        prediction.append({
-            'date': future_date.strftime('%Y-%m-%d'),
-            'predicted_sales': round(avg_daily_sales * (1 + (i * 0.02)), 2)  # Her gün %2 artış varsayımı
+
+    # Verileri numpy dizilerine dönüştür
+    dates = [day.date for day in daily_sales]
+    counts = [day.count for day in daily_sales]
+    amounts = [float(day.total_amount or 0) for day in daily_sales]
+
+    if not dates:
+        return jsonify([])
+
+    # Hareketli ortalama hesapla (7 günlük)
+    def moving_average(data, window=7):
+        weights = np.ones(window) / window
+        return np.convolve(data, weights, mode='valid')
+
+    # Mevsimsellik analizi (haftalık)
+    def get_seasonality(data, period=7):
+        seasons = len(data) // period
+        if seasons < 1:
+            return np.ones(period)
+        seasonal = np.array(data[:seasons * period]).reshape(-1, period)
+        return np.mean(seasonal, axis=0) / np.mean(data)
+
+    # Trend analizi
+    def get_trend(data):
+        x = np.arange(len(data))
+        z = np.polyfit(x, data, 1)
+        return np.poly1d(z)
+
+    # Üstel düzeltme
+    def exponential_smoothing(data, alpha=0.3):
+        result = [data[0]]
+        for i in range(1, len(data)):
+            result.append(alpha * data[i] + (1 - alpha) * result[i-1])
+        return result
+
+    try:
+        import numpy as np
+        
+        # Hareketli ortalama
+        ma_sales = moving_average(counts)
+        
+        # Mevsimsellik
+        seasonality = get_seasonality(counts)
+        
+        # Trend
+        trend_func = get_trend(counts)
+        
+        # Üstel düzeltme
+        exp_smooth = exponential_smoothing(counts)
+
+        # Gelecek 14 gün için tahmin
+        prediction = []
+        current_date = datetime.now()
+        
+        last_ma = ma_sales[-1] if len(ma_sales) > 0 else np.mean(counts)
+        last_exp = exp_smooth[-1] if exp_smooth else np.mean(counts)
+        
+        for i in range(14):
+            future_date = current_date + timedelta(days=i)
+            
+            # Trend tahmini
+            trend_pred = trend_func(len(counts) + i)
+            
+            # Mevsimsellik etkisi
+            season_idx = i % len(seasonality)
+            season_effect = seasonality[season_idx]
+            
+            # Tahminlerin birleştirilmesi
+            combined_pred = (0.4 * trend_pred + 
+                           0.3 * last_ma * season_effect +
+                           0.3 * last_exp * season_effect)
+
+            prediction.append({
+                'date': future_date.strftime('%Y-%m-%d'),
+                'predicted_sales': round(max(0, combined_pred), 2),
+                'confidence': calculate_confidence(i, combined_pred, counts),
+                'trend': round(trend_pred, 2),
+                'seasonality_factor': round(float(season_effect), 2)
+            })
+
+        # İstatistiksel metrikler
+        metrics = {
+            'trend_direction': 'Yükseliş' if trend_func(1) - trend_func(0) > 0 else 'Düşüş',
+            'volatility': round(np.std(counts) / np.mean(counts) * 100, 2),
+            'average_daily_sales': round(np.mean(counts), 2),
+            'peak_day': max(seasonality),
+            'low_day': min(seasonality)
+        }
+
+        return jsonify({
+            'predictions': prediction,
+            'metrics': metrics
         })
-    
-    return jsonify(prediction)
+
+    except Exception as e:
+        logger.error(f"Tahmin hesaplama hatası: {str(e)}")
+        return jsonify({'error': 'Tahmin hesaplanırken bir hata oluştu'})
+
+def calculate_confidence(days_ahead, prediction, historical_data):
+    """Tahmin güven skorunu hesapla"""
+    if not historical_data:
+        return 0
+        
+    volatility = np.std(historical_data) / np.mean(historical_data)
+    confidence = max(0, min(100, 100 - (days_ahead * 5) - (volatility * 100)))
+    return round(confidence, 1)
 
 @analysis_bp.route('/api/sales-stats')
 def sales_stats():
