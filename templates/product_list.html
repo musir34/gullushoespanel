@@ -200,7 +200,7 @@
     .product-image img {
       display: block;
       width: 100%;
-      height: 220x;
+      height: 220px;
       object-fit: cover;
       transition: transform var(--transition-slow);
     }
@@ -259,9 +259,6 @@
     }
     .quantity {
       color: var(--color-success);
-    }
-    .barcode {
-      color: var(--color-danger);
     }
 
     /* Kopyalama */
@@ -455,7 +452,12 @@
                       <div class="variant-details">
                         <span class="size">Beden: {{ product.size }}</span>
                         <span class="quantity">Stok: {{ product.quantity }}</span>
-                        <span class="barcode">Barkod: {{ product.barcode }}</span>
+                        <!-- Barkod değeri sadece hidden ve data-attribute içinde -->
+                        <input 
+                          type="hidden"
+                          class="hidden-barcode"
+                          value="{{ product.barcode }}"
+                        />
                         <button
                           class="btn btn-info btn-sm select-product"
                           data-barcode="{{ product.barcode }}"
@@ -465,7 +467,11 @@
                         >
                           <i class="fas fa-check"></i> Bu Varyantı Seç
                         </button>
-                        <button class="copy-btn" title="Barkodu Kopyala">
+                        <button 
+                          class="copy-btn" 
+                          title="Barkodu Kopyala"
+                          data-barcode="{{ product.barcode }}"
+                        >
                           <i class="fas fa-copy"></i>
                         </button>
                         <span class="copy-confirmation">Kopyalandı!</span>
@@ -529,7 +535,12 @@
                       <div class="variant-details">
                         <span class="size">Beden: {{ product.size }}</span>
                         <span class="quantity">Stok: {{ product.quantity }}</span>
-                        <span class="barcode">Barkod: {{ product.barcode }}</span>
+                        <!-- Barkod değeri sadece hidden ve data-attribute içinde -->
+                        <input 
+                          type="hidden"
+                          class="hidden-barcode"
+                          value="{{ product.barcode }}"
+                        />
                         <button
                           class="btn btn-info btn-sm select-product"
                           data-barcode="{{ product.barcode }}"
@@ -539,7 +550,11 @@
                         >
                           <i class="fas fa-check"></i> Bu Varyantı Seç
                         </button>
-                        <button class="copy-btn" title="Barkodu Kopyala">
+                        <button 
+                          class="copy-btn" 
+                          title="Barkodu Kopyala"
+                          data-barcode="{{ product.barcode }}"
+                        >
                           <i class="fas fa-copy"></i>
                         </button>
                         <span class="copy-confirmation">Kopyalandı!</span>
@@ -666,6 +681,7 @@
           return;
         }
 
+        // Başka bir sayfada barkodu kullanmak için buradan geçiyoruz
         window.open(`/product_label?barcode=${barcode}&model=${model}&color=${color}&size=${size}`, '_blank');
       });
 
@@ -687,7 +703,7 @@
           return;
         }
 
-        // Tüm diğer açık formları kapat
+        // Diğer açık formları kapat
         $('.stock-update-form').not($stockFormContainer).slideUp();
         $('.update-stocks').not(this).html('<i class="fas fa-edit"></i> Stokları Güncelle');
 
@@ -713,15 +729,24 @@
                     <tbody>
               `;
               res.products.forEach(product => {
+                // Orijinal barkod gizli input, quantity güncellenebilir input
                 if (product.original_product_barcode && product.original_product_barcode !== 'undefined') {
                   formHtml += `
                     <tr>
                       <td>${product.size}</td>
                       <td>${product.quantity}</td>
                       <td>
+                        <!-- Gizli input: Sunucuya gönderilecek asıl key (orijinal barkod) -->
+                        <input
+                          type="hidden"
+                          name="${product.original_product_barcode}"
+                          value="${product.quantity}"
+                        />
+                        <!-- Görünür input: Kullanıcının değiştireceği değer -->
                         <input
                           type="number"
-                          name="${product.original_product_barcode}"
+                          class="quantity-input"
+                          data-barcode="${product.original_product_barcode}"
                           value="${product.quantity}"
                           min="0"
                         />
@@ -752,6 +777,14 @@
       // Stok Güncelleme Gönder
       $('#productContainer').on('submit', '.stock-update-form-inner', function(e) {
         e.preventDefault();
+
+        // Form gönderilmeden önce, kullanıcıya görünen input’ların değeri gizli input’a kopyalanır
+        $(this).find('.quantity-input').each(function() {
+          const newQty = $(this).val();
+          const barcode = $(this).data('barcode');
+          $(this).siblings(`input[name="${barcode}"]`).val(newQty);
+        });
+
         const formData = $(this).serialize();
 
         $.ajax({
@@ -776,7 +809,9 @@
 
       // Barkod kopyala
       $('#productContainer').on('click', '.copy-btn', function() {
-        const text = $(this).siblings('.barcode').text().replace('Barkod: ', '').trim();
+        // Barkod değerini butonun data-barcode attribute'ünden alıyoruz
+        const text = $(this).data('barcode');
+
         if (text && text !== 'undefined') {
           copyToClipboard(text, $(this));
         } else {
