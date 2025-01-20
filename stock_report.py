@@ -38,15 +38,15 @@ def stock_report_data():
         end_date = datetime.now()
         start_date = end_date - timedelta(days=30)
 
-    # 2) Ürünleri çekmek için ana sorgu
-    query = Product.query
+    # 2) Ürünleri çekmek için ana sorgu - sadece benzersiz orijinal barkodları al
+    query = Product.query.distinct(Product.original_product_barcode)
 
-    # 3) Arama (title, barcode, product_main_id)
+    # 3) Arama (title, original_product_barcode, product_main_id)
     if search:
         query = query.filter(
             or_(
                 Product.title.ilike(f'%{search}%'),
-                Product.barcode.ilike(f'%{search}%'),
+                Product.original_product_barcode.ilike(f'%{search}%'),
                 Product.product_main_id.ilike(f'%{search}%')
             )
         )
@@ -95,13 +95,20 @@ def stock_report_data():
     # Eğer 0 ise (aynı gün?), 1 diyelim.
     total_days = max(1, (end_date - start_date).days)
 
-    # 7) Ürün detaylarını hazırlama
+    # 7) Ürün detaylarını hazırlama - benzersiz orijinal barkodlar için
     product_list = []
     total_value = 0
     low_stock_count = 0
     out_of_stock_count = 0
+    
+    processed_barcodes = set()  # İşlenmiş barkodları takip et
 
     for product in products:
+        # Eğer bu orijinal barkod zaten işlendiyse atla
+        if product.original_product_barcode in processed_barcodes:
+            continue
+            
+        processed_barcodes.add(product.original_product_barcode)
         quantity = product.quantity or 0
         sale_price = product.sale_price or 0
         total_product_value = quantity * sale_price
