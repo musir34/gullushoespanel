@@ -2,98 +2,7 @@
 {% block content %}
 
 <style>
-/* Genel Sayfa Düzeni */
-.container {
-    max-width: 1400px;
-}
-
-/* Kartların görünümü */
-.card {
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-/* Tablo Başlıklarını Sabitleme ve Genişletme */
-.table-responsive {
-    max-height: 600px; /* Büyük veri setlerinde dikey scroll */
-    overflow: auto;
-    border: 1px solid #dee2e6;
-    border-radius: 5px;
-}
-
-/* Zebra şerit ve hover efekti */
-.table thead th {
-    background-color: #343a40;
-    color: #fff;
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    white-space: nowrap; 
-    text-align: center;
-}
-.table tbody tr:nth-child(even) {
-    background-color: #f8f9fa;
-}
-.table tbody tr:hover {
-    background-color: #e2e6ea;
-}
-
-/* Tablo Hücreleri */
-.table td, .table th {
-    vertical-align: middle;
-    text-overflow: ellipsis;
-    overflow: hidden;
-    padding: 12px;
-}
-.table td {
-    white-space: nowrap; /* Büyük veri setlerinde yatay kaydırma için */
-}
-
-/* Durum Badgeleri */
-.badge {
-    font-size: 0.9rem;
-    padding: 6px 10px;
-    border-radius: 4px;
-}
-
-.bg-success {
-    background-color: #28a745 !important;
-}
-.bg-warning {
-    background-color: #ffc107 !important;
-    color: #212529 !important;
-}
-.bg-danger {
-    background-color: #dc3545 !important;
-}
-.bg-info {
-    background-color: #17a2b8 !important;
-}
-
-/* Küçük ekranlar için responsive ayarlar */
-@media (max-width: 768px) {
-    .container {
-        margin-top: 1rem;
-        padding: 0 1rem;
-    }
-    .table thead {
-        display: none; /* Mobilde tabloyu daha compact göstermek için */
-    }
-    .table, .table tbody, .table tr, .table td {
-        display: block;
-        width: 100%;
-    }
-    .table td {
-        white-space: normal;
-        border-bottom: 1px solid #dee2e6;
-    }
-    .table tbody tr {
-        margin-bottom: 1rem;
-    }
-    .card-body h3 {
-        font-size: 1.5rem;
-    }
-}
+/* ... Sizin CSS'leriniz aynen kalsın ... */
 </style>
 
 <div class="container mt-4">
@@ -188,7 +97,6 @@
                             <th>Stok</th>
                             <th>Birim Fiyat</th>
                             <th>Toplam Değer</th>
-                            <!-- Yeni Analiz Sütunları -->
                             <th>Satılan Adet</th>
                             <th>Günlük Satış</th>
                             <th>Devir Hızı</th>
@@ -207,7 +115,7 @@
 
 <script>
 /**
- * Belirli bir miktarı (örneğin 'sale_price') Türk Lirası formatına çevirir.
+ * 1) Yardımcı Fonksiyonlar
  */
 function formatCurrency(amount) {
     return new Intl.NumberFormat('tr-TR', {
@@ -216,9 +124,6 @@ function formatCurrency(amount) {
     }).format(amount);
 }
 
-/**
- * Ondalıklı sayıları virgülle biçimlendirme (örn. 1.23 -> "1,23").
- */
 function formatNumber(num, fractionDigits = 2) {
     if (num === null || num === undefined) return '-';
     return num.toLocaleString('tr-TR', {
@@ -227,9 +132,6 @@ function formatNumber(num, fractionDigits = 2) {
     });
 }
 
-/**
- * Stok durumuna göre badge rengi ve metni döndürür.
- */
 function getStockStatus(quantity) {
     if (!quantity || quantity === 0) {
         return { text: 'Stok Yok', class: 'bg-danger' };
@@ -241,8 +143,8 @@ function getStockStatus(quantity) {
 }
 
 /**
- * API'den verileri çekerek tabloya ve özet kartlarına basar.
- * Ayrıca, ürünler tabloya eklenmeden önce model -> renk -> beden sıralaması yapılır.
+ * 2) API'den verileri al, aynı "original_product_barcode" değerine sahip
+ *    kayıtları frontend'de TEK SATIRDA BİRLEŞTİR (merge).
  */
 async function loadStockReport() {
     try {
@@ -251,14 +153,9 @@ async function loadStockReport() {
         const startDate = document.getElementById('startDate').value;
         const endDate = document.getElementById('endDate').value;
 
-        // API endpoint'ine parametreleri ekliyoruz
         let apiUrl = `/api/stock-report-data?filter=${stockFilter}&search=${searchQuery}`;
-        if (startDate) {
-            apiUrl += `&start_date=${startDate}`;
-        }
-        if (endDate) {
-            apiUrl += `&end_date=${endDate}`;
-        }
+        if (startDate) apiUrl += `&start_date=${startDate}`;
+        if (endDate) apiUrl += `&end_date=${endDate}`;
 
         const response = await fetch(apiUrl);
         if (!response.ok) {
@@ -266,14 +163,57 @@ async function loadStockReport() {
         }
         const data = await response.json();
 
-        // 1) Özet kartlarını güncelle
+        // Özet kartlarını güncelle
         document.getElementById('totalProducts').textContent = data.summary.total_products;
         document.getElementById('lowStockCount').textContent = data.summary.low_stock_count;
         document.getElementById('outOfStockCount').textContent = data.summary.out_of_stock_count;
         document.getElementById('totalStockValue').textContent = formatCurrency(data.summary.total_value);
 
-        // 2) Gelen ürün verilerini sıralama (model -> color -> size)
-        data.products.sort((a, b) => {
+        // Şimdi, data.products içinde aynı original_product_barcode’a sahip ürünleri birleştirelim:
+        const mergedByBarcode = {};
+
+        data.products.forEach(item => {
+            const ob = item.original_product_barcode || '-';
+
+            // Eğer barkod dictionary'de yoksa, direkt ekle
+            if (!mergedByBarcode[ob]) {
+                mergedByBarcode[ob] = {
+                    title: item.title,
+                    original_product_barcode: ob,
+                    model: item.model,
+                    color: item.color,
+                    size: item.size,
+                    quantity: item.quantity || 0,
+                    sale_price: item.sale_price || 0,
+                    total_value: item.total_value || 0,
+                    sold_quantity: item.sold_quantity || 0,
+                    daily_sold: item.daily_sold || 0,
+                    turnover_ratio: item.turnover_ratio || 0,
+                    days_to_out: item.days_to_out
+                };
+            } else {
+                // Aynı barkod varsa, stok ve bazı alanları topluyoruz
+                // (Color / size gibi alanlar farklıysa hangisini tutacağınıza karar verin)
+                mergedByBarcode[ob].quantity += (item.quantity || 0);
+                mergedByBarcode[ob].total_value += (item.total_value || 0);
+                mergedByBarcode[ob].sold_quantity += (item.sold_quantity || 0);
+
+                // daily_sold veya turnover_ratio gibi verileri
+                // "ortalama" mı alacaksınız, "toplam" mı? Size kalmış.
+                // Burada basitçe ortalama alıyoruz:
+                mergedByBarcode[ob].daily_sold = 
+                    (mergedByBarcode[ob].daily_sold + (item.daily_sold || 0)) / 2;
+
+                mergedByBarcode[ob].turnover_ratio = 
+                    (mergedByBarcode[ob].turnover_ratio + (item.turnover_ratio || 0)) / 2;
+            }
+        });
+
+        // Artık mergedByBarcode sözlüğündeki değerleri bir diziye dönüştürelim
+        let mergedProducts = Object.values(mergedByBarcode);
+
+        // İsterseniz model->color->size şeklinde sıralama yapabilirsiniz
+        mergedProducts.sort((a, b) => {
             const modelCompare = (a.model || '').localeCompare(b.model || '');
             if (modelCompare !== 0) return modelCompare;
 
@@ -287,17 +227,10 @@ async function loadStockReport() {
         const tableBody = document.getElementById('stockTable').querySelector('tbody');
         tableBody.innerHTML = '';
 
-        data.products.forEach(product => {
+        mergedProducts.forEach(product => {
             const row = document.createElement('tr');
             const stockStatus = getStockStatus(product.quantity);
 
-            /**
-             * Yeni Alanlar:
-             * - product.sold_quantity
-             * - product.daily_sold
-             * - product.turnover_ratio
-             * - product.days_to_out
-             */
             row.innerHTML = `
                 <td>${product.title}</td>
                 <td>${product.original_product_barcode || '-'}</td>
@@ -307,12 +240,14 @@ async function loadStockReport() {
                 <td>${product.quantity}</td>
                 <td>${formatCurrency(product.sale_price)}</td>
                 <td>${formatCurrency(product.total_value)}</td>
-                <td>${product.sold_quantity || 0}</td>
+                <td>${product.sold_quantity}</td>
                 <td>${formatNumber(product.daily_sold, 2)}</td>
                 <td>${formatNumber(product.turnover_ratio, 2)}</td>
-                <td>${product.days_to_out !== null && product.days_to_out !== undefined 
+                <td>${
+                    product.days_to_out !== null && product.days_to_out !== undefined 
                         ? formatNumber(product.days_to_out, 1) 
-                        : '-'}</td>
+                        : '-'
+                }</td>
                 <td><span class="badge ${stockStatus.class}">${stockStatus.text}</span></td>
             `;
             tableBody.appendChild(row);
@@ -326,8 +261,6 @@ async function loadStockReport() {
 
 /**
  * Sayfa yüklendiğinde ilk verileri getirin.
- * Varsayılan olarak son 30 gün için backend'de ayarlandığı için
- * startDate ve endDate boş kalırsa otomatik 30 günlük sonuç dönecek.
  */
 document.addEventListener('DOMContentLoaded', loadStockReport);
 </script>
