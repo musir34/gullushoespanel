@@ -469,6 +469,12 @@ def shipping_performance():
     return jsonify(performance_data)
 
 @analysis_bp.route('/api/sales-prediction')
+# Gerekli kütüphaneleri import et
+import numpy as np
+import logging
+
+logger = logging.getLogger(__name__)
+
 def sales_prediction():
     """Gelişmiş talep tahmini"""
     # Son 90 günlük veriyi al (daha uzun dönem analizi için)
@@ -585,12 +591,22 @@ def sales_prediction():
 
 def calculate_confidence(days_ahead, prediction, historical_data):
     """Tahmin güven skorunu hesapla"""
-    if not historical_data:
-        return 0
+    try:
+        if not historical_data or len(historical_data) == 0:
+            return 0
+            
+        historical_array = np.array(historical_data)
+        mean_value = np.mean(historical_array)
         
-    volatility = np.std(historical_data) / np.mean(historical_data)
-    confidence = max(0, min(100, 100 - (days_ahead * 5) - (volatility * 100)))
-    return round(confidence, 1)
+        if mean_value == 0:
+            return 0
+            
+        volatility = np.std(historical_array) / mean_value
+        confidence = max(0, min(100, 100 - (days_ahead * 5) - (volatility * 100)))
+        return round(confidence, 1)
+    except Exception as e:
+        logger.error(f"Konfidans hesaplama hatası: {str(e)}")
+        return 0
 
 @analysis_bp.route('/api/sales-stats')
 def sales_stats():
