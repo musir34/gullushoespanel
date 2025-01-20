@@ -100,14 +100,14 @@ def stock_report_data():
     total_value = 0
     low_stock_count = 0
     out_of_stock_count = 0
-    
+
     processed_barcodes = set()  # İşlenmiş barkodları takip et
 
     for product in products:
         # Eğer bu orijinal barkod zaten işlendiyse atla
         if product.original_product_barcode in processed_barcodes:
             continue
-            
+
         processed_barcodes.add(product.original_product_barcode)
         quantity = product.quantity or 0
         sale_price = product.sale_price or 0
@@ -148,17 +148,15 @@ def stock_report_data():
 
         product_list.append({
             'title': product.title,
-            'original_product_barcode': product.original_product_barcode,
-            'model': product.product_main_id,  # merchant_sku yerine product_main_id
+            'model': product.product_main_id,
             'color': product.color,
-            'size': product.size,
-            'quantity': quantity,
-            'sale_price': sale_price,
-            'total_value': total_product_value,
-            'sold_quantity': int(sold_quantity),   # ilgili tarih aralığında satılan adet
-            'daily_sold': round(daily_sold, 2),    # günlük ortalama satış
-            'turnover_ratio': round(turnover_ratio, 2),
-            'days_to_out': days_to_out
+            'quantity': product.total_quantity,
+            'sale_price': product.sale_price,
+            'total_value': product.total_quantity * product.sale_price,
+            'sold_quantity': int(sold_quantities.get(product.product_main_id, 0)),
+            'daily_sold': round(daily_sold, 2),
+            'turnover_ratio': round(turnover_ratio, 2) if turnover_ratio > 0 else 0,
+            'days_to_out': days_to_out if days_to_out and days_to_out > 0 else None
         })
 
     # 8) Genel özet (summary) döndürelim
