@@ -181,7 +181,7 @@
                     <thead>
                         <tr>
                             <th>Ürün Adı</th>
-                            <th>Barkod</th>
+                            <th>Orijinal Barkod</th>
                             <th>Model</th>
                             <th>Renk</th>
                             <th>Beden</th>
@@ -300,7 +300,7 @@ async function loadStockReport() {
              */
             row.innerHTML = `
                 <td>${product.title}</td>
-                <td>${product.barcode}</td>
+                <td>${product.original_product_barcode || '-'}</td>
                 <td>${product.model || '-'}</td>
                 <td>${product.color || '-'}</td>
                 <td>${product.size || '-'}</td>
