@@ -89,7 +89,6 @@
                 <table class="table table-hover align-middle" id="stockTable">
                     <thead>
                         <tr>
-                            <th>Ürün Adı</th>
                             <th>Orijinal Barkod</th>
                             <th>Model</th>
                             <th>Renk</th>
@@ -232,7 +231,6 @@ async function loadStockReport() {
             const stockStatus = getStockStatus(product.quantity);
 
             row.innerHTML = `
-                <td>${product.title}</td>
                 <td>${product.original_product_barcode || '-'}</td>
                 <td>${product.model || '-'}</td>
                 <td>${product.color || '-'}</td>
