@@ -468,12 +468,12 @@ def shipping_performance():
     
     return jsonify(performance_data)
 
-@analysis_bp.route('/api/sales-prediction')
-# Gerekli kütüphaneleri import et
 import numpy as np
 import logging
 
 logger = logging.getLogger(__name__)
+
+@analysis_bp.route('/api/sales-prediction')
 
 def sales_prediction():
     """Gelişmiş talep tahmini"""
