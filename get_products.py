@@ -386,10 +386,7 @@ async def update_stock_levels_with_items_async(items):
 
                 payload_item = {
                     "barcode": barcode,
-                    "quantity": quantity,
-                    "salePrice": sale_price,
-                    "listPrice": list_price,
-                    "currencyType": currency_type
+                    "quantity": quantity
                 }
                 payload_items.append(payload_item)
 
