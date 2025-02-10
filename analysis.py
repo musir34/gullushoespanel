@@ -1,24 +1,18 @@
-
 from flask import Blueprint, render_template, current_app
 from sqlalchemy import func
+from extensions import db  # Aynı db instance'ını kullanıyoruz
 from models import SiparisFisi, ReturnOrder, Order, Product
-from flask_sqlalchemy import SQLAlchemy
 import pandas as pd
+from configparser import ConfigParser
 import plotly.express as px
 import plotly
 import json
 
-db = SQLAlchemy()
 analysis_bp = Blueprint('analysis', __name__, url_prefix='/analysis')
 
 @analysis_bp.route('/sales', methods=['GET'])
 def sales_analysis():
-    """
-    Günlük satış analizi: Sipariş Fişi tablosundan oluşturulan tarih bazında toplam satışları al,
-    pandas ile DataFrame'e aktar, sıralama yap ve Plotly ile çizgi grafiğini render et.
-    """
     try:
-        # Sipariş Fişi tablosundan günlük toplam satış tutarlarını çekiyoruz.
         sales_query = db.session.query(
             func.date(SiparisFisi.created_date).label('date'),
             func.sum(SiparisFisi.toplam_fiyat).label('total_sales')
@@ -30,7 +24,6 @@ def sales_analysis():
         df['date'] = pd.to_datetime(df['date'])
         df.sort_values('date', inplace=True)
 
-        # Plotly ile çizgi grafik oluşturuyoruz.
         fig = px.line(df, x='date', y='total_sales', title='Günlük Satış Analizi')
         chart_json = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
 
@@ -41,10 +34,6 @@ def sales_analysis():
 
 @analysis_bp.route('/returns', methods=['GET'])
 def returns_analysis():
-    """
-    Günlük iade analizi: İade sipariş verilerini ReturnOrder tablosundan çek,
-    günlük bazda gruplandır ve Plotly bar grafiği ile göster.
-    """
     try:
         returns_query = db.session.query(
             func.date(ReturnOrder.return_date).label('date'),

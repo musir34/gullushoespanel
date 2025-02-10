@@ -795,6 +795,16 @@ wrapt = ">=1.10,<2"
 dev = ["PyTest", "PyTest-Cov", "bump2version (<1)", "jinja2 (>=3.0.3,<3.1.0)", "setuptools", "sphinx (<2)", "tox"]
 
 [[package]]
+name = "extensions"
+version = "0.4"
+description = "Simple plugin system"
+optional = false
+python-versions = "*"
+files = [
+    {file = "extensions-0.4.tar.gz", hash = "sha256:02a6c12973f527fd09adad71792a8d70dfc94cb49fca67ceb201a4dfa5b18099"},
+]
+
+[[package]]
 name = "flask"
 version = "3.0.3"
 description = "A simple framework for building complex web applications."
@@ -3418,4 +3428,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10.0,<3.12"
-content-hash = "64bf854ed9826d0d7eaaf6ba65e9638df89f2180727c5efdf65d1d6a56646cc6"
+content-hash = "ea12a0d5ca4e53559dd7e3a6716f07061135b9927df4d64e778e8dda5064813f"

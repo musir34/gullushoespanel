@@ -43,6 +43,7 @@ prophet = "^1.1.6"
 statsmodels = "^0.14.4"
 plotly = "^6.0.0"
 analysis = "^0.1.7"
+extensions = "^0.4"
 
 [tool.pyright]
 # https://github.com/microsoft/pyright/blob/main/docs/configuration.md
