@@ -1,12 +1,14 @@
+
 from flask import Blueprint, render_template, current_app
 from sqlalchemy import func
-from app import db
-from models import SiparisFisi, ReturnOrder, Order, Product  # Gerekli modelleri import et
+from models import SiparisFisi, ReturnOrder, Order, Product
+from flask_sqlalchemy import SQLAlchemy
 import pandas as pd
 import plotly.express as px
 import plotly
 import json
 
+db = SQLAlchemy()
 analysis_bp = Blueprint('analysis', __name__, url_prefix='/analysis')
 
 @analysis_bp.route('/sales', methods=['GET'])
@@ -62,5 +64,3 @@ def returns_analysis():
     except Exception as ex:
         current_app.logger.error("Returns analysis hatası: %s", ex)
         return render_template('analysis/returns.html', message="İade analizi oluşturulurken hata oluştu.", chart_json=None), 500
-
-# İleride ek analiz endpoint'leri ekleyebilirsin...
