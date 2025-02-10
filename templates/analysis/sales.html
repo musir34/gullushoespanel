@@ -3,41 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <title>Günlük Satış Analizi</title>
-    <!-- Bootstrap CSS ile profesyonel görünüm sağlıyoruz -->
+    <!-- Bootstrap CSS: Sayfanın profesyonel ve responsive görünümü için -->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <!-- Plotly JS kütüphanesi -->
+    <!-- Plotly JS: İnteraktif grafiklerin oluşturulması için -->
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 </head>
 <body>
-    <!-- Navbar -->
+    <!-- Üst Navigasyon Menüsü -->
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
       <a class="navbar-brand" href="/">E Ticaret Programı</a>
+      <!-- Menüdeki diğer linkler -->
       <div class="collapse navbar-collapse">
         <ul class="navbar-nav mr-auto">
-          <li class="nav-item"><a class="nav-link" href="/analysis/sales">Satış Analizi</a></li>
-          <li class="nav-item"><a class="nav-link" href="/analysis/returns">İade Analizi</a></li>
+          <li class="nav-item">
+              <a class="nav-link" href="/analysis/sales">Satış Analizi</a>
+          </li>
+          <li class="nav-item">
+              <a class="nav-link" href="/analysis/returns">İade Analizi</a>
+          </li>
         </ul>
       </div>
     </nav>
 
-    <!-- İçerik -->
+    <!-- Ana İçerik Alanı -->
     <div class="container mt-4">
         <h1>Günlük Satış Analizi</h1>
+        <!-- Eğer analiz yapılırken hata mesajı varsa, kullanıcıya bildir -->
         {% if message %}
             <div class="alert alert-warning" role="alert">
                 {{ message }}
             </div>
         {% else %}
+            <!-- Grafik için tanımlı div alanı -->
             <div id="sales-chart" style="height: 500px;"></div>
+            <!-- Plotly grafik verisinin sayfaya render edilmesi -->
             <script type="text/javascript">
-                // Blueprint'ten gelen JSON formatındaki grafiği parse edip render ediyoruz.
+                // Blueprint'ten gönderilen JSON formatındaki grafik verisini alıp parse ediyoruz.
                 var chartData = {{ chart_json | safe }};
+                // Plotly.newPlot fonksiyonu, 'sales-chart' id'li div içerisine grafik çiziyor.
                 Plotly.newPlot('sales-chart', chartData.data, chartData.layout);
             </script>
         {% endif %}
     </div>
 
-    <!-- Optional Bootstrap JS ve bağımlılıkları -->
+    <!-- Optional: Bootstrap JavaScript ve bağımlılıkları (jQuery & Popper.js) -->
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
