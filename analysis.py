@@ -1,9 +1,8 @@
+
 from flask import Blueprint, render_template, current_app
 from sqlalchemy import func
-from extensions import db  # Aynı db instance'ını kullanıyoruz
-from models import SiparisFisi, ReturnOrder, Order, Product
+from models import SiparisFisi, ReturnOrder, Order, Product, db
 import pandas as pd
-from configparser import ConfigParser
 import plotly.express as px
 import plotly
 import json
