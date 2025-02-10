@@ -10,24 +10,31 @@ analysis_bp = Blueprint('analysis', __name__, url_prefix='/analysis')
 
 def fetch_sales_data():
     """
-    Veritabanından, SiparisFisi tablosundan günlük toplam satış verilerini çek.
+    Veritabanından, Orders tablosundan günlük toplam satış verilerini çek.
     Her gün için; siparişin oluşturulma tarihini ve o günün toplam satış tutarını getirir.
     """
     sales_data = db.session.query(
-        func.date(SiparisFisi.created_date).label('date'),
-        func.sum(SiparisFisi.toplam_fiyat).label('total_sales')
-    ).group_by(func.date(SiparisFisi.created_date)).all()
+        func.date(Order.order_date).label('date'),
+        func.sum(Order.amount).label('total_sales')
+    ).filter(Order.status != 'Cancelled')\
+      .group_by(func.date(Order.order_date))\
+      .order_by(func.date(Order.order_date))\
+      .all()
     return sales_data
 
 def fetch_return_data():
     """
     Veritabanından, ReturnOrder tablosundan günlük iade sayısını çek.
-    Her gün için; iade talep tarihine göre iade sayısını getirir.
+    Her gün için; iade talep tarihine göre iade sayısını ve toplam tutarı getirir.
     """
     returns_data = db.session.query(
         func.date(ReturnOrder.return_date).label('date'),
-        func.count(ReturnOrder.id).label('return_count')
-    ).group_by(func.date(ReturnOrder.return_date)).all()
+        func.count(ReturnOrder.id).label('return_count'),
+        func.sum(ReturnOrder.refund_amount).label('total_refund')
+    ).filter(ReturnOrder.status == 'Approved')\
+      .group_by(func.date(ReturnOrder.return_date))\
+      .order_by(func.date(ReturnOrder.return_date))\
+      .all()
     return returns_data
 
 @analysis_bp.route('/sales', methods=['GET'])
