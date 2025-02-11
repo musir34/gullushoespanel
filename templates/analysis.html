@@ -3,143 +3,160 @@
 
 {% block content %}
 <div class="container mt-4">
-    <div class="row">
-        <div class="col-12">
-            <h2>Satış ve Stok Analizi</h2>
-            <div class="card mb-4">
-                <div class="card-body">
-                    <h4>Günlük Satış Grafiği</h4>
-                    <canvas id="salesChart"></canvas>
-                </div>
-            </div>
+  <h2>Satış ve İade Analizleri</h2>
+  
+  <div class="row mt-4">
+    <!-- Günlük Satış İstatistikleri -->
+    <div class="col-md-6 mb-4">
+      <div class="card">
+        <div class="card-header bg-primary text-white">
+          <h5 class="mb-0">Günlük Satış İstatistikleri</h5>
         </div>
-    </div>
-    
-    <div class="row">
-        <div class="col-md-6">
-            <div class="card mb-4">
-                <div class="card-body">
-                    <h4>İade Analizi</h4>
-                    <canvas id="returnsChart"></canvas>
-                </div>
-            </div>
+        <div class="card-body">
+          <canvas id="dailySalesChart"></canvas>
         </div>
-        <div class="col-md-6">
-            <div class="card mb-4">
-                <div class="card-body">
-                    <h4>Değişim Analizi</h4>
-                    <canvas id="exchangesChart"></canvas>
-                </div>
-            </div>
-        </div>
+      </div>
     </div>
 
-    <div class="row">
-        <div class="col-12">
-            <div class="card mb-4">
-                <div class="card-body">
-                    <h4>Ürün Satış Performansı</h4>
-                    <canvas id="productPerformanceChart"></canvas>
-                </div>
-            </div>
+    <!-- İade Nedenleri -->
+    <div class="col-md-6 mb-4">
+      <div class="card">
+        <div class="card-header bg-warning">
+          <h5 class="mb-0">İade Nedenleri</h5>
         </div>
+        <div class="card-body">
+          <canvas id="returnsChart"></canvas>
+        </div>
+      </div>
     </div>
+
+    <!-- Ürün Bazlı Satışlar -->
+    <div class="col-md-12 mb-4">
+      <div class="card">
+        <div class="card-header bg-success text-white">
+          <h5 class="mb-0">Ürün Bazlı Satışlar</h5>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-striped" id="productSalesTable">
+              <thead>
+                <tr>
+                  <th>Ürün ID</th>
+                  <th>Renk</th>
+                  <th>Beden</th>
+                  <th>Satış Adedi</th>
+                  <th>Toplam Gelir</th>
+                  <th>Ortalama Fiyat</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    fetch('/api/sales-stats')
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Satış grafiği
-                const salesCtx = document.getElementById('salesChart').getContext('2d');
-                new Chart(salesCtx, {
-                    type: 'line',
-                    data: {
-                        labels: data.daily_sales.map(sale => sale.date),
-                        datasets: [{
-                            label: 'Günlük Satış Tutarı (TL)',
-                            data: data.daily_sales.map(sale => sale.total_amount),
-                            borderColor: 'rgb(75, 192, 192)',
-                            tension: 0.1
-                        }, {
-                            label: 'Sipariş Sayısı',
-                            data: data.daily_sales.map(sale => sale.order_count),
-                            borderColor: 'rgb(255, 99, 132)',
-                            tension: 0.1
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        scales: {
-                            y: {
-                                beginAtZero: true
-                            }
-                        }
-                    }
-                });
-
-                // İade grafiği
-                const returnsCtx = document.getElementById('returnsChart').getContext('2d');
-                new Chart(returnsCtx, {
-                    type: 'pie',
-                    data: {
-                        labels: data.returns.map(ret => ret.reason),
-                        datasets: [{
-                            data: data.returns.map(ret => ret.count),
-                            backgroundColor: [
-                                'rgb(255, 99, 132)',
-                                'rgb(54, 162, 235)',
-                                'rgb(255, 205, 86)',
-                                'rgb(75, 192, 192)'
-                            ]
-                        }]
-                    }
-                });
-
-                // Değişim grafiği
-                const exchangesCtx = document.getElementById('exchangesChart').getContext('2d');
-                new Chart(exchangesCtx, {
-                    type: 'bar',
-                    data: {
-                        labels: data.exchanges.map(ex => ex.reason),
-                        datasets: [{
-                            label: 'Değişim Sayısı',
-                            data: data.exchanges.map(ex => ex.count),
-                            backgroundColor: 'rgb(54, 162, 235)'
-                        }]
-                    }
-                });
-
-                // Ürün performans grafiği
-                const productCtx = document.getElementById('productPerformanceChart').getContext('2d');
-                new Chart(productCtx, {
-                    type: 'bar',
-                    data: {
-                        labels: data.product_sales.map(prod => `${prod.product_id} - ${prod.color} - ${prod.size}`),
-                        datasets: [{
-                            label: 'Satış Adedi',
-                            data: data.product_sales.map(prod => prod.sale_count),
-                            backgroundColor: 'rgb(75, 192, 192)'
-                        }, {
-                            label: 'Toplam Gelir (TL)',
-                            data: data.product_sales.map(prod => prod.total_revenue),
-                            backgroundColor: 'rgb(255, 99, 132)'
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        scales: {
-                            y: {
-                                beginAtZero: true
-                            }
-                        }
-                    }
-                });
-            }
-        });
+  // Verileri yükle
+  fetch('/api/sales-stats')
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        createDailySalesChart(data.daily_sales);
+        createReturnsChart(data.returns);
+        populateProductTable(data.product_sales);
+      }
+    })
+    .catch(error => console.error('Veri yükleme hatası:', error));
 });
+
+function createDailySalesChart(dailySales) {
+  const ctx = document.getElementById('dailySalesChart').getContext('2d');
+  const dates = dailySales.map(sale => sale.date);
+  const orderCounts = dailySales.map(sale => sale.order_count);
+  const totalAmounts = dailySales.map(sale => sale.total_amount);
+
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: dates,
+      datasets: [{
+        label: 'Sipariş Sayısı',
+        data: orderCounts,
+        borderColor: 'rgb(75, 192, 192)',
+        tension: 0.1
+      }, {
+        label: 'Toplam Tutar (TL)',
+        data: totalAmounts,
+        borderColor: 'rgb(255, 99, 132)',
+        tension: 0.1
+      }]
+    },
+    options: {
+      responsive: true,
+      interaction: {
+        intersect: false,
+      },
+      scales: {
+        y: {
+          beginAtZero: true
+        }
+      }
+    }
+  });
+}
+
+function createReturnsChart(returns) {
+  const ctx = document.getElementById('returnsChart').getContext('2d');
+  const reasons = returns.map(r => r.reason);
+  const counts = returns.map(r => r.count);
+
+  new Chart(ctx, {
+    type: 'pie',
+    data: {
+      labels: reasons,
+      datasets: [{
+        data: counts,
+        backgroundColor: [
+          'rgb(255, 99, 132)',
+          'rgb(54, 162, 235)',
+          'rgb(255, 206, 86)',
+          'rgb(75, 192, 192)',
+          'rgb(153, 102, 255)'
+        ]
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: {
+          position: 'right'
+        }
+      }
+    }
+  });
+}
+
+function populateProductTable(productSales) {
+  const tbody = document.querySelector('#productSalesTable tbody');
+  tbody.innerHTML = '';
+  
+  productSales.forEach(product => {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td>${product.product_id}</td>
+      <td>${product.color}</td>
+      <td>${product.size}</td>
+      <td>${product.sale_count}</td>
+      <td>${product.total_revenue.toFixed(2)} TL</td>
+      <td>${product.average_price.toFixed(2)} TL</td>
+    `;
+    tbody.appendChild(row);
+  });
+}
 </script>
 {% endblock %}
