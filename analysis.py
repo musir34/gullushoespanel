@@ -21,12 +21,13 @@ def get_sales_stats():
         daily_sales = db.session.query(
             func.date(Order.order_date).label('date'),
             func.count(distinct(Order.order_number)).label('order_count'),
-            func.sum(Order.amount).label('total_amount'),
-            func.sum(Order.quantity).label('total_quantity'),
-            func.avg(Order.amount).label('average_order_value'),
-            func.count(case([(Order.status == 'Delivered', 1)])).label('delivered_count'),
-            func.count(case([(Order.status == 'Cancelled', 1)])).label('cancelled_count')
+            func.coalesce(func.sum(Order.amount), 0).label('total_amount'),
+            func.coalesce(func.sum(Order.quantity), 0).label('total_quantity'),
+            func.coalesce(func.avg(Order.amount), 0).label('average_order_value'),
+            func.count(case([(Order.status == 'Delivered', 1)], else_=None)).label('delivered_count'),
+            func.count(case([(Order.status == 'Cancelled', 1)], else_=None)).label('cancelled_count')
         ).filter(
+            Order.order_date.isnot(None),
             Order.order_date.between(start_date, end_date)
         ).group_by(
             func.date(Order.order_date)
@@ -54,11 +55,12 @@ def get_sales_stats():
 
         # İade analizi
         returns_stats = db.session.query(
-            ReturnOrder.return_reason,
+            func.coalesce(ReturnOrder.return_reason, 'Belirtilmemiş').label('return_reason'),
             func.count(ReturnOrder.id).label('return_count'),
             func.count(distinct(ReturnOrder.order_number)).label('unique_orders'),
-            func.avg(ReturnOrder.refund_amount).label('average_refund')
+            func.coalesce(func.avg(ReturnOrder.refund_amount), 0).label('average_refund')
         ).filter(
+            ReturnOrder.return_date.isnot(None),
             ReturnOrder.return_date.between(start_date, end_date)
         ).group_by(
             ReturnOrder.return_reason
@@ -66,10 +68,11 @@ def get_sales_stats():
 
         # Değişim analizi
         exchange_stats = db.session.query(
-            Degisim.degisim_nedeni,
+            func.coalesce(Degisim.degisim_nedeni, 'Belirtilmemiş').label('degisim_nedeni'),
             func.count(Degisim.degisim_no).label('exchange_count'),
             func.date(Degisim.degisim_tarihi).label('date')
         ).filter(
+            Degisim.degisim_tarihi.isnot(None),
             Degisim.degisim_tarihi.between(start_date, end_date)
         ).group_by(
             Degisim.degisim_nedeni,
