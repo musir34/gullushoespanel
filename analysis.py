@@ -1,4 +1,3 @@
-
 from flask import Blueprint, render_template, jsonify
 from models import db, Order, ReturnOrder, Degisim, Product
 from sqlalchemy import func, and_, extract, case, distinct, text
@@ -16,7 +15,7 @@ def get_sales_stats():
     try:
         end_date = datetime.now()
         start_date = end_date - timedelta(days=90)
-        
+
         # Günlük satış istatistikleri
         daily_sales = db.session.query(
             func.date(Order.order_date).label('date'),
@@ -24,8 +23,8 @@ def get_sales_stats():
             func.sum(Order.amount).label('total_amount'),
             func.sum(Order.quantity).label('total_quantity'),
             func.avg(Order.amount).label('average_order_value'),
-            func.count(case([(Order.status == 'Delivered', 1)], else_=None)).label('delivered_count'),
-            func.count(case([(Order.status == 'Cancelled', 1)], else_=None)).label('cancelled_count')
+            func.count(case((Order.status == 'Delivered', 1), else_=None)).label('delivered_count'),
+            func.count(case((Order.status == 'Cancelled', 1), else_=None)).label('cancelled_count')
         ).filter(
             Order.order_date.between(start_date, end_date)
         ).group_by(
