@@ -14,21 +14,23 @@ def sales_analysis():
 @analysis_bp.route('/api/sales-stats')
 def get_sales_stats():
     try:
+        # Son 3 ayın verilerini al
         end_date = datetime.now()
-        start_date = end_date - timedelta(days=30)
+        start_date = end_date - timedelta(days=90)
         
         # Günlük satış istatistikleri
         daily_sales = db.session.query(
             func.date(Order.order_date).label('date'),
-            func.count(distinct(Order.order_number)).label('order_count'),
-            func.coalesce(func.sum(Order.amount), 0).label('total_amount'),
-            func.coalesce(func.sum(Order.quantity), 0).label('total_quantity'),
-            func.coalesce(func.avg(Order.amount), 0).label('average_order_value'),
-            func.count(case([(Order.status == 'Delivered', 1)], else_=None)).label('delivered_count'),
-            func.count(case([(Order.status == 'Cancelled', 1)], else_=None)).label('cancelled_count')
+            func.count(Order.id).label('order_count'),
+            func.sum(Order.amount).label('total_amount'),
+            func.sum(Order.quantity).label('total_quantity'),
+            func.avg(Order.amount).label('average_order_value'),
+            func.count(case([(Order.status == 'Tamamlandı', 1)], else_=None)).label('delivered_count'),
+            func.count(case([(Order.status == 'İptal', 1)], else_=None)).label('cancelled_count')
         ).filter(
             Order.order_date.isnot(None),
-            Order.order_date.between(start_date, end_date)
+            Order.order_date.between(start_date, end_date),
+            Order.status.in_(['Tamamlandı', 'İptal', 'Created'])
         ).group_by(
             func.date(Order.order_date)
         ).order_by(
@@ -82,14 +84,14 @@ def get_sales_stats():
         return jsonify({
             'success': True,
             'daily_sales': [{
-                'date': str(stat.date),
-                'order_count': stat.order_count,
+                'date': stat.date.strftime('%Y-%m-%d') if stat.date else None,
+                'order_count': int(stat.order_count or 0),
                 'total_amount': float(stat.total_amount or 0),
                 'total_quantity': int(stat.total_quantity or 0),
-                'average_order_value': float(stat.average_order_value or 0),
-                'delivered_count': stat.delivered_count,
-                'cancelled_count': stat.cancelled_count
-            } for stat in daily_sales],
+                'average_order_value': round(float(stat.average_order_value or 0), 2),
+                'delivered_count': int(stat.delivered_count or 0),
+                'cancelled_count': int(stat.cancelled_count or 0)
+            } for stat in daily_sales if stat.date],
             'product_sales': [{
                 'product_id': stat.product_main_id,
                 'color': stat.color,
