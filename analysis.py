@@ -1,7 +1,7 @@
 
 from flask import Blueprint, render_template, jsonify
 from models import db, Order, ReturnOrder, Degisim, Product
-from sqlalchemy import func, and_, extract, case, distinct
+from sqlalchemy import func, and_, extract, case, distinct, text
 from datetime import datetime, timedelta
 import json
 
@@ -14,7 +14,6 @@ def sales_analysis():
 @analysis_bp.route('/api/sales-stats')
 def get_sales_stats():
     try:
-        # Son 3 ayın verilerini al
         end_date = datetime.now()
         start_date = end_date - timedelta(days=90)
         
@@ -25,16 +24,14 @@ def get_sales_stats():
             func.sum(Order.amount).label('total_amount'),
             func.sum(Order.quantity).label('total_quantity'),
             func.avg(Order.amount).label('average_order_value'),
-            func.count(case([(Order.status == 'Tamamlandı', 1)], else_=None)).label('delivered_count'),
-            func.count(case([(Order.status == 'İptal', 1)], else_=None)).label('cancelled_count')
+            func.count(case([(Order.status == 'Delivered', 1)], else_=None)).label('delivered_count'),
+            func.count(case([(Order.status == 'Cancelled', 1)], else_=None)).label('cancelled_count')
         ).filter(
-            Order.order_date.isnot(None),
-            Order.order_date.between(start_date, end_date),
-            Order.status.in_(['Tamamlandı', 'İptal', 'Created'])
+            Order.order_date.between(start_date, end_date)
         ).group_by(
             func.date(Order.order_date)
         ).order_by(
-            func.date(Order.order_date)
+            func.date(Order.order_date).desc()
         ).all()
 
         # Ürün bazlı satış analizi
@@ -46,14 +43,16 @@ def get_sales_stats():
             func.sum(Order.amount).label('total_revenue'),
             func.avg(Order.amount).label('average_price')
         ).join(
-            Product, Order.product_barcode == Product.barcode
+            Product, Order.product_barcode.contains(Product.barcode)
         ).filter(
             Order.order_date.between(start_date, end_date)
         ).group_by(
             Order.product_main_id,
             Product.color,
             Product.size
-        ).all()
+        ).order_by(
+            func.sum(Order.amount).desc()
+        ).limit(50).all()
 
         # İade analizi
         returns_stats = db.session.query(
@@ -62,7 +61,6 @@ def get_sales_stats():
             func.count(distinct(ReturnOrder.order_number)).label('unique_orders'),
             func.coalesce(func.avg(ReturnOrder.refund_amount), 0).label('average_refund')
         ).filter(
-            ReturnOrder.return_date.isnot(None),
             ReturnOrder.return_date.between(start_date, end_date)
         ).group_by(
             ReturnOrder.return_reason
@@ -74,11 +72,12 @@ def get_sales_stats():
             func.count(Degisim.degisim_no).label('exchange_count'),
             func.date(Degisim.degisim_tarihi).label('date')
         ).filter(
-            Degisim.degisim_tarihi.isnot(None),
             Degisim.degisim_tarihi.between(start_date, end_date)
         ).group_by(
             Degisim.degisim_nedeni,
             func.date(Degisim.degisim_tarihi)
+        ).order_by(
+            func.date(Degisim.degisim_tarihi).desc()
         ).all()
 
         return jsonify({
@@ -91,26 +90,27 @@ def get_sales_stats():
                 'average_order_value': round(float(stat.average_order_value or 0), 2),
                 'delivered_count': int(stat.delivered_count or 0),
                 'cancelled_count': int(stat.cancelled_count or 0)
-            } for stat in daily_sales if stat.date],
+            } for stat in daily_sales],
             'product_sales': [{
                 'product_id': stat.product_main_id,
                 'color': stat.color,
                 'size': stat.size,
-                'sale_count': stat.sale_count,
-                'total_revenue': float(stat.total_revenue or 0),
-                'average_price': float(stat.average_price or 0)
+                'sale_count': int(stat.sale_count or 0),
+                'total_revenue': round(float(stat.total_revenue or 0), 2),
+                'average_price': round(float(stat.average_price or 0), 2)
             } for stat in product_sales],
             'returns': [{
                 'reason': stat.return_reason,
-                'count': stat.return_count,
-                'unique_orders': stat.unique_orders,
-                'average_refund': float(stat.average_refund or 0)
+                'count': int(stat.return_count or 0),
+                'unique_orders': int(stat.unique_orders or 0),
+                'average_refund': round(float(stat.average_refund or 0), 2)
             } for stat in returns_stats],
             'exchanges': [{
                 'reason': stat.degisim_nedeni,
-                'count': stat.exchange_count,
-                'date': str(stat.date)
+                'count': int(stat.exchange_count or 0),
+                'date': stat.date.strftime('%Y-%m-%d') if stat.date else None
             } for stat in exchange_stats]
         })
     except Exception as e:
+        print(f"Hata: {str(e)}")
         return jsonify({'success': False, 'error': str(e)})
