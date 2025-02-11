@@ -39,14 +39,14 @@ with app.app_context():
     # Eksik sütunu ekle
     from sqlalchemy import text
     db.session.execute(text('ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_date TIMESTAMP'))
-    
+
     # ProductArchive tablosunu oluştur
     from models import ProductArchive
     from sqlalchemy import inspect
     inspector = inspect(db.engine)
     if not inspector.has_table('product_archive'):
         ProductArchive.__table__.create(db.engine)
-    
+
     db.session.commit()
 
 # Blueprint modüllerini import et
@@ -64,7 +64,7 @@ from processed_orders_service import processed_orders_service_bp
 from iade_islemleri import iade_islemleri, fetch_data_from_api, save_to_database  # iade_islemleri'nden import ettiğimizi varsayıyorum
 from siparis_fisi import siparis_fisi_bp
 from analysis import analysis_bp
-
+from stock_report import stock_report_bp
 
 blueprints = [
     order_service_bp,
@@ -80,7 +80,8 @@ blueprints = [
     processed_orders_service_bp,
     iade_islemleri,
     siparis_fisi_bp,
-    analysis_bp
+    analysis_bp,
+    stock_report_bp
 ]
 
 for bp in blueprints:
