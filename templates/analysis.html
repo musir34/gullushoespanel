@@ -1,0 +1,122 @@
+
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h2>Satış ve Stok Analizi</h2>
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h4>Günlük Satış Grafiği</h4>
+                    <canvas id="salesChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h4>İade Analizi</h4>
+                    <canvas id="returnsChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h4>Değişim Analizi</h4>
+                    <canvas id="exchangesChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h4>Stok Durumu</h4>
+                    <canvas id="stockChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    fetch('/api/sales-stats')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Satış grafiği
+                const salesCtx = document.getElementById('salesChart').getContext('2d');
+                new Chart(salesCtx, {
+                    type: 'line',
+                    data: {
+                        labels: data.daily_sales.map(sale => sale.date),
+                        datasets: [{
+                            label: 'Günlük Satış Tutarı (TL)',
+                            data: data.daily_sales.map(sale => sale.total_amount),
+                            borderColor: 'rgb(75, 192, 192)',
+                            tension: 0.1
+                        }]
+                    }
+                });
+
+                // İade grafiği
+                const returnsCtx = document.getElementById('returnsChart').getContext('2d');
+                new Chart(returnsCtx, {
+                    type: 'pie',
+                    data: {
+                        labels: data.returns.map(ret => ret.reason),
+                        datasets: [{
+                            data: data.returns.map(ret => ret.count),
+                            backgroundColor: [
+                                'rgb(255, 99, 132)',
+                                'rgb(54, 162, 235)',
+                                'rgb(255, 205, 86)'
+                            ]
+                        }]
+                    }
+                });
+
+                // Değişim grafiği
+                const exchangesCtx = document.getElementById('exchangesChart').getContext('2d');
+                new Chart(exchangesCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: data.exchanges.map(ex => ex.reason),
+                        datasets: [{
+                            label: 'Değişim Sayısı',
+                            data: data.exchanges.map(ex => ex.count),
+                            backgroundColor: 'rgb(153, 102, 255)'
+                        }]
+                    }
+                });
+
+                // Stok grafiği
+                const stockCtx = document.getElementById('stockChart').getContext('2d');
+                new Chart(stockCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: data.stock.map(stock => `${stock.product_id} - ${stock.color} - ${stock.size}`),
+                        datasets: [{
+                            label: 'Stok Miktarı',
+                            data: data.stock.map(stock => stock.total_stock),
+                            backgroundColor: 'rgb(75, 192, 192)'
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y'
+                    }
+                });
+            }
+        });
+});
+</script>
+{% endblock %}
