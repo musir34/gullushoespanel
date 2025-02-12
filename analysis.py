@@ -51,23 +51,23 @@ def get_product_sales(start_date: datetime, end_date: datetime):
     try:
         logger.info("Ürün satışları sorgusu başlıyor...")
         product_sales = db.session.query(
-            Product.product_main_id,
-            Product.color,
-            Product.size,
+            Order.product_main_id,
+            Order.product_color.label('color'),
+            Order.product_size.label('size'),
             func.count(Order.id).label('sale_count'),
             func.sum(Order.amount).label('total_revenue'),
-            func.avg(Order.amount).label('average_price')
-        ).join(
-            Product, Order.product_barcode == Product.barcode
+            func.avg(Order.amount).label('average_price'),
+            func.sum(Order.quantity).label('total_quantity')
         ).filter(
             Order.order_date.between(start_date, end_date),
-            Product.product_main_id.isnot(None),
-            Product.color.isnot(None),
-            Product.size.isnot(None)
+            Order.product_main_id.isnot(None),
+            Order.product_color.isnot(None),
+            Order.product_size.isnot(None),
+            Order.status != 'Cancelled'
         ).group_by(
-            Product.product_main_id,
-            Product.color,
-            Product.size
+            Order.product_main_id,
+            Order.product_color,
+            Order.product_size
         ).order_by(
             func.sum(Order.amount).desc()
         ).limit(50).all()
@@ -75,14 +75,15 @@ def get_product_sales(start_date: datetime, end_date: datetime):
         if not product_sales:
             logger.info("Ürün satışı bulunamadı")
             return []
-        else:
-            logger.info(f"Bulunan ürün satışı sayısı: {len(product_sales)}")
-            for sale in product_sales:
-                logger.info(
-                    f"Ürün detayı: ID={sale.product_main_id}, Renk={sale.color}, "
-                    f"Beden={sale.size}, Adet={sale.sale_count}, Gelir={sale.total_revenue}"
-                )
-            return product_sales
+        
+        logger.info(f"Bulunan ürün satışı sayısı: {len(product_sales)}")
+        for sale in product_sales:
+            logger.info(
+                f"Ürün detayı: ID={sale.product_main_id}, Renk={sale.color}, "
+                f"Beden={sale.size}, Adet={sale.sale_count}, Miktar={sale.total_quantity}, "
+                f"Gelir={sale.total_revenue:.2f} TL, Ort. Fiyat={sale.average_price:.2f} TL"
+            )
+        return product_sales
     except Exception as e:
         logger.exception("Ürün satış verisi çekilirken hata oluştu:")
         return []
