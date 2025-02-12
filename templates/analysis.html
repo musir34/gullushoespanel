@@ -121,28 +121,6 @@
         </div>
       </div>
 
-      <!-- Stok Raporu Kartı -->
-      <div class="card mb-4">
-        <div class="card-header bg-info text-white">
-          Stok Durumu
-        </div>
-        <div class="card-body">
-          <div class="table-responsive">
-            <table class="table table-striped" id="stockTable">
-              <thead>
-                <tr>
-                  <th>Ürün ID</th>
-                  <th>Renk</th>
-                  <th>Beden</th>
-                  <th>Toplam Stok</th>
-                </tr>
-              </thead>
-              <tbody></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
       <!-- Ürün Bazlı Satışlar Tablosu -->
       <div class="card">
         <div class="card-header bg-success text-white">
@@ -191,7 +169,6 @@ document.addEventListener('DOMContentLoaded', function() {
         createDailySalesChart(data.daily_sales);
         createReturnsChart(data.returns);
         populateProductTable(data.product_sales);
-        populateStockTable(data.stock_stats);
       }
     })
     .catch(error => console.error('Veri çekme hatası:', error));
@@ -280,22 +257,6 @@ function createReturnsChart(returns) {
         }
       }
     }
-  });
-}
-
-function populateStockTable(stockStats) {
-  const tbody = document.querySelector('#stockTable tbody');
-  tbody.innerHTML = '';
-
-  stockStats.forEach(stock => {
-    const row = document.createElement('tr');
-    row.innerHTML = `
-      <td>${stock.product_id}</td>
-      <td>${stock.color}</td>
-      <td>${stock.size}</td>
-      <td>${stock.total_stock}</td>
-    `;
-    tbody.appendChild(row);
   });
 }
 

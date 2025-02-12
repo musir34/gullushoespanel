@@ -79,26 +79,8 @@ def get_sales_stats():
             func.date(Degisim.degisim_tarihi).desc()
         ).all()
 
-        # Stok raporu verilerini al
-        stock_stats = db.session.query(
-            Product.product_main_id,
-            Product.color,
-            Product.size,
-            func.sum(Product.quantity).label('total_stock')
-        ).group_by(
-            Product.product_main_id,
-            Product.color,
-            Product.size
-        ).all()
-
         return jsonify({
             'success': True,
-            'stock_stats': [{
-                'product_id': stat.product_main_id,
-                'color': stat.color,
-                'size': stat.size,
-                'total_stock': int(stat.total_stock or 0)
-            } for stat in stock_stats],
             'daily_sales': [{
                 'date': stat.date.strftime('%Y-%m-%d') if stat.date else None,
                 'order_count': int(stat.order_count or 0),
