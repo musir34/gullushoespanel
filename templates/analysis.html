@@ -95,7 +95,35 @@
     </nav>
 
     <div class="container-fluid">
-      <h1 class="mb-4">Satış ve İade Analizleri</h1>
+      <div class="row mb-4">
+        <div class="col-lg-8">
+          <h1>Satış ve İade Analizleri</h1>
+        </div>
+        <div class="col-lg-4">
+          <div class="card">
+            <div class="card-body">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="btn-group">
+                  <button type="button" class="btn btn-outline-primary" onclick="setDateFilter('last7')">Son 7 Gün</button>
+                  <button type="button" class="btn btn-outline-primary" onclick="setDateFilter('last30')">Son 30 Gün</button>
+                  <button type="button" class="btn btn-outline-primary" onclick="setDateFilter('thisMonth')">Bu Ay</button>
+                  <button type="button" class="btn btn-outline-primary" onclick="setDateFilter('thisYear')">Bu Yıl</button>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-6">
+                  <label>Başlangıç Tarihi:</label>
+                  <input type="date" id="startDate" class="form-control" onchange="updateCharts()">
+                </div>
+                <div class="col-md-6">
+                  <label>Bitiş Tarihi:</label>
+                  <input type="date" id="endDate" class="form-control" onchange="updateCharts()">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <div class="row">
         <!-- Günlük Satışlar Kartı -->
@@ -200,8 +228,41 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+  setDateFilter('last30'); // Varsayılan olarak son 30 günü göster
+});
+
+function setDateFilter(period) {
+  const today = new Date();
+  let startDate = new Date();
+  
+  switch(period) {
+    case 'last7':
+      startDate.setDate(today.getDate() - 7);
+      break;
+    case 'last30':
+      startDate.setDate(today.getDate() - 30);
+      break;
+    case 'thisMonth':
+      startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+      break;
+    case 'thisYear':
+      startDate = new Date(today.getFullYear(), 0, 1);
+      break;
+  }
+  
+  document.getElementById('startDate').value = startDate.toISOString().split('T')[0];
+  document.getElementById('endDate').value = today.toISOString().split('T')[0];
+  updateCharts();
+}
+
+function updateCharts() {
+  const startDate = document.getElementById('startDate').value;
+  const endDate = document.getElementById('endDate').value;
+  
+  if (!startDate || !endDate) return;
+
   // API'den verileri çekiyoruz
-  fetch('/api/sales-stats')
+  fetch(`/api/sales-stats?start_date=${startDate}&end_date=${endDate}`)
     .then(response => {
       console.log('API yanıt durumu:', response.status);
       return response.json();
