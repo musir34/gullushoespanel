@@ -14,18 +14,8 @@ def sales_analysis():
 def get_sales_stats():
     try:
         print("API isteği başladı")
-        start_date = request.args.get('start_date')
-        end_date = request.args.get('end_date')
-
-        if start_date:
-            start_date = datetime.strptime(start_date, '%Y-%m-%d')
-        else:
-            start_date = datetime.now() - timedelta(days=30)
-
-        if end_date:
-            end_date = datetime.strptime(end_date, '%Y-%m-%d')
-        else:
-            end_date = datetime.now()
+        end_date = datetime.now()
+        start_date = end_date - timedelta(days=90)
         print(f"Tarih aralığı: {start_date} - {end_date}")
 
         # Varsayılan boş veri yapıları
