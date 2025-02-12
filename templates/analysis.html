@@ -202,7 +202,7 @@
       // Aktif sınıfı güncelle
       document.querySelectorAll('.list-group-item').forEach(i => i.classList.remove('active'));
       this.classList.add('active');
-
+      
       // İlgili bölümü göster/gizle
       const section = this.getAttribute('data-section');
       document.querySelectorAll('.card').forEach(card => {
@@ -234,7 +234,7 @@ document.addEventListener('DOMContentLoaded', function() {
 function setDateFilter(period) {
   const today = new Date();
   let startDate = new Date();
-
+  
   switch(period) {
     case 'last7':
       startDate.setDate(today.getDate() - 7);
@@ -249,115 +249,38 @@ function setDateFilter(period) {
       startDate = new Date(today.getFullYear(), 0, 1);
       break;
   }
-
+  
   document.getElementById('startDate').value = startDate.toISOString().split('T')[0];
   document.getElementById('endDate').value = today.toISOString().split('T')[0];
   updateCharts();
 }
 
-// Mevcut grafikleri saklamak için global değişkenler
-let dailySalesChartInstance = null;
-let returnsChartInstance = null;
-let productSalesChartInstance = null;
-
-function destroyCharts() {
-    try {
-        console.log("Mevcut grafikler temizleniyor...");
-
-        const charts = [
-            { instance: window.dailySalesChartInstance, name: 'Günlük satış grafiği' },
-            { instance: window.returnsChartInstance, name: 'İade grafiği' },
-            { instance: window.productSalesChartInstance, name: 'Ürün satış grafiği' }
-        ];
-
-        charts.forEach(chart => {
-            try {
-                if (chart.instance && typeof chart.instance.destroy === 'function') {
-                    chart.instance.destroy();
-                    console.log(`${chart.name} temizlendi`);
-                }
-            } catch (err) {
-                console.error(`${chart.name} temizlenirken hata:`, err);
-            }
-        });
-
-        // Grafik referanslarını sıfırla
-        window.dailySalesChartInstance = null;
-        window.returnsChartInstance = null;
-        window.productSalesChartInstance = null;
-    } catch (err) {
-        console.error("Grafikleri temizlerken hata:", err);
-    }
-}
-
 function updateCharts() {
-    try {
-        const startDate = document.getElementById('startDate').value;
-        const endDate = document.getElementById('endDate').value;
+  const startDate = document.getElementById('startDate').value;
+  const endDate = document.getElementById('endDate').value;
+  
+  if (!startDate || !endDate) return;
 
-        console.log(`Tarih aralığı seçildi: ${startDate} - ${endDate}`);
-        if (!startDate || !endDate) {
-            console.warn("Tarih aralığı eksik!");
-            return;
-        }
-
-        // Grafikleri temizle
-        if (typeof destroyCharts === 'function') {
-            destroyCharts();
-        } else {
-            console.warn("destroyCharts fonksiyonu bulunamadı");
-            if (window.dailySalesChartInstance) window.dailySalesChartInstance.destroy();
-            if (window.returnsChartInstance) window.returnsChartInstance.destroy();
-            if (window.productSalesChartInstance) window.productSalesChartInstance.destroy();
-        }
-
-    // API'den verileri çek
-    console.log("API isteği yapılıyor...");
-    fetch(`/api/sales-stats?start_date=${startDate}&end_date=${endDate}`)
-        .then(response => {
-            console.log('API yanıt durumu:', response.status);
-            if (!response.ok) {
-                throw new Error(`HTTP hata! Durum: ${response.status}`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            console.log('API yanıt verisi:', data);
-            if (data.success) {
-                try {
-                    console.log("Günlük satış verisi:", data.daily_sales);
-                    dailySalesChartInstance = createDailySalesChart(data.daily_sales);
-
-                    console.log("İade verisi:", data.returns);
-                    returnsChartInstance = createReturnsChart(data.returns);
-
-                    console.log("Ürün satış verisi:", data.product_sales_chart);
-                    productSalesChartInstance = createProductSalesChart(data.product_sales_chart);
-
-                    console.log("Tablo güncelleniyor...");
-                    populateProductTable(data.product_sales);
-
-                    console.log("Tüm grafikler başarıyla güncellendi");
-                } catch (err) {
-                    console.error("Grafik oluşturma hatası:", err);
-                }
-            } else {
-                console.error("API başarısız yanıt döndü:", data.error);
-            }
-        })
-        .catch(error => {
-            console.error('Veri çekme hatası:', error);
-            alert('Veri yüklenirken bir hata oluştu. Lütfen tekrar deneyin.');
-        });
-}
+  // API'den verileri çekiyoruz
+  fetch(`/api/sales-stats?start_date=${startDate}&end_date=${endDate}`)
+    .then(response => {
+      console.log('API yanıt durumu:', response.status);
+      return response.json();
+    })
+    .then(data => {
+      console.log('API yanıt verisi:', data);
+      if (data.success) {
+        createDailySalesChart(data.daily_sales);
+        createReturnsChart(data.returns);
+        createProductSalesChart(data.product_sales_chart);
+        populateProductTable(data.product_sales);
+      }
+    })
+    .catch(error => console.error('Veri çekme hatası:', error));
+});
 
 function createDailySalesChart(dailySales) {
-  console.log("Günlük satış grafiği oluşturuluyor...");
   const ctx = document.getElementById('dailySalesChart').getContext('2d');
-  if (!dailySales || !Array.isArray(dailySales)) {
-    console.error("Geçersiz günlük satış verisi:", dailySales);
-    return null;
-  }
   const dates = dailySales.map(sale => sale.date);
   const orderCounts = dailySales.map(sale => sale.order_count);
   const totalAmounts = dailySales.map(sale => sale.total_amount);
@@ -455,97 +378,70 @@ function createReturnsChart(returns) {
 }
 
 function createProductSalesChart(productSalesData) {
-  try {
-    console.log('Gelen ürün satış verisi:', JSON.stringify(productSalesData, null, 2));
+  console.log('Gelen ürün satış verisi:', JSON.stringify(productSalesData, null, 2));
+  
+  if (!productSalesData || !Array.isArray(productSalesData)) {
+    console.error('Geçersiz ürün satış verisi:', productSalesData);
+    console.error('Veri tipi:', typeof productSalesData);
+    console.error('Veri yapısı:', Object.prototype.toString.call(productSalesData));
+    return;
+  }
 
-    if (!productSalesData || !Array.isArray(productSalesData)) {
-      console.error('Geçersiz ürün satış verisi:', productSalesData);
-      return null;
-    }
+  const ctx = document.getElementById('productSalesChart').getContext('2d');
+  const productIds = productSalesData.map(item => item.product_id || 'Bilinmeyen');
+  const saleCounts = productSalesData.map(item => item.sale_count || 0);
+  const totalRevenues = productSalesData.map(item => item.total_revenue || 0);
 
-    const canvas = document.getElementById('productSalesChart');
-    if (!canvas) {
-      console.error('Canvas elementi bulunamadı');
-      return null;
-    }
+  // Gradient tanımları
+  const gradientSales = ctx.createLinearGradient(0, 0, 0, 400);
+  gradientSales.addColorStop(0, 'rgba(54, 162, 235, 0.7)');
+  gradientSales.addColorStop(1, 'rgba(54, 162, 235, 0.3)');
 
-    const ctx = canvas.getContext('2d');
-    if (!ctx) {
-      console.error('Canvas context alınamadı');
-      return null;
-    }
+  const gradientRevenues = ctx.createLinearGradient(0, 0, 0, 400);
+  gradientRevenues.addColorStop(0, 'rgba(75, 192, 192, 0.7)');
+  gradientRevenues.addColorStop(1, 'rgba(75, 192, 192, 0.3)');
 
-    // Verileri hazırla
-    const productIds = productSalesData.map(item => item.product_id?.trim() || 'Bilinmeyen').slice(0, 15);
-    const saleCounts = productSalesData.map(item => parseInt(item.sale_count) || 0).slice(0, 15);
-    const totalRevenues = productSalesData.map(item => parseFloat(item.total_revenue) || 0).slice(0, 15);
-
-    // Önceki grafiği temizle
-    if (window.productChart) {
-      window.productChart.destroy();
-    }
-
-    // Gradient tanımları
-    const gradientSales = ctx.createLinearGradient(0, 0, 0, 400);
-    gradientSales.addColorStop(0, 'rgba(54, 162, 235, 0.7)');
-    gradientSales.addColorStop(1, 'rgba(54, 162, 235, 0.3)');
-
-    const gradientRevenues = ctx.createLinearGradient(0, 0, 0, 400);
-    gradientRevenues.addColorStop(0, 'rgba(75, 192, 192, 0.7)');
-    gradientRevenues.addColorStop(1, 'rgba(75, 192, 192, 0.3)');
-
-    window.productChart = new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: productIds,
-        datasets: [{
-          label: 'Satış Adedi',
-          data: saleCounts,
-          backgroundColor: gradientSales,
-          borderColor: 'rgba(54, 162, 235, 1)',
-          borderWidth: 1,
-          yAxisID: 'y'
-        },
-        {
-          label: 'Toplam Gelir',
-          data: totalRevenues,
-          backgroundColor: gradientRevenues,
-          borderColor: 'rgba(75, 192, 192, 1)',
-          borderWidth: 1,
-          yAxisID: 'y1'
-        }]
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: productIds,
+      datasets: [{
+        label: 'Satış Adedi',
+        data: saleCounts,
+        backgroundColor: gradientSales,
+        borderColor: 'rgba(54, 162, 235, 1)',
+        borderWidth: 1,
+        yAxisID: 'y'
       },
-      options: {
-        responsive: true,
-        plugins: {
-          legend: { position: 'bottom' },
-          tooltip: { mode: 'index', intersect: false }
+      {
+        label: 'Toplam Gelir',
+        data: totalRevenues,
+        backgroundColor: gradientRevenues,
+        borderColor: 'rgba(75, 192, 192, 1)',
+        borderWidth: 1,
+        yAxisID: 'y1'
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position: 'bottom' },
+        tooltip: { mode: 'index', intersect: false }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          position: 'left',
+          grid: { color: 'rgba(0,0,0,0.1)' }
         },
-        scales: {
-          y: {
-            beginAtZero: true,
-            position: 'left',
-            grid: { color: 'rgba(0,0,0,0.1)' }
-          },
-          y1: {
-            beginAtZero: true,
-            position: 'right',
-            grid: { drawOnChartArea: false }
-          }
+        y1: {
+          beginAtZero: true,
+          position: 'right',
+          grid: { drawOnChartArea: false }
         }
       }
-    });
-    
-    return window.productChart;
-
-  } catch (error) {
-    console.error('Grafik oluşturma hatası:', error);
-    alert('Grafik oluşturulurken bir hata oluştu: ' + error.message);
-    return null;
-  }
-    alert('Grafik oluşturulurken bir hata oluştu: ' + error.message);
-    return null;
-  }
+    }
+  });
 }
 
 function populateProductTable(productSales) {
