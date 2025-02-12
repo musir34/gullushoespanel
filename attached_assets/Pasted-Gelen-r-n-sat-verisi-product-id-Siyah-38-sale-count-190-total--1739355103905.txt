@@ -1,0 +1,203 @@
+Gelen ürün satış verisi: [
+  {
+    "product_id": " Siyah 38",
+    "sale_count": 190,
+    "total_revenue": 179923.25
+  },
+  {
+    "product_id": " Siyah 37",
+    "sale_count": 161,
+    "total_revenue": 154478.96
+  },
+  {
+    "product_id": " Siyah 39",
+    "sale_count": 135,
+    "total_revenue": 127519.3
+  },
+  {
+    "product_id": " Siyah 36",
+    "sale_count": 118,
+    "total_revenue": 113087.63
+  },
+  {
+    "product_id": " Siyah-Süet 38",
+    "sale_count": 74,
+    "total_revenue": 65095.74
+  },
+  {
+    "product_id": " Süet Vegan Deri 35",
+    "sale_count": 68,
+    "total_revenue": 60519.19
+  },
+  {
+    "product_id": " Siyah 35",
+    "sale_count": 65,
+    "total_revenue": 59594.13
+  },
+  {
+    "product_id": " Siyah 40",
+    "sale_count": 57,
+    "total_revenue": 55700.28
+  },
+  {
+    "product_id": ",  Siyah 38",
+    "sale_count": 25,
+    "total_revenue": 52353.5
+  },
+  {
+    "product_id": " Vegan Deri 40",
+    "sale_count": 53,
+    "total_revenue": 45837.53
+  },
+  {
+    "product_id": ",  Siyah 37",
+    "sale_count": 21,
+    "total_revenue": 40145.36
+  },
+  {
+    "product_id": " Siyah 41",
+    "sale_count": 39,
+    "total_revenue": 37736.6
+  },
+  {
+    "product_id": " Bej 37",
+    "sale_count": 41,
+    "total_revenue": 37176.65
+  },
+  {
+    "product_id": " Açık Yeşil 38",
+    "sale_count": 39,
+    "total_revenue": 36862.73
+  },
+  {
+    "product_id": " Açık Yeşil 37",
+    "sale_count": 38,
+    "total_revenue": 35798.4
+  },
+  {
+    "product_id": " Bej 38",
+    "sale_count": 40,
+    "total_revenue": 35435.34
+  },
+  {
+    "product_id": " Beyaz 38",
+    "sale_count": 36,
+    "total_revenue": 33865.69
+  },
+  {
+    "product_id": ",  Siyah 39",
+    "sale_count": 15,
+    "total_revenue": 31578.73
+  },
+  {
+    "product_id": " Kırmızı 38",
+    "sale_count": 33,
+    "total_revenue": 30475.53
+  },
+  {
+    "product_id": " Beyaz 39",
+    "sale_count": 31,
+    "total_revenue": 28586.93
+  },
+  {
+    "product_id": " Kırmızı 37",
+    "sale_count": 32,
+    "total_revenue": 28011.88
+  },
+  {
+    "product_id": " Siyah-Süet 39",
+    "sale_count": 30,
+    "total_revenue": 27328.27
+  },
+  {
+    "product_id": " Beyaz 37",
+    "sale_count": 26,
+    "total_revenue": 25743.16
+  },
+  {
+    "product_id": " Bej 39",
+    "sale_count": 28,
+    "total_revenue": 25590.55
+  },
+  {
+    "product_id": " Siyah Bantlı Süet 37",
+    "sale_count": 25,
+    "total_revenue": 24894.6
+  },
+  {
+    "product_id": " Açık Yeşil 36",
+    "sale_count": 25,
+    "total_revenue": 24708.04
+  },
+  {
+    "product_id": " Siyah-Süet 37",
+    "sale_count": 29,
+    "total_revenue": 24146.39
+  },
+  {
+    "product_id": " Gümüş 39",
+    "sale_count": 27,
+    "total_revenue": 23648.19
+  },
+  {
+    "product_id": " Kırmızı 39",
+    "sale_count": 25,
+    "total_revenue": 22710.98
+  },
+  {
+    "product_id": " Siyah-Süet 36",
+    "sale_count": 25,
+    "total_revenue": 20178.45
+  },
+  {
+    "product_id": " Ten Rengi 38",
+    "sale_count": 20,
+    "total_revenue": 18833.04
+  },
+  {
+    "product_id": ",  Kırmızı 38",
+    "sale_count": 10,
+    "total_revenue": 18119.1
+  },
+  {
+    "product_id": " Açık Mavi 38",
+    "sale_count": 18,
+    "total_revenue": 17990.11
+  },
+  {
+    "product_id": ",  Siyah 36",
+    "sale_count": 9,
+    "total_revenue": 17676.22
+  },
+  {
+    "product_id": " Bej 36",
+    "sale_count": 20,
+    "total_revenue": 17540
+  },
+  {
+    "product_id": ",  Siyah 41",
+    "sale_count": 9,
+    "total_revenue": 17216.54
+  },
+  {
+    "product_id": ",  Bej 39",
+    "sale_count": 9,
+    "total_revenue": 16862.1
+  },
+  {
+    "product_id":…
+API yanıt durumu: 200
+API yanıt verisi: 
+Object {daily_sales: Array(7), exchanges: Array(13), product_sales: Array(50), product_sales_chart: Array(50), returns: Array(1), …}
+Veri çekme hatası: 
+Error {}
+message: "Canvas is already in use. Chart with ID '0' must be destroyed before the canvas with ID 'dailySalesChart' can be reused."
+stack: "Error: Canvas is already in use. Chart with ID '0' must be destroyed before the canvas with ID 'dailySalesChart' can be reused.↵ at new An (https://cdn.jsdelivr.net/npm/chart.js:19:89869)↵ at createDailySalesChart (https://5e5f38ec-4896-41e0-b881-d14c826de9d5-00-jybg4zhves9f.sisko.replit.dev/analysis:317:3)↵ at https://5e5f38ec-4896-41e0-b881-d14c826de9d5-00-jybg4zhves9f.sisko.replit.dev/analysis:293:9"
+get stack: ƒ ()
+set stack: ƒ ()
+[[Prototype]]: Object
+
+at t.value (https://5e5f38ec-4896-41e0-b881-d14c826de9d5-00-jybg4zhves9f.sisko.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://5e5f38ec-4896-41e0-b881-d14c826de9d5-00-jybg4zhves9f.sisko.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://5e5f38ec-4896-41e0-b881-d14c826de9d5-00-jybg4zhves9f.sisko.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://5e5f38ec-4896-41e0-b881-d14c826de9d5-00-jybg4zhves9f.sisko.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400
