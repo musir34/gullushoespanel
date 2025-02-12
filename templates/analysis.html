@@ -65,7 +65,7 @@
 </style>
 
 <div id="wrapper">
-  <!-- Sidebar -->
+  <!-- Sidebar (Stok Raporu butonu kaldırıldı) -->
   <div id="sidebar-wrapper">
     <div class="sidebar-heading">Analiz Paneli</div>
     <div class="list-group list-group-flush">
@@ -95,6 +95,12 @@
 
     <div class="container-fluid">
       <h1 class="mb-4">Satış ve İade Analizleri</h1>
+      <!-- Stok Raporu Butonu Analiz Paneline Eklendi -->
+      <div class="mb-4">
+        <button class="btn btn-warning" onclick="window.location.href='/stock-report'">
+          <i class="fas fa-boxes"></i> Stok Raporu
+        </button>
+      </div>
 
       <div class="row">
         <!-- Günlük Satışlar Kartı -->
@@ -112,7 +118,7 @@
         <div class="col-lg-6">
           <div class="card">
             <div class="card-header bg-danger text-white">
-              İade Nedenleri (Radar Analizi)
+              İade Nedenleri (Güncel Veri Okuma Grafiği)
             </div>
             <div class="card-body">
               <canvas id="returnsChart"></canvas>
@@ -121,10 +127,20 @@
         </div>
       </div>
 
-      <!-- Ürün Bazlı Satışlar Tablosu -->
+      <!-- Ürün Bazlı Satış Analizi Kartı -->
       <div class="card">
         <div class="card-header bg-success text-white">
-          Ürün Bazlı Satışlar
+          Ürün Bazlı Satış Analizi
+        </div>
+        <div class="card-body">
+          <canvas id="productSalesChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Ürün Bazlı Satışlar Tablosu -->
+      <div class="card">
+        <div class="card-header bg-info text-white">
+          Ürün Bazlı Satışlar Tablosu
         </div>
         <div class="card-body">
           <div class="table-responsive">
@@ -168,6 +184,7 @@ document.addEventListener('DOMContentLoaded', function() {
       if (data.success) {
         createDailySalesChart(data.daily_sales);
         createReturnsChart(data.returns);
+        createProductSalesChart(data.product_sales_chart);
         populateProductTable(data.product_sales);
       }
     })
@@ -180,6 +197,15 @@ function createDailySalesChart(dailySales) {
   const orderCounts = dailySales.map(sale => sale.order_count);
   const totalAmounts = dailySales.map(sale => sale.total_amount);
 
+  // Gradient tanımları
+  const gradientOrders = ctx.createLinearGradient(0, 0, 0, 400);
+  gradientOrders.addColorStop(0, 'rgba(0, 123, 255, 0.7)');
+  gradientOrders.addColorStop(1, 'rgba(0, 123, 255, 0.3)');
+
+  const gradientAmounts = ctx.createLinearGradient(0, 0, 0, 400);
+  gradientAmounts.addColorStop(0, 'rgba(255, 193, 7, 0.7)');
+  gradientAmounts.addColorStop(1, 'rgba(255, 193, 7, 0.3)');
+
   new Chart(ctx, {
     type: 'line',
     data: {
@@ -187,37 +213,38 @@ function createDailySalesChart(dailySales) {
       datasets: [{
         label: 'Sipariş Sayısı',
         data: orderCounts,
-        borderColor: 'rgba(255, 255, 255, 0.9)',
-        backgroundColor: 'rgba(0, 123, 255, 0.5)',
+        borderColor: 'rgba(0, 123, 255, 1)',
+        backgroundColor: gradientOrders,
         fill: true,
-        tension: 0.3
+        tension: 0.3,
+        yAxisID: 'y'
       },
       {
         label: 'Toplam Tutar (TL)',
         data: totalAmounts,
-        borderColor: 'rgba(255, 193, 7, 0.9)',
-        backgroundColor: 'rgba(255, 193, 7, 0.5)',
+        borderColor: 'rgba(255, 193, 7, 1)',
+        backgroundColor: gradientAmounts,
         fill: true,
-        tension: 0.3
+        tension: 0.3,
+        yAxisID: 'y1'
       }]
     },
     options: {
       responsive: true,
       plugins: {
-        legend: {
-          position: 'bottom'
-        },
-        tooltip: {
-          mode: 'index',
-          intersect: false
-        }
+        legend: { position: 'bottom' },
+        tooltip: { mode: 'index', intersect: false }
       },
       scales: {
         y: {
           beginAtZero: true,
-          grid: {
-            color: 'rgba(0,0,0,0.1)'
-          }
+          position: 'left',
+          grid: { color: 'rgba(0,0,0,0.1)' }
+        },
+        y1: {
+          beginAtZero: true,
+          position: 'right',
+          grid: { drawOnChartArea: false }
         }
       }
     }
@@ -229,31 +256,91 @@ function createReturnsChart(returns) {
   const reasons = returns.map(r => r.reason);
   const counts = returns.map(r => r.count);
 
+  // Gradient tanımı
+  const gradientReturns = ctx.createLinearGradient(0, 0, 0, 400);
+  gradientReturns.addColorStop(0, 'rgba(220, 53, 69, 0.7)');
+  gradientReturns.addColorStop(1, 'rgba(220, 53, 69, 0.3)');
+
   new Chart(ctx, {
-    type: 'radar',
+    type: 'bar', // Güncel veri okuma tipi olarak bar grafiği
     data: {
       labels: reasons,
       datasets: [{
         label: 'İade Sayısı',
         data: counts,
-        backgroundColor: 'rgba(220, 53, 69, 0.3)',
+        backgroundColor: gradientReturns,
         borderColor: 'rgba(220, 53, 69, 1)',
-        pointBackgroundColor: 'rgba(220, 53, 69, 1)'
+        borderWidth: 1
       }]
     },
     options: {
       responsive: true,
-      scales: {
-        r: {
-          beginAtZero: true,
-          grid: {
-            color: 'rgba(0,0,0,0.1)'
-          }
-        }
-      },
       plugins: {
-        legend: {
-          position: 'bottom'
+        legend: { position: 'bottom' },
+        tooltip: { mode: 'index', intersect: false }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          grid: { color: 'rgba(0,0,0,0.1)' }
+        }
+      }
+    }
+  });
+}
+
+function createProductSalesChart(productSalesData) {
+  const ctx = document.getElementById('productSalesChart').getContext('2d');
+  const productIds = productSalesData.map(item => item.product_id);
+  const saleCounts = productSalesData.map(item => item.sale_count);
+  const totalRevenues = productSalesData.map(item => item.total_revenue);
+
+  // Gradient tanımları
+  const gradientSales = ctx.createLinearGradient(0, 0, 0, 400);
+  gradientSales.addColorStop(0, 'rgba(54, 162, 235, 0.7)');
+  gradientSales.addColorStop(1, 'rgba(54, 162, 235, 0.3)');
+
+  const gradientRevenues = ctx.createLinearGradient(0, 0, 0, 400);
+  gradientRevenues.addColorStop(0, 'rgba(75, 192, 192, 0.7)');
+  gradientRevenues.addColorStop(1, 'rgba(75, 192, 192, 0.3)');
+
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: productIds,
+      datasets: [{
+        label: 'Satış Adedi',
+        data: saleCounts,
+        backgroundColor: gradientSales,
+        borderColor: 'rgba(54, 162, 235, 1)',
+        borderWidth: 1,
+        yAxisID: 'y'
+      },
+      {
+        label: 'Toplam Gelir',
+        data: totalRevenues,
+        backgroundColor: gradientRevenues,
+        borderColor: 'rgba(75, 192, 192, 1)',
+        borderWidth: 1,
+        yAxisID: 'y1'
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position: 'bottom' },
+        tooltip: { mode: 'index', intersect: false }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          position: 'left',
+          grid: { color: 'rgba(0,0,0,0.1)' }
+        },
+        y1: {
+          beginAtZero: true,
+          position: 'right',
+          grid: { drawOnChartArea: false }
         }
       }
     }
