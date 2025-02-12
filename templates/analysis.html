@@ -10,6 +10,8 @@
       <i class="bi bi-bar-chart-fill me-2"></i> Analiz Paneli
     </div>
     <div class="list-group list-group-flush">
+      <!-- Dashboard, Sales, Returns, Products, Stock sekmeleri -->
+      <!-- data-section değerleri, sadece göster/gizle yapılacak kısımlara ait -->
       <a href="#" class="list-group-item list-group-item-action bg-dark text-white active" data-section="dashboard">
         <i class="bi bi-speedometer2 me-2"></i> Dashboard
       </a>
@@ -31,15 +33,12 @@
 
   <!-- Sayfa İçeriği -->
   <div id="page-content-wrapper" class="w-100">
-
     <!-- Üst Navbar -->
     <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom py-3">
       <div class="container-fluid">
-        <!-- Eğer menüyü tamamen sabit bırakacaksanız, bu butonu kaldırabilirsiniz: -->
         <button class="btn btn-primary" id="menu-toggle">
           <i class="bi bi-list"></i>
         </button>
-
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent">
           <span class="navbar-toggler-icon"></span>
         </button>
@@ -62,7 +61,8 @@
       <!-- Başlık -->
       <h1 class="mb-4">Satış ve İade Analizleri</h1>
 
-      <!-- Özet Kartlar ve Filtre (Her zaman görünsün, data-section kaldırıldı) -->
+      <!-- Bilgi Kartları -->
+      <!-- data-section KALDIRILDI (her zaman görünsün) -->
       <div class="row mb-4 g-3">
         <!-- Toplam Sipariş -->
         <div class="col-md-4">
@@ -112,9 +112,11 @@
             </div>
           </div>
         </div>
-      </div> <!-- /Özet Kartlar -->
+      </div>
+      <!-- /Bilgi Kartları -->
 
-      <!-- Filtre Kartı (Her zaman görünsün, data-section kaldırıldı) -->
+      <!-- Filtre Seçenekleri Kartı -->
+      <!-- data-section KALDIRILDI (her zaman görünsün) -->
       <div class="card mb-4 shadow-sm">
         <div class="card-header bg-secondary text-white">
           Filtre Seçenekleri
@@ -146,10 +148,10 @@
           </div>
         </div>
       </div>
-      <!-- /Filtre Kartı -->
+      <!-- /Filtre Seçenekleri Kartı -->
 
       <div class="row">
-        <!-- Günlük Satışlar (sales) -->
+        <!-- Günlük Satışlar Kartı (sales) -->
         <div class="col-lg-6 mb-4">
           <div class="card shadow-sm" data-section="sales">
             <div class="card-header bg-primary text-white">
@@ -160,11 +162,11 @@
             </div>
           </div>
         </div>
-        <!-- İade Nedenleri (returns) -->
+        <!-- İade Nedenleri Kartı (returns) -->
         <div class="col-lg-6 mb-4">
           <div class="card shadow-sm" data-section="returns">
             <div class="card-header bg-danger text-white">
-              İade Nedenleri
+              İade Nedenleri (Yakınlaştırma/Uzaklaştırma destekli)
             </div>
             <div class="card-body">
               <canvas id="returnsChart"></canvas>
@@ -173,7 +175,7 @@
         </div>
       </div>
 
-      <!-- Ürün Bazlı Satış Analizi (products) -->
+      <!-- Ürün Bazlı Satış Analizi Kartı (products) -->
       <div class="card mb-4 shadow-sm" data-section="products">
         <div class="card-header bg-success text-white">
           Ürün Bazlı Satış Analizi
@@ -206,23 +208,27 @@
           </div>
         </div>
       </div>
-      <!-- data-section="stock" gibi ek modüller eklenebilir -->
+
+      <!-- İsterseniz, data-section="stock" şeklinde bir Stok Raporu ekleyebilirsiniz -->
     </div> <!-- container-fluid -->
   </div> <!-- /page-content-wrapper -->
 </div> <!-- /wrapper -->
 
-<!-- CSS -->
+<!-- STYLES -->
 <style>
+  /* GENEL SAYFA YAPISI */
   html, body {
     height: 100%;
     margin: 0;
     font-family: 'Segoe UI', Tahoma, sans-serif;
     background-color: #f8f9fa;
   }
+
   #wrapper {
     min-height: 100vh;
     overflow: hidden;
   }
+
   /* SIDEBAR STİLLERİ */
   #sidebar-wrapper {
     width: 250px;
@@ -244,12 +250,6 @@
     background-color: #495057;
     color: #fff;
   }
-  /* ÖNEMLİ: AŞAĞIDAKİ satırı kaldırarak .toggled durumunda sidebar'ı gizlemeyi engelliyoruz! */
-  /*
-  #wrapper.toggled #sidebar-wrapper {
-    margin-left: -250px; // KALDIRILDI
-  }
-  */
 
   /* SAYFA İÇERİĞİ */
   #page-content-wrapper {
@@ -257,17 +257,25 @@
     transition: all 0.3s ease;
   }
 
+  /* TOGGLE DURUMU */
+  #wrapper.toggled #sidebar-wrapper {
+    margin-left: -250px;
+  }
+
+  /* INFO CARD */
   .info-card .icon {
     font-size: 2rem;
   }
 
+  /* CHART CANVAS */
   canvas {
     width: 100% !important;
     max-height: 400px;
   }
 </style>
 
-<!-- Bootstrap 5 & İkonlar -->
+<!-- SCRIPTS -->
+<!-- Bootstrap 5 & İkonlar (CDN) -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -280,30 +288,44 @@
   let dailySalesChart, returnsChart, productSalesChart;
 
   document.addEventListener("DOMContentLoaded", () => {
-    // Toggler kodunu isterseniz tamamen kaldırın veya yorum yapın:
-    /*
+    // Sidebar aç/kapa
     document.getElementById("menu-toggle").addEventListener("click", function(e) {
       e.preventDefault();
       document.getElementById("wrapper").classList.toggle("toggled");
     });
-    */
-    // Varsayılan verileri yükle
+
+    // Sayfa yüklenince varsayılan verileri getir
     loadSalesStats();
 
-    // Sekme geçişleri (sales, returns, products vb.)
+    // Soldaki menü (sidebar) sekmeleri
     document.querySelectorAll('.list-group-item').forEach(item => {
       item.addEventListener('click', function(e) {
         e.preventDefault();
-        // Sadece aktif sekme stilini ayarla
+        // Aktif sekmeyi güncelle
         document.querySelectorAll('.list-group-item').forEach(i => i.classList.remove('active'));
         this.classList.add('active');
 
-        // İçerikleri gizleme/gösterme işlemini kaldırdık
-        // Tüm kartlar her zaman görünür kalacak
+        // Seçilen sekmeye göre ilgili kartları göster/gizle
+        const selectedSection = this.getAttribute('data-section');
+        const cards = document.querySelectorAll('[data-section]');
+        cards.forEach(card => {
+          if (selectedSection === 'dashboard') {
+            // Dashboard: tüm data-section'lı kartlar görünsün
+            card.style.display = 'block';
+          } else {
+            // Sadece seçilen sekmeye ait olanları göster
+            const cardSection = card.getAttribute('data-section');
+            if (cardSection && cardSection.includes(selectedSection)) {
+              card.style.display = 'block';
+            } else {
+              card.style.display = 'none';
+            }
+          }
+        });
       });
     });
 
-    // Hızlı filtre
+    // Hızlı filtre butonları
     document.querySelectorAll('.quick-filter').forEach(button => {
       button.addEventListener('click', function() {
         document.querySelectorAll('.quick-filter').forEach(btn => btn.classList.remove('active'));
@@ -314,7 +336,7 @@
       });
     });
 
-    // Tarih aralığı filtrelemesi
+    // Detaylı tarih filtrelemesi
     document.getElementById('filterByDate').addEventListener('click', function() {
       const startDate = document.getElementById('startDate').value;
       const endDate = document.getElementById('endDate').value;
@@ -326,6 +348,7 @@
     });
   });
 
+  // API'den veri çekme
   async function loadSalesStats(queryParams = '') {
     try {
       const response = await fetch('/api/sales-stats' + queryParams);
@@ -333,17 +356,17 @@
       console.log('API yanıt verisi:', data);
 
       if (data.success) {
-        // Özet bilgileri doldur
+        // Özet Bilgileri doldur
         document.getElementById('totalOrders').innerText = data.total_orders ?? 0;
         document.getElementById('totalItemsSold').innerText = data.total_items_sold ?? 0;
         document.getElementById('totalRevenue').innerText = (data.total_revenue ?? 0).toLocaleString('tr-TR', { minimumFractionDigits: 2 }) + " TL";
 
-        // Grafikleri oluştur/güncelle
+        // Grafikleri güncelle
         createDailySalesChart(data.daily_sales);
         createReturnsChart(data.returns);
         createProductSalesChart(data.product_sales_chart);
 
-        // Ürün tablosu
+        // Tabloyu güncelle
         populateProductTable(data.product_sales);
       } else {
         console.error('API hatası:', data.error);
@@ -353,10 +376,12 @@
     }
   }
 
+  // Günlük Satış Grafiği
   function createDailySalesChart(dailySales) {
     const ctx = document.getElementById('dailySalesChart').getContext('2d');
     if (dailySalesChart) dailySalesChart.destroy();
 
+    // X ekseni: tarih, Y ekseni: sipariş sayısı vs.
     const dates = dailySales.map(sale => sale.date);
     const orderCounts = dailySales.map(sale => sale.order_count);
     const totalAmounts = dailySales.map(sale => sale.total_amount);
@@ -391,14 +416,15 @@
         plugins: {
           legend: { position: 'bottom' },
           tooltip: { mode: 'index', intersect: false },
+          // Zoom plugin
           zoom: {
             zoom: {
-              wheel: { enabled: true },
-              pinch: { enabled: true },
+              wheel: { enabled: true },   // fare tekerleği ile zoom
+              pinch: { enabled: true },   // dokunma ile pinch zoom
               mode: 'xy',
             },
             pan: {
-              enabled: true,
+              enabled: true,             // sürükle/pan
               mode: 'xy',
             }
           }
@@ -420,6 +446,7 @@
     });
   }
 
+  // İade Grafiği (Bar)
   function createReturnsChart(returns) {
     const ctx = document.getElementById('returnsChart').getContext('2d');
     if (returnsChart) returnsChart.destroy();
@@ -465,6 +492,7 @@
     });
   }
 
+  // Ürün Bazlı Satış Grafiği
   function createProductSalesChart(productSalesData) {
     const ctx = document.getElementById('productSalesChart').getContext('2d');
     if (productSalesChart) productSalesChart.destroy();
@@ -530,6 +558,7 @@
     });
   }
 
+  // Ürün Bazlı Satışlar Tablosu
   function populateProductTable(productSales) {
     const tbody = document.querySelector('#productSalesTable tbody');
     tbody.innerHTML = '';
