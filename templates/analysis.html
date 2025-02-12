@@ -319,10 +319,15 @@ function createReturnsChart(returns) {
 }
 
 function createProductSalesChart(productSalesData) {
+  if (!productSalesData || !Array.isArray(productSalesData)) {
+    console.error('Geçersiz ürün satış verisi:', productSalesData);
+    return;
+  }
+
   const ctx = document.getElementById('productSalesChart').getContext('2d');
-  const productIds = productSalesData.map(item => item.product_id);
-  const saleCounts = productSalesData.map(item => item.sale_count);
-  const totalRevenues = productSalesData.map(item => item.total_revenue);
+  const productIds = productSalesData.map(item => item.product_id || 'Bilinmeyen');
+  const saleCounts = productSalesData.map(item => item.sale_count || 0);
+  const totalRevenues = productSalesData.map(item => item.total_revenue || 0);
 
   // Gradient tanımları
   const gradientSales = ctx.createLinearGradient(0, 0, 0, 400);
