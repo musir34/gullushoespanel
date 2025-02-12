@@ -208,8 +208,12 @@
 document.addEventListener('DOMContentLoaded', function() {
   // API'den verileri çekiyoruz
   fetch('/api/sales-stats')
-    .then(response => response.json())
+    .then(response => {
+      console.log('API yanıt durumu:', response.status);
+      return response.json();
+    })
     .then(data => {
+      console.log('API yanıt verisi:', data);
       if (data.success) {
         createDailySalesChart(data.daily_sales);
         createReturnsChart(data.returns);
@@ -319,8 +323,12 @@ function createReturnsChart(returns) {
 }
 
 function createProductSalesChart(productSalesData) {
+  console.log('Gelen ürün satış verisi:', JSON.stringify(productSalesData, null, 2));
+  
   if (!productSalesData || !Array.isArray(productSalesData)) {
     console.error('Geçersiz ürün satış verisi:', productSalesData);
+    console.error('Veri tipi:', typeof productSalesData);
+    console.error('Veri yapısı:', Object.prototype.toString.call(productSalesData));
     return;
   }
 

@@ -13,8 +13,10 @@ def sales_analysis():
 @analysis_bp.route('/api/sales-stats')
 def get_sales_stats():
     try:
+        print("API isteği başladı")
         end_date = datetime.now()
         start_date = end_date - timedelta(days=90)
+        print(f"Tarih aralığı: {start_date} - {end_date}")
 
         # Varsayılan boş veri yapıları
         default_response = {
@@ -43,6 +45,7 @@ def get_sales_stats():
 
         # Ürün bazlı satış analizi
         try:
+            print("Ürün satışları sorgusu başlıyor...")
             product_sales = db.session.query(
                 Order.product_main_id,
                 Product.color,
@@ -66,9 +69,18 @@ def get_sales_stats():
             ).limit(50).all()
 
             if not product_sales:
+                print("Ürün satışı bulunamadı")
                 product_sales = []
+            else:
+                print(f"Bulunan ürün satışı sayısı: {len(product_sales)}")
+                for sale in product_sales:
+                    print(f"Ürün detayı: ID={sale.product_main_id}, "
+                          f"Renk={sale.color}, Beden={sale.size}, "
+                          f"Adet={sale.sale_count}, Gelir={sale.total_revenue}")
         except Exception as e:
             print(f"Ürün satış verisi çekilirken hata: {e}")
+            import traceback
+            print("Hata detayı:", traceback.format_exc())
             product_sales = []
 
         # İade analizi
