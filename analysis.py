@@ -42,24 +42,34 @@ def get_sales_stats():
         ).all()
 
         # Ürün bazlı satış analizi
-        product_sales = db.session.query(
-            Order.product_main_id,
-            Product.color,
-            Product.size,
-            func.count(Order.id).label('sale_count'),
-            func.sum(Order.amount).label('total_revenue'),
-            func.avg(Order.amount).label('average_price')
-        ).join(
-            Product, Order.product_barcode.contains(Product.barcode)
-        ).filter(
-            Order.order_date.between(start_date, end_date)
-        ).group_by(
-            Order.product_main_id,
-            Product.color,
-            Product.size
-        ).order_by(
-            func.sum(Order.amount).desc()
-        ).limit(50).all()
+        try:
+            product_sales = db.session.query(
+                Order.product_main_id,
+                Product.color,
+                Product.size,
+                func.count(Order.id).label('sale_count'),
+                func.sum(Order.amount).label('total_revenue'),
+                func.avg(Order.amount).label('average_price')
+            ).join(
+                Product, Order.product_barcode.contains(Product.barcode)
+            ).filter(
+                Order.order_date.between(start_date, end_date),
+                Order.product_main_id.isnot(None),
+                Product.color.isnot(None),
+                Product.size.isnot(None)
+            ).group_by(
+                Order.product_main_id,
+                Product.color,
+                Product.size
+            ).order_by(
+                func.sum(Order.amount).desc()
+            ).limit(50).all()
+
+            if not product_sales:
+                product_sales = []
+        except Exception as e:
+            print(f"Ürün satış verisi çekilirken hata: {e}")
+            product_sales = []
 
         # İade analizi
         returns_stats = db.session.query(
