@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, jsonify
+from flask import Blueprint, render_template, jsonify, request
 from models import db, Order, ReturnOrder, Degisim, Product
 from sqlalchemy import func, and_, extract, case, distinct, text
 from datetime import datetime, timedelta
@@ -6,12 +6,22 @@ import json
 
 analysis_bp = Blueprint('analysis', __name__)
 
+# Varsayılan yanıt yapısı
+default_response = {
+    'daily_sales': [],
+    'product_sales': [],
+    'product_sales_chart': [],
+    'returns': [],
+    'exchanges': []
+}
+
 @analysis_bp.route('/analysis')
 def sales_analysis():
     return render_template('analysis.html')
 
 @analysis_bp.route('/api/sales-stats')
 def get_sales_stats():
+    global default_response
     try:
         print("API isteği başladı")
         start_date = request.args.get('start_date')
