@@ -255,32 +255,87 @@ function setDateFilter(period) {
   updateCharts();
 }
 
-function updateCharts() {
-  const startDate = document.getElementById('startDate').value;
-  const endDate = document.getElementById('endDate').value;
-  
-  if (!startDate || !endDate) return;
+// Mevcut grafikleri saklamak için global değişkenler
+let dailySalesChartInstance = null;
+let returnsChartInstance = null;
+let productSalesChartInstance = null;
 
-  // API'den verileri çekiyoruz
-  fetch(`/api/sales-stats?start_date=${startDate}&end_date=${endDate}`)
-    .then(response => {
-      console.log('API yanıt durumu:', response.status);
-      return response.json();
-    })
-    .then(data => {
-      console.log('API yanıt verisi:', data);
-      if (data.success) {
-        createDailySalesChart(data.daily_sales);
-        createReturnsChart(data.returns);
-        createProductSalesChart(data.product_sales_chart);
-        populateProductTable(data.product_sales);
-      }
-    })
-    .catch(error => console.error('Veri çekme hatası:', error));
+function destroyCharts() {
+    console.log("Mevcut grafikler temizleniyor...");
+    if (dailySalesChartInstance) {
+        dailySalesChartInstance.destroy();
+        console.log("Günlük satış grafiği temizlendi");
+    }
+    if (returnsChartInstance) {
+        returnsChartInstance.destroy();
+        console.log("İade grafiği temizlendi");
+    }
+    if (productSalesChartInstance) {
+        productSalesChartInstance.destroy();
+        console.log("Ürün satış grafiği temizlendi");
+    }
+}
+
+function updateCharts() {
+    const startDate = document.getElementById('startDate').value;
+    const endDate = document.getElementById('endDate').value;
+    
+    console.log(`Tarih aralığı seçildi: ${startDate} - ${endDate}`);
+    if (!startDate || !endDate) {
+        console.warn("Tarih aralığı eksik!");
+        return;
+    }
+
+    // Mevcut grafikleri temizle
+    destroyCharts();
+
+    // API'den verileri çek
+    console.log("API isteği yapılıyor...");
+    fetch(`/api/sales-stats?start_date=${startDate}&end_date=${endDate}`)
+        .then(response => {
+            console.log('API yanıt durumu:', response.status);
+            if (!response.ok) {
+                throw new Error(`HTTP hata! Durum: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('API yanıt verisi:', data);
+            if (data.success) {
+                try {
+                    console.log("Günlük satış verisi:", data.daily_sales);
+                    dailySalesChartInstance = createDailySalesChart(data.daily_sales);
+                    
+                    console.log("İade verisi:", data.returns);
+                    returnsChartInstance = createReturnsChart(data.returns);
+                    
+                    console.log("Ürün satış verisi:", data.product_sales_chart);
+                    productSalesChartInstance = createProductSalesChart(data.product_sales_chart);
+                    
+                    console.log("Tablo güncelleniyor...");
+                    populateProductTable(data.product_sales);
+                    
+                    console.log("Tüm grafikler başarıyla güncellendi");
+                } catch (err) {
+                    console.error("Grafik oluşturma hatası:", err);
+                }
+            } else {
+                console.error("API başarısız yanıt döndü:", data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Veri çekme hatası:', error);
+            alert('Veri yüklenirken bir hata oluştu. Lütfen tekrar deneyin.');
+        });
 }
 
 function createDailySalesChart(dailySales) {
+  console.log("Günlük satış grafiği oluşturuluyor...");
   const ctx = document.getElementById('dailySalesChart').getContext('2d');
+  if (!dailySales || !Array.isArray(dailySales)) {
+    console.error("Geçersiz günlük satış verisi:", dailySales);
+    return null;
+  }
   const dates = dailySales.map(sale => sale.date);
   const orderCounts = dailySales.map(sale => sale.order_count);
   const totalAmounts = dailySales.map(sale => sale.total_amount);
