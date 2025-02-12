@@ -1,40 +1,130 @@
-
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container mt-4">
-  <h2>Satış ve İade Analizleri</h2>
-  
-  <div class="row mt-4">
-    <!-- Günlük Satış İstatistikleri -->
-    <div class="col-md-6 mb-4">
-      <div class="card">
-        <div class="card-header bg-primary text-white">
-          <h5 class="mb-0">Günlük Satış İstatistikleri</h5>
+<!-- Dashboard Arayüzü için Ek CSS -->
+<style>
+  /* Genel Layout */
+  #wrapper {
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+  }
+  /* Sidebar Stilleri */
+  #sidebar-wrapper {
+    min-width: 250px;
+    max-width: 250px;
+    background: #343a40;
+    color: #fff;
+    transition: all 0.3s;
+  }
+  #sidebar-wrapper .sidebar-heading {
+    padding: 1.5rem 1rem;
+    font-size: 1.2rem;
+    background: #23272b;
+  }
+  #sidebar-wrapper .list-group-item {
+    background: #343a40;
+    border: none;
+    color: #adb5bd;
+  }
+  #sidebar-wrapper .list-group-item:hover {
+    background: #495057;
+    color: #fff;
+  }
+  /* Sayfa İçerik Stilleri */
+  #page-content-wrapper {
+    width: 100%;
+    overflow-y: auto;
+    padding: 20px;
+    background: #f8f9fa;
+  }
+  /* Navbar Düzenlemesi */
+  .navbar {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  /* Kart Stilleri */
+  .card {
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+    margin-bottom: 20px;
+  }
+  .card-header {
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+  }
+  /* Responsive Canvas Ayarı */
+  canvas {
+    width: 100% !important;
+    max-height: 400px;
+  }
+  /* Sidebar Toggle Durumu */
+  #wrapper.toggled #sidebar-wrapper {
+    margin-left: -250px;
+  }
+</style>
+
+<div id="wrapper">
+  <!-- Sidebar -->
+  <div id="sidebar-wrapper">
+    <div class="sidebar-heading">Analiz Paneli</div>
+    <div class="list-group list-group-flush">
+      <a href="#" class="list-group-item list-group-item-action">Dashboard</a>
+      <a href="#" class="list-group-item list-group-item-action">Satışlar</a>
+      <a href="#" class="list-group-item list-group-item-action">İadeler</a>
+      <a href="#" class="list-group-item list-group-item-action">Ürün Analizleri</a>
+    </div>
+  </div>
+
+  <!-- Sayfa İçeriği -->
+  <div id="page-content-wrapper">
+    <!-- Üst Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-light mb-3">
+      <button class="btn btn-primary" id="menu-toggle">Menüyü Göster/Gizle</button>
+      <div class="collapse navbar-collapse">
+        <ul class="navbar-nav ml-auto mt-2 mt-lg-0">
+          <li class="nav-item active">
+            <a class="nav-link" href="#">Ana Sayfa</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#">Ayarlar</a>
+          </li>
+        </ul>
+      </div>
+    </nav>
+
+    <div class="container-fluid">
+      <h1 class="mb-4">Satış ve İade Analizleri</h1>
+
+      <div class="row">
+        <!-- Günlük Satışlar Kartı -->
+        <div class="col-lg-6">
+          <div class="card">
+            <div class="card-header bg-primary text-white">
+              Günlük Satışlar
+            </div>
+            <div class="card-body">
+              <canvas id="dailySalesChart"></canvas>
+            </div>
+          </div>
         </div>
-        <div class="card-body">
-          <canvas id="dailySalesChart"></canvas>
+        <!-- İade Nedenleri Kartı -->
+        <div class="col-lg-6">
+          <div class="card">
+            <div class="card-header bg-danger text-white">
+              İade Nedenleri (Radar Analizi)
+            </div>
+            <div class="card-body">
+              <canvas id="returnsChart"></canvas>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- İade Nedenleri -->
-    <div class="col-md-6 mb-4">
-      <div class="card">
-        <div class="card-header bg-warning">
-          <h5 class="mb-0">İade Nedenleri</h5>
-        </div>
-        <div class="card-body">
-          <canvas id="returnsChart"></canvas>
-        </div>
-      </div>
-    </div>
-
-    <!-- Ürün Bazlı Satışlar -->
-    <div class="col-md-12 mb-4">
+      <!-- Ürün Bazlı Satışlar Tablosu -->
       <div class="card">
         <div class="card-header bg-success text-white">
-          <h5 class="mb-0">Ürün Bazlı Satışlar</h5>
+          Ürün Bazlı Satışlar
         </div>
         <div class="card-body">
           <div class="table-responsive">
@@ -54,14 +144,24 @@
           </div>
         </div>
       </div>
-    </div>
-  </div>
-</div>
 
+    </div> <!-- container-fluid -->
+  </div> <!-- page-content-wrapper -->
+</div> <!-- wrapper -->
+
+<!-- Sidebar Toggle Script -->
+<script>
+  document.getElementById("menu-toggle").addEventListener("click", function(e) {
+    e.preventDefault();
+    document.getElementById("wrapper").classList.toggle("toggled");
+  });
+</script>
+
+<!-- Chart.js Kütüphanesi -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-  // Verileri yükle
+  // API'den verileri çekiyoruz
   fetch('/api/sales-stats')
     .then(response => response.json())
     .then(data => {
@@ -71,7 +171,7 @@ document.addEventListener('DOMContentLoaded', function() {
         populateProductTable(data.product_sales);
       }
     })
-    .catch(error => console.error('Veri yükleme hatası:', error));
+    .catch(error => console.error('Veri çekme hatası:', error));
 });
 
 function createDailySalesChart(dailySales) {
@@ -87,23 +187,37 @@ function createDailySalesChart(dailySales) {
       datasets: [{
         label: 'Sipariş Sayısı',
         data: orderCounts,
-        borderColor: 'rgb(75, 192, 192)',
-        tension: 0.1
-      }, {
+        borderColor: 'rgba(255, 255, 255, 0.9)',
+        backgroundColor: 'rgba(0, 123, 255, 0.5)',
+        fill: true,
+        tension: 0.3
+      },
+      {
         label: 'Toplam Tutar (TL)',
         data: totalAmounts,
-        borderColor: 'rgb(255, 99, 132)',
-        tension: 0.1
+        borderColor: 'rgba(255, 193, 7, 0.9)',
+        backgroundColor: 'rgba(255, 193, 7, 0.5)',
+        fill: true,
+        tension: 0.3
       }]
     },
     options: {
       responsive: true,
-      interaction: {
-        intersect: false,
+      plugins: {
+        legend: {
+          position: 'bottom'
+        },
+        tooltip: {
+          mode: 'index',
+          intersect: false
+        }
       },
       scales: {
         y: {
-          beginAtZero: true
+          beginAtZero: true,
+          grid: {
+            color: 'rgba(0,0,0,0.1)'
+          }
         }
       }
     }
@@ -116,25 +230,30 @@ function createReturnsChart(returns) {
   const counts = returns.map(r => r.count);
 
   new Chart(ctx, {
-    type: 'pie',
+    type: 'radar',
     data: {
       labels: reasons,
       datasets: [{
+        label: 'İade Sayısı',
         data: counts,
-        backgroundColor: [
-          'rgb(255, 99, 132)',
-          'rgb(54, 162, 235)',
-          'rgb(255, 206, 86)',
-          'rgb(75, 192, 192)',
-          'rgb(153, 102, 255)'
-        ]
+        backgroundColor: 'rgba(220, 53, 69, 0.3)',
+        borderColor: 'rgba(220, 53, 69, 1)',
+        pointBackgroundColor: 'rgba(220, 53, 69, 1)'
       }]
     },
     options: {
       responsive: true,
+      scales: {
+        r: {
+          beginAtZero: true,
+          grid: {
+            color: 'rgba(0,0,0,0.1)'
+          }
+        }
+      },
       plugins: {
         legend: {
-          position: 'right'
+          position: 'bottom'
         }
       }
     }
@@ -144,7 +263,7 @@ function createReturnsChart(returns) {
 function populateProductTable(productSales) {
   const tbody = document.querySelector('#productSalesTable tbody');
   tbody.innerHTML = '';
-  
+
   productSales.forEach(product => {
     const row = document.createElement('tr');
     row.innerHTML = `
