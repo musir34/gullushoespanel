@@ -51,7 +51,7 @@ def get_product_sales(start_date: datetime, end_date: datetime):
     try:
         logger.info("Ürün satışları sorgusu başlıyor...")
         product_sales = db.session.query(
-            Order.product_main_id,
+            Product.product_main_id,
             Order.product_color.label('color'),
             Order.product_size.label('size'),
             func.count(Order.id).label('sale_count'),
