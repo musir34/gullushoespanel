@@ -480,57 +480,58 @@ function createProductSalesChart(productSalesData) {
     const saleCounts = productSalesData.map(item => parseInt(item.sale_count) || 0).slice(0, 15);
     const totalRevenues = productSalesData.map(item => parseFloat(item.total_revenue) || 0).slice(0, 15);
 
-  // Gradient tanımları
-  const gradientSales = ctx.createLinearGradient(0, 0, 0, 400);
-  gradientSales.addColorStop(0, 'rgba(54, 162, 235, 0.7)');
-  gradientSales.addColorStop(1, 'rgba(54, 162, 235, 0.3)');
+    // Gradient tanımları
+    const gradientSales = ctx.createLinearGradient(0, 0, 0, 400);
+    gradientSales.addColorStop(0, 'rgba(54, 162, 235, 0.7)');
+    gradientSales.addColorStop(1, 'rgba(54, 162, 235, 0.3)');
 
-  const gradientRevenues = ctx.createLinearGradient(0, 0, 0, 400);
-  gradientRevenues.addColorStop(0, 'rgba(75, 192, 192, 0.7)');
-  gradientRevenues.addColorStop(1, 'rgba(75, 192, 192, 0.3)');
+    const gradientRevenues = ctx.createLinearGradient(0, 0, 0, 400);
+    gradientRevenues.addColorStop(0, 'rgba(75, 192, 192, 0.7)');
+    gradientRevenues.addColorStop(1, 'rgba(75, 192, 192, 0.3)');
 
-  new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: productIds,
-      datasets: [{
-        label: 'Satış Adedi',
-        data: saleCounts,
-        backgroundColor: gradientSales,
-        borderColor: 'rgba(54, 162, 235, 1)',
-        borderWidth: 1,
-        yAxisID: 'y'
-      },
-      {
-        label: 'Toplam Gelir',
-        data: totalRevenues,
-        backgroundColor: gradientRevenues,
-        borderColor: 'rgba(75, 192, 192, 1)',
-        borderWidth: 1,
-        yAxisID: 'y1'
-      }]
-    },
-    options: {
-      responsive: true,
-      plugins: {
-        legend: { position: 'bottom' },
-        tooltip: { mode: 'index', intersect: false }
-      },
-      scales: {
-        y: {
-          beginAtZero: true,
-          position: 'left',
-          grid: { color: 'rgba(0,0,0,0.1)' }
+    const chart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: productIds,
+        datasets: [{
+          label: 'Satış Adedi',
+          data: saleCounts,
+          backgroundColor: gradientSales,
+          borderColor: 'rgba(54, 162, 235, 1)',
+          borderWidth: 1,
+          yAxisID: 'y'
         },
-        y1: {
-          beginAtZero: true,
-          position: 'right',
-          grid: { drawOnChartArea: false }
+        {
+          label: 'Toplam Gelir',
+          data: totalRevenues,
+          backgroundColor: gradientRevenues,
+          borderColor: 'rgba(75, 192, 192, 1)',
+          borderWidth: 1,
+          yAxisID: 'y1'
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: 'bottom' },
+          tooltip: { mode: 'index', intersect: false }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            position: 'left',
+            grid: { color: 'rgba(0,0,0,0.1)' }
+          },
+          y1: {
+            beginAtZero: true,
+            position: 'right',
+            grid: { drawOnChartArea: false }
+          }
         }
       }
-    }
-  });
-  return chart;
+    });
+    
+    return chart;
 
   } catch (error) {
     console.error('Grafik oluşturma hatası:', error);
