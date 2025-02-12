@@ -294,12 +294,28 @@
     document.querySelectorAll('.list-group-item').forEach(item => {
       item.addEventListener('click', function(e) {
         e.preventDefault();
-        // Sadece aktif sekme stilini ayarla
+        // Aktif sekme stilini ayarla
         document.querySelectorAll('.list-group-item').forEach(i => i.classList.remove('active'));
         this.classList.add('active');
 
-        // İçerikleri gizleme/gösterme işlemini kaldırdık
-        // Tüm kartlar her zaman görünür kalacak
+        const selectedSection = this.getAttribute('data-section');
+        // data-section'lı tüm kartları topla
+        const cards = document.querySelectorAll('[data-section]');
+        
+        if (selectedSection === 'dashboard') {
+          // Dashboard seçilince: tüm data-section kartları göster
+          cards.forEach(card => card.style.display = 'block');
+        } else {
+          // İlgili sekmeye ait kartları göster, diğerlerini gizle
+          cards.forEach(card => {
+            const cardSection = card.getAttribute('data-section');
+            if (cardSection && cardSection.includes(selectedSection)) {
+              card.style.display = 'block';
+            } else {
+              card.style.display = 'none';
+            }
+          });
+        }
       });
     });
 
