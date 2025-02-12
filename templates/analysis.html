@@ -69,10 +69,11 @@
   <div id="sidebar-wrapper">
     <div class="sidebar-heading">Analiz Paneli</div>
     <div class="list-group list-group-flush">
-      <a href="#" class="list-group-item list-group-item-action">Dashboard</a>
-      <a href="#" class="list-group-item list-group-item-action">Satışlar</a>
-      <a href="#" class="list-group-item list-group-item-action">İadeler</a>
-      <a href="#" class="list-group-item list-group-item-action">Ürün Analizleri</a>
+      <a href="#" class="list-group-item list-group-item-action active" data-section="dashboard">Dashboard</a>
+      <a href="#" class="list-group-item list-group-item-action" data-section="sales">Satışlar</a>
+      <a href="#" class="list-group-item list-group-item-action" data-section="returns">İadeler</a>
+      <a href="#" class="list-group-item list-group-item-action" data-section="products">Ürün Analizleri</a>
+      <a href="#" class="list-group-item list-group-item-action" data-section="stock">Stok Raporu</a>
     </div>
   </div>
 
@@ -170,6 +171,34 @@
   document.getElementById("menu-toggle").addEventListener("click", function(e) {
     e.preventDefault();
     document.getElementById("wrapper").classList.toggle("toggled");
+  });
+
+  // Sidebar menü yönetimi
+  document.querySelectorAll('.list-group-item').forEach(item => {
+    item.addEventListener('click', function(e) {
+      e.preventDefault();
+      // Aktif sınıfı güncelle
+      document.querySelectorAll('.list-group-item').forEach(i => i.classList.remove('active'));
+      this.classList.add('active');
+      
+      // İlgili bölümü göster/gizle
+      const section = this.getAttribute('data-section');
+      document.querySelectorAll('.card').forEach(card => {
+        if (section === 'dashboard') {
+          card.style.display = 'block';
+        } else if (section === 'stock' && card.querySelector('.card-header').textContent.trim() === 'Stok Durumu') {
+          card.style.display = 'block';
+        } else if (section === 'sales' && card.querySelector('.card-header').textContent.includes('Satış')) {
+          card.style.display = 'block';
+        } else if (section === 'returns' && card.querySelector('.card-header').textContent.includes('İade')) {
+          card.style.display = 'block';
+        } else if (section === 'products' && card.querySelector('.card-header').textContent.includes('Ürün')) {
+          card.style.display = 'block';
+        } else {
+          card.style.display = 'none';
+        }
+      });
+    });
   });
 </script>
 
