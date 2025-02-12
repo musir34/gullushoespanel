@@ -109,6 +109,13 @@ def get_sales_stats():
             func.date(Degisim.degisim_tarihi).desc()
         ).all()
 
+        # Grafik için product_sales verisi hazırla
+        product_sales_chart = [{
+            'product_id': f"{stat.product_main_id or ''} {stat.color or ''} {stat.size or ''}",
+            'sale_count': int(stat.sale_count or 0),
+            'total_revenue': round(float(stat.total_revenue or 0), 2)
+        } for stat in product_sales]
+
         return jsonify({
             'success': True,
             'daily_sales': [{
@@ -128,6 +135,7 @@ def get_sales_stats():
                 'total_revenue': round(float(stat.total_revenue or 0), 2),
                 'average_price': round(float(stat.average_price or 0), 2)
             } for stat in product_sales],
+            'product_sales_chart': product_sales_chart,
             'returns': [{
                 'reason': stat.return_reason,
                 'count': int(stat.return_count or 0),
