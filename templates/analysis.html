@@ -261,33 +261,55 @@ let returnsChartInstance = null;
 let productSalesChartInstance = null;
 
 function destroyCharts() {
-    console.log("Mevcut grafikler temizleniyor...");
-    if (dailySalesChartInstance) {
-        dailySalesChartInstance.destroy();
-        console.log("Günlük satış grafiği temizlendi");
-    }
-    if (returnsChartInstance) {
-        returnsChartInstance.destroy();
-        console.log("İade grafiği temizlendi");
-    }
-    if (productSalesChartInstance) {
-        productSalesChartInstance.destroy();
-        console.log("Ürün satış grafiği temizlendi");
+    try {
+        console.log("Mevcut grafikler temizleniyor...");
+        
+        const charts = [
+            { instance: window.dailySalesChartInstance, name: 'Günlük satış grafiği' },
+            { instance: window.returnsChartInstance, name: 'İade grafiği' },
+            { instance: window.productSalesChartInstance, name: 'Ürün satış grafiği' }
+        ];
+
+        charts.forEach(chart => {
+            try {
+                if (chart.instance && typeof chart.instance.destroy === 'function') {
+                    chart.instance.destroy();
+                    console.log(`${chart.name} temizlendi`);
+                }
+            } catch (err) {
+                console.error(`${chart.name} temizlenirken hata:`, err);
+            }
+        });
+
+        // Grafik referanslarını sıfırla
+        window.dailySalesChartInstance = null;
+        window.returnsChartInstance = null;
+        window.productSalesChartInstance = null;
+    } catch (err) {
+        console.error("Grafikleri temizlerken hata:", err);
     }
 }
 
 function updateCharts() {
-    const startDate = document.getElementById('startDate').value;
-    const endDate = document.getElementById('endDate').value;
-    
-    console.log(`Tarih aralığı seçildi: ${startDate} - ${endDate}`);
-    if (!startDate || !endDate) {
-        console.warn("Tarih aralığı eksik!");
-        return;
-    }
+    try {
+        const startDate = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate').value;
+        
+        console.log(`Tarih aralığı seçildi: ${startDate} - ${endDate}`);
+        if (!startDate || !endDate) {
+            console.warn("Tarih aralığı eksik!");
+            return;
+        }
 
-    // Mevcut grafikleri temizle
-    destroyCharts();
+        // Grafikleri temizle
+        if (typeof destroyCharts === 'function') {
+            destroyCharts();
+        } else {
+            console.warn("destroyCharts fonksiyonu bulunamadı");
+            if (window.dailySalesChartInstance) window.dailySalesChartInstance.destroy();
+            if (window.returnsChartInstance) window.returnsChartInstance.destroy();
+            if (window.productSalesChartInstance) window.productSalesChartInstance.destroy();
+        }
 
     // API'den verileri çek
     console.log("API isteği yapılıyor...");
@@ -433,19 +455,30 @@ function createReturnsChart(returns) {
 }
 
 function createProductSalesChart(productSalesData) {
-  console.log('Gelen ürün satış verisi:', JSON.stringify(productSalesData, null, 2));
-  
-  if (!productSalesData || !Array.isArray(productSalesData)) {
-    console.error('Geçersiz ürün satış verisi:', productSalesData);
-    console.error('Veri tipi:', typeof productSalesData);
-    console.error('Veri yapısı:', Object.prototype.toString.call(productSalesData));
-    return;
-  }
+  try {
+    console.log('Gelen ürün satış verisi:', JSON.stringify(productSalesData, null, 2));
+    
+    if (!productSalesData || !Array.isArray(productSalesData)) {
+      console.error('Geçersiz ürün satış verisi:', productSalesData);
+      return null;
+    }
 
-  const ctx = document.getElementById('productSalesChart').getContext('2d');
-  const productIds = productSalesData.map(item => item.product_id || 'Bilinmeyen');
-  const saleCounts = productSalesData.map(item => item.sale_count || 0);
-  const totalRevenues = productSalesData.map(item => item.total_revenue || 0);
+    const canvas = document.getElementById('productSalesChart');
+    if (!canvas) {
+      console.error('Canvas elementi bulunamadı');
+      return null;
+    }
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      console.error('Canvas context alınamadı');
+      return null;
+    }
+
+    // Verileri hazırla
+    const productIds = productSalesData.map(item => item.product_id?.trim() || 'Bilinmeyen').slice(0, 15);
+    const saleCounts = productSalesData.map(item => parseInt(item.sale_count) || 0).slice(0, 15);
+    const totalRevenues = productSalesData.map(item => parseFloat(item.total_revenue) || 0).slice(0, 15);
 
   // Gradient tanımları
   const gradientSales = ctx.createLinearGradient(0, 0, 0, 400);
