@@ -480,6 +480,11 @@ function createProductSalesChart(productSalesData) {
     const saleCounts = productSalesData.map(item => parseInt(item.sale_count) || 0).slice(0, 15);
     const totalRevenues = productSalesData.map(item => parseFloat(item.total_revenue) || 0).slice(0, 15);
 
+    // Önceki grafiği temizle
+    if (window.productChart) {
+      window.productChart.destroy();
+    }
+
     // Gradient tanımları
     const gradientSales = ctx.createLinearGradient(0, 0, 0, 400);
     gradientSales.addColorStop(0, 'rgba(54, 162, 235, 0.7)');
@@ -489,7 +494,7 @@ function createProductSalesChart(productSalesData) {
     gradientRevenues.addColorStop(0, 'rgba(75, 192, 192, 0.7)');
     gradientRevenues.addColorStop(1, 'rgba(75, 192, 192, 0.3)');
 
-    const chart = new Chart(ctx, {
+    window.productChart = new Chart(ctx, {
       type: 'bar',
       data: {
         labels: productIds,
@@ -531,10 +536,13 @@ function createProductSalesChart(productSalesData) {
       }
     });
     
-    return chart;
+    return window.productChart;
 
   } catch (error) {
     console.error('Grafik oluşturma hatası:', error);
+    alert('Grafik oluşturulurken bir hata oluştu: ' + error.message);
+    return null;
+  }
     alert('Grafik oluşturulurken bir hata oluştu: ' + error.message);
     return null;
   }
