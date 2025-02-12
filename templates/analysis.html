@@ -202,7 +202,7 @@
       // Aktif sınıfı güncelle
       document.querySelectorAll('.list-group-item').forEach(i => i.classList.remove('active'));
       this.classList.add('active');
-      
+
       // İlgili bölümü göster/gizle
       const section = this.getAttribute('data-section');
       document.querySelectorAll('.card').forEach(card => {
@@ -234,7 +234,7 @@ document.addEventListener('DOMContentLoaded', function() {
 function setDateFilter(period) {
   const today = new Date();
   let startDate = new Date();
-  
+
   switch(period) {
     case 'last7':
       startDate.setDate(today.getDate() - 7);
@@ -249,7 +249,7 @@ function setDateFilter(period) {
       startDate = new Date(today.getFullYear(), 0, 1);
       break;
   }
-  
+
   document.getElementById('startDate').value = startDate.toISOString().split('T')[0];
   document.getElementById('endDate').value = today.toISOString().split('T')[0];
   updateCharts();
@@ -263,7 +263,7 @@ let productSalesChartInstance = null;
 function destroyCharts() {
     try {
         console.log("Mevcut grafikler temizleniyor...");
-        
+
         const charts = [
             { instance: window.dailySalesChartInstance, name: 'Günlük satış grafiği' },
             { instance: window.returnsChartInstance, name: 'İade grafiği' },
@@ -294,7 +294,7 @@ function updateCharts() {
     try {
         const startDate = document.getElementById('startDate').value;
         const endDate = document.getElementById('endDate').value;
-        
+
         console.log(`Tarih aralığı seçildi: ${startDate} - ${endDate}`);
         if (!startDate || !endDate) {
             console.warn("Tarih aralığı eksik!");
@@ -327,16 +327,16 @@ function updateCharts() {
                 try {
                     console.log("Günlük satış verisi:", data.daily_sales);
                     dailySalesChartInstance = createDailySalesChart(data.daily_sales);
-                    
+
                     console.log("İade verisi:", data.returns);
                     returnsChartInstance = createReturnsChart(data.returns);
-                    
+
                     console.log("Ürün satış verisi:", data.product_sales_chart);
                     productSalesChartInstance = createProductSalesChart(data.product_sales_chart);
-                    
+
                     console.log("Tablo güncelleniyor...");
                     populateProductTable(data.product_sales);
-                    
+
                     console.log("Tüm grafikler başarıyla güncellendi");
                 } catch (err) {
                     console.error("Grafik oluşturma hatası:", err);
@@ -457,7 +457,7 @@ function createReturnsChart(returns) {
 function createProductSalesChart(productSalesData) {
   try {
     console.log('Gelen ürün satış verisi:', JSON.stringify(productSalesData, null, 2));
-    
+
     if (!productSalesData || !Array.isArray(productSalesData)) {
       console.error('Geçersiz ürün satış verisi:', productSalesData);
       return null;
@@ -530,6 +530,13 @@ function createProductSalesChart(productSalesData) {
       }
     }
   });
+  return chart;
+
+  } catch (error) {
+    console.error('Grafik oluşturma hatası:', error);
+    alert('Grafik oluşturulurken bir hata oluştu: ' + error.message);
+    return null;
+  }
 }
 
 function populateProductTable(productSales) {
