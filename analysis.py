@@ -53,20 +53,16 @@ def get_sales_stats():
             func.sum(Order.amount).desc()
         ).limit(50).all()
 
-        # İade analizi - ReturnProduct tablosundan
+        # İade analizi
         returns_stats = db.session.query(
-            func.coalesce(ReturnProduct.reason, 'Belirtilmemiş').label('return_reason'),
-            func.count(ReturnProduct.id).label('return_count'),
-            func.count(distinct(ReturnProduct.return_order_id)).label('unique_orders'),
-            func.avg(Order.amount).label('average_refund')
-        ).join(
-            ReturnOrder, ReturnProduct.return_order_id == ReturnOrder.id
-        ).outerjoin(
-            Order, ReturnOrder.order_number == Order.order_number
+            func.coalesce(ReturnOrder.return_reason, 'Belirtilmemiş').label('return_reason'),
+            func.count(ReturnOrder.id).label('return_count'),
+            func.count(distinct(ReturnOrder.order_number)).label('unique_orders'),
+            func.coalesce(func.avg(ReturnOrder.refund_amount), 0).label('average_refund')
         ).filter(
             ReturnOrder.return_date.between(start_date, end_date)
         ).group_by(
-            ReturnProduct.reason
+            ReturnOrder.return_reason
         ).all()
 
         # Değişim analizi
