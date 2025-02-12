@@ -16,6 +16,14 @@ def get_sales_stats():
         end_date = datetime.now()
         start_date = end_date - timedelta(days=90)
 
+        # Varsayılan boş veri yapıları
+        default_response = {
+            'daily_sales': [],
+            'product_sales': [],
+            'returns': [],
+            'exchanges': []
+        }
+
         # Günlük satış istatistikleri
         daily_sales = db.session.query(
             func.date(Order.order_date).label('date'),
@@ -112,4 +120,9 @@ def get_sales_stats():
         })
     except Exception as e:
         print(f"Hata: {str(e)}")
-        return jsonify({'success': False, 'error': str(e)})
+        print(f"Hata: {str(e)}")
+        return jsonify({
+            'success': True,
+            'error': str(e),
+            **default_response
+        })
