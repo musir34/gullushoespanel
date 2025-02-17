@@ -12,10 +12,28 @@ def yeni_siparis():
         
     # POST isteği için
     try:
-        data = request.get_json()
+        # Hem JSON hem de form verisi desteği
+        if request.is_json:
+            data = request.get_json()
+        else:
+            data = request.form
+            # Form verisi içindeki ürünleri JSON'dan parse et
+            data = {
+                'musteri_adi': data.get('musteri_adi'),
+                'musteri_soyadi': data.get('musteri_soyadi'),
+                'musteri_adres': data.get('musteri_adres'),
+                'musteri_telefon': data.get('musteri_telefon'),
+                'toplam_tutar': float(data.get('toplam_tutar', 0)),
+                'notlar': data.get('notlar', ''),
+                'urunler': json.loads(data.get('urunler', '[]'))
+            }
+
+        # Sipariş numarası oluştur
+        siparis_no = f"SP{datetime.now().strftime('%Y%m%d%H%M%S')}"
 
         # Yeni sipariş oluştur
         yeni_siparis = YeniSiparis(
+            siparis_no=siparis_no,
             musteri_adi=data['musteri_adi'],
             musteri_soyadi=data['musteri_soyadi'],
             musteri_adres=data['musteri_adres'],

@@ -255,13 +255,13 @@ function addMultipleProducts() {
 async function processMultipleProducts() {
   const barcodes = document.getElementById('multiple-barcodes').value.split('\n').filter(b => b.trim());
   const defaultQuantity = parseInt(document.getElementById('default-quantity').value) || 1;
-  
+
   for (const barcode of barcodes) {
     if (barcode.trim()) {
       try {
         const response = await fetch(`/api/product/${barcode.trim()}`);
         const data = await response.json();
-        
+
         if (data.success) {
           const item = {
             barcode: barcode.trim(),
@@ -281,7 +281,7 @@ async function processMultipleProducts() {
       }
     }
   }
-  
+
   updateOrderTable();
   updateTotals();
   bootstrap.Modal.getInstance(document.getElementById('multipleProductsModal')).hide();
@@ -362,14 +362,6 @@ function updateTotals() {
   `;
 }
 
-function updateTotals() {
-  const totalItems = orderItems.reduce((sum, item) => sum + item.quantity, 0);
-  const totalAmount = orderItems.reduce((sum, item) => sum + item.total, 0);
-
-  document.getElementById('total-items').textContent = totalItems;
-  document.getElementById('total-amount').textContent = `${totalAmount.toFixed(2)} TL`;
-}
-
 // Form gönderilmeden önce sipariş öğelerini ekle
 document.querySelector('form').addEventListener('submit', function(e) {
   e.preventDefault();
@@ -379,8 +371,26 @@ document.querySelector('form').addEventListener('submit', function(e) {
     return;
   }
 
+  const orderData = {
+    musteri_adi: document.getElementById('customer_name').value,
+    musteri_soyadi: document.getElementById('customer_surname').value,
+    musteri_adres: document.getElementById('customer_address').value,
+    musteri_telefon: document.getElementById('customer_phone').value,
+    toplam_tutar: parseFloat(document.getElementById('total-amount').textContent.replace(' TL', '').replace(/<[^>]+>/g, '')), //Regular expression to remove html tags from total amount.
+    notlar: '', // Add a field for notes if needed
+    urunler: orderItems
+  };
+
+
   const formData = new FormData(this);
-  formData.append('order_items', JSON.stringify(orderItems));
+  formData.append('musteri_adi', orderData.musteri_adi);
+  formData.append('musteri_soyadi', orderData.musteri_soyadi);
+  formData.append('musteri_adres', orderData.musteri_adres);
+  formData.append('musteri_telefon', orderData.musteri_telefon);
+  formData.append('toplam_tutar', orderData.toplam_tutar);
+  formData.append('notlar', orderData.notlar);
+  formData.append('urunler', JSON.stringify(orderData.urunler));
+
 
   fetch('/yeni-siparis', {
     method: 'POST',
