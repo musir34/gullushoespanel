@@ -252,8 +252,22 @@ function addMultipleProducts() {
 }
 
 // Toplu ürün ekleme işlemi
+async function logToServer(level, message, data = null) {
+    try {
+        await fetch('/api/log', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ level, message, data })
+        });
+    } catch (error) {
+        console.error('Logging error:', error);
+    }
+}
+
 async function processMultipleProducts() {
-  const barcodes = document.getElementById('multiple-barcodes').value.split('\n').filter(b => b.trim());
+    try {
+        const barcodes = document.getElementById('multiple-barcodes').value.split('\n').filter(b => b.trim());
+        await logToServer('info', 'Çoklu ürün işleme başlatıldı', { barcodeCount: barcodes.length });
   const defaultQuantity = parseInt(document.getElementById('default-quantity').value) || 1;
 
   for (const barcode of barcodes) {

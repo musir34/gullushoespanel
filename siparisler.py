@@ -1,7 +1,11 @@
 from flask import Blueprint, render_template, request, jsonify
-from models import db, Order, Product, YeniSiparis, SiparisUrun # Assuming YeniSiparis and SiparisUrun models are defined
+from models import db, Order, Product, YeniSiparis, SiparisUrun
 from datetime import datetime
 import json
+from logger_config import app_logger, order_logger
+import traceback
+
+logger = order_logger
 
 siparisler_bp = Blueprint('siparisler_bp', __name__)
 
@@ -9,7 +13,7 @@ siparisler_bp = Blueprint('siparisler_bp', __name__)
 def yeni_siparis():
     if request.method == 'GET':
         return render_template('yeni_siparis.html')
-        
+
     # POST isteği için
     try:
         # Hem JSON hem de form verisi desteği
@@ -61,10 +65,12 @@ def yeni_siparis():
             db.session.add(siparis_urun)
 
         db.session.commit()
+        logger.info(f"Sipariş başarıyla kaydedildi: {siparis_no}") #added logging
         return jsonify({'success': True, 'message': 'Sipariş başarıyla kaydedildi'})
 
     except Exception as e:
         db.session.rollback()
+        logger.error(f"Sipariş kaydedilirken hata oluştu: {e}\n{traceback.format_exc()}") #added logging and traceback
         return jsonify({'success': False, 'error': str(e)})
 
 
@@ -88,4 +94,5 @@ def get_product(barcode):
             })
         return jsonify({'success': False, 'message': 'Ürün bulunamadı'})
     except Exception as e:
+        logger.error(f"Ürün getirilirken hata oluştu: {e}") #added logging
         return jsonify({'success': False, 'message': str(e)})
