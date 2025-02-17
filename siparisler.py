@@ -1,43 +1,50 @@
-
 from flask import Blueprint, render_template, request, jsonify
-from models import db, Order, Product
+from models import db, Order, Product, YeniSiparis, SiparisUrun # Assuming YeniSiparis and SiparisUrun models are defined
 from datetime import datetime
 import json
 
 siparisler_bp = Blueprint('siparisler_bp', __name__)
 
-@siparisler_bp.route('/yeni-siparis', methods=['GET', 'POST'])
+@siparisler_bp.route('/yeni-siparis', methods=['POST'])
 def yeni_siparis():
-    if request.method == 'POST':
-        try:
-            data = request.form
-            order_items = json.loads(data.get('order_items', '[]'))
-            
-            if not order_items:
-                return jsonify({'success': False, 'message': 'Sipariş öğeleri bulunamadı!'})
+    try:
+        data = request.get_json()
 
-            # Yeni sipariş oluştur
-            new_order = Order(
-                customer_name=data.get('customer_name'),
-                customer_surname=data.get('customer_surname'),
-                customer_address=data.get('customer_address'),
-                order_date=datetime.now(),
-                status=data.get('status', 'new'),
-                details=json.dumps(order_items),
-                quantity=sum(item['quantity'] for item in order_items),
-                amount=sum(item['total'] for item in order_items)
+        # Yeni sipariş oluştur
+        yeni_siparis = YeniSiparis(
+            musteri_adi=data['musteri_adi'],
+            musteri_soyadi=data['musteri_soyadi'],
+            musteri_adres=data['musteri_adres'],
+            musteri_telefon=data['musteri_telefon'],
+            toplam_tutar=data['toplam_tutar'],
+            notlar=data.get('notlar', '')
+        )
+
+        db.session.add(yeni_siparis)
+        db.session.flush()  # ID almak için flush
+
+        # Ürünleri kaydet
+        for urun in data['urunler']:
+            siparis_urun = SiparisUrun(
+                siparis_id=yeni_siparis.id,
+                urun_barkod=urun['barkod'],
+                urun_adi=urun['urun_adi'],
+                adet=urun['adet'],
+                birim_fiyat=urun['birim_fiyat'],
+                toplam_fiyat=urun['adet'] * urun['birim_fiyat'],
+                renk=urun.get('renk', ''),
+                beden=urun.get('beden', ''),
+                urun_gorseli=urun.get('urun_gorseli', '')
             )
+            db.session.add(siparis_urun)
 
-            db.session.add(new_order)
-            db.session.commit()
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'Sipariş başarıyla kaydedildi'})
 
-            return jsonify({'success': True, 'order_id': new_order.id})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)})
 
-        except Exception as e:
-            db.session.rollback()
-            return jsonify({'success': False, 'message': str(e)})
-
-    return render_template('yeni_siparis.html')
 
 @siparisler_bp.route('/api/product/<barcode>')
 def get_product(barcode):

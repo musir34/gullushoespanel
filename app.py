@@ -42,6 +42,10 @@ with app.app_context():
     # Eksik sütunu ekle
     from sqlalchemy import text
     db.session.execute(text('ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_date TIMESTAMP'))
+    
+    # Yeni tabloları oluştur
+    from models import YeniSiparis, SiparisUrun
+    db.create_all()
 
     # ProductArchive tablosunu oluştur
     from models import ProductArchive

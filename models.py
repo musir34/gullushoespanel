@@ -263,6 +263,34 @@ class Archive(db.Model):
         return f"<Archive {self.order_number}>"
 
 # Değişim Modeli
+class YeniSiparis(db.Model):
+    __tablename__ = 'yeni_siparisler'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    siparis_no = db.Column(db.String, unique=True)
+    musteri_adi = db.Column(db.String)
+    musteri_soyadi = db.Column(db.String)
+    musteri_adres = db.Column(db.Text)
+    musteri_telefon = db.Column(db.String)
+    siparis_tarihi = db.Column(db.DateTime, default=datetime.utcnow)
+    toplam_tutar = db.Column(db.Float)
+    durum = db.Column(db.String, default='Yeni')
+    notlar = db.Column(db.Text)
+
+class SiparisUrun(db.Model):
+    __tablename__ = 'siparis_urunler'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    siparis_id = db.Column(db.Integer, db.ForeignKey('yeni_siparisler.id'))
+    urun_barkod = db.Column(db.String)
+    urun_adi = db.Column(db.String)
+    adet = db.Column(db.Integer)
+    birim_fiyat = db.Column(db.Float)
+    toplam_fiyat = db.Column(db.Float)
+    renk = db.Column(db.String)
+    beden = db.Column(db.String)
+    urun_gorseli = db.Column(db.String)
+
 class Degisim(db.Model):
     __tablename__ = 'degisim'
 
