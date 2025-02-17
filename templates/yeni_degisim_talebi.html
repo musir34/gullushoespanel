@@ -62,10 +62,22 @@
         <!-- Sipariş ve Ürün Bilgileri -->
         <div id="orderDetails" style="display: none;">
             <h5>Alıcı Bilgileri</h5>
-            <p><strong>Ad:</strong> <span id="ad"></span></p>
-            <p><strong>Soyad:</strong> <span id="soyad"></span></p>
-            <p><strong>Adres:</strong> <span id="adres"></span></p>
-            <p><strong>Telefon No:</strong> <span id="telefon_no"></span></p>
+            <div class="mb-3">
+                <label class="form-label">Ad:</label>
+                <input type="text" class="form-control" id="ad">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Soyad:</label>
+                <input type="text" class="form-control" id="soyad">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Adres:</label>
+                <textarea class="form-control" id="adres" rows="3"></textarea>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Telefon No:</label>
+                <input type="text" class="form-control" id="telefon_no">
+            </div>
 
             <h5>Gönderilen Ürünler</h5>
             <div id="productList" class="row"></div>
@@ -117,10 +129,10 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    document.getElementById('ad').innerText = data.ad;
-                    document.getElementById('soyad').innerText = data.soyad;
-                    document.getElementById('adres').innerText = data.adres;
-                    document.getElementById('telefon_no').innerText = data.telefon_no || 'Belirtilmedi';
+                    document.getElementById('ad').value = data.ad;
+                    document.getElementById('soyad').value = data.soyad;
+                    document.getElementById('adres').value = data.adres;
+                    document.getElementById('telefon_no').value = data.telefon_no || '';
 
                     const productList = document.getElementById('productList');
                     productList.innerHTML = '';
@@ -207,10 +219,10 @@
 
         async function confirmExchange() {
             const siparisNo = document.getElementById('siparis_no').value.trim();
-            const ad = document.getElementById('ad').innerText;
-            const soyad = document.getElementById('soyad').innerText;
-            const adres = document.getElementById('adres').innerText;
-            const telefonNo = document.getElementById('customer_phone').value.trim() || document.getElementById('telefon_no').innerText;
+            const ad = document.getElementById('ad').value.trim();
+            const soyad = document.getElementById('soyad').value.trim();
+            const adres = document.getElementById('adres').value.trim();
+            const telefonNo = document.getElementById('telefon_no').value.trim();
             const changeReason = document.getElementById('change_reason').value.trim();
 
             const productList = document.querySelectorAll('[id^="new_barcode_"]');
