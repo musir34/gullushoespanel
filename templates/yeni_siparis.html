@@ -400,9 +400,17 @@ document.querySelector('form').addEventListener('submit', function(e) {
     musteri_soyadi: document.getElementById('customer_surname').value,
     musteri_adres: document.getElementById('customer_address').value,
     musteri_telefon: document.getElementById('customer_phone').value,
-    toplam_tutar: parseFloat(document.getElementById('total-amount').textContent.replace(' TL', '').replace(/<[^>]+>/g, '')), //Regular expression to remove html tags from total amount.
-    notlar: '', // Add a field for notes if needed
-    urunler: orderItems
+    toplam_tutar: parseFloat(document.getElementById('total-amount').textContent.replace(' TL', '').replace(/<[^>]+>/g, '')),
+    notlar: '',
+    urunler: orderItems.map(item => ({
+      barkod: item.barcode,
+      urun_adi: item.title,
+      adet: item.quantity,
+      birim_fiyat: item.price,
+      renk: item.color,
+      beden: item.size,
+      toplam_fiyat: item.total - item.discount
+    }))
   };
 
 
