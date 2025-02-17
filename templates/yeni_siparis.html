@@ -1,0 +1,258 @@
+
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2>Yeni Sipariş Oluştur</h2>
+  
+  <form method="POST" class="needs-validation" novalidate>
+    <!-- Müşteri Bilgileri -->
+    <div class="card mb-4">
+      <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">Müşteri Bilgileri</h5>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label for="customer_name">Ad:</label>
+            <input type="text" class="form-control" id="customer_name" name="customer_name" required>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label for="customer_surname">Soyad:</label>
+            <input type="text" class="form-control" id="customer_surname" name="customer_surname" required>
+          </div>
+        </div>
+        <div class="mb-3">
+          <label for="customer_phone">Telefon:</label>
+          <input type="tel" class="form-control" id="customer_phone" name="customer_phone" required>
+        </div>
+        <div class="mb-3">
+          <label for="customer_address">Adres:</label>
+          <textarea class="form-control" id="customer_address" name="customer_address" rows="3" required></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ürün Bilgileri -->
+    <div class="card mb-4">
+      <div class="card-header bg-success text-white">
+        <h5 class="mb-0">Ürün Bilgileri</h5>
+      </div>
+      <div class="card-body">
+        <div class="mb-3">
+          <label for="barcode">Barkod:</label>
+          <div class="input-group">
+            <input type="text" class="form-control" id="barcode" name="barcode">
+            <button type="button" class="btn btn-primary" onclick="searchProduct()">Ara</button>
+          </div>
+        </div>
+
+        <!-- Ürün Detayları (AJAX ile doldurulacak) -->
+        <div id="product-details" class="d-none">
+          <div class="row">
+            <div class="col-md-4">
+              <img id="product-image" src="" class="img-fluid rounded" alt="Ürün Görseli">
+            </div>
+            <div class="col-md-8">
+              <h5 id="product-title"></h5>
+              <div class="row">
+                <div class="col-md-6">
+                  <p><strong>Model:</strong> <span id="product-model"></span></p>
+                  <p><strong>Renk:</strong> <span id="product-color"></span></p>
+                </div>
+                <div class="col-md-6">
+                  <p><strong>Beden:</strong> <span id="product-size"></span></p>
+                  <p><strong>Fiyat:</strong> <span id="product-price"></span></p>
+                </div>
+              </div>
+              <div class="mb-3">
+                <label for="quantity">Adet:</label>
+                <input type="number" class="form-control" id="quantity" name="quantity" min="1" value="1">
+              </div>
+              <button type="button" class="btn btn-success" onclick="addToOrder()">Sepete Ekle</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sipariş Listesi -->
+        <div class="mt-4">
+          <h5>Sipariş Listesi</h5>
+          <table class="table table-striped">
+            <thead>
+              <tr>
+                <th>Barkod</th>
+                <th>Ürün</th>
+                <th>Renk/Beden</th>
+                <th>Adet</th>
+                <th>Fiyat</th>
+                <th>Toplam</th>
+                <th>İşlem</th>
+              </tr>
+            </thead>
+            <tbody id="order-items">
+              <!-- JavaScript ile doldurulacak -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sipariş Özeti -->
+    <div class="card mb-4">
+      <div class="card-header bg-info text-white">
+        <h5 class="mb-0">Sipariş Özeti</h5>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-6">
+            <p><strong>Toplam Ürün:</strong> <span id="total-items">0</span></p>
+          </div>
+          <div class="col-md-6">
+            <p><strong>Toplam Tutar:</strong> <span id="total-amount">0.00 TL</span></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sipariş Statüsü -->
+    <div class="mb-4">
+      <label for="status">Sipariş Durumu:</label>
+      <select class="form-control" id="status" name="status" required>
+        <option value="new">Yeni Sipariş</option>
+        <option value="confirmed">Onaylandı</option>
+        <option value="preparing">Hazırlanıyor</option>
+        <option value="shipped">Kargoya Verildi</option>
+        <option value="delivered">Teslim Edildi</option>
+        <option value="cancelled">İptal Edildi</option>
+      </select>
+    </div>
+
+    <button type="submit" class="btn btn-primary btn-lg">Siparişi Oluştur</button>
+  </form>
+</div>
+
+<script>
+let orderItems = [];
+
+async function searchProduct() {
+  const barcode = document.getElementById('barcode').value;
+  if (!barcode) return;
+
+  try {
+    const response = await fetch(`/api/product/${barcode}`);
+    const data = await response.json();
+    
+    if (data.success) {
+      document.getElementById('product-details').classList.remove('d-none');
+      document.getElementById('product-image').src = data.product.images || '/static/logo/default.png';
+      document.getElementById('product-title').textContent = data.product.title;
+      document.getElementById('product-model').textContent = data.product.product_main_id;
+      document.getElementById('product-color').textContent = data.product.color;
+      document.getElementById('product-size').textContent = data.product.size;
+      document.getElementById('product-price').textContent = `${data.product.sale_price} TL`;
+    } else {
+      alert('Ürün bulunamadı!');
+    }
+  } catch (error) {
+    console.error('Hata:', error);
+    alert('Ürün arama sırasında bir hata oluştu!');
+  }
+}
+
+function addToOrder() {
+  const barcode = document.getElementById('barcode').value;
+  const quantity = parseInt(document.getElementById('quantity').value);
+  const title = document.getElementById('product-title').textContent;
+  const color = document.getElementById('product-color').textContent;
+  const size = document.getElementById('product-size').textContent;
+  const price = parseFloat(document.getElementById('product-price').textContent);
+
+  const item = {
+    barcode,
+    title,
+    color,
+    size,
+    quantity,
+    price,
+    total: quantity * price
+  };
+
+  orderItems.push(item);
+  updateOrderTable();
+  updateTotals();
+  
+  // Formu temizle
+  document.getElementById('product-details').classList.add('d-none');
+  document.getElementById('barcode').value = '';
+  document.getElementById('quantity').value = '1';
+}
+
+function removeItem(index) {
+  orderItems.splice(index, 1);
+  updateOrderTable();
+  updateTotals();
+}
+
+function updateOrderTable() {
+  const tbody = document.getElementById('order-items');
+  tbody.innerHTML = '';
+
+  orderItems.forEach((item, index) => {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td>${item.barcode}</td>
+      <td>${item.title}</td>
+      <td>${item.color} / ${item.size}</td>
+      <td>${item.quantity}</td>
+      <td>${item.price} TL</td>
+      <td>${item.total} TL</td>
+      <td>
+        <button type="button" class="btn btn-danger btn-sm" onclick="removeItem(${index})">
+          <i class="bi bi-trash"></i>
+        </button>
+      </td>
+    `;
+    tbody.appendChild(row);
+  });
+}
+
+function updateTotals() {
+  const totalItems = orderItems.reduce((sum, item) => sum + item.quantity, 0);
+  const totalAmount = orderItems.reduce((sum, item) => sum + item.total, 0);
+
+  document.getElementById('total-items').textContent = totalItems;
+  document.getElementById('total-amount').textContent = `${totalAmount.toFixed(2)} TL`;
+}
+
+// Form gönderilmeden önce sipariş öğelerini ekle
+document.querySelector('form').addEventListener('submit', function(e) {
+  e.preventDefault();
+  
+  if (orderItems.length === 0) {
+    alert('Lütfen siparişe en az bir ürün ekleyin!');
+    return;
+  }
+
+  const formData = new FormData(this);
+  formData.append('order_items', JSON.stringify(orderItems));
+
+  fetch('/yeni-siparis', {
+    method: 'POST',
+    body: formData
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      alert('Sipariş başarıyla oluşturuldu!');
+      window.location.href = '/siparisler'; // Sipariş listesine yönlendir
+    } else {
+      alert('Sipariş oluşturulurken bir hata oluştu!');
+    }
+  })
+  .catch(error => {
+    console.error('Hata:', error);
+    alert('Bir hata oluştu!');
+  });
+});
+</script>
+{% endblock %}

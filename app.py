@@ -13,6 +13,9 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
+
+from siparisler import siparisler_bp
+app.register_blueprint(siparisler_bp)
 app.secret_key = os.environ.get('SECRET_KEY', 'varsayılan_anahtar')
 
 # Veritabanı ayarları
