@@ -67,11 +67,56 @@
                   <p><strong>Fiyat:</strong> <span id="product-price"></span></p>
                 </div>
               </div>
-              <div class="mb-3">
-                <label for="quantity">Adet:</label>
-                <input type="number" class="form-control" id="quantity" name="quantity" min="1" value="1">
+              <div class="row">
+                <div class="col-md-4">
+                  <div class="mb-3">
+                    <label for="quantity">Adet:</label>
+                    <input type="number" class="form-control" id="quantity" name="quantity" min="1" value="1">
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="mb-3">
+                    <label for="custom-price">Özel Fiyat (TL):</label>
+                    <input type="number" step="0.01" class="form-control" id="custom-price" name="custom-price">
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="mb-3">
+                    <label for="product-notes">Ürün Notu:</label>
+                    <input type="text" class="form-control" id="product-notes" name="product-notes">
+                  </div>
+                </div>
               </div>
-              <button type="button" class="btn btn-success" onclick="addToOrder()">Sepete Ekle</button>
+              <div class="btn-group">
+                <button type="button" class="btn btn-success" onclick="addToOrder()">Sepete Ekle</button>
+                <button type="button" class="btn btn-primary" onclick="addMultipleProducts()">Toplu Ürün Ekle</button>
+              </div>
+
+              <!-- Toplu Ürün Ekleme Modalı -->
+              <div class="modal fade" id="multipleProductsModal" tabindex="-1">
+                <div class="modal-dialog">
+                  <div class="modal-content">
+                    <div class="modal-header">
+                      <h5 class="modal-title">Toplu Ürün Ekle</h5>
+                      <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                      <div class="mb-3">
+                        <label>Barkodlar (Her satıra bir barkod):</label>
+                        <textarea class="form-control" id="multiple-barcodes" rows="5"></textarea>
+                      </div>
+                      <div class="mb-3">
+                        <label>Varsayılan Adet:</label>
+                        <input type="number" class="form-control" id="default-quantity" value="1" min="1">
+                      </div>
+                    </div>
+                    <div class="modal-footer">
+                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                      <button type="button" class="btn btn-primary" onclick="processMultipleProducts()">Ekle</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -86,8 +131,10 @@
                 <th>Ürün</th>
                 <th>Renk/Beden</th>
                 <th>Adet</th>
-                <th>Fiyat</th>
+                <th>Birim Fiyat</th>
+                <th>İndirim</th>
                 <th>Toplam</th>
+                <th>Not</th>
                 <th>İşlem</th>
               </tr>
             </thead>
@@ -167,7 +214,8 @@ function addToOrder() {
   const title = document.getElementById('product-title').textContent;
   const color = document.getElementById('product-color').textContent;
   const size = document.getElementById('product-size').textContent;
-  const price = parseFloat(document.getElementById('product-price').textContent);
+  const customPrice = document.getElementById('custom-price').value;
+  const price = customPrice ? parseFloat(customPrice) : parseFloat(document.getElementById('product-price').textContent.replace(' TL', ''));
 
   const item = {
     barcode,
@@ -176,7 +224,9 @@ function addToOrder() {
     size,
     quantity,
     price,
-    total: quantity * price
+    total: quantity * price,
+    discount: 0,
+    notes: document.getElementById('product-notes').value || ''
   };
 
   orderItems.push(item);
@@ -195,6 +245,48 @@ function removeItem(index) {
   updateTotals();
 }
 
+// Toplu ürün ekleme modalını aç
+function addMultipleProducts() {
+  const modal = new bootstrap.Modal(document.getElementById('multipleProductsModal'));
+  modal.show();
+}
+
+// Toplu ürün ekleme işlemi
+async function processMultipleProducts() {
+  const barcodes = document.getElementById('multiple-barcodes').value.split('\n').filter(b => b.trim());
+  const defaultQuantity = parseInt(document.getElementById('default-quantity').value) || 1;
+  
+  for (const barcode of barcodes) {
+    if (barcode.trim()) {
+      try {
+        const response = await fetch(`/api/product/${barcode.trim()}`);
+        const data = await response.json();
+        
+        if (data.success) {
+          const item = {
+            barcode: barcode.trim(),
+            title: data.product.title,
+            color: data.product.color,
+            size: data.product.size,
+            quantity: defaultQuantity,
+            price: data.product.sale_price,
+            total: defaultQuantity * data.product.sale_price,
+            discount: 0,
+            notes: ''
+          };
+          orderItems.push(item);
+        }
+      } catch (error) {
+        console.error(`Hata (${barcode}):`, error);
+      }
+    }
+  }
+  
+  updateOrderTable();
+  updateTotals();
+  bootstrap.Modal.getInstance(document.getElementById('multipleProductsModal')).hide();
+}
+
 function updateOrderTable() {
   const tbody = document.getElementById('order-items');
   tbody.innerHTML = '';
@@ -205,9 +297,23 @@ function updateOrderTable() {
       <td>${item.barcode}</td>
       <td>${item.title}</td>
       <td>${item.color} / ${item.size}</td>
-      <td>${item.quantity}</td>
-      <td>${item.price} TL</td>
-      <td>${item.total} TL</td>
+      <td>
+        <input type="number" class="form-control form-control-sm" value="${item.quantity}" 
+               onchange="updateItemQuantity(${index}, this.value)">
+      </td>
+      <td>
+        <input type="number" step="0.01" class="form-control form-control-sm" value="${item.price}" 
+               onchange="updateItemPrice(${index}, this.value)">
+      </td>
+      <td>
+        <input type="number" step="0.01" class="form-control form-control-sm" value="${item.discount}" 
+               onchange="updateItemDiscount(${index}, this.value)">
+      </td>
+      <td>${(item.total - item.discount).toFixed(2)} TL</td>
+      <td>
+        <input type="text" class="form-control form-control-sm" value="${item.notes}" 
+               onchange="updateItemNotes(${index}, this.value)">
+      </td>
       <td>
         <button type="button" class="btn btn-danger btn-sm" onclick="removeItem(${index})">
           <i class="bi bi-trash"></i>
@@ -216,6 +322,44 @@ function updateOrderTable() {
     `;
     tbody.appendChild(row);
   });
+}
+
+function updateItemQuantity(index, value) {
+  orderItems[index].quantity = parseInt(value);
+  orderItems[index].total = orderItems[index].quantity * orderItems[index].price;
+  updateOrderTable();
+  updateTotals();
+}
+
+function updateItemPrice(index, value) {
+  orderItems[index].price = parseFloat(value);
+  orderItems[index].total = orderItems[index].quantity * orderItems[index].price;
+  updateOrderTable();
+  updateTotals();
+}
+
+function updateItemDiscount(index, value) {
+  orderItems[index].discount = parseFloat(value);
+  updateOrderTable();
+  updateTotals();
+}
+
+function updateItemNotes(index, value) {
+  orderItems[index].notes = value;
+}
+
+function updateTotals() {
+  const totalItems = orderItems.reduce((sum, item) => sum + item.quantity, 0);
+  const subtotal = orderItems.reduce((sum, item) => sum + item.total, 0);
+  const totalDiscount = orderItems.reduce((sum, item) => sum + (item.discount || 0), 0);
+  const finalTotal = subtotal - totalDiscount;
+
+  document.getElementById('total-items').textContent = totalItems;
+  document.getElementById('total-amount').innerHTML = `
+    <div>Ara Toplam: ${subtotal.toFixed(2)} TL</div>
+    <div>Toplam İndirim: ${totalDiscount.toFixed(2)} TL</div>
+    <div class="fw-bold">Genel Toplam: ${finalTotal.toFixed(2)} TL</div>
+  `;
 }
 
 function updateTotals() {
