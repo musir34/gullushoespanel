@@ -184,11 +184,17 @@
 let orderItems = [];
 
 async function searchProduct() {
-  const barcode = document.getElementById('barcode').value;
-  if (!barcode) return;
-
   try {
+    const barcode = document.getElementById('barcode').value;
+    if (!barcode) {
+      alert('Lütfen barkod giriniz!');
+      return;
+    }
+
     const response = await fetch(`/api/product/${barcode}`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
     const data = await response.json();
 
     if (data.success) {
@@ -202,6 +208,10 @@ async function searchProduct() {
     } else {
       alert('Ürün bulunamadı!');
     }
+  } catch (error) {
+    console.error('Ürün arama hatası:', error);
+    alert('Ürün arama sırasında bir hata oluştu: ' + error.message);
+  }
   } catch (error) {
     console.error('Hata:', error);
     alert('Ürün arama sırasında bir hata oluştu!');
