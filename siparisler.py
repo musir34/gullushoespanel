@@ -5,8 +5,12 @@ import json
 
 siparisler_bp = Blueprint('siparisler_bp', __name__)
 
-@siparisler_bp.route('/yeni-siparis', methods=['POST'])
+@siparisler_bp.route('/yeni-siparis', methods=['GET', 'POST'])
 def yeni_siparis():
+    if request.method == 'GET':
+        return render_template('yeni_siparis.html')
+        
+    # POST isteği için
     try:
         data = request.get_json()
 
