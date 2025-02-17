@@ -271,10 +271,10 @@ async function logToServer(level, message, data = null) {
 }
 
 async function processMultipleProducts() {
-    try {
-        const barcodes = document.getElementById('multiple-barcodes').value.split('\n').filter(b => b.trim());
-        await logToServer('info', 'Çoklu ürün işleme başlatıldı', { barcodeCount: barcodes.length });
-  const defaultQuantity = parseInt(document.getElementById('default-quantity').value) || 1;
+  try {
+    const barcodes = document.getElementById('multiple-barcodes').value.split('\n').filter(b => b.trim());
+    await logToServer('info', 'Çoklu ürün işleme başlatıldı', { barcodeCount: barcodes.length });
+    const defaultQuantity = parseInt(document.getElementById('default-quantity').value) || 1;
 
   for (const barcode of barcodes) {
     if (barcode.trim()) {
@@ -303,8 +303,12 @@ async function processMultipleProducts() {
   }
 
   updateOrderTable();
-  updateTotals();
-  bootstrap.Modal.getInstance(document.getElementById('multipleProductsModal')).hide();
+    updateTotals();
+    bootstrap.Modal.getInstance(document.getElementById('multipleProductsModal')).hide();
+  } catch (error) {
+    console.error('Toplu ürün ekleme hatası:', error);
+    alert('Toplu ürün eklenirken bir hata oluştu: ' + error.message);
+  }
 }
 
 function updateOrderTable() {
