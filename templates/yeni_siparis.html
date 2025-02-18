@@ -454,7 +454,7 @@ function hideOrderForm() {
   document.getElementById('orderForm').classList.add('d-none');
 }
 
-async function showOrderDetails(siparisNo) {
+async async function showOrderDetails(siparisNo) {
   try {
     const response = await fetch(`/siparis-detay/${siparisNo}`);
     if (!response.ok) throw new Error('Sipariş detayları alınamadı');
@@ -462,11 +462,88 @@ async function showOrderDetails(siparisNo) {
     const detayHtml = await response.text();
     document.getElementById('orderDetailContent').innerHTML = detayHtml;
 
+    // Düzenleme ve silme butonları ekle
+    const footerHtml = `
+      <div class="modal-footer">
+        <button type="button" class="btn btn-warning" onclick="duzenlemeyeAc('${siparisNo}')">
+          <i class="bi bi-pencil"></i> Düzenle
+        </button>
+        <button type="button" class="btn btn-danger" onclick="siparisiSil('${siparisNo}')">
+          <i class="bi bi-trash"></i> Sil
+        </button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+      </div>
+    `;
+    document.getElementById('orderDetailContent').insertAdjacentHTML('beforeend', footerHtml);
+
     const modal = new bootstrap.Modal(document.getElementById('orderDetailModal'));
     modal.show();
   } catch (error) {
     console.error('Hata:', error);
     alert('Sipariş detayları yüklenirken bir hata oluştu.');
+  }
+}
+
+async function duzenlemeyeAc(siparisNo) {
+  try {
+    const response = await fetch(`/siparis-detay/${siparisNo}`);
+    if (!response.ok) throw new Error('Sipariş detayları alınamadı');
+    
+    const detayHtml = await response.text();
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(detayHtml, 'text/html');
+    
+    // Form alanlarını doldur
+    const siparis = {
+      musteri_adi: doc.querySelector('[data-musteri-adi]')?.textContent,
+      musteri_soyadi: doc.querySelector('[data-musteri-soyadi]')?.textContent,
+      musteri_adres: doc.querySelector('[data-musteri-adres]')?.textContent,
+      musteri_telefon: doc.querySelector('[data-musteri-telefon]')?.textContent,
+      durum: doc.querySelector('[data-durum]')?.textContent
+    };
+
+    document.getElementById('customer_name').value = siparis.musteri_adi;
+    document.getElementById('customer_surname').value = siparis.musteri_soyadi;
+    document.getElementById('customer_address').value = siparis.musteri_adres;
+    document.getElementById('customer_phone').value = siparis.musteri_telefon;
+    document.getElementById('status').value = siparis.durum;
+
+    // Modal'ı kapat ve form görünümüne geç
+    bootstrap.Modal.getInstance(document.getElementById('orderDetailModal')).hide();
+    showOrderForm();
+
+    // Form gönderim hedefini güncelle
+    const form = document.querySelector('form');
+    form.dataset.mode = 'edit';
+    form.dataset.siparisNo = siparisNo;
+  } catch (error) {
+    console.error('Hata:', error);
+    alert('Sipariş düzenlemeye açılırken bir hata oluştu.');
+  }
+}
+
+async function siparisiSil(siparisNo) {
+  if (!confirm('Bu siparişi silmek istediğinizden emin misiniz?')) {
+    return;
+  }
+
+  try {
+    const response = await fetch(`/siparis-sil/${siparisNo}`, {
+      method: 'DELETE'
+    });
+
+    const data = await response.json();
+    
+    if (data.success) {
+      alert('Sipariş başarıyla silindi');
+      bootstrap.Modal.getInstance(document.getElementById('orderDetailModal')).hide();
+      window.location.reload();
+    } else {
+      alert('Sipariş silinirken bir hata oluştu: ' + data.message);
+    }
+  } catch (error) {
+    console.error('Hata:', error);
+    alert('Sipariş silinirken bir hata oluştu.');
   }
 }
 
@@ -478,6 +555,9 @@ document.querySelector('form').addEventListener('submit', async function(e) {
     alert('Lütfen siparişe en az bir ürün ekleyin!');
     return;
   }
+
+  const isEditMode = this.dataset.mode === 'edit';
+  const siparisNo = this.dataset.siparisNo;
 
   const orderData = {
     musteri_adi: document.getElementById('customer_name').value,
@@ -508,7 +588,7 @@ document.querySelector('form').addEventListener('submit', async function(e) {
   formData.append('urunler', JSON.stringify(orderData.urunler));
 
 
-  fetch('/yeni-siparis', {
+  fetch(isEditMode ? `/siparis-guncelle/${siparisNo}` : '/yeni-siparis', {
     method: 'POST',
     body: formData
   })

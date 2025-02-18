@@ -125,3 +125,74 @@ def siparis_detay(siparis_no):
     except Exception as e:
         logger.error(f"Sipariş detayı görüntülenirken hata: {str(e)}")
         return "Bir hata oluştu", 500
+
+@siparisler_bp.route('/siparis-guncelle/<siparis_no>', methods=['POST'])
+def siparis_guncelle(siparis_no):
+    try:
+        siparis = YeniSiparis.query.filter_by(siparis_no=siparis_no).first()
+        if not siparis:
+            return jsonify({'success': False, 'message': 'Sipariş bulunamadı'})
+
+        data = request.get_json()
+        
+        # Temel bilgileri güncelle
+        siparis.musteri_adi = data.get('musteri_adi', siparis.musteri_adi)
+        siparis.musteri_soyadi = data.get('musteri_soyadi', siparis.musteri_soyadi)
+        siparis.musteri_adres = data.get('musteri_adres', siparis.musteri_adres)
+        siparis.musteri_telefon = data.get('musteri_telefon', siparis.musteri_telefon)
+        siparis.durum = data.get('durum', siparis.durum)
+        siparis.notlar = data.get('notlar', siparis.notlar)
+
+        # Ürünleri güncelle
+        if 'urunler' in data:
+            # Önce mevcut ürünleri sil
+            SiparisUrun.query.filter_by(siparis_id=siparis.id).delete()
+            
+            # Yeni ürünleri ekle
+            toplam_tutar = 0
+            for urun in data['urunler']:
+                yeni_urun = SiparisUrun(
+                    siparis_id=siparis.id,
+                    urun_barkod=urun['barkod'],
+                    urun_adi=urun['urun_adi'],
+                    adet=urun['adet'],
+                    birim_fiyat=urun['birim_fiyat'],
+                    toplam_fiyat=urun['adet'] * urun['birim_fiyat'],
+                    renk=urun.get('renk', ''),
+                    beden=urun.get('beden', '')
+                )
+                db.session.add(yeni_urun)
+                toplam_tutar += yeni_urun.toplam_fiyat
+            
+            siparis.toplam_tutar = toplam_tutar
+
+        db.session.commit()
+        logger.info(f"Sipariş başarıyla güncellendi: {siparis_no}")
+        return jsonify({'success': True, 'message': 'Sipariş başarıyla güncellendi'})
+
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Sipariş güncellenirken hata oluştu: {str(e)}")
+        return jsonify({'success': False, 'message': str(e)})
+
+@siparisler_bp.route('/siparis-sil/<siparis_no>', methods=['DELETE'])
+def siparis_sil(siparis_no):
+    try:
+        siparis = YeniSiparis.query.filter_by(siparis_no=siparis_no).first()
+        if not siparis:
+            return jsonify({'success': False, 'message': 'Sipariş bulunamadı'})
+
+        # Önce siparişe ait ürünleri sil
+        SiparisUrun.query.filter_by(siparis_id=siparis.id).delete()
+        
+        # Sonra siparişi sil
+        db.session.delete(siparis)
+        db.session.commit()
+        
+        logger.info(f"Sipariş başarıyla silindi: {siparis_no}")
+        return jsonify({'success': True, 'message': 'Sipariş başarıyla silindi'})
+
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Sipariş silinirken hata oluştu: {str(e)}")
+        return jsonify({'success': False, 'message': str(e)})
