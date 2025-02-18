@@ -454,9 +454,10 @@ function hideOrderForm() {
   document.getElementById('orderForm').classList.add('d-none');
 }
 
-function showOrderDetails(siparisNo) {
-  return new Promise((resolve, reject) => {
-    fetch(`/siparis-detay/${siparisNo}`)
+async function showOrderDetails(siparisNo) {
+  logToConsole('Sipariş detayları görüntüleme başlatıldı', { siparisNo });
+  try {
+    const response = await fetch(`/siparis-detay/${siparisNo}`);
       .then(response => {
         if (!response.ok) throw new Error('Sipariş detayları alınamadı');
         return response.text();
@@ -490,10 +491,20 @@ function showOrderDetails(siparisNo) {
   });
 }
 
+function logToConsole(message, data = null) {
+  console.log(`[DEBUG] ${message}`, data ? data : '');
+}
+
 async function duzenlemeyeAc(siparisNo) {
+  logToConsole('Düzenleme fonksiyonu başlatıldı', { siparisNo });
   try {
+    logToConsole('Sipariş detayları için fetch isteği yapılıyor');
     const response = await fetch(`/siparis-detay/${siparisNo}`);
-    if (!response.ok) throw new Error('Sipariş detayları alınamadı');
+    if (!response.ok) {
+      const error = `HTTP error! status: ${response.status}`;
+      logToConsole('Fetch hatası:', error);
+      throw new Error(error);
+    }
     
     const detayHtml = await response.text();
     const parser = new DOMParser();
@@ -516,9 +527,18 @@ async function duzenlemeyeAc(siparisNo) {
 
     // Modal'ı kapat ve form görünümüne geç
     const orderDetailModal = document.getElementById('orderDetailModal');
+    logToConsole('Modal elementi bulundu:', orderDetailModal);
+    
     if (orderDetailModal) {
-      const modal = bootstrap.Modal.getOrCreateInstance(orderDetailModal);
-      if (modal) modal.hide();
+      try {
+        logToConsole('Modal kapatma işlemi başlatıldı');
+        const modal = new bootstrap.Modal(orderDetailModal);
+        modal.hide();
+        logToConsole('Modal başarıyla kapatıldı');
+      } catch (modalError) {
+        logToConsole('Modal kapatma hatası:', modalError);
+        console.error('Modal hatası:', modalError);
+      }
     }
     
     showOrderForm();
