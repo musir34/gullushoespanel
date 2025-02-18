@@ -9,17 +9,12 @@ from models import Order, Product
 # Logging ayarları
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-from flask import Blueprint, render_template, redirect, url_for
-home_bp = Blueprint('home_bp', __name__)
+home_bp = Blueprint('home', __name__)
 
 @home_bp.route('/')
 def home():
-    try:
-        order_data = get_home()
-        return render_template('home.html', **order_data)
-    except Exception as e:
-        logging.error(f"Anasayfa yüklenirken hata: {str(e)}")
-        return render_template('home.html', **default_order_data())
+    order_data = get_home()
+    return render_template('home.html', **order_data)
 
 def get_home():
     """
@@ -99,7 +94,7 @@ def get_home():
 
 def default_order_data():
     """
-    Varsayılan boş sipariş verilerini döndürür ve hata durumunda kullanılır.
+    Varsayılan boş sipariş verilerini döndürür.
     """
     return {
         'order': None,
@@ -111,8 +106,7 @@ def default_order_data():
         'customer_name': 'Alıcı Yok',
         'customer_surname': 'Soyad Yok',
         'customer_address': 'Adres Yok',
-        'remaining_time': 'Kalan Süre Yok',
-        'error_message': 'Siparişler yüklenirken bir hata oluştu. Lütfen sayfayı yenileyin.'
+        'remaining_time': 'Kalan Süre Yok'
     }
 
 def calculate_remaining_time(delivery_date):
