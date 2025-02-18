@@ -105,12 +105,12 @@ def kendi_siparislerim():
     try:
         # YeniSiparis tablosundan tüm siparişleri al
         siparisler = YeniSiparis.query.order_by(YeniSiparis.siparis_tarihi.desc()).all()
-        
+
         return render_template('kendi_siparislerim.html', siparisler=siparisler)
     except Exception as e:
         logger.error(f"Kendi siparişleri listelenirken hata: {str(e)}")
         flash('Siparişler yüklenirken bir hata oluştu.', 'danger')
-        return redirect(url_for('home.home'))
+        return redirect(url_for('home_bp.home'))
 
 @siparisler_bp.route('/siparis-detay/<siparis_no>')
 def siparis_detay(siparis_no):
@@ -118,9 +118,9 @@ def siparis_detay(siparis_no):
         siparis = YeniSiparis.query.filter_by(siparis_no=siparis_no).first()
         if not siparis:
             return "Sipariş bulunamadı", 404
-            
+
         urunler = SiparisUrun.query.filter_by(siparis_id=siparis.id).all()
-        
+
         return render_template('siparis_detay_partial.html', 
                              siparis=siparis, 
                              urunler=urunler)
