@@ -9,6 +9,10 @@ logger = order_logger
 
 siparisler_bp = Blueprint('siparisler_bp', __name__)
 
+@siparisler_bp.route('/', methods=['GET'])
+def siparis_listesi():
+    return redirect(url_for('siparisler_bp.kendi_siparislerim'))
+
 @siparisler_bp.route('/yeni-siparis', methods=['GET', 'POST'])
 def yeni_siparis():
     if request.method == 'GET':
