@@ -12,7 +12,9 @@ siparisler_bp = Blueprint('siparisler_bp', __name__)
 @siparisler_bp.route('/yeni-siparis', methods=['GET', 'POST'])
 def yeni_siparis():
     if request.method == 'GET':
-        return render_template('yeni_siparis.html')
+        # Mevcut siparişleri getir
+        siparisler = YeniSiparis.query.order_by(YeniSiparis.siparis_tarihi.desc()).all()
+        return render_template('yeni_siparis.html', siparisler=siparisler)
 
     # POST isteği için
     try:

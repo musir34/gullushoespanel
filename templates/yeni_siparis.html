@@ -2,182 +2,240 @@
 
 {% block content %}
 <div class="container mt-4">
-  <a href="{{ url_for('home.home') }}" class="btn btn-secondary mb-3">
-    <i class="bi bi-house-fill"></i> Ana Sayfa
-  </a>
-  <h2>Yeni Sipariş Oluştur</h2>
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Siparişler</h2>
+    <button class="btn btn-primary" onclick="showOrderForm()">
+      <i class="bi bi-plus-circle"></i> Yeni Sipariş Oluştur
+    </button>
+  </div>
 
-  <form method="POST" class="needs-validation" novalidate>
-    <!-- Müşteri Bilgileri -->
-    <div class="card mb-4">
-      <div class="card-header bg-primary text-white">
-        <h5 class="mb-0">Müşteri Bilgileri</h5>
-      </div>
-      <div class="card-body">
-        <div class="row">
-          <div class="col-md-6 mb-3">
-            <label for="customer_name">Ad:</label>
-            <input type="text" class="form-control" id="customer_name" name="customer_name" required>
-          </div>
-          <div class="col-md-6 mb-3">
-            <label for="customer_surname">Soyad:</label>
-            <input type="text" class="form-control" id="customer_surname" name="customer_surname" required>
-          </div>
-        </div>
-        <div class="mb-3">
-          <label for="customer_phone">Telefon:</label>
-          <input type="tel" class="form-control" id="customer_phone" name="customer_phone" required>
-        </div>
-        <div class="mb-3">
-          <label for="customer_address">Adres:</label>
-          <textarea class="form-control" id="customer_address" name="customer_address" rows="3" required></textarea>
-        </div>
-      </div>
+  <!-- Sipariş Listesi -->
+  <div id="ordersList" class="mb-4">
+    <div class="table-responsive">
+      <table class="table table-striped table-hover">
+        <thead class="table-dark">
+          <tr>
+            <th>Sipariş No</th>
+            <th>Müşteri</th>
+            <th>Toplam Tutar</th>
+            <th>Tarih</th>
+            <th>Durum</th>
+            <th>İşlemler</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for siparis in siparisler %}
+          <tr>
+            <td>{{ siparis.siparis_no }}</td>
+            <td>{{ siparis.musteri_adi }} {{ siparis.musteri_soyadi }}</td>
+            <td>{{ "%.2f"|format(siparis.toplam_tutar) }} TL</td>
+            <td>{{ siparis.siparis_tarihi.strftime('%d.%m.%Y %H:%M') }}</td>
+            <td>
+              <span class="badge bg-{{ 'success' if siparis.durum == 'Tamamlandı' else 'warning' }}">
+                {{ siparis.durum }}
+              </span>
+            </td>
+            <td>
+              <button class="btn btn-sm btn-info" onclick="showOrderDetails('{{ siparis.siparis_no }}')">
+                <i class="bi bi-eye"></i> Detay
+              </button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
+  </div>
 
-    <!-- Ürün Bilgileri -->
-    <div class="card mb-4">
-      <div class="card-header bg-success text-white">
-        <h5 class="mb-0">Ürün Bilgileri</h5>
-      </div>
-      <div class="card-body">
-        <div class="mb-3">
-          <label for="barcode">Barkod:</label>
-          <div class="input-group">
-            <input type="text" class="form-control" id="barcode" name="barcode">
-            <button type="button" class="btn btn-primary" onclick="searchProduct()">Ara</button>
-          </div>
+  <!-- Sipariş Formu (başlangıçta gizli) -->
+  <div id="orderForm" class="d-none">
+    <form method="POST" class="needs-validation" novalidate>
+      <!-- Müşteri Bilgileri -->
+      <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+          <h5 class="mb-0">Müşteri Bilgileri</h5>
         </div>
-
-        <!-- Ürün Detayları (AJAX ile doldurulacak) -->
-        <div id="product-details" class="d-none">
+        <div class="card-body">
           <div class="row">
-            <div class="col-md-4">
-              <img id="product-image" src="" class="img-fluid rounded" alt="Ürün Görseli">
+            <div class="col-md-6 mb-3">
+              <label for="customer_name">Ad:</label>
+              <input type="text" class="form-control" id="customer_name" name="customer_name" required>
             </div>
-            <div class="col-md-8">
-              <h5 id="product-title"></h5>
-              <div class="row">
-                <div class="col-md-6">
-                  <p><strong>Model:</strong> <span id="product-model"></span></p>
-                  <p><strong>Renk:</strong> <span id="product-color"></span></p>
-                </div>
-                <div class="col-md-6">
-                  <p><strong>Beden:</strong> <span id="product-size"></span></p>
-                  <p><strong>Fiyat:</strong> <span id="product-price"></span></p>
-                </div>
-              </div>
-              <div class="row">
-                <div class="col-md-4">
-                  <div class="mb-3">
-                    <label for="quantity">Adet:</label>
-                    <input type="number" class="form-control" id="quantity" name="quantity" min="1" value="1">
-                  </div>
-                </div>
-                <div class="col-md-4">
-                  <div class="mb-3">
-                    <label for="custom-price">Özel Fiyat (TL):</label>
-                    <input type="number" step="0.01" class="form-control" id="custom-price" name="custom-price">
-                  </div>
-                </div>
-                <div class="col-md-4">
-                  <div class="mb-3">
-                    <label for="product-notes">Ürün Notu:</label>
-                    <input type="text" class="form-control" id="product-notes" name="product-notes">
-                  </div>
-                </div>
-              </div>
-              <div class="btn-group">
-                <button type="button" class="btn btn-success" onclick="addToOrder()">Sepete Ekle</button>
-                <button type="button" class="btn btn-primary" onclick="addMultipleProducts()">Toplu Ürün Ekle</button>
-              </div>
-
-              <!-- Toplu Ürün Ekleme Modalı -->
-              <div class="modal fade" id="multipleProductsModal" tabindex="-1">
-                <div class="modal-dialog">
-                  <div class="modal-content">
-                    <div class="modal-header">
-                      <h5 class="modal-title">Toplu Ürün Ekle</h5>
-                      <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                      <div class="mb-3">
-                        <label>Barkodlar (Her satıra bir barkod):</label>
-                        <textarea class="form-control" id="multiple-barcodes" rows="5"></textarea>
-                      </div>
-                      <div class="mb-3">
-                        <label>Varsayılan Adet:</label>
-                        <input type="number" class="form-control" id="default-quantity" value="1" min="1">
-                      </div>
-                    </div>
-                    <div class="modal-footer">
-                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
-                      <button type="button" class="btn btn-primary" onclick="processMultipleProducts()">Ekle</button>
-                    </div>
-                  </div>
-                </div>
-              </div>
+            <div class="col-md-6 mb-3">
+              <label for="customer_surname">Soyad:</label>
+              <input type="text" class="form-control" id="customer_surname" name="customer_surname" required>
             </div>
           </div>
-        </div>
-
-        <!-- Sipariş Listesi -->
-        <div class="mt-4">
-          <h5>Sipariş Listesi</h5>
-          <table class="table table-striped">
-            <thead>
-              <tr>
-                <th>Barkod</th>
-                <th>Ürün</th>
-                <th>Renk/Beden</th>
-                <th>Adet</th>
-                <th>Birim Fiyat</th>
-                <th>İndirim</th>
-                <th>Toplam</th>
-                <th>Not</th>
-                <th>İşlem</th>
-              </tr>
-            </thead>
-            <tbody id="order-items">
-              <!-- JavaScript ile doldurulacak -->
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <!-- Sipariş Özeti -->
-    <div class="card mb-4">
-      <div class="card-header bg-info text-white">
-        <h5 class="mb-0">Sipariş Özeti</h5>
-      </div>
-      <div class="card-body">
-        <div class="row">
-          <div class="col-md-6">
-            <p><strong>Toplam Ürün:</strong> <span id="total-items">0</span></p>
+          <div class="mb-3">
+            <label for="customer_phone">Telefon:</label>
+            <input type="tel" class="form-control" id="customer_phone" name="customer_phone" required>
           </div>
-          <div class="col-md-6">
-            <p><strong>Toplam Tutar:</strong> <span id="total-amount">0.00 TL</span></p>
+          <div class="mb-3">
+            <label for="customer_address">Adres:</label>
+            <textarea class="form-control" id="customer_address" name="customer_address" rows="3" required></textarea>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Sipariş Statüsü -->
-    <div class="mb-4">
-      <label for="status">Sipariş Durumu:</label>
-      <select class="form-control" id="status" name="status" required>
-        <option value="new">Yeni Sipariş</option>
-        <option value="confirmed">Onaylandı</option>
-        <option value="preparing">Hazırlanıyor</option>
-        <option value="shipped">Kargoya Verildi</option>
-        <option value="delivered">Teslim Edildi</option>
-        <option value="cancelled">İptal Edildi</option>
-      </select>
-    </div>
+      <!-- Ürün Bilgileri -->
+      <div class="card mb-4">
+        <div class="card-header bg-success text-white">
+          <h5 class="mb-0">Ürün Bilgileri</h5>
+        </div>
+        <div class="card-body">
+          <div class="mb-3">
+            <label for="barcode">Barkod:</label>
+            <div class="input-group">
+              <input type="text" class="form-control" id="barcode" name="barcode">
+              <button type="button" class="btn btn-primary" onclick="searchProduct()">Ara</button>
+            </div>
+          </div>
 
-    <button type="submit" class="btn btn-primary btn-lg">Siparişi Oluştur</button>
-  </form>
+          <!-- Ürün Detayları (AJAX ile doldurulacak) -->
+          <div id="product-details" class="d-none">
+            <div class="row">
+              <div class="col-md-4">
+                <img id="product-image" src="" class="img-fluid rounded" alt="Ürün Görseli">
+              </div>
+              <div class="col-md-8">
+                <h5 id="product-title"></h5>
+                <div class="row">
+                  <div class="col-md-6">
+                    <p><strong>Model:</strong> <span id="product-model"></span></p>
+                    <p><strong>Renk:</strong> <span id="product-color"></span></p>
+                  </div>
+                  <div class="col-md-6">
+                    <p><strong>Beden:</strong> <span id="product-size"></span></p>
+                    <p><strong>Fiyat:</strong> <span id="product-price"></span></p>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-md-4">
+                    <div class="mb-3">
+                      <label for="quantity">Adet:</label>
+                      <input type="number" class="form-control" id="quantity" name="quantity" min="1" value="1">
+                    </div>
+                  </div>
+                  <div class="col-md-4">
+                    <div class="mb-3">
+                      <label for="custom-price">Özel Fiyat (TL):</label>
+                      <input type="number" step="0.01" class="form-control" id="custom-price" name="custom-price">
+                    </div>
+                  </div>
+                  <div class="col-md-4">
+                    <div class="mb-3">
+                      <label for="product-notes">Ürün Notu:</label>
+                      <input type="text" class="form-control" id="product-notes" name="product-notes">
+                    </div>
+                  </div>
+                </div>
+                <div class="btn-group">
+                  <button type="button" class="btn btn-success" onclick="addToOrder()">Sepete Ekle</button>
+                  <button type="button" class="btn btn-primary" onclick="addMultipleProducts()">Toplu Ürün Ekle</button>
+                </div>
+
+                <!-- Toplu Ürün Ekleme Modalı -->
+                <div class="modal fade" id="multipleProductsModal" tabindex="-1">
+                  <div class="modal-dialog">
+                    <div class="modal-content">
+                      <div class="modal-header">
+                        <h5 class="modal-title">Toplu Ürün Ekle</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                      </div>
+                      <div class="modal-body">
+                        <div class="mb-3">
+                          <label>Barkodlar (Her satıra bir barkod):</label>
+                          <textarea class="form-control" id="multiple-barcodes" rows="5"></textarea>
+                        </div>
+                        <div class="mb-3">
+                          <label>Varsayılan Adet:</label>
+                          <input type="number" class="form-control" id="default-quantity" value="1" min="1">
+                        </div>
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                        <button type="button" class="btn btn-primary" onclick="processMultipleProducts()">Ekle</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sipariş Listesi -->
+          <div class="mt-4">
+            <h5>Sipariş Listesi</h5>
+            <table class="table table-striped">
+              <thead>
+                <tr>
+                  <th>Barkod</th>
+                  <th>Ürün</th>
+                  <th>Renk/Beden</th>
+                  <th>Adet</th>
+                  <th>Birim Fiyat</th>
+                  <th>İndirim</th>
+                  <th>Toplam</th>
+                  <th>Not</th>
+                  <th>İşlem</th>
+                </tr>
+              </thead>
+              <tbody id="order-items">
+                <!-- JavaScript ile doldurulacak -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sipariş Özeti -->
+      <div class="card mb-4">
+        <div class="card-header bg-info text-white">
+          <h5 class="mb-0">Sipariş Özeti</h5>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6">
+              <p><strong>Toplam Ürün:</strong> <span id="total-items">0</span></p>
+            </div>
+            <div class="col-md-6">
+              <p><strong>Toplam Tutar:</strong> <span id="total-amount">0.00 TL</span></p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sipariş Statüsü -->
+      <div class="mb-4">
+        <label for="status">Sipariş Durumu:</label>
+        <select class="form-control" id="status" name="status" required>
+          <option value="new">Yeni Sipariş</option>
+          <option value="confirmed">Onaylandı</option>
+          <option value="preparing">Hazırlanıyor</option>
+          <option value="shipped">Kargoya Verildi</option>
+          <option value="delivered">Teslim Edildi</option>
+          <option value="cancelled">İptal Edildi</option>
+        </select>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-lg">Siparişi Oluştur</button>
+    </form>
+  </div>
+</div>
+
+<!-- Sipariş Detay Modalı -->
+<div class="modal fade" id="orderDetailModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Sipariş Detayı</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="orderDetailContent">
+        <!-- AJAX ile doldurulacak -->
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -386,8 +444,34 @@ function updateTotals() {
   `;
 }
 
-// Form gönderilmeden önce sipariş öğelerini ekle
-document.querySelector('form').addEventListener('submit', function(e) {
+function showOrderForm() {
+  document.getElementById('ordersList').classList.add('d-none');
+  document.getElementById('orderForm').classList.remove('d-none');
+}
+
+function hideOrderForm() {
+  document.getElementById('ordersList').classList.remove('d-none');
+  document.getElementById('orderForm').classList.add('d-none');
+}
+
+async function showOrderDetails(siparisNo) {
+  try {
+    const response = await fetch(`/siparis-detay/${siparisNo}`);
+    if (!response.ok) throw new Error('Sipariş detayları alınamadı');
+
+    const detayHtml = await response.text();
+    document.getElementById('orderDetailContent').innerHTML = detayHtml;
+
+    const modal = new bootstrap.Modal(document.getElementById('orderDetailModal'));
+    modal.show();
+  } catch (error) {
+    console.error('Hata:', error);
+    alert('Sipariş detayları yüklenirken bir hata oluştu.');
+  }
+}
+
+// Form gönderimi sonrası
+document.querySelector('form').addEventListener('submit', async function(e) {
   e.preventDefault();
 
   if (orderItems.length === 0) {
@@ -432,7 +516,8 @@ document.querySelector('form').addEventListener('submit', function(e) {
   .then(data => {
     if (data.success) {
       alert('Sipariş başarıyla oluşturuldu!');
-      window.location.href = '/siparisler'; // Sipariş listesine yönlendir
+      hideOrderForm();
+      window.location.reload(); // Listeyi yenile
     } else {
       alert('Sipariş oluşturulurken bir hata oluştu!');
     }
