@@ -36,7 +36,7 @@
               </span>
             </td>
             <td>
-              <button class="btn btn-sm btn-info" onclick="showOrderDetails('{{ siparis.siparis_no }}')">
+              <button class="btn btn-sm btn-info" onclick="showOrderDetails('{{ siparis.siparis_no }}')" type="button">
                 <i class="bi bi-eye"></i> Detay
               </button>
             </td>
@@ -454,7 +454,7 @@ function hideOrderForm() {
   document.getElementById('orderForm').classList.add('d-none');
 }
 
-async async function showOrderDetails(siparisNo) {
+async function showOrderDetails(siparisNo) {
   try {
     const response = await fetch(`/siparis-detay/${siparisNo}`);
     if (!response.ok) throw new Error('Sipariş detayları alınamadı');
@@ -488,11 +488,11 @@ async function duzenlemeyeAc(siparisNo) {
   try {
     const response = await fetch(`/siparis-detay/${siparisNo}`);
     if (!response.ok) throw new Error('Sipariş detayları alınamadı');
-    
+
     const detayHtml = await response.text();
     const parser = new DOMParser();
     const doc = parser.parseFromString(detayHtml, 'text/html');
-    
+
     // Form alanlarını doldur
     const siparis = {
       musteri_adi: doc.querySelector('[data-musteri-adi]')?.textContent,
@@ -533,7 +533,7 @@ async function siparisiSil(siparisNo) {
     });
 
     const data = await response.json();
-    
+
     if (data.success) {
       alert('Sipariş başarıyla silindi');
       bootstrap.Modal.getInstance(document.getElementById('orderDetailModal')).hide();
