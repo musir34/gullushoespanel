@@ -13,8 +13,12 @@ home_bp = Blueprint('home', __name__)
 
 @home_bp.route('/')
 def home():
-    order_data = get_home()
-    return render_template('home.html', **order_data)
+    try:
+        order_data = get_home()
+        return render_template('home.html', **order_data)
+    except Exception as e:
+        logging.error(f"Anasayfa yüklenirken hata: {str(e)}")
+        return render_template('home.html', **default_order_data())
 
 def get_home():
     """
@@ -94,7 +98,7 @@ def get_home():
 
 def default_order_data():
     """
-    Varsayılan boş sipariş verilerini döndürür.
+    Varsayılan boş sipariş verilerini döndürür ve hata durumunda kullanılır.
     """
     return {
         'order': None,
@@ -106,7 +110,8 @@ def default_order_data():
         'customer_name': 'Alıcı Yok',
         'customer_surname': 'Soyad Yok',
         'customer_address': 'Adres Yok',
-        'remaining_time': 'Kalan Süre Yok'
+        'remaining_time': 'Kalan Süre Yok',
+        'error_message': 'Siparişler yüklenirken bir hata oluştu. Lütfen sayfayı yenileyin.'
     }
 
 def calculate_remaining_time(delivery_date):
