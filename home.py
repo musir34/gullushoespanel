@@ -9,7 +9,8 @@ from models import Order, Product
 # Logging ayarları
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-home_bp = Blueprint('home', __name__)
+from flask import Blueprint, render_template, redirect, url_for
+home_bp = Blueprint('home_bp', __name__)
 
 @home_bp.route('/')
 def home():
