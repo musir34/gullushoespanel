@@ -1,0 +1,53 @@
+
+<div class="container-fluid">
+  <div class="row mb-3">
+    <div class="col-md-6">
+      <h6>Sipariş Bilgileri</h6>
+      <p><strong>Sipariş No:</strong> {{ siparis.siparis_no }}</p>
+      <p><strong>Tarih:</strong> {{ siparis.siparis_tarihi.strftime('%d.%m.%Y %H:%M') }}</p>
+      <p><strong>Durum:</strong> {{ siparis.durum }}</p>
+    </div>
+    <div class="col-md-6">
+      <h6>Müşteri Bilgileri</h6>
+      <p><strong>Ad Soyad:</strong> {{ siparis.musteri_adi }} {{ siparis.musteri_soyadi }}</p>
+      <p><strong>Telefon:</strong> {{ siparis.musteri_telefon }}</p>
+      <p><strong>Adres:</strong> {{ siparis.musteri_adres }}</p>
+    </div>
+  </div>
+  
+  <h6>Ürünler</h6>
+  <div class="table-responsive">
+    <table class="table table-sm">
+      <thead>
+        <tr>
+          <th>Ürün</th>
+          <th>Barkod</th>
+          <th>Renk</th>
+          <th>Beden</th>
+          <th>Adet</th>
+          <th>Birim Fiyat</th>
+          <th>Toplam</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for urun in urunler %}
+        <tr>
+          <td>{{ urun.urun_adi }}</td>
+          <td>{{ urun.urun_barkod }}</td>
+          <td>{{ urun.renk }}</td>
+          <td>{{ urun.beden }}</td>
+          <td>{{ urun.adet }}</td>
+          <td>{{ "%.2f"|format(urun.birim_fiyat) }} TL</td>
+          <td>{{ "%.2f"|format(urun.toplam_fiyat) }} TL</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colspan="6" class="text-end"><strong>Genel Toplam:</strong></td>
+          <td><strong>{{ "%.2f"|format(siparis.toplam_tutar) }} TL</strong></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</div>
