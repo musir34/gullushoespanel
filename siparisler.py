@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, jsonify, redirect, url_for
+from flask import Blueprint, render_template, request, jsonify
 from models import db, Order, Product, YeniSiparis, SiparisUrun
 from datetime import datetime
 import json
@@ -11,7 +11,7 @@ siparisler_bp = Blueprint('siparisler_bp', __name__)
 
 @siparisler_bp.route('/', methods=['GET'])
 def siparis_listesi():
-    return redirect(url_for('home.home'))
+    return redirect(url_for('siparisler_bp.kendi_siparislerim'))
 
 @siparisler_bp.route('/yeni-siparis', methods=['GET', 'POST'])
 def yeni_siparis():
