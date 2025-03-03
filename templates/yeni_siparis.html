@@ -560,47 +560,97 @@ async function showOrderDetails(siparisNo) {
 
 // Siparişi düzenle
 async function duzenlemeyeAc(siparisNo) {
-  logToConsole('Düzenleme fonksiyonu başlatıldı', { siparisNo });
+  console.log('🔄 Düzenleme fonksiyonu başlatıldı', { siparisNo });
   try {
-    logToConsole('Sipariş detayları için fetch isteği yapılıyor');
+    // Detay bilgilerini al
+    console.log('📡 Sipariş detayları için istek yapılıyor...');
     const response = await fetch(`/siparis-detay/${siparisNo}`);
     if (!response.ok) {
-      const error = `HTTP error! status: ${response.status}`;
-      logToConsole('Fetch hatası:', error);
-      throw new Error(error);
+      throw new Error(`Sunucu hatası: ${response.status}`);
     }
 
     const detayHtml = await response.text();
     const parser = new DOMParser();
     const doc = parser.parseFromString(detayHtml, 'text/html');
 
-    // data-* alanlarından sipariş bilgileri
-    const siparis = {
-      musteri_adi: doc.querySelector('[data-musteri-adi]')?.textContent || '',
-      musteri_soyadi: doc.querySelector('[data-musteri-soyadi]')?.textContent || '',
-      musteri_adres: doc.querySelector('[data-musteri-adres]')?.textContent || '',
-      musteri_telefon: doc.querySelector('[data-musteri-telefon]')?.textContent || '',
-      durum: doc.querySelector('[data-durum]')?.textContent || 'new'
-    };
+    // Sipariş bilgilerini al (güvenli bir şekilde)
+    let musteriAdi = '', musteriSoyadi = '', musteriAdres = '', musteriTelefon = '', durum = 'new';
+    
+    // data-* özniteliklerini kullanarak bilgileri al
+    const mAdiElem = doc.querySelector('[data-musteri-adi]');
+    const mSoyadiElem = doc.querySelector('[data-musteri-soyadi]');
+    const mAdresElem = doc.querySelector('[data-musteri-adres]');
+    const mTelefonElem = doc.querySelector('[data-musteri-telefon]');
+    const mDurumElem = doc.querySelector('[data-durum]');
+
+    if (mAdiElem) musteriAdi = mAdiElem.textContent || '';
+    if (mSoyadiElem) musteriSoyadi = mSoyadiElem.textContent || '';
+    if (mAdresElem) musteriAdres = mAdresElem.textContent || '';
+    if (mTelefonElem) musteriTelefon = mTelefonElem.textContent || '';
+    if (mDurumElem) durum = mDurumElem.textContent || 'new';
+
+    console.log('📝 Müşteri bilgileri alındı:', { 
+      musteriAdi, musteriSoyadi, musteriTelefon, durum 
+    });
+
+    // Ürün bilgilerini al
+    const urunTablosu = doc.querySelector('table.table-products');
+    orderItems = []; // Global değişkeni temizle
+    
+    if (urunTablosu) {
+      const satirlar = urunTablosu.querySelectorAll('tbody tr');
+      console.log(`🛒 ${satirlar.length} adet ürün bulundu`);
+      
+      satirlar.forEach((satir, index) => {
+        const hucreler = satir.querySelectorAll('td');
+        if (hucreler.length >= 5) {
+          try {
+            const barkod = hucreler[0]?.textContent?.trim() || '';
+            const urunAdi = hucreler[1]?.textContent?.trim() || '';
+            const renkBeden = (hucreler[2]?.textContent?.trim() || '').split('/');
+            const renk = renkBeden[0]?.trim() || '';
+            const beden = renkBeden[1]?.trim() || '';
+            const adet = parseInt(hucreler[3]?.textContent?.trim() || '1', 10);
+            const fiyat = parseFloat((hucreler[4]?.textContent?.trim() || '0').replace('TL', '').trim());
+
+            const urun = {
+              barcode: barkod,
+              title: urunAdi,
+              color: renk,
+              size: beden,
+              quantity: adet,
+              price: fiyat,
+              total: adet * fiyat,
+              discount: 0,
+              notes: ''
+            };
+            
+            orderItems.push(urun);
+            console.log(`✅ Ürün #${index+1} eklendi:`, urun);
+          } catch (err) {
+            console.error(`⚠️ Ürün #${index+1} eklenirken hata:`, err);
+          }
+        }
+      });
+    }
 
     // Form alanlarını doldur
-    document.getElementById('customer_name').value = siparis.musteri_adi.trim();
-    document.getElementById('customer_surname').value = siparis.musteri_soyadi.trim();
-    document.getElementById('customer_address').value = siparis.musteri_adres.trim();
-    document.getElementById('customer_phone').value = siparis.musteri_telefon.trim();
-    document.getElementById('status').value = siparis.durum.trim();
+    document.getElementById('customer_name').value = musteriAdi.trim();
+    document.getElementById('customer_surname').value = musteriSoyadi.trim();
+    document.getElementById('customer_address').value = musteriAdres.trim();
+    document.getElementById('customer_phone').value = musteriTelefon.trim();
+    document.getElementById('status').value = durum.trim();
 
     // Modal'ı kapat ve form görünümüne geç
     const orderDetailModal = document.getElementById('orderDetailModal');
     if (orderDetailModal) {
-      try {
-        const modal = bootstrap.Modal.getInstance(orderDetailModal);
-        modal.hide();
-      } catch (modalError) {
-        console.error('Modal kapatma hatası:', modalError);
-      }
+      const modal = bootstrap.Modal.getInstance(orderDetailModal);
+      if (modal) modal.hide();
     }
+    
     showOrderForm();
+    updateOrderTable(); // Ürün tablosunu güncelle
+    updateTotals();    // Toplamları güncelle
 
     // Formun gönderim şeklini (yeni mi/düzenleme mi) tut
     const form = document.querySelector('form');
@@ -608,9 +658,11 @@ async function duzenlemeyeAc(siparisNo) {
       form.dataset.mode = 'edit';
       form.dataset.siparisNo = siparisNo;
     }
+    
+    console.log('✅ Düzenleme formu başarıyla açıldı');
   } catch (error) {
-    console.error('Hata:', error);
-    alert('Sipariş düzenlemeye açılırken bir hata oluştu.');
+    console.error('❌ Düzenleme hatası:', error);
+    alert(`Sipariş düzenlemeye açılırken bir hata oluştu: ${error.message}`);
   }
 }
 

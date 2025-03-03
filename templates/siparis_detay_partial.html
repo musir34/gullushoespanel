@@ -1,4 +1,3 @@
-
 <div class="container-fluid">
   <div class="row mb-3">
     <div class="col-md-6">
@@ -9,15 +8,23 @@
     </div>
     <div class="col-md-6">
       <h6>Müşteri Bilgileri</h6>
-      <p><strong>Ad Soyad:</strong> {{ siparis.musteri_adi }} {{ siparis.musteri_soyadi }}</p>
-      <p><strong>Telefon:</strong> {{ siparis.musteri_telefon }}</p>
-      <p><strong>Adres:</strong> {{ siparis.musteri_adres }}</p>
+      <div class="card mb-3">
+        <div class="card-header">
+          <h5 class="mb-0">Müşteri Bilgileri</h5>
+        </div>
+        <div class="card-body">
+          <p><strong>Müşteri:</strong> <span data-musteri-adi>{{ siparis.musteri_adi }}</span> <span data-musteri-soyadi>{{ siparis.musteri_soyadi }}</span></p>
+          <p><strong>Telefon:</strong> <span data-musteri-telefon>{{ siparis.musteri_telefon }}</span></p>
+          <p><strong>Adres:</strong> <span data-musteri-adres>{{ siparis.musteri_adres }}</span></p>
+          <p hidden data-durum>{{ siparis.durum }}</p>
+        </div>
+      </div>
     </div>
   </div>
-  
+
   <h6>Ürünler</h6>
   <div class="table-responsive">
-    <table class="table table-sm">
+    <table class="table table-striped table-sm table-products">
       <thead>
         <tr>
           <th>Ürün</th>
