@@ -18,6 +18,9 @@ def login_user(user):
     session['role'] = user.role
     session['first_name'] = user.first_name
     session['last_name'] = user.last_name
+    session['authenticated'] = True
+    # Oturum süresini uzatmak için permanent oturumu kullanıyoruz
+    session.permanent = True
     print(f"Oturumda atanan rol: {session['role']}")  # Oturumdaki rolü logla
 
 
@@ -123,6 +126,10 @@ def check_role():
 # Kullanıcı girişi
 @login_logout_bp.route('/login', methods=['GET', 'POST'])
 def login():
+    # Eğer kullanıcı zaten doğrulanmışsa
+    if 'user_id' in session and session.get('authenticated', False) and session.get('totp_verified', False):
+        return redirect(url_for('login_logout.home'))
+        
     if request.method == 'POST':
         session.clear()
         username = request.form['username']
@@ -189,6 +196,8 @@ def verify_totp():
         if totp.verify(token):
             login_user(user)
             session.pop('pending_user', None)
+            # 2FA tamamlandı
+            session['totp_verified'] = True
             flash('Başarıyla giriş yaptınız.', 'success')
             return redirect(url_for('login_logout.home'))
         flash('Geçersiz doğrulama kodu.', 'danger')

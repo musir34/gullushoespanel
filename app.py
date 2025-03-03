@@ -6,6 +6,7 @@ from flask_sqlalchemy import SQLAlchemy
 from models import db, Base
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from datetime import timedelta
 
 # Logging ayarları
 import logging
@@ -97,6 +98,7 @@ for bp in blueprints:
 
 @app.before_request
 def check_authentication():
+    # İzin verilen rotalar
     allowed_routes = [
         'login_logout.login',
         'login_logout.register',
@@ -104,14 +106,19 @@ def check_authentication():
         'login_logout.verify_totp',
         'login_logout.logout'
     ]
-
+    
+    # Oturum süresini ayarla - 1 ay (30 gün)
+    app.permanent_session_lifetime = timedelta(days=30)
+    
+    # Eğer izin verilen rotalara istek yapılmışsa ve kullanıcı henüz giriş yapmamışsa
     if request.endpoint not in allowed_routes:
         if 'username' not in session:
             flash('Lütfen giriş yapınız.', 'danger')
             return redirect(url_for('login_logout.login'))
-
-    if 'pending_user' in session and request.endpoint != 'login_logout.verify_totp':
-        return redirect(url_for('login_logout.verify_totp'))
+        
+        # Kullanıcı giriş yapmış ama TOTP doğrulaması yapmamışsa
+        if 'pending_user' in session and request.endpoint != 'login_logout.verify_totp':
+            return redirect(url_for('login_logout.verify_totp'))
 
 def custom_url_for(endpoint, **values):
     try:
