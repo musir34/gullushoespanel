@@ -153,15 +153,24 @@ def degisim_talep():
     page = request.args.get('page', 1, type=int)
     per_page = 10
 
-    # Filtre ve sıralama parametrelerini alıyoruz
+    # Filtre, sıralama ve arama parametrelerini alıyoruz
     filter_status = request.args.get('filter_status')
     sort = request.args.get('sort', 'desc')
+    siparis_no = request.args.get('siparis_no')
+
+    logging.info(f"Değişim talepleri filtreleniyor: sayfa={page}, durum={filter_status}, sıralama={sort}, sipariş_no={siparis_no}")
 
     query = Degisim.query
 
     # Eğer filtre verilmişse duruma göre filtrele
     if filter_status:
         query = query.filter(Degisim.degisim_durumu == filter_status)
+        logging.debug(f"Durum filtresi uygulandı: {filter_status}")
+
+    # Sipariş numarasına göre filtreleme
+    if siparis_no:
+        query = query.filter(Degisim.siparis_no.ilike(f"%{siparis_no}%"))
+        logging.debug(f"Sipariş numarası filtresi uygulandı: {siparis_no}")
 
     # Sıralama
     if sort == 'asc':
@@ -173,6 +182,8 @@ def degisim_talep():
     degisim_kayitlari = pagination.items
     total_records = pagination.total
     total_pages = pagination.pages
+    
+    logging.info(f"Toplam {total_records} değişim talebi bulundu, {len(degisim_kayitlari)} adet gösteriliyor")
 
     return render_template(
         'degisim_talep.html',

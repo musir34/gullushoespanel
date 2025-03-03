@@ -52,10 +52,24 @@
         </div>
 
         <!-- Filtre ve Sıralama Alanı -->
-        <div class="d-flex justify-content-center mb-4">
-            <form action="{{ url_for('degisim.degisim_talep') }}" method="GET" class="me-3">
+        <div class="d-flex justify-content-center mb-4 flex-wrap">
+            <!-- Sipariş Numarasına Göre Arama Kutusu -->
+            <div class="me-3 mb-2">
+                <form action="{{ url_for('degisim.degisim_talep') }}" method="GET" class="d-flex">
+                    <div class="input-group">
+                        <input type="text" name="siparis_no" class="form-control form-control-sm" placeholder="Sipariş No Ara" value="{{ request.args.get('siparis_no', '') }}">
+                        <button type="submit" class="btn btn-primary btn-sm">Ara</button>
+                        {% if request.args.get('siparis_no') %}
+                        <a href="{{ url_for('degisim.degisim_talep') }}" class="btn btn-outline-secondary btn-sm">Temizle</a>
+                        {% endif %}
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Durum Filtresi -->
+            <form action="{{ url_for('degisim.degisim_talep') }}" method="GET" class="me-3 mb-2">
                 <div class="input-group">
-                    <select name="filter_status" class="form-select">
+                    <select name="filter_status" class="form-select form-select-sm">
                         <option value="">Tümü</option>
                         <option value="Beklemede" {% if request.args.get('filter_status') == 'Beklemede' %}selected{% endif %}>Beklemede</option>
                         <option value="İşleme Alındı" {% if request.args.get('filter_status') == 'İşleme Alındı' %}selected{% endif %}>İşleme Alındı</option>
@@ -64,12 +78,16 @@
                     </select>
                     <button type="submit" class="btn btn-primary btn-sm">Filtrele</button>
                 </div>
+                {% if request.args.get('siparis_no') %}
+                <input type="hidden" name="siparis_no" value="{{ request.args.get('siparis_no') }}">
+                {% endif %}
             </form>
 
-            <div>
+            <!-- Sıralama Seçenekleri -->
+            <div class="mb-2">
                 Sırala:
-                <a href="{{ url_for('degisim.degisim_talep', filter_status=request.args.get('filter_status'), sort='asc') }}" class="btn btn-sm btn-outline-secondary">Eskiden Yeniye</a>
-                <a href="{{ url_for('degisim.degisim_talep', filter_status=request.args.get('filter_status'), sort='desc') }}" class="btn btn-sm btn-outline-secondary">Yeniden Eskiye</a>
+                <a href="{{ url_for('degisim.degisim_talep', filter_status=request.args.get('filter_status'), sort='asc', siparis_no=request.args.get('siparis_no')) }}" class="btn btn-sm btn-outline-secondary">Eskiden Yeniye</a>
+                <a href="{{ url_for('degisim.degisim_talep', filter_status=request.args.get('filter_status'), sort='desc', siparis_no=request.args.get('siparis_no')) }}" class="btn btn-sm btn-outline-secondary">Yeniden Eskiye</a>
             </div>
         </div>
 
@@ -155,17 +173,17 @@
             <ul class="pagination justify-content-center">
                 {% if page > 1 %}
                 <li class="page-item">
-                    <a class="page-link" href="{{ url_for(request.endpoint, page=page-1, filter_status=request.args.get('filter_status'), sort=request.args.get('sort')) }}">Önceki</a>
+                    <a class="page-link" href="{{ url_for(request.endpoint, page=page-1, filter_status=request.args.get('filter_status'), sort=request.args.get('sort'), siparis_no=request.args.get('siparis_no')) }}">Önceki</a>
                 </li>
                 {% endif %}
                 {% for i in range(1, total_pages + 1) %}
                 <li class="page-item {% if i == page %}active{% endif %}">
-                    <a class="page-link" href="{{ url_for(request.endpoint, page=i, filter_status=request.args.get('filter_status'), sort=request.args.get('sort')) }}">{{ i }}</a>
+                    <a class="page-link" href="{{ url_for(request.endpoint, page=i, filter_status=request.args.get('filter_status'), sort=request.args.get('sort'), siparis_no=request.args.get('siparis_no')) }}">{{ i }}</a>
                 </li>
                 {% endfor %}
                 {% if page < total_pages %}
                 <li class="page-item">
-                    <a class="page-link" href="{{ url_for(request.endpoint, page=page+1, filter_status=request.args.get('filter_status'), sort=request.args.get('sort')) }}">Sonraki</a>
+                    <a class="page-link" href="{{ url_for(request.endpoint, page=page+1, filter_status=request.args.get('filter_status'), sort=request.args.get('sort'), siparis_no=request.args.get('siparis_no')) }}">Sonraki</a>
                 </li>
                 {% endif %}
             </ul>
