@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Değişim Listesi</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <style>
         .toggle-details { cursor: pointer; }
         .details-section { display: none; transition: all 0.3s ease; }
@@ -34,12 +35,76 @@
             align-items: center;
             justify-content: space-between;
         }
-        .card { margin-bottom: 15px; }
+        .card { 
+            margin-bottom: 15px; 
+            transition: all 0.3s ease;
+            transform-origin: center;
+            animation: fadeIn 0.5s;
+        }
+        .card:hover {
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+        }
         .card-body { padding: 15px; }
-        .product-image { width: 100px; height: auto; }
+        .product-image { 
+            width: 100px; 
+            height: auto; 
+            transition: transform 0.3s ease;
+        }
+        .product-image:hover {
+            transform: scale(1.1);
+        }
         .bg-orange { background-color: orange; color: white; }
         .bg-red { background-color: red; color: white; }
-        #messageBox { display: none; }
+        #messageBox { 
+            display: none; 
+            animation: slideDown 0.3s ease;
+        }
+        .result-container {
+            min-height: 500px;
+        }
+        
+        /* Animasyonlar */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.6; }
+            100% { opacity: 1; }
+        }
+        
+        .loading-item {
+            animation: pulse 1.5s infinite;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+        }
+        
+        .search-highlight {
+            background-color: #fffacd;
+            padding: 2px;
+            border-radius: 3px;
+        }
+        
+        #content-area {
+            transition: opacity 0.3s ease;
+        }
+        
+        .pagination .page-item .page-link {
+            transition: all 0.2s ease;
+        }
+        
+        .pagination .page-item:hover .page-link {
+            background-color: #007bff;
+            color: white;
+        }
     </style>
 </head>
 <body>
@@ -55,15 +120,21 @@
         <div class="d-flex justify-content-center mb-4 flex-wrap">
             <!-- Sipariş Numarasına Göre Arama Kutusu -->
             <div class="me-3 mb-2">
-                <form action="{{ url_for('degisim.degisim_talep') }}" method="GET" class="d-flex">
-                    <div class="input-group">
-                        <input type="text" name="siparis_no" class="form-control form-control-sm" placeholder="Sipariş No Ara" value="{{ request.args.get('siparis_no', '') }}">
-                        <button type="submit" class="btn btn-primary btn-sm">Ara</button>
-                        {% if request.args.get('siparis_no') %}
-                        <a href="{{ url_for('degisim.degisim_talep') }}" class="btn btn-outline-secondary btn-sm">Temizle</a>
-                        {% endif %}
+                <div class="input-group">
+                    <input type="text" id="search_input" class="form-control form-control-sm" placeholder="Sipariş No Ara" value="{{ request.args.get('siparis_no', '') }}">
+                    <button type="button" id="search_button" class="btn btn-primary btn-sm">
+                        <i class="bi bi-search"></i> Ara
+                    </button>
+                    {% if request.args.get('siparis_no') %}
+                    <a href="{{ url_for('degisim.degisim_talep') }}" class="btn btn-outline-secondary btn-sm">Temizle</a>
+                    {% endif %}
+                </div>
+                <div id="search_loader" class="mt-1 text-center d-none">
+                    <div class="spinner-border spinner-border-sm text-primary" role="status">
+                        <span class="visually-hidden">Aranıyor...</span>
                     </div>
-                </form>
+                    <small class="text-muted ms-2">Aranıyor...</small>
+                </div>
             </div>
             
             <!-- Durum Filtresi -->
@@ -104,7 +175,7 @@
         </div>
 
         <!-- Değişim Taleplerinin Listelendiği Kısım -->
-        <div class="row">
+        <div id="content-area" class="row result-container">
             {% for exchange in degisim_kayitlari %}
             <div class="col-md-6 col-lg-4">
                 <div class="card">
@@ -199,7 +270,19 @@
             box.style.display = 'block';
             box.className = success ? 'alert alert-success' : 'alert alert-danger';
             box.textContent = message;
-            setTimeout(() => { box.style.display = 'none'; }, 3000);
+            box.style.opacity = 0;
+            
+            // Animasyon ile göster
+            setTimeout(() => { 
+                box.style.opacity = 1;
+            }, 10);
+            
+            setTimeout(() => { 
+                box.style.opacity = 0;
+                setTimeout(() => {
+                    box.style.display = 'none';
+                }, 300);
+            }, 3000);
         }
 
         function copyToClipboard(text, element) {
@@ -215,10 +298,26 @@
         }
 
         function updateStatus(degisim_no, status) {
+            const fadeOut = (element) => {
+                element.style.opacity = 0;
+                element.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    // element.parentNode.removeChild(element);
+                }, 300);
+            };
+            
             $.post("/update_status", { degisim_no: degisim_no, status: status }, function(response) {
                 if (response.success) {
                     showMessage("Durum güncellendi!", true);
-                    setTimeout(() => { location.reload(); }, 1000);
+                    // Animasyonlu geçiş için card elementini bul
+                    const cardElement = $(`button[onclick="updateStatus('${degisim_no}', '${status}')"]`).closest('.card');
+                    cardElement.css({
+                        'transition': 'all 0.3s ease',
+                        'opacity': '0',
+                        'transform': 'scale(0.95)'
+                    });
+                    
+                    setTimeout(() => { location.reload(); }, 700);
                 } else {
                     showMessage("Durum güncellenirken bir hata oluştu.", false);
                 }
@@ -229,14 +328,36 @@
 
         function deleteExchange(degisim_no) {
             if (confirm("Bu değişim kaydını silmek istediğinizden emin misiniz?")) {
+                const cardElement = $(`button[onclick="deleteExchange('${degisim_no}')"]`).closest('.card');
+                cardElement.css({
+                    'transition': 'all 0.5s ease',
+                    'opacity': '0',
+                    'transform': 'translateY(20px)'
+                });
+                
                 $.post("/delete_exchange", { degisim_no: degisim_no }, function(response) {
                     if (response.success) {
                         showMessage("Değişim kaydı silindi!", true);
-                        setTimeout(() => { location.reload(); }, 1000);
+                        // Animasyonlu silme işlemi
+                        setTimeout(() => {
+                            cardElement.css('display', 'none');
+                            // Kartı tamamen siliyoruz
+                            setTimeout(() => { location.reload(); }, 100);
+                        }, 500);
                     } else {
+                        // Hata durumunda kartı geri göster
+                        cardElement.css({
+                            'opacity': '1',
+                            'transform': 'translateY(0)'
+                        });
                         showMessage("Değişim kaydı silinirken bir hata oluştu.", false);
                     }
                 }).fail(function() {
+                    // Hata durumunda kartı geri göster
+                    cardElement.css({
+                        'opacity': '1',
+                        'transform': 'translateY(0)'
+                    });
                     showMessage("Değişim kaydı silinirken bir hata oluştu.", false);
                 });
             }
@@ -245,6 +366,82 @@
         function editExchange(degisim_no) {
             window.location.href = `/edit_exchange/${degisim_no}`;
         }
+        
+        // Sayfa yüklendiğinde
+        $(document).ready(function() {
+            // Arama işlevi için olay dinleyicileri
+            $('#search_button').on('click', function() {
+                performSearch();
+            });
+            
+            $('#search_input').on('keypress', function(e) {
+                if (e.which === 13) { // Enter tuşu
+                    e.preventDefault();
+                    performSearch();
+                }
+            });
+            
+            // Geçiş efekti - sayfalama tıklamaları için
+            $('.pagination .page-link').on('click', function() {
+                fadePageContent();
+            });
+            
+            // Sayfa içeriğini soluklaştırma fonksiyonu
+            function fadePageContent() {
+                $('#content-area').css('opacity', '0.5');
+            }
+            
+            // AJAX ile arama işlevi
+            function performSearch() {
+                const searchTerm = $('#search_input').val().trim();
+                if (searchTerm === '') return;
+                
+                // Yükleniyor göstergesini göster
+                $('#search_loader').removeClass('d-none');
+                
+                // İçeriği soluklaştır
+                $('.result-container').css('opacity', '0.6');
+                
+                // URL oluştur
+                const url = `{{ url_for('degisim.degisim_talep') }}?siparis_no=${encodeURIComponent(searchTerm)}`;
+                
+                // Sayfa içeriğini animasyonla geçiş yaparak güncelleyelim
+                window.location.href = url;
+            }
+            
+            // Sayfa yüklenirken fade-in efekti
+            $('.card').each(function(index) {
+                const card = $(this);
+                setTimeout(() => {
+                    card.css('opacity', '1');
+                }, index * 100);
+            });
+            
+            // Arama sonuçlarında eşleşen metni vurgulama
+            if ('{{ request.args.get("siparis_no", "") }}' !== '') {
+                const searchTerm = '{{ request.args.get("siparis_no", "") }}';
+                highlightSearchTerm(searchTerm);
+            }
+            
+            // Metni vurgulama fonksiyonu
+            function highlightSearchTerm(term) {
+                if (!term) return;
+                
+                // Siparış numaralarında eşleşme ara
+                $('.card strong:contains("Sipariş Numarası:")').each(function() {
+                    const element = $(this).parent();
+                    const text = element.html();
+                    
+                    if(text.indexOf(term) > -1) {
+                        const newText = text.replace(
+                            new RegExp(term, 'gi'), 
+                            '<span class="search-highlight">$&</span>'
+                        );
+                        element.html(newText);
+                    }
+                });
+            }
+        });
     </script>
 </body>
 </html>

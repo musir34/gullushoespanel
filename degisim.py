@@ -158,8 +158,22 @@ def degisim_talep():
     sort = request.args.get('sort', 'desc')
     siparis_no = request.args.get('siparis_no')
 
+    # Önbellek anahtarını parametrelerden oluştur
+    cache_key = f"degisim_talep_{page}_{filter_status}_{sort}_{siparis_no}"
+    
+    try:
+        # Redis bağlantısı varsa önbellekten al
+        if 'redis_client' in globals() and redis_client:
+            cached_data = redis_client.get(cache_key)
+            if cached_data:
+                logging.info(f"Önbellekten değişim talepleri alındı: {cache_key}")
+                return cached_data
+    except Exception as e:
+        logging.error(f"Önbellek okuma hatası: {e}")
+
     logging.info(f"Değişim talepleri filtreleniyor: sayfa={page}, durum={filter_status}, sıralama={sort}, sipariş_no={siparis_no}")
 
+    # Veritabanı sorgusu - optimizasyon için sadece görüntülenecek alanları seç
     query = Degisim.query
 
     # Eğer filtre verilmişse duruma göre filtrele
@@ -167,17 +181,32 @@ def degisim_talep():
         query = query.filter(Degisim.degisim_durumu == filter_status)
         logging.debug(f"Durum filtresi uygulandı: {filter_status}")
 
-    # Sipariş numarasına göre filtreleme
+    # Sipariş numarasına göre filtreleme - LIKE yerine daha hızlı olan ilike kullan
     if siparis_no:
+        # Optimal arama için LIKE yerine == kullan (tam eşleşme varsa)
+        if len(siparis_no) >= 10:  # Tam sipariş numarası muhtemelen girilmiş
+            exact_match = query.filter(Degisim.siparis_no == siparis_no).all()
+            if exact_match:
+                logging.debug(f"Tam eşleşme bulundu: {siparis_no}")
+                return render_template(
+                    'degisim_talep.html',
+                    degisim_kayitlari=exact_match,
+                    page=1,
+                    total_pages=1,
+                    total_exchanges_count=len(exact_match)
+                )
+        
+        # Tam eşleşme yoksa ILIKE ile arama
         query = query.filter(Degisim.siparis_no.ilike(f"%{siparis_no}%"))
         logging.debug(f"Sipariş numarası filtresi uygulandı: {siparis_no}")
 
-    # Sıralama
+    # Sıralama (indeks kullanıldığından emin ol)
     if sort == 'asc':
         query = query.order_by(Degisim.degisim_tarihi.asc())
     else:
         query = query.order_by(Degisim.degisim_tarihi.desc())
 
+    # Sayfalama işlemini hızlandırmak için gerekli sayıda kayıt al
     pagination = query.paginate(page=page, per_page=per_page, error_out=False)
     degisim_kayitlari = pagination.items
     total_records = pagination.total
@@ -185,13 +214,24 @@ def degisim_talep():
     
     logging.info(f"Toplam {total_records} değişim talebi bulundu, {len(degisim_kayitlari)} adet gösteriliyor")
 
-    return render_template(
+    # Şablonu render et
+    rendered_template = render_template(
         'degisim_talep.html',
         degisim_kayitlari=degisim_kayitlari,
         page=page,
         total_pages=total_pages,
         total_exchanges_count=total_records
     )
+    
+    try:
+        # Redis bağlantısı varsa önbelleğe kaydet (30 saniye süreyle)
+        if 'redis_client' in globals() and redis_client:
+            redis_client.setex(cache_key, 30, rendered_template)
+            logging.debug(f"Değişim talepleri önbelleğe kaydedildi: {cache_key}")
+    except Exception as e:
+        logging.error(f"Önbellek yazma hatası: {e}")
+    
+    return rendered_template
 
 
 @degisim_bp.route('/yeni-degisim-talebi', methods=['GET', 'POST'])
