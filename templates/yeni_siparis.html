@@ -4,20 +4,6 @@
 <div class="container mt-4">
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>Siparişler</h2>
-    <div class="search-container">
-      <form id="searchForm" class="d-flex">
-        <input type="text" class="form-control me-2" id="search_query" placeholder="Sipariş No, Müşteri Adı...">
-        <select id="search_field" class="form-select me-2">
-          <option value="siparis_no">Sipariş No</option>
-          <option value="musteri_adi">Müşteri Adı</option>
-        </select>
-        <button class="btn btn-primary" type="submit">Ara</button>
-      </form>
-      <div id="loadingIndicator" class="d-none text-center mt-2">
-        <div class="spinner-border text-primary" role="status"></div>
-        <p class="mt-2">Aranıyor...</p>
-      </div>
-    </div>
     <button class="btn btn-primary" onclick="showOrderForm()">
       <i class="bi bi-plus-circle"></i> Yeni Sipariş Oluştur
     </button>
@@ -37,13 +23,27 @@
             <th>İşlemler</th>
           </tr>
         </thead>
-        <tbody id="ordersTableBody">
-          <!-- JavaScript ile doldurulacak -->
+        <tbody>
+          {% for siparis in siparisler %}
+          <tr>
+            <td>{{ siparis.siparis_no }}</td>
+            <td>{{ siparis.musteri_adi }} {{ siparis.musteri_soyadi }}</td>
+            <td>{{ "%.2f"|format(siparis.toplam_tutar) }} TL</td>
+            <td>{{ siparis.siparis_tarihi.strftime('%d.%m.%Y %H:%M') }}</td>
+            <td>
+              <span class="badge bg-{{ 'success' if siparis.durum == 'Tamamlandı' else 'warning' }}">
+                {{ siparis.durum }}
+              </span>
+            </td>
+            <td>
+              <button class="btn btn-sm btn-info" onclick="showOrderDetails('{{ siparis.siparis_no }}')" type="button">
+                <i class="bi bi-eye"></i> Detay
+              </button>
+            </td>
+          </tr>
+          {% endfor %}
         </tbody>
       </table>
-      <div id="noResults" class="d-none no-results">
-        <p>Sonuç bulunamadı.</p>
-      </div>
     </div>
   </div>
 
@@ -285,9 +285,6 @@
     margin: 20px 0;
     border-radius: 5px;
   }
-  .btn-close-white{
-    color: white;
-  }
 </style>
 <script>
 // Basit debug fonksiyonu
@@ -333,108 +330,36 @@ async function searchProduct() {
 
 // Tekli ürün sepete ekle
 function addToOrder() {
-  console.group('%c🛒 Ürün Sepete Ekleniyor', 'background: #2ecc71; color: white; padding: 5px; border-radius: 3px;');
-  
-  try {
-    // Ürün bilgilerini al
-    const barcode = document.getElementById('barcode').value;
-    console.log(`📊 Ürün barkod: "${barcode}"`);
-    
-    const quantityElement = document.getElementById('quantity');
-    const quantityRaw = quantityElement.value;
-    console.log(`📊 Ham adet değeri: "${quantityRaw}"`);
-    
-    const quantity = parseInt(quantityRaw);
-    if (isNaN(quantity)) {
-      console.error('❌ Geçersiz adet değeri!');
-      throw new Error('Geçersiz adet değeri. Lütfen pozitif bir sayı girin.');
-    }
-    console.log(`📊 Adet: ${quantity}`);
-    
-    const title = document.getElementById('product-title').textContent;
-    console.log(`📊 Ürün adı: "${title}"`);
-    
-    const color = document.getElementById('product-color').textContent;
-    console.log(`📊 Renk: "${color}"`);
-    
-    const size = document.getElementById('product-size').textContent;
-    console.log(`📊 Beden: "${size}"`);
-    
-    const customPrice = document.getElementById('custom-price').value;
-    console.log(`📊 Özel fiyat girişi: "${customPrice}"`);
-    
-    const priceElement = document.getElementById('product-price');
-    const priceText = priceElement.textContent;
-    console.log(`📊 Varsayılan fiyat metni: "${priceText}"`);
-    
-    let price;
-    if (customPrice) {
-      price = parseFloat(customPrice);
-      console.log(`📊 Özel fiyat kullanılıyor: ${price}`);
-    } else {
-      const cleanPriceText = priceText.replace(' TL', '');
-      console.log(`📊 Temizlenmiş fiyat metni: "${cleanPriceText}"`);
-      price = parseFloat(cleanPriceText);
-      console.log(`📊 Varsayılan fiyat kullanılıyor: ${price}`);
-    }
-    
-    if (isNaN(price)) {
-      console.error('❌ Geçersiz fiyat değeri!');
-      throw new Error('Geçersiz fiyat değeri. Lütfen doğru bir fiyat girin.');
-    }
-    
-    const notesElement = document.getElementById('product-notes');
-    const notes = notesElement.value || '';
-    console.log(`📊 Ürün notu: "${notes}"`);
-    
-    // Toplam tutarı hesapla
-    const total = quantity * price;
-    console.log(`📊 Hesaplanan toplam: ${quantity} × ${price} = ${total}`);
+  const barcode = document.getElementById('barcode').value;
+  const quantity = parseInt(document.getElementById('quantity').value);
+  const title = document.getElementById('product-title').textContent;
+  const color = document.getElementById('product-color').textContent;
+  const size = document.getElementById('product-size').textContent;
+  const customPrice = document.getElementById('custom-price').value;
+  const price = customPrice
+    ? parseFloat(customPrice)
+    : parseFloat(document.getElementById('product-price').textContent.replace(' TL', ''));
 
-    // Ürün nesnesini oluştur
-    const item = {
-      barcode,
-      title,
-      color,
-      size,
-      quantity,
-      price,
-      total,
-      discount: 0,
-      notes
-    };
-    
-    console.log('✅ Ürün nesnesi oluşturuldu:', item);
-    
-    // Listeye ekle
-    orderItems.push(item);
-    console.log(`📋 Sipariş listesine eklendi. Mevcut ürün sayısı: ${orderItems.length}`);
-    
-    // Tabloyu güncelle
-    console.log('🔄 Sipariş tablosu güncelleniyor...');
-    updateOrderTable();
-    
-    // Toplamları güncelle
-    console.log('🔄 Toplam tutarlar güncelleniyor...');
-    updateTotals();
+  const item = {
+    barcode,
+    title,
+    color,
+    size,
+    quantity,
+    price,
+    total: quantity * price,
+    discount: 0,
+    notes: document.getElementById('product-notes').value || ''
+  };
 
-    // Formu temizle
-    console.log('🧹 Form temizleniyor...');
-    document.getElementById('product-details').classList.add('d-none');
-    document.getElementById('barcode').value = '';
-    document.getElementById('quantity').value = '1';
-    document.getElementById('custom-price').value = '';
-    document.getElementById('product-notes').value = '';
-    
-    console.log('✅ Ürün ekleme işlemi başarıyla tamamlandı');
-  } catch (error) {
-    console.error('🔴 Ürün ekleme hatası:', error);
-    console.error('🔴 Hata mesajı:', error.message);
-    console.error('🔴 Hata stack:', error.stack);
-    alert('Ürün eklerken bir hata oluştu: ' + error.message);
-  } finally {
-    console.groupEnd();
-  }
+  orderItems.push(item);
+  updateOrderTable();
+  updateTotals();
+
+  // Formu temizle
+  document.getElementById('product-details').classList.add('d-none');
+  document.getElementById('barcode').value = '';
+  document.getElementById('quantity').value = '1';
 }
 
 // Bir satırı kaldır
@@ -575,63 +500,17 @@ function updateItemNotes(index, value) {
 
 // Tutarları hesaplama
 function updateTotals() {
-  console.group('%c💰 Sipariş Toplamları Hesaplanıyor', 'background: #f39c12; color: white; padding: 5px; border-radius: 3px;');
-  
-  try {
-    console.log(`📋 Toplam ${orderItems.length} adet ürün bulunuyor:`);
-    orderItems.forEach((item, index) => {
-      console.log(`   Ürün #${index+1}: ${item.title} × ${item.quantity} = ${item.total} TL (İndirim: ${item.discount || 0} TL)`);
-    });
-    
-    // Toplam ürün adedi
-    const totalItems = orderItems.reduce((sum, item) => {
-      const quantity = Number(item.quantity) || 0;
-      return sum + quantity;
-    }, 0);
-    console.log(`🔢 Toplam ürün adedi: ${totalItems}`);
-    
-    // Ara toplam (indirimler hariç)
-    const subtotal = orderItems.reduce((sum, item) => {
-      const total = Number(item.total) || 0;
-      return sum + total;
-    }, 0);
-    console.log(`💵 Ara toplam: ${subtotal.toFixed(2)} TL`);
-    
-    // Toplam indirim
-    const totalDiscount = orderItems.reduce((sum, item) => {
-      const discount = Number(item.discount) || 0;
-      return sum + discount;
-    }, 0);
-    console.log(`🏷️ Toplam indirim: ${totalDiscount.toFixed(2)} TL`);
-    
-    // Genel toplam (indirimler düşülmüş)
-    const finalTotal = subtotal - totalDiscount;
-    console.log(`💰 Genel toplam: ${finalTotal.toFixed(2)} TL`);
-    
-    // DOM güncellemesi
-    console.log('🔄 DOM öğeleri güncelleniyor...');
-    
-    const totalItemsElement = document.getElementById('total-items');
-    totalItemsElement.textContent = totalItems;
-    console.log(`✅ Toplam ürün adedi DOM'a yüklendi: "${totalItemsElement.textContent}"`);
-    
-    const totalAmountElement = document.getElementById('total-amount');
-    const htmlContent = `
-      <div>Ara Toplam: ${subtotal.toFixed(2)} TL</div>
-      <div>Toplam İndirim: ${totalDiscount.toFixed(2)} TL</div>
-      <div class="fw-bold">Genel Toplam: ${finalTotal.toFixed(2)} TL</div>
-    `;
-    totalAmountElement.innerHTML = htmlContent;
-    console.log(`✅ Tutar özeti DOM'a yüklendi`);
-    
-    console.log('✅ Toplam hesaplamaları başarıyla tamamlandı');
-  } catch (error) {
-    console.error('🔴 Toplam hesaplama hatası:', error);
-    console.error('🔴 Hata mesajı:', error.message);
-    console.error('🔴 Hata stack:', error.stack);
-  } finally {
-    console.groupEnd();
-  }
+  const totalItems = orderItems.reduce((sum, item) => sum + item.quantity, 0);
+  const subtotal = orderItems.reduce((sum, item) => sum + item.total, 0);
+  const totalDiscount = orderItems.reduce((sum, item) => sum + (item.discount || 0), 0);
+  const finalTotal = subtotal - totalDiscount;
+
+  document.getElementById('total-items').textContent = totalItems;
+  document.getElementById('total-amount').innerHTML = `
+    <div>Ara Toplam: ${subtotal.toFixed(2)} TL</div>
+    <div>Toplam İndirim: ${totalDiscount.toFixed(2)} TL</div>
+    <div class="fw-bold">Genel Toplam: ${finalTotal.toFixed(2)} TL</div>
+  `;
 }
 
 // Formu aç/kapat
@@ -645,190 +524,13 @@ function hideOrderForm() {
   document.getElementById('orderForm').classList.add('d-none');
 }
 
-// AJAX ile gerçek zamanlı sipariş arama
-async function searchOrders() {
-  console.group('%c🔍 Sipariş Arama Başlatıldı', 'background: #9b59b6; color: white; padding: 5px; border-radius: 3px;');
-  
-  try {
-    const searchQuery = document.getElementById('search_query').value.trim();
-    const searchField = document.getElementById('search_field').value;
-    
-    console.log(`🔍 Arama terimi: "${searchQuery}", Alan: "${searchField}"`);
-
-    if (!searchQuery) {
-      console.warn('⚠️ Arama terimi boş, sonuçlar temizleniyor.');
-      document.getElementById('ordersTableBody').innerHTML = '';
-      document.getElementById('noResults').classList.remove('d-none');
-      console.groupEnd();
-      return;
-    }
-
-    // Yükleniyor göstergesini göster
-    console.log('⏳ Yükleniyor göstergesi aktifleştiriliyor...');
-    document.getElementById('loadingIndicator').classList.remove('d-none');
-    document.getElementById('noResults').classList.add('d-none');
-
-    // API URL'i oluştur
-    const apiUrl = `/api/siparisler/search?q=${encodeURIComponent(searchQuery)}&field=${searchField}`;
-    console.log(`🌐 API isteği yapılıyor: ${apiUrl}`);
-    
-    const startTime = performance.now();
-    const response = await fetch(apiUrl);
-    const endTime = performance.now();
-    
-    console.log(`⏱️ API yanıt süresi: ${(endTime - startTime).toFixed(2)}ms`);
-    console.log(`📡 Yanıt durum kodu: ${response.status}`);
-    
-    if (!response.ok) {
-      console.error(`❌ HTTP hata! Durum: ${response.status}`);
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
-    console.log('📦 API yanıtı:', data);
-
-    // Yükleniyor göstergesini gizle
-    console.log('⏳ Yükleniyor göstergesi gizleniyor...');
-    document.getElementById('loadingIndicator').classList.add('d-none');
-
-    if (data.success && data.siparisler.length > 0) {
-      console.log(`✅ ${data.siparisler.length} adet sipariş bulundu. Toplam kayıt sayısı: ${data.total}`);
-      
-      const tableBody = document.getElementById('ordersTableBody');
-      console.log('🔄 Tablo içeriği temizleniyor...');
-      tableBody.innerHTML = '';
-
-      console.log('🔄 Sipariş satırları oluşturuluyor...');
-      data.siparisler.forEach((siparis, index) => {
-        console.log(`📋 Sipariş #${index+1}: ${siparis.siparis_no} (${siparis.musteri})`);
-        
-        // Arama terimini sipariş numarasında vurgula
-        let siparisNoHtml = siparis.siparis_no;
-        if (siparis.highlight) {
-          console.log(`🎯 Eşleşme vurgulanıyor: ${siparis.siparis_no}`);
-          const regex = new RegExp(`(${searchQuery})`, 'gi');
-          siparisNoHtml = siparisNoHtml.replace(regex, '<span class="search-highlight">$1</span>');
-        }
-
-        // Satırı oluştur
-        const row = document.createElement('tr');
-        row.className = 'order-row fade-in';
-        row.setAttribute('data-order-no', siparis.siparis_no);
-
-        // Satırın HTML içeriğini oluştur
-        row.innerHTML = `
-          <td>${siparisNoHtml}</td>
-          <td>${siparis.musteri}</td>
-          <td>${siparis.tutar.toFixed(2)} TL</td>
-          <td>${siparis.tarih}</td>
-          <td>
-            <span class="badge bg-${siparis.durum === 'Tamamlandı' ? 'success' : 
-                                     siparis.durum === 'İşleme Alındı' ? 'warning' : 'primary'}">
-              ${siparis.durum}
-            </span>
-          </td>
-          <td>
-            <div class="btn-group">
-              <button class="btn btn-sm btn-info" onclick="showOrderDetails('${siparis.siparis_no}')" type="button">
-                <i class="bi bi-eye"></i> Detay
-              </button>
-              <button class="btn btn-sm btn-warning" onclick="duzenlemeyeAc('${siparis.siparis_no}')" type="button">
-                <i class="bi bi-pencil"></i>
-              </button>
-            </div>
-          </td>
-        `;
-
-        // Satırı tabloya ekle
-        tableBody.appendChild(row);
-      });
-
-      console.log('✅ Tablo başarıyla güncellendi');
-      showToast('Arama tamamlandı', `${data.count} adet sipariş bulundu.`, 'success');
-    } else {
-      console.warn('⚠️ Sipariş bulunamadı veya API başarısız yanıt döndü');
-      document.getElementById('ordersTableBody').innerHTML = '';
-      document.getElementById('noResults').classList.remove('d-none');
-    }
-  } catch (error) {
-    console.error('🔴 Arama hatası:', error);
-    console.error('🔴 Hata mesajı:', error.message);
-    console.error('🔴 Hata stack:', error.stack);
-    document.getElementById('loadingIndicator').classList.add('d-none');
-    showToast('Hata', 'Arama sırasında bir hata oluştu: ' + error.message, 'danger');
-  } finally {
-    console.groupEnd();
-  }
-}
-
-// Bildirim gösterme fonksiyonu
-function showToast(title, message, type = 'info') {
-  const toastContainer = document.getElementById('toastContainer');
-  const toastId = `toast-${Date.now()}`;
-
-  const toastHtml = `
-    <div id="${toastId}" class="toast align-items-center text-white bg-${type} border-0" role="alert" aria-live="assertive" aria-atomic="true">
-      <div class="d-flex">
-        <div class="toast-body">
-          <strong>${title}</strong>: ${message}
-        </div>
-        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-      </div>
-    </div>
-  `;
-
-  toastContainer.insertAdjacentHTML('beforeend', toastHtml);
-  const toastElement = document.getElementById(toastId);
-  const toast = new bootstrap.Toast(toastElement, { delay: 5000 });
-  toast.show();
-
-  // Otomatik temizleme
-  toastElement.addEventListener('hidden.bs.toast', () => {
-    toastElement.remove();
-  });
-}
-
-// Debounce fonksiyonu - hızlı tekrarlanan istekleri önlemek için
-function debounce(func, wait) {
-  let timeout;
-  return function(...args) {
-    const context = this;
-    clearTimeout(timeout);
-    timeout = setTimeout(() => func.apply(context, args), wait);
-  };
-}
-
-// Arama kutusuna olay dinleyicisi ekle (debounce ile)
-document.addEventListener('DOMContentLoaded', function() {
-  const searchInput = document.getElementById('search_query');
-  if (searchInput) {
-    searchInput.addEventListener('input', debounce(function() {
-      if (this.value.length >= 3 || this.value.length === 0) {
-        searchOrders();
-      }
-    }, 500));
-  }
-
-  // Enter tuşuna basılınca arama yap
-  document.getElementById('searchForm')?.addEventListener('submit', function(e) {
-    e.preventDefault();
-    searchOrders();
-  });
-});
-
-// Sipariş detayları görüntüleme - iyileştirilmiş versiyon
+// -- DÜZELTİLMİŞ showOrderDetails FONKSİYONU (Async/Await) --
 async function showOrderDetails(siparisNo) {
   logToConsole('Sipariş detayları görüntüleme başlatıldı', { siparisNo });
   try {
-    // Yükleniyor göstergesini göster
-    document.getElementById('orderDetailContent').innerHTML = '<div class="text-center p-4"><div class="spinner-border text-primary" role="status"></div><p class="mt-2">Sipariş detayları yükleniyor...</p></div>';
-
-    const modal = new bootstrap.Modal(document.getElementById('orderDetailModal'));
-    modal.show();
-
     const response = await fetch(`/siparis-detay/${siparisNo}`);
     if (!response.ok) {
-      throw new Error(`Sipariş detayları alınamadı: ${response.status}`);
+      throw new Error('Sipariş detayları alınamadı');
     }
 
     const detayHtml = await response.text();
@@ -847,17 +549,12 @@ async function showOrderDetails(siparisNo) {
       </div>
     `;
     document.getElementById('orderDetailContent').insertAdjacentHTML('beforeend', footerHtml);
+
+    const modal = new bootstrap.Modal(document.getElementById('orderDetailModal'));
+    modal.show();
   } catch (error) {
-    console.error('Detay görüntüleme hatası:', error);
-    document.getElementById('orderDetailContent').innerHTML = `
-      <div class="alert alert-danger">
-        <h5>Hata!</h5>
-        <p>Sipariş detayları yüklenirken bir hata oluştu: ${error.message}</p>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
-      </div>
-    `;
+    console.error('Hata:', error);
+    alert('Sipariş detayları yüklenirken bir hata oluştu.');
   }
 }
 
@@ -945,153 +642,68 @@ async function siparisiSil(siparisNo) {
 // Form gönderimi (Yeni sipariş veya Düzenleme)
 document.querySelector('form').addEventListener('submit', async function(e) {
   e.preventDefault();
-  
-  console.group('%c📝 Form Gönderimi Başlatıldı', 'background: #3498db; color: white; padding: 5px; border-radius: 3px;');
 
-  // Ürün kontrolü
   if (orderItems.length === 0) {
-    console.warn('⚠️ Sipariş ürün listesi boş!');
     alert('Lütfen siparişe en az bir ürün ekleyin!');
-    console.groupEnd();
     return;
   }
-  
-  console.log(`📋 Toplam ${orderItems.length} adet ürün içeren sipariş`);
 
   const isEditMode = this.dataset.mode === 'edit';
   const siparisNo = this.dataset.siparisNo;
-  
-  console.log(`🔄 İşlem modu: ${isEditMode ? 'Düzenleme' : 'Yeni Sipariş'} ${isEditMode ? `(Sipariş No: ${siparisNo})` : ''}`);
 
   // Sipariş verileri
-  try {
-    console.log('🧮 Sipariş verisi hazırlanıyor...');
-    
-    // Müşteri bilgileri
-    const musteri_adi = document.getElementById('customer_name').value;
-    const musteri_soyadi = document.getElementById('customer_surname').value;
-    const musteri_adres = document.getElementById('customer_address').value;
-    const musteri_telefon = document.getElementById('customer_phone').value;
-    
-    console.log(`👤 Müşteri: ${musteri_adi} ${musteri_soyadi}`);
-    console.log(`📞 Telefon: ${musteri_telefon}`);
-    console.log(`🏠 Adres: ${musteri_adres}`);
-    
-    // Toplam tutarı hesapla
-    const toplam_tutar_text = document.getElementById('total-amount').textContent;
-    const toplam_tutar_clean = toplam_tutar_text.replace(' TL', '').replace(/<[^>]+>/g, '');
-    const toplam_tutar = parseFloat(toplam_tutar_clean);
-    
-    console.log(`💰 Ham toplam tutar metni: "${toplam_tutar_text}"`);
-    console.log(`💰 Temizlenmiş tutar metni: "${toplam_tutar_clean}"`);
-    console.log(`💰 Hesaplanan toplam tutar: ${toplam_tutar}`);
-    
-    if (isNaN(toplam_tutar)) {
-      console.error('❌ Toplam tutar sayısal değere dönüştürülemedi!');
-      throw new Error('Toplam tutar hesaplanamadı');
-    }
-    
-    // Ürünleri hazırla
-    console.log('📦 Ürün listesi hazırlanıyor...');
-    const urunler = orderItems.map((item, index) => {
-      const urun = {
-        barkod: item.barcode,
-        urun_adi: item.title,
-        adet: item.quantity,
-        birim_fiyat: item.price,
-        renk: item.color,
-        beden: item.size,
-        toplam_fiyat: item.total - item.discount
-      };
-      console.log(`📦 Ürün #${index+1}:`, urun);
-      return urun;
-    });
-    
-    const orderData = {
-      musteri_adi,
-      musteri_soyadi,
-      musteri_adres,
-      musteri_telefon,
-      toplam_tutar,
-      notlar: '',
-      urunler
-    };
-    
-    console.log('✅ Sipariş verileri hazır:', orderData);
+  const orderData = {
+    musteri_adi: document.getElementById('customer_name').value,
+    musteri_soyadi: document.getElementById('customer_surname').value,
+    musteri_adres: document.getElementById('customer_address').value,
+    musteri_telefon: document.getElementById('customer_phone').value,
+    toplam_tutar: parseFloat(
+      document
+        .getElementById('total-amount')
+        .textContent.replace(' TL', '')
+        .replace(/<[^>]+>/g, '')
+    ),
+    notlar: '',
+    urunler: orderItems.map(item => ({
+      barkod: item.barcode,
+      urun_adi: item.title,
+      adet: item.quantity,
+      birim_fiyat: item.price,
+      renk: item.color,
+      beden: item.size,
+      toplam_fiyat: item.total - item.discount
+    }))
+  };
 
-    // FormData oluştur
-    console.log('📋 FormData oluşturuluyor...');
-    const formData = new FormData(this);
-    formData.append('musteri_adi', orderData.musteri_adi);
-    formData.append('musteri_soyadi', orderData.musteri_soyadi);
-    formData.append('musteri_adres', orderData.musteri_adres);
-    formData.append('musteri_telefon', orderData.musteri_telefon);
-    formData.append('toplam_tutar', orderData.toplam_tutar);
-    formData.append('notlar', orderData.notlar);
-    
-    // Ürünleri JSON'a dönüştür
-    const urunlerJSON = JSON.stringify(orderData.urunler);
-    console.log(`📦 Ürünler JSON (${urunlerJSON.length} karakter):`);
-    console.log(urunlerJSON);
-    formData.append('urunler', urunlerJSON);
-    
-    // FormData içeriğini debug için yazdır
-    console.log('📋 FormData içeriği:');
-    for (let [key, value] of formData.entries()) {
-      if (key === 'urunler') {
-        console.log(`   ${key}: [JSON veri - ${value.length} karakter]`);
-      } else {
-        console.log(`   ${key}: ${value}`);
-      }
-    }
+  // FormData oluştur
+  const formData = new FormData(this);
+  formData.append('musteri_adi', orderData.musteri_adi);
+  formData.append('musteri_soyadi', orderData.musteri_soyadi);
+  formData.append('musteri_adres', orderData.musteri_adres);
+  formData.append('musteri_telefon', orderData.musteri_telefon);
+  formData.append('toplam_tutar', orderData.toplam_tutar);
+  formData.append('notlar', orderData.notlar);
+  formData.append('urunler', JSON.stringify(orderData.urunler));
 
-    // POST isteği
-    const endpoint = isEditMode ? `/siparis-guncelle/${siparisNo}` : '/yeni-siparis';
-    console.log(`🌐 Fetch isteği gönderiliyor... Endpoint: ${endpoint}`);
-    
-    const response = await fetch(endpoint, {
-      method: 'POST',
-      body: formData
-    });
-    
-    console.log(`📡 Yanıt durum kodu: ${response.status}`);
-    
-    if (!response.ok) {
-      console.error(`❌ HTTP hata! Durum: ${response.status}`);
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    
-    const data = await response.json();
-    console.log('📦 Sunucu yanıtı:', data);
-
-    if (data.success) {
-      console.log('✅ İşlem başarılı!');
-      // Daha modern bir bildirim göster
-      showToast(
-        isEditMode ? 'Güncelleme Başarılı' : 'Kayıt Başarılı', 
-        data.message || (isEditMode ? 'Sipariş başarıyla güncellendi!' : 'Sipariş başarıyla oluşturuldu!'), 
-        'success'
-      );
-      hideOrderForm();
-      
-      // Sayfa yenilenmeden önce kısa bir gecikme ekleyelim ki kullanıcı bildirimi görebilsin
-      console.log('⏱️ Sayfa yenilemesi için 1.5 saniye bekleniyor...');
-      setTimeout(() => {
-        console.log('🔄 Sayfa yenileniyor...');
+  // POST isteği
+  fetch(isEditMode ? `/siparis-guncelle/${siparisNo}` : '/yeni-siparis', {
+    method: 'POST',
+    body: formData
+  })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        alert(isEditMode ? 'Sipariş başarıyla güncellendi!' : 'Sipariş başarıyla oluşturuldu!');
+        hideOrderForm();
         window.location.reload(); // Listeyi yenile
-      }, 1500);
-    } else {
-      console.error('❌ Sunucu hatası:', data.message);
-      showToast('Hata', data.message || 'Sipariş işlenirken bir hata oluştu!', 'danger');
-    }
-  } catch (error) {
-    console.error('🔴 Sipariş gönderimi hatası:', error);
-    console.error('🔴 Hata mesajı:', error.message);
-    console.error('🔴 Hata stack:', error.stack);
-    alert('Sipariş gönderilirken bir hata oluştu: ' + error.message);
-  } finally {
-    console.groupEnd();
-  }
+      } else {
+        alert('Sipariş oluşturulurken bir hata oluştu!');
+      }
+    })
+    .catch(error => {
+      console.error('Hata:', error);
+      alert('Bir hata oluştu!');
+    });
 });
 </script>
   <div id="toastContainer"></div>
