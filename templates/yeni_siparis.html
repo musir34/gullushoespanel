@@ -838,11 +838,20 @@ document.querySelector('form').addEventListener('submit', async function(e) {
     .then(response => response.json())
     .then(data => {
       if (data.success) {
-        alert(isEditMode ? 'Sipariş başarıyla güncellendi!' : 'Sipariş başarıyla oluşturuldu!');
+        // Daha modern bir bildirim göster
+        showToast(
+          isEditMode ? 'Güncelleme Başarılı' : 'Kayıt Başarılı', 
+          data.message || (isEditMode ? 'Sipariş başarıyla güncellendi!' : 'Sipariş başarıyla oluşturuldu!'), 
+          'success'
+        );
         hideOrderForm();
-        window.location.reload(); // Listeyi yenile
+        
+        // Sayfa yenilenmeden önce kısa bir gecikme ekleyelim ki kullanıcı bildirimi görebilsin
+        setTimeout(() => {
+          window.location.reload(); // Listeyi yenile
+        }, 1500);
       } else {
-        alert('Sipariş oluşturulurken bir hata oluştu!');
+        showToast('Hata', data.message || 'Sipariş işlenirken bir hata oluştu!', 'danger');
       }
     })
     .catch(error => {
