@@ -238,6 +238,54 @@
   </div>
 </div>
 
+<style>
+/* Arama ve Animasyon Stilleri */
+  .search-container {
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  }
+  .search-container:hover {
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  }
+
+  #ordersList tr {
+    transition: all 0.3s ease;
+  }
+
+  #ordersList tr.highlight {
+    background-color: #fff8e1 !important;
+    animation: highlight-row 1.5s ease;
+  }
+
+  @keyframes highlight-row {
+    0% { background-color: #fff8e1; }
+    50% { background-color: #ffe0b2; }
+    100% { background-color: #fff8e1; }
+  }
+
+  .search-highlight {
+    background-color: #ffff00;
+    padding: 2px;
+    border-radius: 3px;
+  }
+
+  .fade-in {
+    animation: fadeIn 0.5s;
+  }
+
+  @keyframes fadeIn {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+  }
+
+  .no-results {
+    padding: 20px;
+    text-align: center;
+    border: 1px dashed #ccc;
+    margin: 20px 0;
+    border-radius: 5px;
+  }
+</style>
 <script>
 // Basit debug fonksiyonu
 function logToConsole(message, data = null) {
@@ -658,4 +706,5 @@ document.querySelector('form').addEventListener('submit', async function(e) {
     });
 });
 </script>
+  <div id="toastContainer"></div>
 {% endblock %}

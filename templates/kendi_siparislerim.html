@@ -7,6 +7,80 @@
   
   <div class="table-responsive">
     <table class="table table-striped table-hover">
+
+<!-- Arama Formu -->
+<div class="card mb-4 search-container">
+  <div class="card-body">
+    <form action="{{ url_for('siparisler_bp.kendi_siparislerim') }}" method="GET" class="row g-3">
+      <div class="col-md-4">
+        <div class="input-group">
+          <span class="input-group-text"><i class="bi bi-search"></i></span>
+          <input type="text" name="siparis_no" class="form-control" placeholder="Sipariş Numarası..." 
+                value="{{ request.args.get('siparis_no', '') }}">
+        </div>
+      </div>
+      <div class="col-md-3">
+        <button type="submit" class="btn btn-primary">
+          <i class="bi bi-search"></i> Ara
+        </button>
+        <a href="{{ url_for('siparisler_bp.kendi_siparislerim') }}" class="btn btn-outline-secondary">
+          <i class="bi bi-x-circle"></i> Temizle
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<style>
+  /* Arama ve Animasyon Stilleri */
+  .search-container {
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  }
+  .search-container:hover {
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  }
+  
+  tr {
+    transition: all 0.3s ease;
+  }
+  
+  tr.highlight {
+    background-color: #fff8e1 !important;
+    animation: highlight-row 1.5s ease;
+  }
+  
+  @keyframes highlight-row {
+    0% { background-color: #fff8e1; }
+    50% { background-color: #ffe0b2; }
+    100% { background-color: #fff8e1; }
+  }
+  
+  .fade-in {
+    animation: fadeIn 0.5s;
+  }
+  
+  @keyframes fadeIn {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+  }
+</style>
+
+<script>
+  // Sayfa yüklendiğinde, varsa arama sonuçlarını vurgula
+  document.addEventListener('DOMContentLoaded', function() {
+    const searchParam = new URLSearchParams(window.location.search).get('siparis_no');
+    if (searchParam) {
+      document.querySelectorAll('table tbody tr').forEach(row => {
+        const siparisNo = row.querySelector('td:first-child').textContent.trim();
+        if (siparisNo.toLowerCase().includes(searchParam.toLowerCase())) {
+          row.classList.add('highlight');
+        }
+      });
+    }
+  });
+</script>
+
       <thead>
         <tr>
           <th>Sipariş No</th>
