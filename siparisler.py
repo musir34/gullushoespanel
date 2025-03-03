@@ -4,8 +4,32 @@ from datetime import datetime
 import json
 from logger_config import app_logger, order_logger
 import traceback
+import sys
 
 logger = order_logger
+
+def log_exception(e, detay=""):
+    """
+    Hata ayrıntılarını hem loglara hem de konsola yazdırır.
+    
+    Args:
+        e (Exception): Yakalanmış hata
+        detay (str): Hataya ilişkin ek açıklama
+    """
+    hata_mesaji = f"HATA: {type(e).__name__}: {str(e)}"
+    hata_izi = traceback.format_exc()
+    
+    if detay:
+        hata_mesaji = f"{detay} - {hata_mesaji}"
+    
+    logger.error(hata_mesaji)
+    logger.error(hata_izi)
+    
+    # Konsola renkli hata mesajı yazdır
+    print("\033[91m" + "="*50 + "\033[0m", file=sys.stderr)  # Kırmızı ayraç
+    print(f"\033[91m{hata_mesaji}\033[0m", file=sys.stderr)  # Kırmızı hata mesajı
+    print("\033[93m" + hata_izi + "\033[0m", file=sys.stderr)  # Sarı stack trace
+    print("\033[91m" + "="*50 + "\033[0m", file=sys.stderr)  # Kırmızı ayraç
 
 siparisler_bp = Blueprint('siparisler_bp', __name__)
 
@@ -114,7 +138,7 @@ def yeni_siparis():
 
     except Exception as e:
         db.session.rollback()
-        logger.error("Sipariş kaydedilirken hata oluştu: %s\n%s", e, traceback.format_exc())
+        log_exception(e, "Sipariş kaydedilirken hata oluştu")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
@@ -141,7 +165,7 @@ def get_product(barcode):
         logger.debug("Ürün bulunamadı, barkod: %s", barcode)
         return jsonify({'success': False, 'message': 'Ürün bulunamadı'})
     except Exception as e:
-        logger.error("Ürün getirilirken hata oluştu: %s", e)
+        log_exception(e, "Ürün getirilirken hata oluştu")
         return jsonify({'success': False, 'message': str(e)}), 500
 
 
@@ -236,12 +260,11 @@ def siparis_ara():
         })
     
     except Exception as e:
-        logger.error("Sipariş arama sırasında hata: %s", e)
-        import traceback
-        logger.error(traceback.format_exc())
+        log_exception(e, "Sipariş arama sırasında hata")
         return jsonify({
             'success': False,
-            'error': str(e)
+            'error': str(e),
+            'trace': traceback.format_exc() if app_logger.level <= logging.DEBUG else "Detaylı hata için logları kontrol edin."
         }), 500
 
 @siparisler_bp.route('/kendi-siparislerim')
@@ -346,9 +369,8 @@ def siparis_detay(siparis_no):
             # Session kapatma işlemi
             session.close()
     except Exception as e:
-        import traceback
         error_details = traceback.format_exc()
-        logger.error("Sipariş detayı görüntülenirken hata: %s\n%s", e, error_details)
+        log_exception(e, "Sipariş detayı görüntülenirken hata")
         return render_template('error_partial.html', 
                              message="Sipariş detayları yüklenirken bir hata oluştu", 
                              details=str(e)), 500

@@ -5,4 +5,16 @@
   <hr>
   <p class="mb-0">{{ details }}</p>
   {% endif %}
+  
+  {% if config.DEBUG and trace %}
+  <hr>
+  <div class="small">
+    <strong>Hata İzi:</strong>
+    <pre class="text-danger">{{ trace }}</pre>
+  </div>
+  {% endif %}
+  
+  <div class="mt-3 text-end">
+    <small class="text-muted">Hata Zamanı: {{ now().strftime('%d.%m.%Y %H:%M:%S') }}</small>
+  </div>
 </div>
