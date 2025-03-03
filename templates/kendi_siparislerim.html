@@ -8,7 +8,7 @@
   <div class="table-responsive">
     <table class="table table-striped table-hover">
 
-<!-- Arama Formu -->
+<!-- Gelişmiş Arama Formu -->
 <div class="card mb-4 search-container">
   <div class="card-body">
     <form action="{{ url_for('siparisler_bp.kendi_siparislerim') }}" method="GET" class="row g-3">
@@ -20,6 +20,21 @@
         </div>
       </div>
       <div class="col-md-3">
+        <div class="input-group">
+          <span class="input-group-text"><i class="bi bi-person"></i></span>
+          <input type="text" name="musteri_adi" class="form-control" placeholder="Müşteri Adı..." 
+                value="{{ request.args.get('musteri_adi', '') }}">
+        </div>
+      </div>
+      <div class="col-md-3">
+        <select name="durum" class="form-select">
+          <option value="">Durum Seçin...</option>
+          <option value="Yeni" {% if request.args.get('durum') == 'Yeni' %}selected{% endif %}>Yeni</option>
+          <option value="İşleme Alındı" {% if request.args.get('durum') == 'İşleme Alındı' %}selected{% endif %}>İşleme Alındı</option>
+          <option value="Tamamlandı" {% if request.args.get('durum') == 'Tamamlandı' %}selected{% endif %}>Tamamlandı</option>
+        </select>
+      </div>
+      <div class="col-md-2">
         <button type="submit" class="btn btn-primary">
           <i class="bi bi-search"></i> Ara
         </button>
@@ -28,6 +43,23 @@
         </a>
       </div>
     </form>
+  </div>
+</div>
+
+<!-- Hızlı Arama Formu (JavaScript ile çalışır) -->
+<div class="card mb-4 search-container">
+  <div class="card-header bg-light">
+    <h5 class="mb-0">Hızlı Arama</h5>
+  </div>
+  <div class="card-body">
+    <div class="input-group">
+      <span class="input-group-text"><i class="bi bi-lightning"></i></span>
+      <input type="text" id="quick_search" class="form-control" placeholder="Hızlı arama (en az 3 karakter)...">
+      <button class="btn btn-outline-primary" type="button" id="quickSearchBtn">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+    <div class="form-text">Sipariş no veya müşteri adıyla anlık arama yapabilirsiniz.</div>
   </div>
 </div>
 
@@ -78,7 +110,113 @@
         }
       });
     }
+    
+    // Hızlı arama fonksiyonu
+    const quickSearchInput = document.getElementById('quick_search');
+    const quickSearchBtn = document.getElementById('quickSearchBtn');
+    
+    // Debounce fonksiyonu
+    function debounce(func, wait) {
+      let timeout;
+      return function(...args) {
+        const context = this;
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(context, args), wait);
+      };
+    }
+    
+    // Hızlı arama işlevi
+    const performQuickSearch = debounce(function() {
+      const searchText = quickSearchInput.value.toLowerCase().trim();
+      if (searchText.length < 3) {
+        // Tüm satırları göster
+        document.querySelectorAll('table tbody tr').forEach(row => {
+          row.classList.remove('d-none');
+          row.classList.remove('highlight');
+        });
+        return;
+      }
+      
+      let matchFound = false;
+      
+      // Tüm satırları ara
+      document.querySelectorAll('table tbody tr').forEach(row => {
+        const siparisNo = row.querySelector('td:nth-child(1)').textContent.toLowerCase();
+        const musteri = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
+        
+        if (siparisNo.includes(searchText) || musteri.includes(searchText)) {
+          row.classList.remove('d-none');
+          row.classList.add('highlight');
+          matchFound = true;
+        } else {
+          row.classList.add('d-none');
+          row.classList.remove('highlight');
+        }
+      });
+      
+      // Sonuç bulunamadı mesajı
+      if (!matchFound) {
+        // Eğer sonuç bulunamadı mesajı göstermek istiyorsanız
+        // buraya kod ekleyebilirsiniz
+        console.log("Arama kriterine uygun sonuç bulunamadı");
+      }
+    }, 300);
+    
+    // Olay dinleyicileri
+    if (quickSearchInput) {
+      quickSearchInput.addEventListener('input', performQuickSearch);
+      quickSearchInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          performQuickSearch();
+        }
+      });
+    }
+    
+    if (quickSearchBtn) {
+      quickSearchBtn.addEventListener('click', performQuickSearch);
+    }
   });
+  
+  // Toast bildirim gösterme
+  function showToast(message, type = 'info') {
+    const toastContainer = document.createElement('div');
+    toastContainer.style.position = 'fixed';
+    toastContainer.style.top = '10px';
+    toastContainer.style.right = '10px';
+    toastContainer.style.zIndex = '9999';
+    
+    const toast = document.createElement('div');
+    toast.className = `toast align-items-center text-white bg-${type} border-0`;
+    toast.setAttribute('role', 'alert');
+    toast.setAttribute('aria-live', 'assertive');
+    toast.setAttribute('aria-atomic', 'true');
+    
+    toast.innerHTML = `
+      <div class="d-flex">
+        <div class="toast-body">
+          ${message}
+        </div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>
+    `;
+    
+    toastContainer.appendChild(toast);
+    document.body.appendChild(toastContainer);
+    
+    const bsToast = new bootstrap.Toast(toast, {
+      animation: true,
+      autohide: true,
+      delay: 3000
+    });
+    
+    bsToast.show();
+    
+    // Otomatik olarak kaldır
+    toast.addEventListener('hidden.bs.toast', function () {
+      document.body.removeChild(toastContainer);
+    });
+  }
 </script>
 
       <thead>

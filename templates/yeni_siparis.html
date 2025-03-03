@@ -4,6 +4,20 @@
 <div class="container mt-4">
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>Siparişler</h2>
+    <div class="search-container">
+      <form id="searchForm" class="d-flex">
+        <input type="text" class="form-control me-2" id="search_query" placeholder="Sipariş No, Müşteri Adı...">
+        <select id="search_field" class="form-select me-2">
+          <option value="siparis_no">Sipariş No</option>
+          <option value="musteri_adi">Müşteri Adı</option>
+        </select>
+        <button class="btn btn-primary" type="submit">Ara</button>
+      </form>
+      <div id="loadingIndicator" class="d-none text-center mt-2">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p class="mt-2">Aranıyor...</p>
+      </div>
+    </div>
     <button class="btn btn-primary" onclick="showOrderForm()">
       <i class="bi bi-plus-circle"></i> Yeni Sipariş Oluştur
     </button>
@@ -23,27 +37,13 @@
             <th>İşlemler</th>
           </tr>
         </thead>
-        <tbody>
-          {% for siparis in siparisler %}
-          <tr>
-            <td>{{ siparis.siparis_no }}</td>
-            <td>{{ siparis.musteri_adi }} {{ siparis.musteri_soyadi }}</td>
-            <td>{{ "%.2f"|format(siparis.toplam_tutar) }} TL</td>
-            <td>{{ siparis.siparis_tarihi.strftime('%d.%m.%Y %H:%M') }}</td>
-            <td>
-              <span class="badge bg-{{ 'success' if siparis.durum == 'Tamamlandı' else 'warning' }}">
-                {{ siparis.durum }}
-              </span>
-            </td>
-            <td>
-              <button class="btn btn-sm btn-info" onclick="showOrderDetails('{{ siparis.siparis_no }}')" type="button">
-                <i class="bi bi-eye"></i> Detay
-              </button>
-            </td>
-          </tr>
-          {% endfor %}
+        <tbody id="ordersTableBody">
+          <!-- JavaScript ile doldurulacak -->
         </tbody>
       </table>
+      <div id="noResults" class="d-none no-results">
+        <p>Sonuç bulunamadı.</p>
+      </div>
     </div>
   </div>
 
@@ -285,6 +285,9 @@
     margin: 20px 0;
     border-radius: 5px;
   }
+  .btn-close-white{
+    color: white;
+  }
 </style>
 <script>
 // Basit debug fonksiyonu
@@ -524,13 +527,150 @@ function hideOrderForm() {
   document.getElementById('orderForm').classList.add('d-none');
 }
 
-// -- DÜZELTİLMİŞ showOrderDetails FONKSİYONU (Async/Await) --
+// AJAX ile gerçek zamanlı sipariş arama
+async function searchOrders() {
+  const searchQuery = document.getElementById('search_query').value.trim();
+  const searchField = document.getElementById('search_field').value;
+
+  if (!searchQuery) {
+    document.getElementById('ordersTableBody').innerHTML = '';
+    document.getElementById('noResults').classList.remove('d-none');
+    return;
+  }
+
+  try {
+    // Yükleniyor göstergesini göster
+    document.getElementById('loadingIndicator').classList.remove('d-none');
+    document.getElementById('noResults').classList.add('d-none');
+
+    const response = await fetch(`/api/siparisler/search?q=${encodeURIComponent(searchQuery)}&field=${searchField}`);
+    const data = await response.json();
+
+    // Yükleniyor göstergesini gizle
+    document.getElementById('loadingIndicator').classList.add('d-none');
+
+    if (data.success && data.siparisler.length > 0) {
+      const tableBody = document.getElementById('ordersTableBody');
+      tableBody.innerHTML = '';
+
+      data.siparisler.forEach(siparis => {
+        // Arama terimini sipariş numarasında vurgula
+        let siparisNoHtml = siparis.siparis_no;
+        if (siparis.highlight) {
+          const regex = new RegExp(`(${searchQuery})`, 'gi');
+          siparisNoHtml = siparisNoHtml.replace(regex, '<span class="search-highlight">$1</span>');
+        }
+
+        const row = document.createElement('tr');
+        row.className = 'order-row fade-in';
+        row.setAttribute('data-order-no', siparis.siparis_no);
+
+        row.innerHTML = `
+          <td>${siparisNoHtml}</td>
+          <td>${siparis.musteri}</td>
+          <td>${siparis.tutar.toFixed(2)} TL</td>
+          <td>${siparis.tarih}</td>
+          <td>
+            <span class="badge bg-${siparis.durum === 'Tamamlandı' ? 'success' : 
+                                     siparis.durum === 'İşleme Alındı' ? 'warning' : 'primary'}">
+              ${siparis.durum}
+            </span>
+          </td>
+          <td>
+            <div class="btn-group">
+              <button class="btn btn-sm btn-info" onclick="showOrderDetails('${siparis.siparis_no}')" type="button">
+                <i class="bi bi-eye"></i> Detay
+              </button>
+              <button class="btn btn-sm btn-warning" onclick="duzenlemeyeAc('${siparis.siparis_no}')" type="button">
+                <i class="bi bi-pencil"></i>
+              </button>
+            </div>
+          </td>
+        `;
+
+        tableBody.appendChild(row);
+      });
+
+      showToast('Arama tamamlandı', `${data.count} adet sipariş bulundu.`, 'success');
+    } else {
+      document.getElementById('ordersTableBody').innerHTML = '';
+      document.getElementById('noResults').classList.remove('d-none');
+    }
+  } catch (error) {
+    console.error('Arama hatası:', error);
+    document.getElementById('loadingIndicator').classList.add('d-none');
+    showToast('Hata', 'Arama sırasında bir hata oluştu.', 'danger');
+  }
+}
+
+// Bildirim gösterme fonksiyonu
+function showToast(title, message, type = 'info') {
+  const toastContainer = document.getElementById('toastContainer');
+  const toastId = `toast-${Date.now()}`;
+
+  const toastHtml = `
+    <div id="${toastId}" class="toast align-items-center text-white bg-${type} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+      <div class="d-flex">
+        <div class="toast-body">
+          <strong>${title}</strong>: ${message}
+        </div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>
+    </div>
+  `;
+
+  toastContainer.insertAdjacentHTML('beforeend', toastHtml);
+  const toastElement = document.getElementById(toastId);
+  const toast = new bootstrap.Toast(toastElement, { delay: 5000 });
+  toast.show();
+
+  // Otomatik temizleme
+  toastElement.addEventListener('hidden.bs.toast', () => {
+    toastElement.remove();
+  });
+}
+
+// Debounce fonksiyonu - hızlı tekrarlanan istekleri önlemek için
+function debounce(func, wait) {
+  let timeout;
+  return function(...args) {
+    const context = this;
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func.apply(context, args), wait);
+  };
+}
+
+// Arama kutusuna olay dinleyicisi ekle (debounce ile)
+document.addEventListener('DOMContentLoaded', function() {
+  const searchInput = document.getElementById('search_query');
+  if (searchInput) {
+    searchInput.addEventListener('input', debounce(function() {
+      if (this.value.length >= 3 || this.value.length === 0) {
+        searchOrders();
+      }
+    }, 500));
+  }
+
+  // Enter tuşuna basılınca arama yap
+  document.getElementById('searchForm')?.addEventListener('submit', function(e) {
+    e.preventDefault();
+    searchOrders();
+  });
+});
+
+// Sipariş detayları görüntüleme - iyileştirilmiş versiyon
 async function showOrderDetails(siparisNo) {
   logToConsole('Sipariş detayları görüntüleme başlatıldı', { siparisNo });
   try {
+    // Yükleniyor göstergesini göster
+    document.getElementById('orderDetailContent').innerHTML = '<div class="text-center p-4"><div class="spinner-border text-primary" role="status"></div><p class="mt-2">Sipariş detayları yükleniyor...</p></div>';
+
+    const modal = new bootstrap.Modal(document.getElementById('orderDetailModal'));
+    modal.show();
+
     const response = await fetch(`/siparis-detay/${siparisNo}`);
     if (!response.ok) {
-      throw new Error('Sipariş detayları alınamadı');
+      throw new Error(`Sipariş detayları alınamadı: ${response.status}`);
     }
 
     const detayHtml = await response.text();
@@ -549,12 +689,17 @@ async function showOrderDetails(siparisNo) {
       </div>
     `;
     document.getElementById('orderDetailContent').insertAdjacentHTML('beforeend', footerHtml);
-
-    const modal = new bootstrap.Modal(document.getElementById('orderDetailModal'));
-    modal.show();
   } catch (error) {
-    console.error('Hata:', error);
-    alert('Sipariş detayları yüklenirken bir hata oluştu.');
+    console.error('Detay görüntüleme hatası:', error);
+    document.getElementById('orderDetailContent').innerHTML = `
+      <div class="alert alert-danger">
+        <h5>Hata!</h5>
+        <p>Sipariş detayları yüklenirken bir hata oluştu: ${error.message}</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+      </div>
+    `;
   }
 }
 
@@ -671,7 +816,7 @@ document.querySelector('form').addEventListener('submit', async function(e) {
       birim_fiyat: item.price,
       renk: item.color,
       beden: item.size,
-      toplam_fiyat: item.total - item.discount
+      toplam_fiyat: item.total -item.discount
     }))
   };
 

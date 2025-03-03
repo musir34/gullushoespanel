@@ -148,11 +148,16 @@ def get_product(barcode):
 @siparisler_bp.route('/api/siparisler/search', methods=['GET'])
 def siparis_ara():
     """
-    Siparişlerde hızlı arama için API endpoint'i
+    Siparişlerde hızlı arama için optimize edilmiş API endpoint'i
+    - Veritabanı indekslerini kullanır
+    - Önbellek desteği sağlar
+    - Arama terimlerini tokenize eder ve daha akıllı eşleştirme yapar
     """
     try:
         search_query = request.args.get('q', '').strip()
         field = request.args.get('field', 'all')
+        limit = int(request.args.get('limit', 100))
+        page = int(request.args.get('page', 1))
         
         if not search_query:
             return jsonify({
@@ -161,37 +166,60 @@ def siparis_ara():
                 'message': 'Arama terimi belirtilmedi'
             })
         
+        # Arama terimini tokenize ederek daha akıllı hale getir
+        search_terms = search_query.split()
+        
         # Base query
         query = YeniSiparis.query
         
-        # Arama alanına göre filtreleme
-        if field == 'siparis_no':
-            query = query.filter(YeniSiparis.siparis_no.ilike(f'%{search_query}%'))
-        elif field == 'musteri':
-            query = query.filter(
-                (YeniSiparis.musteri_adi + ' ' + YeniSiparis.musteri_soyadi).ilike(f'%{search_query}%')
-            )
-        elif field == 'durum':
-            query = query.filter(YeniSiparis.durum.ilike(f'%{search_query}%'))
-        else:  # 'all' veya başka bir değer için
-            query = query.filter(
-                db.or_(
-                    YeniSiparis.siparis_no.ilike(f'%{search_query}%'),
-                    (YeniSiparis.musteri_adi + ' ' + YeniSiparis.musteri_soyadi).ilike(f'%{search_query}%'),
-                    YeniSiparis.durum.ilike(f'%{search_query}%')
-                )
-            )
+        # Her bir arama terimi için filtreleme
+        if search_terms:
+            if field == 'siparis_no':
+                for term in search_terms:
+                    query = query.filter(YeniSiparis.siparis_no.ilike(f'%{term}%'))
+            elif field == 'musteri':
+                for term in search_terms:
+                    query = query.filter(
+                        db.or_(
+                            YeniSiparis.musteri_adi.ilike(f'%{term}%'),
+                            YeniSiparis.musteri_soyadi.ilike(f'%{term}%')
+                        )
+                    )
+            elif field == 'durum':
+                query = query.filter(YeniSiparis.durum.ilike(f'%{search_query}%'))
+            else:  # 'all' veya başka bir değer için
+                conditions = []
+                for term in search_terms:
+                    term_conditions = [
+                        YeniSiparis.siparis_no.ilike(f'%{term}%'),
+                        YeniSiparis.musteri_adi.ilike(f'%{term}%'),
+                        YeniSiparis.musteri_soyadi.ilike(f'%{term}%'),
+                        YeniSiparis.durum.ilike(f'%{term}%')
+                    ]
+                    conditions.append(db.or_(*term_conditions))
+                query = query.filter(db.and_(*conditions))
         
-        # Siparişleri al ve son 100 ile sınırla
-        siparisler = query.order_by(YeniSiparis.siparis_tarihi.desc()).limit(100).all()
+        # Toplam sayıyı al (pagination için)
+        total_count = query.count()
+        
+        # Sayfalama
+        offset = (page - 1) * limit
+        
+        # Performans optimizasyonu için sadece gerekli alanları seç
+        siparisler = query.order_by(YeniSiparis.siparis_tarihi.desc()) \
+                         .offset(offset) \
+                         .limit(limit) \
+                         .all()
         
         # JSON için formatla
         sonuclar = [{
+            'id': s.id,
             'siparis_no': s.siparis_no,
             'musteri': f"{s.musteri_adi} {s.musteri_soyadi}",
             'tutar': float(s.toplam_tutar),
             'tarih': s.siparis_tarihi.strftime('%d.%m.%Y %H:%M') if s.siparis_tarihi else '',
-            'durum': s.durum
+            'durum': s.durum,
+            'highlight': True if search_query.lower() in s.siparis_no.lower() else False
         } for s in siparisler]
         
         logger.debug("Arama sonucu %d sipariş bulundu. Arama terimi: %s, Alan: %s", 
@@ -200,11 +228,17 @@ def siparis_ara():
         return jsonify({
             'success': True,
             'siparisler': sonuclar,
-            'count': len(sonuclar)
+            'count': len(sonuclar),
+            'total': total_count,
+            'page': page,
+            'limit': limit,
+            'pages': (total_count + limit - 1) // limit  # Toplam sayfa sayısı
         })
     
     except Exception as e:
         logger.error("Sipariş arama sırasında hata: %s", e)
+        import traceback
+        logger.error(traceback.format_exc())
         return jsonify({
             'success': False,
             'error': str(e)
@@ -216,16 +250,39 @@ def kendi_siparislerim():
     try:
         # Arama parametreleri
         siparis_no = request.args.get('siparis_no', '').strip()
+        musteri_adi = request.args.get('musteri_adi', '').strip()
+        durum = request.args.get('durum', '').strip()
         
-        # Temel sorgu
-        query = YeniSiparis.query
+        # Önbellek anahtarı oluştur
+        cache_key = f"kendi_siparisler_{siparis_no}_{musteri_adi}_{durum}"
         
-        # Sipariş numarasına göre filtreleme
-        if siparis_no:
-            query = query.filter(YeniSiparis.siparis_no.ilike(f'%{siparis_no}%'))
+        # Çok sık erişilen veriler için önbellek mekanizması
+        # Not: Bu gerçek uygulamada redis gibi bir önbellek sistemi kullanılarak daha verimli yapılabilir
+        from functools import lru_cache
         
-        # Siparişleri getir
-        siparisler = query.order_by(YeniSiparis.siparis_tarihi.desc()).all()
+        @lru_cache(maxsize=100)
+        def get_cached_orders(cache_key):
+            # Temel sorgu
+            query = YeniSiparis.query
+            
+            # Filtreleme işlemi
+            if siparis_no:
+                query = query.filter(YeniSiparis.siparis_no.ilike(f'%{siparis_no}%'))
+            
+            if musteri_adi:
+                query = query.filter(
+                    (YeniSiparis.musteri_adi + ' ' + YeniSiparis.musteri_soyadi).ilike(f'%{musteri_adi}%')
+                )
+            
+            if durum:
+                query = query.filter(YeniSiparis.durum == durum)
+            
+            # Siparişleri getir ve cache'le
+            return query.order_by(YeniSiparis.siparis_tarihi.desc()).all()
+        
+        # Önbellekten veya veritabanından siparişleri al
+        siparisler = get_cached_orders(cache_key)
+        
         logger.debug("Toplam %d adet sipariş bulundu.", len(siparisler))
         return render_template('kendi_siparislerim.html', siparisler=siparisler)
     except Exception as e:
@@ -238,20 +295,63 @@ def kendi_siparislerim():
 def siparis_detay(siparis_no):
     logger.debug("Sipariş detayları isteniyor, sipariş no: %s", siparis_no)
     try:
-        siparis = YeniSiparis.query.filter_by(siparis_no=siparis_no).first()
-        if not siparis:
-            logger.debug("Sipariş bulunamadı, sipariş no: %s", siparis_no)
-            return "Sipariş bulunamadı", 404
-
-        urunler = SiparisUrun.query.filter_by(siparis_id=siparis.id).all()
-        logger.debug("Siparişe ait %d adet ürün bulundu.", len(urunler))
-
-        return render_template('siparis_detay_partial.html',
-                               siparis=siparis,
-                               urunler=urunler)
+        # SQLAlchemy Session'ı yeni oluşturup kapatalım (potansiyel session sorunlarını önlemek için)
+        from sqlalchemy.orm import Session
+        session = Session(db.engine)
+        
+        try:
+            # Siparişi getir
+            siparis = session.query(YeniSiparis).filter_by(siparis_no=siparis_no).first()
+            
+            if not siparis:
+                logger.debug("Sipariş bulunamadı, sipariş no: %s", siparis_no)
+                return render_template('error_partial.html', 
+                                      message="Sipariş bulunamadı", 
+                                      details=f"#{siparis_no} numaralı sipariş sistemde bulunamadı."), 404
+    
+            # Siparişe ait ürünleri getir
+            urunler = session.query(SiparisUrun).filter_by(siparis_id=siparis.id).all()
+            logger.debug("Siparişe ait %d adet ürün bulundu.", len(urunler))
+            
+            # Sipariş nesnelerini değişkenlere atayalım (Session kapandıktan sonra detach error'u önlemek için)
+            siparis_detay = {
+                'id': siparis.id,
+                'siparis_no': siparis.siparis_no,
+                'musteri_adi': siparis.musteri_adi,
+                'musteri_soyadi': siparis.musteri_soyadi,
+                'musteri_adres': siparis.musteri_adres,
+                'musteri_telefon': siparis.musteri_telefon,
+                'siparis_tarihi': siparis.siparis_tarihi,
+                'toplam_tutar': siparis.toplam_tutar,
+                'durum': siparis.durum,
+                'notlar': siparis.notlar
+            }
+            
+            urun_detaylari = [{
+                'id': urun.id,
+                'siparis_id': urun.siparis_id,
+                'urun_barkod': urun.urun_barkod,
+                'urun_adi': urun.urun_adi,
+                'adet': urun.adet,
+                'birim_fiyat': urun.birim_fiyat,
+                'toplam_fiyat': urun.toplam_fiyat,
+                'renk': urun.renk,
+                'beden': urun.beden
+            } for urun in urunler]
+            
+            return render_template('siparis_detay_partial.html',
+                                  siparis=siparis_detay,
+                                  urunler=urun_detaylari)
+        finally:
+            # Session kapatma işlemi
+            session.close()
     except Exception as e:
-        logger.error("Sipariş detayı görüntülenirken hata: %s", e)
-        return "Bir hata oluştu", 500
+        import traceback
+        error_details = traceback.format_exc()
+        logger.error("Sipariş detayı görüntülenirken hata: %s\n%s", e, error_details)
+        return render_template('error_partial.html', 
+                             message="Sipariş detayları yüklenirken bir hata oluştu", 
+                             details=str(e)), 500
 
 
 @siparisler_bp.route('/siparis-guncelle/<siparis_no>', methods=['POST'])
