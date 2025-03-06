@@ -60,9 +60,13 @@ def webhook_status():
             'order_webhook_active': status_info.get('order_webhook_active', False),
             'product_webhook_active': status_info.get('product_webhook_active', False),
             'total_webhooks': status_info.get('total_webhooks', 0),
+            'webhook_details': status_info.get('webhook_details', []),
             'recent_order_events': order_events[-20:],  # Son 20 olay
             'recent_product_events': product_events[-20:]  # Son 20 olay
         }
+        
+        # Durumu loglama
+        logger.info(f"API webhook durumu yanıtı: {response_data}")
         
         # Hata varsa ekle
         if 'error' in status_info:

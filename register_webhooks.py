@@ -178,21 +178,48 @@ def check_webhook_status():
         
         order_webhook_active = False
         product_webhook_active = False
+        webhook_details = []
+        
+        logger.info(f"Webhook durumu kontrolü başladı - Toplam {len(webhooks)} webhook")
         
         for webhook in webhooks:
-            if webhook.get("name") == "OrderWebhook" and webhook.get("status") == "ACTIVE":
-                order_webhook_active = True
-            elif webhook.get("name") == "ProductWebhook" and webhook.get("status") == "ACTIVE":
-                product_webhook_active = True
+            webhook_id = webhook.get("id", "")
+            webhook_name = webhook.get("name", "")
+            webhook_status = webhook.get("status", "")
+            webhook_url = webhook.get("url", "")
+            
+            logger.info(f"Webhook bilgisi: ID: {webhook_id}, İsim: {webhook_name}, Durum: {webhook_status}, URL: {webhook_url}")
+            
+            webhook_details.append({
+                "id": webhook_id,
+                "name": webhook_name,
+                "status": webhook_status,
+                "url": webhook_url
+            })
+            
+            # Durum kontrolü - API yanıtlarından gelen değerleri kontrol et
+            if webhook_name == "OrderWebhook":
+                # Durumu string olarak karşılaştır, büyük/küçük harf duyarlılığını kaldır
+                if str(webhook_status).upper() == "ACTIVE":
+                    order_webhook_active = True
+                    logger.info(f"Sipariş webhook'u aktif olarak işaretlendi. Durum: {webhook_status}")
+            elif webhook_name == "ProductWebhook":
+                if str(webhook_status).upper() == "ACTIVE":
+                    product_webhook_active = True
+                    logger.info(f"Ürün webhook'u aktif olarak işaretlendi. Durum: {webhook_status}")
         
-        return {
+        result = {
             "order_webhook_active": order_webhook_active,
             "product_webhook_active": product_webhook_active,
-            "total_webhooks": len(webhooks)
+            "total_webhooks": len(webhooks),
+            "webhook_details": webhook_details
         }
+        
+        logger.info(f"Webhook durumu: {result}")
+        return result
             
     except Exception as e:
-        logger.error(f"Webhook durumu kontrol edilirken hata: {str(e)}")
+        logger.error(f"Webhook durumu kontrol edilirken hata: {str(e)}", exc_info=True)
         return {
             "order_webhook_active": False,
             "product_webhook_active": False,

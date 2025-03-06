@@ -199,6 +199,7 @@ function checkWebhookStatus() {
   // Durum göstergelerini "Kontrol Ediliyor..." olarak ayarla
   const orderStatus = document.getElementById('orderWebhookStatus');
   const productStatus = document.getElementById('productWebhookStatus');
+  const detailsContainer = document.getElementById('webhookDetails') || document.createElement('div');
 
   orderStatus.className = 'badge bg-secondary';
   orderStatus.textContent = 'Kontrol Ediliyor...';
@@ -211,6 +212,40 @@ function checkWebhookStatus() {
     .then(response => response.json())
     .then(data => {
       console.log('Webhook durumu:', data);
+
+      // Ayrıntılı bilgiyi göster
+      if (data.webhook_details && data.webhook_details.length > 0) {
+        let detailsHtml = '<div class="mt-4 mb-2"><h6>Webhook Detayları:</h6><ul class="list-group">';
+        
+        data.webhook_details.forEach(webhook => {
+          const statusClass = webhook.status && webhook.status.toUpperCase() === 'ACTIVE' ? 'bg-success' : 'bg-danger';
+          detailsHtml += `
+            <li class="list-group-item">
+              <div class="d-flex justify-content-between">
+                <div>
+                  <strong>ID:</strong> ${webhook.id} <br>
+                  <strong>İsim:</strong> ${webhook.name} <br>
+                  <strong>URL:</strong> <small>${webhook.url}</small>
+                </div>
+                <div>
+                  <span class="badge ${statusClass}">${webhook.status || 'Bilinmiyor'}</span>
+                </div>
+              </div>
+            </li>
+          `;
+        });
+        
+        detailsHtml += '</ul></div>';
+        
+        // Detay bölümünü ekle/güncelle
+        if (!document.getElementById('webhookDetails')) {
+          const detailsDiv = document.createElement('div');
+          detailsDiv.id = 'webhookDetails';
+          document.querySelector('.card-body').appendChild(detailsDiv);
+        }
+        
+        document.getElementById('webhookDetails').innerHTML = detailsHtml;
+      }
 
       // Sipariş webhook durumunu güncelle
       if (data.order_webhook_active) {
