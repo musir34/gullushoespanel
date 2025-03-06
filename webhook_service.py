@@ -1,5 +1,5 @@
 
-from flask import Blueprint, request, jsonify, current_app, render_template
+from flask import Blueprint, request, jsonify, current_app
 import json
 import logging
 from datetime import datetime
@@ -20,9 +20,6 @@ webhook_bp = Blueprint('webhook_bp', __name__)
 order_events = []
 product_events = []
 
-# İşlenen ürün kodlarını takip etmek için set
-product_events_processed = set()
-
 @webhook_bp.route('/webhook-dashboard')
 def webhook_dashboard():
     """
@@ -38,7 +35,7 @@ def webhook_dashboard():
     except:
         logs = "Log dosyası bulunamadı."
     
-    return render_template('webhook_kurulum.html', 
+    return render_template('webhook_dashboard.html', 
                           order_webhook_url=ORDER_WEBHOOK_URL,
                           product_webhook_url=PRODUCT_WEBHOOK_URL,
                           order_events=order_events[-20:],  # Son 20 olay
@@ -161,13 +158,9 @@ def handle_order_webhook():
         # İsteğin içeriğini logla (debug için)
         logger.debug(f"Webhook İçeriği: {request.data.decode('utf-8')}")
         
-        # API Key doğrulama
-        api_key = request.headers.get('X-API-Key')
-        webhook_secret = current_app.config.get('WEBHOOK_SECRET', '')
-        
-        if api_key != webhook_secret:
-            logger.warning(f"Webhook API Key doğrulaması başarısız: {api_key}")
-            return jsonify({"status": "error", "message": "Geçersiz API Key"}), 401
+        # İmza doğrulama (opsiyonel güvenlik)
+        # if not verify_webhook_signature(request):
+        #     return jsonify({"status": "error", "message": "Webhook imzası doğrulanamadı"}), 401
         
         # JSON verisini al
         webhook_data = request.json
@@ -175,31 +168,18 @@ def handle_order_webhook():
             logger.error("Webhook verisi boş veya geçersiz JSON formatında")
             return jsonify({"status": "error", "message": "Geçersiz veri formatı"}), 400
         
-        # Sipariş durumu doğrudan webhook_data üzerinden alınabilir
-        status = webhook_data.get('shipmentPackageStatus', '')
-        logger.info(f"Sipariş Durumu: {status}")
+        event_type = webhook_data.get('type', '')
+        logger.info(f"Webhook Tipi: {event_type}")
         
-        # Webhook içeriğini kaydet (izleme için)
-        order_events.append({
-            'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-            'status': status,
-            'order_number': webhook_data.get('orderNumber', ''),
-            'data': webhook_data
-        })
-        
-        # Listeyi maksimum 100 olayla sınırla
-        if len(order_events) > 100:
-            order_events.pop(0)
-        
-        # Sipariş durumuna göre işlem
-        if status == "CREATED":
+        # Olay tipine göre işlem
+        if event_type == 'OrderCreated':
             handle_order_created(webhook_data)
-        elif status in ["PICKING", "INVOICED", "SHIPPED", "CANCELLED", "DELIVERED", 
-                     "UNDELIVERED", "RETURNED", "UNSUPPLIED", "AWAITING", 
-                     "UNPACKED", "AT_COLLECTION_POINT", "VERIFIED"]:
+        elif event_type == 'OrderStatusChanged':
             handle_order_status_changed(webhook_data)
+        elif event_type == 'PackageStatusChanged':
+            handle_package_status_changed(webhook_data)
         else:
-            logger.warning(f"Bilinmeyen sipariş durumu: {status}")
+            logger.warning(f"Bilinmeyen webhook tipi: {event_type}")
         
         return jsonify({"status": "success", "message": "Webhook başarıyla işlendi"}), 200
         
@@ -218,58 +198,22 @@ def handle_product_webhook():
         # İsteğin içeriğini logla (debug için)
         logger.debug(f"Webhook İçeriği: {request.data.decode('utf-8')}")
         
-        # API Key doğrulama
-        api_key = request.headers.get('X-API-Key')
-        webhook_secret = current_app.config.get('WEBHOOK_SECRET', '')
-        
-        if api_key != webhook_secret:
-            logger.warning(f"Webhook API Key doğrulaması başarısız: {api_key}")
-            return jsonify({"status": "error", "message": "Geçersiz API Key"}), 401
+        # İmza doğrulama (opsiyonel güvenlik)
+        # if not verify_webhook_signature(request):
+        #     return jsonify({"status": "error", "message": "Webhook imzası doğrulanamadı"}), 401
         
         # JSON verisini al
         webhook_data = request.json
         if not webhook_data:
             logger.error("Webhook verisi boş veya geçersiz JSON formatında")
             return jsonify({"status": "error", "message": "Geçersiz veri formatı"}), 400
-        
-        # Webhook olayının tipini belirle
-        event_type = None
-        
-        # Ürün yaratma/güncelleme bilgisi varsa
-        if 'product' in webhook_data:
-            if webhook_data.get('productCode', '') not in product_events_processed:
-                event_type = 'ProductCreated'
-            else:
-                event_type = 'ProductUpdated'
-                
-        # Fiyat değişikliği bilgisi varsa
-        elif 'price' in webhook_data or 'salePrice' in webhook_data or 'listPrice' in webhook_data:
-            event_type = 'PriceChanged'
             
-        # Stok değişikliği bilgisi varsa
-        elif 'quantity' in webhook_data or 'stock' in webhook_data:
-            event_type = 'StockChanged'
-        
-        logger.info(f"Belirlenen webhook tipi: {event_type}")
-        
-        # Webhook içeriğini kaydet (izleme için)
-        product_events.append({
-            'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-            'type': event_type,
-            'barcode': webhook_data.get('barcode', ''),
-            'data': webhook_data
-        })
-        
-        # Listeyi maksimum 100 olayla sınırla
-        if len(product_events) > 100:
-            product_events.pop(0)
+        event_type = webhook_data.get('type', '')
+        logger.info(f"Webhook Tipi: {event_type}")
         
         # Olay tipine göre işlem
         if event_type == 'ProductCreated':
             handle_product_created(webhook_data)
-            # İşlenen ürün kodlarını takip et
-            if webhook_data.get('productCode'):
-                product_events_processed.add(webhook_data.get('productCode'))
         elif event_type == 'ProductUpdated':
             handle_product_updated(webhook_data)
         elif event_type == 'PriceChanged':
@@ -277,7 +221,7 @@ def handle_product_webhook():
         elif event_type == 'StockChanged':
             handle_stock_changed(webhook_data)
         else:
-            logger.warning(f"Bilinmeyen webhook içeriği: {webhook_data}")
+            logger.warning(f"Bilinmeyen webhook tipi: {event_type}")
         
         return jsonify({"status": "success", "message": "Webhook başarıyla işlendi"}), 200
         
