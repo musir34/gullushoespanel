@@ -308,6 +308,11 @@ async def fetch_claims_async():
     """
     Trendyol API'den iade/talep verilerini asenkron olarak çeker ve veritabanını günceller
     """
+    # Global logger değişkeni oluşturalım - bu en önemli değişiklik
+    from logger_config import app_logger
+    
+    app_logger.info("fetch_claims_async başlatılıyor...")
+    
     try:
         import aiohttp
         import asyncio
@@ -319,23 +324,29 @@ async def fetch_claims_async():
         import logging
         from models import db, Claim  # Claim modelinizin adına göre düzenleyin
         
-        logger = logging.getLogger(__name__)
+        # Yerel logger değil global logger kullanacağız
+        app_logger.debug("Gerekli modüller yüklendi")
         
         # Son 30 günlük talepleri çek
         end_date = int(time.time() * 1000)
         start_date = int((datetime.now() - timedelta(days=30)).timestamp() * 1000)
+        app_logger.debug(f"Tarih aralığı: {datetime.fromtimestamp(start_date/1000)} - {datetime.fromtimestamp(end_date/1000)}")
 
         url = f'https://api.trendyol.com/sapigw/suppliers/{SUPPLIER_ID}/claims'
+        app_logger.debug(f"API URL: {url}")
+        
         credentials = f'{API_KEY}:{API_SECRET}'
         encoded_credentials = base64.b64encode(credentials.encode('utf-8')).decode('utf-8')
         headers = {
             'Authorization': f'Basic {encoded_credentials}',
             'Content-Type': 'application/json'
         }
+        app_logger.debug("API kimlik bilgileri oluşturuldu")
 
         all_claims = []
         page = 0
         size = 100
+        app_logger.info(f"Sayfalama başlatılıyor: sayfa={page}, boyut={size}")
         
         async with aiohttp.ClientSession() as session:
             while True:
@@ -381,34 +392,103 @@ async def fetch_claims_async():
         logger.info(f"Toplam {len(all_claims)} adet talep çekildi.")
         
         # Veritabanını güncelle
-        # Burada kendi modelinize ve veritabanı yapınıza göre işlem yapmanız gerekiyor
-        # Örnek olarak:
-        for claim_data in all_claims:
+        app_logger.info(f"Toplam {len(all_claims)} talep verisi işlenecek")
+        
+        try:
+            # Önce Claim sınıfının varlığını kontrol edelim
+            # Gerçek model adını saptayalım
+            from models import Return  # Return model'ini kullanabiliriz
+            app_logger.debug("Return modeli başarıyla import edildi")
+            
+            # Claim modelini kontrol edelim
+            claim_model_exists = False
             try:
-                claim_id = claim_data.get('id')
-                existing_claim = Claim.query.filter_by(claim_id=claim_id).first()
-                
-                if existing_claim:
-                    # Mevcut talebi güncelle
-                    existing_claim.status = claim_data.get('status')
-                    existing_claim.last_updated = datetime.now()
-                    # Diğer alanları güncelle
-                else:
-                    # Yeni talep oluştur
-                    new_claim = Claim(
-                        claim_id=claim_id,
-                        status=claim_data.get('status'),
-                        # Diğer alanları doldur
-                    )
-                    db.session.add(new_claim)
+                from models import Claim
+                claim_model_exists = True
+                app_logger.debug("Claim modeli başarıyla import edildi")
+            except ImportError:
+                app_logger.warning("Claim modeli bulunamadı, Return modeli kullanılacak")
+                Claim = Return  # Return modelini kullan
+            
+            app_logger.debug(f"Talep verileri işlenmeye başlanıyor (Model: {'Claim' if claim_model_exists else 'Return'})")
+            
+            # İşlenen talep sayısını tut
+            process_count = 0
+            error_count = 0
+            
+            for claim_data in all_claims:
+                try:
+                    claim_id = claim_data.get('id')
+                    if not claim_id:
+                        app_logger.warning("ID'siz talep verisi atlanıyor")
+                        continue
                     
-            except Exception as e:
-                logger.error(f"Talep verisi kaydedilirken hata (ID: {claim_data.get('id')}): {e}")
-                continue
+                    app_logger.debug(f"Talep ID #{claim_id} işleniyor")
+                    
+                    # Mevcut talebi kontrol et
+                    existing_claim = Claim.query.filter_by(claim_id=str(claim_id)).first()
+                    
+                    if existing_claim:
+                        app_logger.debug(f"Mevcut talep bulundu: #{claim_id}")
+                        # Mevcut talebi güncelle
+                        existing_claim.status = claim_data.get('status')
+                        existing_claim.last_modified_date = datetime.now()
+                        # Diğer alanları güncelle
+                        db.session.add(existing_claim)
+                    else:
+                        app_logger.debug(f"Yeni talep oluşturuluyor: #{claim_id}")
+                        
+                        # Model alanlarını kontrol edelim
+                        claim_fields = [column.key for column in Claim.__table__.columns]
+                        app_logger.debug(f"Mevcut model alanları: {claim_fields}")
+                        
+                        # Yeni talep parametrelerini oluştur
+                        claim_params = {
+                            'claim_id': str(claim_id),
+                            'status': claim_data.get('status'),
+                        }
+                        
+                        # Diğer ortak alanları ekle
+                        if 'order_number' in claim_fields:
+                            claim_params['order_number'] = str(claim_data.get('orderNumber', ''))
+                            
+                        if 'create_date' in claim_fields or 'created_date' in claim_fields:
+                            create_date_key = 'create_date' if 'create_date' in claim_fields else 'created_date'
+                            claim_params[create_date_key] = datetime.now()
+                            
+                        app_logger.debug(f"Yeni talep parametreleri: {claim_params}")
+                        
+                        # Yeni talep oluştur
+                        new_claim = Claim(**claim_params)
+                        db.session.add(new_claim)
+                        
+                    process_count += 1
+                    
+                    # Her 100 talepte bir commit yap
+                    if process_count % 100 == 0:
+                        db.session.commit()
+                        app_logger.info(f"{process_count} talep işlendi ve kaydedildi")
+                        
+                except Exception as e:
+                    error_count += 1
+                    app_logger.error(f"Talep verisi kaydedilirken hata (ID: {claim_data.get('id')}): {e}", exc_info=True)
+                    continue
+            
+            # Son değişiklikleri kaydet
+            db.session.commit()
+            app_logger.info(f"Toplam {process_count} talep başarıyla işlendi, {error_count} talep işlenemedi")
+                    
+        except Exception as e:
+            app_logger.error(f"Talep işleme sırasında beklenmeyen bir hata oluştu: {e}", exc_info=True)
+            db.session.rollback()
                 
-        db.session.commit()
-        logger.info("Talep verileri başarıyla güncellendi.")
+        # Bu kısma kadar gelebildiysek, işlem başarılı demektir
+        app_logger.info("Talep verileri başarıyla güncellendi.")
+        return True
         
     except Exception as e:
         db.session.rollback()
-        logger.error(f"Talep verileri güncellenirken bir hata oluştu: {e}")
+        app_logger.error(f"Talep verileri güncellenirken bir hata oluştu: {e}", exc_info=True)
+        app_logger.debug(f"Hata detayları: {type(e).__name__}")
+        app_logger.debug(f"Hata mesajı: {str(e)}")
+        return False

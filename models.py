@@ -185,6 +185,7 @@ class Product(db.Model):
     title = db.Column(db.String)
     hidden = db.Column(db.Boolean, default=False)
     product_main_id = db.Column(db.String)
+    category_name = db.Column(db.String)  # categoryName için gerekli alan
     quantity = db.Column(db.Integer)
     images = db.Column(db.String)
     variants = db.Column(db.String)
@@ -200,11 +201,12 @@ class Product(db.Model):
 
     def __init__(self, barcode, original_product_barcode, title, product_main_id, 
                  quantity, images, variants, size, color, archived, locked, on_sale,
-                 reject_reason, sale_price, list_price, currency_type):
+                 reject_reason, sale_price, list_price, currency_type, category_name=None):
         self.barcode = barcode
         self.original_product_barcode = original_product_barcode
         self.title = title
         self.product_main_id = product_main_id
+        self.category_name = category_name  # categoryName için yeni parametre
         self.quantity = quantity
         self.images = images
         self.variants = variants
