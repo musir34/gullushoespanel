@@ -205,32 +205,32 @@ def continuous_update_worker():
     logger.info("Sürekli güncelleme sistemi başlatıldı")
     
     # Uygulamayı doğrudan referans al
-    app_context = app.app_context()
-    app_context.push()  # Uygulama bağlamını etkinleştir
+    # !!! HER GÜNCELLEME İŞLEMİ İÇİN YENİ BİR BAĞLAM OLUŞTURMAK ÖNEMLİDİR !!!
     
     try:
-        logger.info("Uygulama bağlamı oluşturuldu")
-        
         while True:
             try:
                 UPDATING = True
                 
-                # 1. Siparişleri güncelle
-                logger.info("--- Güncelleme Döngüsü Başladı ---")
-                logger.info("1/3: Siparişler güncelleniyor...")
-                update_orders()
-                time.sleep(10)  # 10 saniye bekle
+                # Her döngüde yeni bir uygulama bağlamı oluştur
+                with app.app_context():
+                    # 1. Siparişleri güncelle
+                    logger.info("--- Güncelleme Döngüsü Başladı ---")
+                    logger.info("1/3: Siparişler güncelleniyor...")
+                    update_orders()
+                    time.sleep(10)  # 10 saniye bekle
+                    
+                    # 2. Ürünleri güncelle
+                    logger.info("2/3: Ürünler güncelleniyor...")
+                    update_products()
+                    time.sleep(10)  # 10 saniye bekle
+                    
+                    # 3. İade/Talepleri güncelle
+                    logger.info("3/3: İadeler/Talepler güncelleniyor...")
+                    update_claims()
+                    
+                    logger.info("--- Güncelleme Döngüsü Tamamlandı ---")
                 
-                # 2. Ürünleri güncelle
-                logger.info("2/3: Ürünler güncelleniyor...")
-                update_products()
-                time.sleep(10)  # 10 saniye bekle
-                
-                # 3. İade/Talepleri güncelle
-                logger.info("3/3: İadeler/Talepler güncelleniyor...")
-                update_claims()
-                
-                logger.info("--- Güncelleme Döngüsü Tamamlandı ---")
                 UPDATING = False
                 
                 # Tüm güncellemeler bittikten sonra 1 dakika bekle
@@ -242,10 +242,7 @@ def continuous_update_worker():
                 UPDATING = False
                 time.sleep(60)  # Hata durumunda 1 dakika bekle ve tekrar dene
     except Exception as e:
-        logger.error(f"Uygulama bağlamı oluşturulurken hata: {e}")
-    finally:
-        # İş parçacığı sonlandığında uygulama bağlamını kapat
-        app_context.pop()
+        logger.error(f"Sürekli güncelleme sisteminde genel hata: {e}")
 
 def start_continuous_update():
     """Sürekli güncelleme sistemini başlat"""

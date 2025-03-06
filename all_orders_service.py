@@ -9,11 +9,17 @@ def get_all_orders():
     """
     Retrieve and display all orders with pagination and search functionality and caching
     """
-    cache_key = f"orders_page_{request.args.get('page', 1)}_{request.args.get('search', '')}"
-    cached_data = redis_client.get(cache_key)
-    
-    if cached_data:
-        return cached_data
+    # Redis istemcisini import et ve kontrol et
+    try:
+        from cache_config import redis_client
+        cache_key = f"orders_page_{request.args.get('page', 1)}_{request.args.get('search', '')}"
+        cached_data = redis_client.get(cache_key)
+        
+        if cached_data:
+            return cached_data
+    except (ImportError, AttributeError, Exception) as e:
+        # Redis istemcisi mevcut değilse veya hata oluşursa geç
+        pass
     # Get page parameters
     page = int(request.args.get('page', 1))
     per_page = 50
