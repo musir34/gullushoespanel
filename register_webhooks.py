@@ -171,7 +171,7 @@ def deactivate_webhook(webhook_id):
 
 def check_webhook_status():
     """
-    Kayıtlı webhook'ların durumunu kontrol eder
+    Kayıtlı webhook'ların durumunu kontrol eder ve gerekirse aktivasyon yapar
     """
     try:
         webhooks = get_registered_webhooks()
@@ -212,6 +212,19 @@ def check_webhook_status():
                     logger.info(f"Ürün webhook'u aktif olarak işaretlendi. Durum: {webhook_status}")
                 else:
                     logger.warning(f"Tanımlanamayan aktif webhook bulundu: {webhook_name}, URL: {webhook_url}")
+            # Eğer webhook aktif değilse, aktivasyon yapmayı deneyelim
+            elif str(webhook_status).upper() != "ACTIVE" and webhook_id:
+                logger.info(f"Pasif webhook bulundu, aktifleştirme deneniyor. ID: {webhook_id}")
+                activation_result = activate_webhook(webhook_id)
+                if activation_result:
+                    logger.info(f"Webhook başarıyla aktifleştirildi: {webhook_id}")
+                    # Durumu güncelleyelim
+                    if is_order_webhook:
+                        order_webhook_active = True
+                    elif is_product_webhook:
+                        product_webhook_active = True
+                else:
+                    logger.warning(f"Webhook aktifleştirme başarısız: {webhook_id}")
         
         result = {
             "order_webhook_active": order_webhook_active,
