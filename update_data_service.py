@@ -1,4 +1,3 @@
-
 from flask import Blueprint, render_template, request, jsonify, current_app
 from datetime import datetime, timedelta
 import json
@@ -81,7 +80,7 @@ def update_data(data_type):
             product_count = Product.query.count()
             save_update_info('products', True, product_count)
             return jsonify({'success': True, 'message': 'Ürünler başarıyla güncellendi'})
-            
+
         elif data_type == 'orders':
             from order_service import fetch_trendyol_orders_async
             asyncio.run(fetch_trendyol_orders_async())
@@ -90,7 +89,7 @@ def update_data(data_type):
             order_count = Order.query.count()
             save_update_info('orders', True, order_count)
             return jsonify({'success': True, 'message': 'Siparişler başarıyla güncellendi'})
-            
+
         elif data_type == 'claims':
             from claims_service import fetch_claims_async
             asyncio.run(fetch_claims_async())
@@ -99,43 +98,43 @@ def update_data(data_type):
             claim_count = Claim.query.count()
             save_update_info('claims', True, claim_count)
             return jsonify({'success': True, 'message': 'İadeler/talepler başarıyla güncellendi'})
-            
+
         elif data_type == 'all':
             # Tüm verileri güncelle
             from product_service import fetch_trendyol_products_async
             from order_service import fetch_trendyol_orders_async
             from claims_service import fetch_claims_async
-            
+
             # Ürünleri güncelle
             asyncio.run(fetch_trendyol_products_async())
             from models import Product
             product_count = Product.query.count()
             save_update_info('products', True, product_count)
-            
+
             # Siparişleri güncelle
             asyncio.run(fetch_trendyol_orders_async())
             from models import Order
             order_count = Order.query.count()
             save_update_info('orders', True, order_count)
-            
+
             # İadeleri/talepleri güncelle
             asyncio.run(fetch_claims_async())
             from models import Claim
             claim_count = Claim.query.count()
             save_update_info('claims', True, claim_count)
-            
+
             return jsonify({'success': True, 'message': 'Tüm veriler başarıyla güncellendi'})
-            
+
         else:
             return jsonify({'success': False, 'message': 'Geçersiz veri türü'}), 400
-            
+
     except Exception as e:
         logger.error(f"Veri güncellenirken hata: {e}")
-        
+
         # Hata durumunda güncelleme bilgisini kaydet
         if data_type in ['products', 'orders', 'claims']:
             save_update_info(data_type, False, 0)
-        
+
         return jsonify({'success': False, 'message': f'Güncelleme sırasında bir hata oluştu: {str(e)}'}), 500
 
 def update_orders():
@@ -143,7 +142,7 @@ def update_orders():
     try:
         logger.info("Siparişler güncellenmeye başlanıyor...")
         from order_service import fetch_trendyol_orders_async
-        
+
         # Uygulama bağlamı zaten ana thread tarafından oluşturuldu
         asyncio.run(fetch_trendyol_orders_async())
         # Sipariş sayısını al
@@ -162,7 +161,7 @@ def update_products():
     try:
         logger.info("Ürünler güncellenmeye başlanıyor...")
         from product_service import fetch_trendyol_products_async
-        
+
         # Uygulama bağlamı zaten ana thread tarafından oluşturuldu
         asyncio.run(fetch_trendyol_products_async())
         # Ürün sayısını al
@@ -181,37 +180,43 @@ def update_claims():
     try:
         logger.info("İadeler/talepler güncellenmeye başlanıyor...")
         from claims_service import fetch_claims_async
-        
-        # Uygulama bağlamı zaten ana thread tarafından oluşturuldu
-        asyncio.run(fetch_claims_async())
-        # İade/talep sayısını al
-        from models import Claim
-        claim_count = Claim.query.count()
-        save_update_info('claims', True, claim_count)
-        logger.info(f"İadeler/talepler güncellendi. Toplam iade/talep sayısı: {claim_count}")
-        return True
+        try:
+            from logger_config import app_logger as logger
+            # İade/talepleri güncelleme kodunu burada çalıştır
+            asyncio.run(fetch_claims_async())
+            # İade/talep sayısını al
+            from models import Claim
+            claim_count = Claim.query.count()
+            save_update_info('claims', True, claim_count)
+            logger.info(f"İadeler/talepler güncellendi. Toplam iade/talep sayısı: {claim_count}")
+            return True
+        except Exception as e:
+            logger.error(f"İadeler/talepler güncellenirken hata: {str(e)}")
+            save_update_info('claims', False, 0)
+            return False
+
     except Exception as e:
-        logger.error(f"İadeler/talepler güncellenirken hata: {e}")
-        save_update_info('claims', False, 0)
+        logger.exception(f"update_claims fonksiyonunda beklenmedik hata: {e}") # daha genel bir hata yakalama
         return False
+
 
 def continuous_update_worker():
     """Sürekli güncelleme yapan arka plan iş parçacığı"""
     global UPDATING
-    
+
     # Flask uygulamasını almak için
     from app import app  # app.py'den doğrudan uygulama örneğini içe aktar
-    
+
     logger.info("Sürekli güncelleme sistemi başlatıldı")
-    
+
     # Uygulamayı doğrudan referans al
     # !!! HER GÜNCELLEME İŞLEMİ İÇİN YENİ BİR BAĞLAM OLUŞTURMAK ÖNEMLİDİR !!!
-    
+
     try:
         while True:
             try:
                 UPDATING = True
-                
+
                 # Her döngüde yeni bir uygulama bağlamı oluştur
                 with app.app_context():
                     # 1. Siparişleri güncelle
@@ -219,24 +224,24 @@ def continuous_update_worker():
                     logger.info("1/3: Siparişler güncelleniyor...")
                     update_orders()
                     time.sleep(10)  # 10 saniye bekle
-                    
+
                     # 2. Ürünleri güncelle
                     logger.info("2/3: Ürünler güncelleniyor...")
                     update_products()
                     time.sleep(10)  # 10 saniye bekle
-                    
+
                     # 3. İade/Talepleri güncelle
                     logger.info("3/3: İadeler/Talepler güncelleniyor...")
                     update_claims()
-                    
+
                     logger.info("--- Güncelleme Döngüsü Tamamlandı ---")
-                
+
                 UPDATING = False
-                
+
                 # Tüm güncellemeler bittikten sonra 1 dakika bekle
                 logger.info("Sonraki güncelleme döngüsüne kadar 1 dakika bekleniyor...")
                 time.sleep(60)  # 1 dakika bekle
-                
+
             except Exception as e:
                 logger.error(f"Sürekli güncelleme sırasında hata: {e}")
                 UPDATING = False
@@ -247,12 +252,12 @@ def continuous_update_worker():
 def start_continuous_update():
     """Sürekli güncelleme sistemini başlat"""
     global UPDATE_THREAD, UPDATING
-    
+
     # Zaten çalışıyorsa yeni bir tane başlatma
     if UPDATE_THREAD and UPDATE_THREAD.is_alive():
         logger.info("Sürekli güncelleme sistemi zaten çalışıyor")
         return False
-    
+
     # Yeni güncelleme thread'i başlat
     UPDATE_THREAD = threading.Thread(target=continuous_update_worker, daemon=True)
     UPDATE_THREAD.start()
