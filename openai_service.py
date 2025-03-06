@@ -2,7 +2,7 @@
 import os
 from flask import Blueprint, request, jsonify, render_template
 from dotenv import load_dotenv
-import openai
+from openai import OpenAI
 from logger_config import app_logger
 
 # Logger yapılandırması
@@ -11,8 +11,8 @@ logger = app_logger
 # Çevre değişkenlerini yükle
 load_dotenv()
 
-# OpenAI API anahtarınızı çevre değişkenlerinden alın
-openai.api_key = os.getenv("OPENAI_API_KEY")
+# OpenAI istemcisini oluştur
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 # Blueprint oluşturma
 openai_bp = Blueprint('openai_bp', __name__)
@@ -43,8 +43,8 @@ def analyze_text():
         user_text = data['text']
         logger.debug(f"Analiz edilecek metin: {user_text[:50]}...")
         
-        # OpenAI API çağrısı
-        response = openai.ChatCompletion.create(
+        # OpenAI API çağrısı - yeni sürüm
+        response = client.chat.completions.create(
             model="gpt-3.5-turbo",  # veya tercih ettiğiniz model
             messages=[
                 {"role": "system", "content": "Sen bir metin analiz uzmanısın. Verilen metni analiz et ve önemli noktaları vurgula."},
@@ -54,8 +54,8 @@ def analyze_text():
             temperature=0.5
         )
         
-        # Yanıtı işle
-        analysis_result = response.choices[0].message['content'].strip()
+        # Yanıtı işle - yeni API formatı
+        analysis_result = response.choices[0].message.content.strip()
         logger.debug(f"OpenAI analiz sonucu: {analysis_result[:50]}...")
         
         return jsonify({
@@ -86,8 +86,8 @@ def siparis_ozeti():
         siparis_bilgileri = data['siparis_bilgileri']
         logger.debug(f"Özeti çıkarılacak sipariş bilgileri alındı")
         
-        # OpenAI API çağrısı
-        response = openai.ChatCompletion.create(
+        # OpenAI API çağrısı - yeni sürüm
+        response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
                 {"role": "system", "content": "Sen bir sipariş analiz uzmanısın. Verilen sipariş bilgilerini inceleyip özet çıkar ve önemli noktaları vurgula."},
@@ -97,8 +97,8 @@ def siparis_ozeti():
             temperature=0.3
         )
         
-        # Yanıtı işle
-        ozet = response.choices[0].message['content'].strip()
+        # Yanıtı işle - yeni API formatı
+        ozet = response.choices[0].message.content.strip()
         logger.debug(f"Sipariş özeti oluşturuldu")
         
         return jsonify({
@@ -143,8 +143,8 @@ def urun_onerileri():
         Her ürün için şunları belirt: ad, açıklama, fiyat ve öneri sebebi.
         """
         
-        # OpenAI API çağrısı
-        response = openai.ChatCompletion.create(
+        # OpenAI API çağrısı - yeni sürüm
+        response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
                 {"role": "system", "content": "Sen bir ürün öneri uzmanısın. Müşteri profiline göre en uygun ürünleri öner."},
@@ -154,8 +154,8 @@ def urun_onerileri():
             temperature=0.7
         )
         
-        # Yanıtı işle
-        oneriler = response.choices[0].message['content'].strip()
+        # Yanıtı işle - yeni API formatı
+        oneriler = response.choices[0].message.content.strip()
         logger.debug(f"Ürün önerileri oluşturuldu")
         
         return jsonify({
