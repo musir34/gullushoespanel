@@ -1,0 +1,284 @@
+INFO:__main__:Veritabanına başarıyla bağlanıldı ve tablolar oluşturuldu.
+INFO:update_data_service:update_data_service modülü yüklendi
+INFO:apscheduler.scheduler:Adding job tentatively -- it will be properly scheduled when the scheduler starts
+INFO:apscheduler.scheduler:Adding job tentatively -- it will be properly scheduled when the scheduler starts
+INFO:apscheduler.scheduler:Adding job tentatively -- it will be properly scheduled when the scheduler starts
+INFO:apscheduler.scheduler:Adding job tentatively -- it will be properly scheduled when the scheduler starts
+INFO:apscheduler.scheduler:Adding job tentatively -- it will be properly scheduled when the scheduler starts
+INFO:apscheduler.scheduler:Adding job tentatively -- it will be properly scheduled when the scheduler starts
+INFO:apscheduler.scheduler:Added job "İadeleri Güncelle" to job store "default"
+INFO:apscheduler.scheduler:Added job "Ürünleri Güncelle" to job store "default"
+INFO:apscheduler.scheduler:Added job "Siparişleri Güncelle" to job store "default"
+INFO:apscheduler.scheduler:Added job "İade/Talepleri Güncelle" to job store "default"
+INFO:apscheduler.scheduler:Added job "İlk Ürün Güncellemesi" to job store "default"
+INFO:apscheduler.scheduler:Added job "İlk Sipariş Güncellemesi" to job store "default"
+INFO:apscheduler.scheduler:Scheduler started
+INFO:__main__:Zamanlayıcı başlatıldı - Otomatik veri güncelleme işleri planlandı
+WARNING:apscheduler.executors.default:Run time of job "İlk Ürün Güncellemesi (trigger: date[2025-03-06 18:39:31 +03], next run at: 2025-03-06 18:39:31 +03)" was missed by 2:59:00.002074
+INFO:apscheduler.scheduler:Removed job initial_products_job
+INFO:update_data_service:Sürekli güncelleme sistemi başlatıldı
+INFO:apscheduler.scheduler:Removed job initial_orders_job
+WARNING:apscheduler.executors.default:Run time of job "İlk Sipariş Güncellemesi (trigger: date[2025-03-06 18:40:31 +03], next run at: 2025-03-06 18:40:31 +03)" was missed by 2:58:00.004831
+INFO:__main__:Otomatik veri güncelleme sistemi başlatıldı
+ * Serving Flask app 'app'
+ * Debug mode: off
+INFO:werkzeug:WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:8080
+ * Running on http://172.31.128.86:8080
+INFO:werkzeug:Press CTRL+C to quit
+INFO:root:En eski 'Created' statüsündeki sipariş işleniyor.
+INFO:root:Sipariş detayları: [{"barcode": "0799653335880", "converted_barcode": "0799653335880", "color": "Bej", "size": "38", "sku": "099-38 Beige", "productName": "Bej Kumaş Stiletto: Konforlu Vegan Deri Günlük Ve Özel Gün Kadın Topuklu Ayakkabı 099, 38", "productCode": "723303157", "product_main_id": "", "quantity": 1, "total_price": 1149.9, "image_url": "", "line_id": "3975691271", "total_quantity": 1}]
+INFO:werkzeug:172.31.128.86 - - [06/Mar/2025 18:38:33] "GET / HTTP/1.1" 200 -
+INFO:werkzeug:172.31.128.86 - - [06/Mar/2025 18:38:33] "GET /static/logo/gullu.png HTTP/1.1" 304 -
+INFO:werkzeug:172.31.128.86 - - [06/Mar/2025 18:38:33] "GET /static/images/0799653335880.jpg HTTP/1.1" 304 -
+2025-03-06 18:38:36 INFO [app] Veritabanına başarıyla bağlanıldı ve tablolar oluşturuldu.
+INFO:app:Veritabanına başarıyla bağlanıldı ve tablolar oluşturuldu.
+INFO:apscheduler.scheduler:Adding job tentatively -- it will be properly scheduled when the scheduler starts
+INFO:apscheduler.scheduler:Adding job tentatively -- it will be properly scheduled when the scheduler starts
+INFO:apscheduler.scheduler:Adding job tentatively -- it will be properly scheduled when the scheduler starts
+INFO:apscheduler.scheduler:Adding job tentatively -- it will be properly scheduled when the scheduler starts
+INFO:apscheduler.scheduler:Adding job tentatively -- it will be properly scheduled when the scheduler starts
+INFO:apscheduler.scheduler:Adding job tentatively -- it will be properly scheduled when the scheduler starts
+INFO:apscheduler.scheduler:Added job "İadeleri Güncelle" to job store "default"
+INFO:apscheduler.scheduler:Added job "Ürünleri Güncelle" to job store "default"
+INFO:apscheduler.scheduler:Added job "Siparişleri Güncelle" to job store "default"
+INFO:apscheduler.scheduler:Added job "İade/Talepleri Güncelle" to job store "default"
+INFO:apscheduler.scheduler:Added job "İlk Ürün Güncellemesi" to job store "default"
+INFO:apscheduler.scheduler:Added job "İlk Sipariş Güncellemesi" to job store "default"
+INFO:apscheduler.scheduler:Scheduler started
+WARNING:apscheduler.executors.default:Run time of job "İlk Ürün Güncellemesi (trigger: date[2025-03-06 18:39:45 +03], next run at: 2025-03-06 18:39:45 +03)" was missed by 2:59:00.001466
+INFO:apscheduler.scheduler:Removed job initial_products_job
+INFO:apscheduler.scheduler:Removed job initial_orders_job
+2025-03-06 18:38:45 INFO [app] Zamanlayıcı başlatıldı - Otomatik veri güncelleme işleri planlandı
+WARNING:apscheduler.executors.default:Run time of job "İlk Sipariş Güncellemesi (trigger: date[2025-03-06 18:40:45 +03], next run at: 2025-03-06 18:40:45 +03)" was missed by 2:58:00.001894
+INFO:app:Zamanlayıcı başlatıldı - Otomatik veri güncelleme işleri planlandı
+INFO:update_data_service:Sürekli güncelleme sistemi zaten çalışıyor
+2025-03-06 18:38:45 INFO [app] Otomatik veri güncelleme sistemi başlatıldı
+INFO:app:Otomatik veri güncelleme sistemi başlatıldı
+INFO:update_data_service:Sürekli güncelleme sistemi başlatıldı
+INFO:update_data_service:--- Güncelleme Döngüsü Başladı ---
+INFO:update_data_service:1/3: Siparişler güncelleniyor...
+INFO:update_data_service:Siparişler güncellenmeye başlanıyor...
+Toplam sipariş sayısı: 656, Toplam sayfa sayısı: 4
+Toplam çekilen sipariş sayısı: 656
+INFO:order_service:API'den 656 sipariş alındı, veritabanında 9403 sipariş var, arşivde 0 sipariş var.
+INFO:order_service:Güncellenen sipariş: 10045253350
+INFO:order_service:Güncellenen sipariş: 10045230025
+INFO:order_service:Güncellenen sipariş: 10045210784
+INFO:order_service:Güncellenen sipariş: 10045207388
+INFO:order_service:Güncellenen sipariş: 10045198861
+INFO:order_service:Güncellenen sipariş: 10045186708
+INFO:order_service:Güncellenen sipariş: 10045181599
+INFO:order_service:Güncellenen sipariş: 10045178328
+INFO:order_service:Güncellenen sipariş: 10045174126
+INFO:order_service:Güncellenen sipariş: 10045172142
+INFO:order_service:Güncellenen sipariş: 10045172218
+INFO:order_service:Güncellenen sipariş: 10045162360
+INFO:order_service:Güncellenen sipariş: 10045129193
+INFO:order_service:Güncellenen sipariş: 10045081960
+INFO:order_service:Güncellenen sipariş: 10045022261
+INFO:order_service:Güncellenen sipariş: 10044938287
+INFO:order_service:Güncellenen sipariş: 10044867151
+INFO:order_service:Güncellenen sipariş: 10044856656
+INFO:order_service:Güncellenen sipariş: 10044818657
+INFO:order_service:Güncellenen sipariş: 10044782560
+INFO:order_service:Güncellenen sipariş: 10032480553
+INFO:order_service:Güncellenen sipariş: 10044669719
+INFO:order_service:Güncellenen sipariş: 10044661681
+INFO:order_service:Güncellenen sipariş: 10044602615
+INFO:order_service:Güncellenen sipariş: 10044601119
+INFO:order_service:Güncellenen sipariş: 10044588931
+INFO:order_service:Güncellenen sipariş: 10044525715
+INFO:order_service:Güncellenen sipariş: 10044516856
+INFO:order_service:Güncellenen sipariş: 10035542534
+INFO:order_service:Güncellenen sipariş: 10044104415
+INFO:order_service:Güncellenen sipariş: 10044004070
+INFO:order_service:Güncellenen sipariş: 10043943290
+INFO:order_service:Güncellenen sipariş: 10043925117
+INFO:order_service:Güncellenen sipariş: 10043921265
+INFO:order_service:Güncellenen sipariş: 10044412781
+INFO:order_service:Güncellenen sipariş: 10044385065
+INFO:order_service:Güncellenen sipariş: 10044301347
+INFO:order_service:Güncellenen sipariş: 10044297596
+INFO:order_service:Güncellenen sipariş: 10044297672
+INFO:order_service:Güncellenen sipariş: 10044272726
+INFO:order_service:Güncellenen sipariş: 10044245378
+INFO:order_service:Güncellenen sipariş: 10044218143
+INFO:order_service:Güncellenen sipariş: 10042080322
+INFO:order_service:Güncellenen sipariş: 10042802503
+INFO:order_service:Güncellenen sipariş: 10042335981
+INFO:order_service:Güncellenen sipariş: 10043727360
+INFO:order_service:Güncellenen sipariş: 10043791152
+INFO:order_service:Güncellenen sipariş: 10042424461
+INFO:order_service:Güncellenen sipariş: 10043653435
+INFO:order_service:Güncellenen sipariş: 10042511252
+INFO:order_service:Güncellenen sipariş: 10043413783
+INFO:order_service:Güncellenen sipariş: 10042075422
+INFO:order_service:Güncellenen sipariş: 10042051828
+INFO:order_service:Güncellenen sipariş: 10041826062
+INFO:order_service:Güncellenen sipariş: 10042949535
+INFO:order_service:Güncellenen sipariş: 10042754495
+INFO:order_service:Güncellenen sipariş: 10043115437
+INFO:order_service:Güncellenen sipariş: 10041857501
+INFO:order_service:Güncellenen sipariş: 10041830167
+INFO:order_service:Güncellenen sipariş: 10041629761
+INFO:order_service:Güncellenen sipariş: 10041998062
+INFO:order_service:Güncellenen sipariş: 10042417988
+INFO:order_service:Güncellenen sipariş: 10042532017
+INFO:order_service:Güncellenen sipariş: 10043091671
+INFO:order_service:Güncellenen sipariş: 10041656618
+INFO:order_service:Güncellenen sipariş: 10042224829
+INFO:order_service:Güncellenen sipariş: 10042954059
+INFO:order_service:Güncellenen sipariş: 10041704769
+INFO:order_service:Güncellenen sipariş: 10041938735
+INFO:order_service:Güncellenen sipariş: 10041865294
+INFO:order_service:Güncellenen sipariş: 10043369401
+INFO:order_service:Güncellenen sipariş: 10043624751
+INFO:order_service:Güncellenen sipariş: 10042989674
+INFO:order_service:Güncellenen sipariş: 10042033181
+INFO:order_service:Güncellenen sipariş: 10041677000
+INFO:order_service:Güncellenen sipariş: 10041735531
+INFO:order_service:Güncellenen sipariş: 10042668131
+INFO:order_service:Güncellenen sipariş: 10041991565
+INFO:order_service:Güncellenen sipariş: 10042226653
+INFO:order_service:Güncellenen sipariş: 10042853165
+INFO:order_service:Güncellenen sipariş: 10042716948
+INFO:order_service:Güncellenen sipariş: 10041615176
+INFO:order_service:Güncellenen sipariş: 10043067518
+INFO:order_service:Güncellenen sipariş: 10042410097
+INFO:order_service:Güncellenen sipariş: 10042595155
+INFO:order_service:Güncellenen sipariş: 10043169775
+INFO:order_service:Güncellenen sipariş: 10043467654
+INFO:order_service:Güncellenen sipariş: 10042797157
+INFO:order_service:Güncellenen sipariş: 10042560224
+INFO:order_service:Güncellenen sipariş: 10042783127
+INFO:order_service:Güncellenen sipariş: 10042064609
+INFO:order_service:Güncellenen sipariş: 10041868816
+INFO:order_service:Güncellenen sipariş: 10043022366
+INFO:order_service:Güncellenen sipariş: 10041743664
+INFO:order_service:Güncellenen sipariş: 10041874933
+INFO:order_service:Güncellenen sipariş: 10041837536
+INFO:order_service:Güncellenen sipariş: 10042304129
+INFO:order_service:Güncellenen sipariş: 10042592763
+INFO:order_service:Güncellenen sipariş: 10042178597
+INFO:order_service:Güncellenen sipariş: 10042667849
+INFO:order_service:Güncellenen sipariş: 10041861971
+INFO:order_service:Güncellenen sipariş: 10042377284
+INFO:order_service:Güncellenen sipariş: 10042040471
+INFO:order_service:Güncellenen sipariş: 10043102692
+INFO:order_service:Güncellenen sipariş: 10042447850
+INFO:order_service:Güncellenen sipariş: 10043886691
+INFO:order_service:Güncellenen sipariş: 10042830107
+INFO:order_service:Güncellenen sipariş: 10042389889
+INFO:order_service:Güncellenen sipariş: 10043174480
+INFO:order_service:Güncellenen sipariş: 10043731596
+INFO:order_service:Güncellenen sipariş: 10042688117
+INFO:order_service:Güncellenen sipariş: 10044167998
+INFO:order_service:Güncellenen sipariş: 10044151810
+INFO:order_service:Güncellenen sipariş: 10044152551
+INFO:order_service:Güncellenen sipariş: 10044123182
+INFO:order_service:Güncellenen sipariş: 10044119675
+INFO:order_service:Güncellenen sipariş: 10031584451
+INFO:order_service:Güncellenen sipariş: 10027452890
+INFO:order_service:Güncellenen sipariş: 10040201320
+INFO:order_service:Güncellenen sipariş: 10041161441
+INFO:order_service:Güncellenen sipariş: 10041487909
+INFO:order_service:Güncellenen sipariş: 10039221599
+INFO:order_service:Güncellenen sipariş: 10039642127
+INFO:order_service:Güncellenen sipariş: 10039810784
+INFO:order_service:Güncellenen sipariş: 10041281941
+INFO:order_service:Güncellenen sipariş: 10038826739
+INFO:order_service:Güncellenen sipariş: 10040485691
+INFO:order_service:Güncellenen sipariş: 10039103309
+INFO:order_service:Güncellenen sipariş: 10040302393
+INFO:order_service:Güncellenen sipariş: 10039755573
+INFO:order_service:Güncellenen sipariş: 10040875453
+INFO:order_service:Güncellenen sipariş: 10039303183
+INFO:order_service:Güncellenen sipariş: 10040524492
+INFO:order_service:Güncellenen sipariş: 10038876431
+INFO:order_service:Güncellenen sipariş: 10040596640
+INFO:order_service:Güncellenen sipariş: 10040393721
+INFO:order_service:Güncellenen sipariş: 10041105024
+INFO:order_service:Güncellenen sipariş: 10038939002
+INFO:order_service:Güncellenen sipariş: 10040645463
+INFO:order_service:Güncellenen sipariş: 10039174864
+INFO:order_service:Güncellenen sipariş: 10038769181
+INFO:order_service:Güncellenen sipariş: 10039228767
+INFO:order_service:Güncellenen sipariş: 10040636918
+INFO:order_service:Güncellenen sipariş: 10039358257
+INFO:order_service:Güncellenen sipariş: 10040135527
+INFO:order_service:Güncellenen sipariş: 10039148253
+INFO:order_service:Güncellenen sipariş: 10039670856
+INFO:order_service:Güncellenen sipariş: 10039022133
+INFO:order_service:Güncellenen sipariş: 10039731164
+INFO:order_service:Güncellenen sipariş: 10039026143
+INFO:order_service:Güncellenen sipariş: 10040277861
+INFO:order_service:Güncellenen sipariş: 10040527740
+INFO:order_service:Güncellenen sipariş: 10041511125
+INFO:order_service:Güncellenen sipariş: 10040222639
+INFO:order_service:Güncellenen sipariş: 10039829237
+INFO:order_service:Güncellenen sipariş: 10040525010
+INFO:order_service:Güncellenen sipariş: 10039692460
+INFO:order_service:Güncellenen sipariş: 10039823098
+INFO:order_service:Güncellenen sipariş: 10038915157
+INFO:order_service:Güncellenen sipariş: 10037387361
+INFO:order_service:Güncellenen sipariş: 10029722551
+INFO:order_service:Güncellenen sipariş: 10034362812
+INFO:order_service:Güncellenen sipariş: 10034706530
+INFO:order_service:Güncellenen sipariş: 10035518275
+INFO:order_service:Güncellenen sipariş: 10036245219
+INFO:order_service:Güncellenen sipariş: 10035495546
+INFO:order_service:Güncellenen sipariş: 10034245192
+INFO:order_service:Güncellenen sipariş: 10034693502
+INFO:order_service:Güncellenen sipariş: 10035101671
+INFO:order_service:Güncellenen sipariş: 10033337119
+INFO:order_service:Güncellenen sipariş: 10034982032
+INFO:order_service:Güncellenen sipariş: 10038565722
+INFO:order_service:Güncellenen sipariş: 10037860434
+INFO:order_service:Güncellenen sipariş: 10038605756
+INFO:order_service:Güncellenen sipariş: 10036687585
+INFO:order_service:Güncellenen sipariş: 10037805538
+INFO:order_service:Güncellenen sipariş: 10036859675
+INFO:order_service:Güncellenen sipariş: 10038728030
+INFO:order_service:Güncellenen sipariş: 10038550272
+INFO:order_service:Güncellenen sipariş: 10037728492
+INFO:order_service:Güncellenen sipariş: 10028548279
+INFO:order_service:Güncellenen sipariş: 10032224580
+INFO:order_service:Güncellenen sipariş: 10020742198
+INFO:order_service:Güncellenen sipariş: 10010628201
+INFO:order_service:Güncellenen sipariş: 10030913874
+INFO:order_service:Güncellenen sipariş: 10031318056
+INFO:order_service:Güncellenen sipariş: 10029106497
+INFO:order_service:Güncellenen sipariş: 10030063692
+INFO:order_service:Güncellenen sipariş: 10022685526
+INFO:order_service:Toplam yeni eklenen sipariş sayısı: 1
+INFO:order_service:Silinecek sipariş yok.
+INFO:update_data_service:Siparişler güncellendi. Toplam sipariş sayısı: 9404
+INFO:update_data_service:2/3: Ürünler güncelleniyor...
+INFO:update_data_service:Ürünler güncellenmeye başlanıyor...
+INFO:product_service:Toplam ürün sayısı: 1431, Toplam sayfa sayısı: 8
+INFO:product_service:Toplam çekilen ürün sayısı: 1431
+ERROR:product_service:Hata: process_all_products - __init__() got an unexpected keyword argument 'vat_rate'
+INFO:update_data_service:Ürünler güncellendi. Toplam ürün sayısı: 968
+INFO:update_data_service:3/3: İadeler/Talepler güncelleniyor...
+2025-03-06 18:40:06 INFO [app] İadeler/talepler güncellenmeye başlanıyor...
+INFO:app:İadeler/talepler güncellenmeye başlanıyor...
+2025-03-06 18:40:06 INFO [app] fetch_claims_async başlatılıyor...
+INFO:app:fetch_claims_async başlatılıyor...
+2025-03-06 18:40:06 ERROR [app] Talep verileri güncellenirken bir hata oluştu: cannot import name 'Claim' from 'models' (/home/runner/workspace/models.py)
+Traceback (most recent call last):
+  File "/home/runner/workspace/claims_service.py", line 325, in fetch_claims_async
+    from models import db, Claim  # Claim modelinizin adına göre düzenleyin
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ImportError: cannot import name 'Claim' from 'models' (/home/runner/workspace/models.py)
+ERROR:app:Talep verileri güncellenirken bir hata oluştu: cannot import name 'Claim' from 'models' (/home/runner/workspace/models.py)
+Traceback (most recent call last):
+  File "/home/runner/workspace/claims_service.py", line 325, in fetch_claims_async
+    from models import db, Claim  # Claim modelinizin adına göre düzenleyin
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ImportError: cannot import name 'Claim' from 'models' (/home/runner/workspace/models.py)
+2025-03-06 18:40:06 ERROR [app] İadeler/talepler güncellenirken hata: cannot import name 'Claim' from 'models' (/home/runner/workspace/models.py)
+ERROR:app:İadeler/talepler güncellenirken hata: cannot import name 'Claim' from 'models' (/home/runner/workspace/models.py)
+INFO:update_data_service:--- Güncelleme Döngüsü Tamamlandı ---
+INFO:update_data_service:Sonraki güncelleme döngüsüne kadar 1 dakika bekleniyor...
