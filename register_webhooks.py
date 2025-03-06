@@ -159,24 +159,69 @@ def register_webhook(webhook_type, webhook_url):
             "events": events
         }
         
-        # API isteği gönder
-        response = requests.post(url, headers=headers, json=payload, timeout=15)
-        
-        # Yanıtı işle
-        if response.status_code in [200, 201]:
-            logger.info(f"{webhook_type.title()} webhook başarıyla kaydedildi")
-            return {
-                "success": True,
-                "message": f"{webhook_type.title()} webhook başarıyla kaydedildi",
-                "response": response.json() if response.text else {}
-            }
-        else:
-            logger.error(f"{webhook_type.title()} webhook kaydedilemedi. Durum: {response.status_code}, Yanıt: {response.text}")
+        try:
+            # API isteği gönder - yeniden deneme mekanizması
+            max_retries = 3
+            retry_count = 0
+            retry_delay = 2  # saniye
+            
+            while retry_count < max_retries:
+                try:
+                    logger.info(f"{webhook_type.title()} webhook kaydı için API isteği gönderiliyor (Deneme: {retry_count+1}/{max_retries})")
+                    response = requests.post(url, headers=headers, json=payload, timeout=15)
+                    
+                    # Başarı durumu kontrolü
+                    if response.status_code in [200, 201]:
+                        logger.info(f"{webhook_type.title()} webhook başarıyla kaydedildi")
+                        return {
+                            "success": True,
+                            "message": f"{webhook_type.title()} webhook başarıyla kaydedildi",
+                            "response": response.json() if response.text else {}
+                        }
+                    # Servis Kullanılamıyor hatası - yeniden dene
+                    elif response.status_code == 556:
+                        retry_count += 1
+                        error_msg = f"{webhook_type.title()} webhook kaydı başarısız: Servis Kullanılamıyor (556). "
+                        
+                        if retry_count < max_retries:
+                            error_msg += f"Yeniden deneniyor ({retry_count}/{max_retries})..."
+                            logger.warning(error_msg)
+                            time.sleep(retry_delay * retry_count)  # Her seferinde daha uzun bekleme
+                        else:
+                            error_msg += "Maksimum deneme sayısına ulaşıldı."
+                            logger.error(error_msg)
+                            return {
+                                "success": False,
+                                "message": f"{webhook_type.title()} webhook kaydedilemedi - Servis Kullanılamıyor",
+                                "error": response.text,
+                                "status_code": response.status_code
+                            }
+                    # Diğer hata durumları
+                    else:
+                        logger.error(f"{webhook_type.title()} webhook kaydedilemedi. Durum: {response.status_code}, Yanıt: {response.text}")
+                        return {
+                            "success": False,
+                            "message": f"{webhook_type.title()} webhook kaydedilemedi",
+                            "error": response.text,
+                            "status_code": response.status_code
+                        }
+                except requests.exceptions.RequestException as req_err:
+                    retry_count += 1
+                    if retry_count >= max_retries:
+                        logger.error(f"API isteği başarısız: {str(req_err)}")
+                        return {
+                            "success": False,
+                            "message": f"API bağlantı hatası: {str(req_err)}",
+                            "error": str(req_err)
+                        }
+                    logger.warning(f"API bağlantı hatası, yeniden deneme {retry_count}/{max_retries}: {str(req_err)}")
+                    time.sleep(retry_delay * retry_count)
+        except Exception as e:
+            logger.error(f"{webhook_type.title()} webhook kaydı sırasında beklenmeyen hata: {str(e)}")
             return {
                 "success": False,
-                "message": f"{webhook_type.title()} webhook kaydedilemedi",
-                "error": response.text,
-                "status_code": response.status_code
+                "message": f"{webhook_type.title()} webhook kaydı sırasında beklenmeyen hata",
+                "error": str(e)
             }
     
     except Exception as e:

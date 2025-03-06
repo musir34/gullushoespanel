@@ -179,18 +179,47 @@ def get_webhook_status():
 def register_webhooks_api():
     """Webhook'ları kaydetmek için API endpoint'i"""
     from register_webhooks import register_webhook
+    import time
+
+    # API erişilebilirliğini kontrol et 
+    from register_webhooks import get_registered_webhooks
+    api_check = get_registered_webhooks()
+    
+    # API erişilemiyorsa uyarı ver
+    if not api_check.get("success", False):
+        if "556" in str(api_check.get("error", "")) or "Service Unavailable" in str(api_check.get("error", "")):
+            logger.warning("Trendyol API şu anda erişilemez durumda. Webhook kaydı yine de deneniyor...")
+            # API'nin toparlanması için kısa bir bekleme ekle
+            time.sleep(2)
     
     # Order webhook'unu kaydet
+    logger.info(f"Order webhook kaydı başlatılıyor: {ORDER_WEBHOOK_URL}")
     order_result = register_webhook("order", ORDER_WEBHOOK_URL)
     
+    # Kısa bir bekleme ekle (rate limiting'den kaçınmak için)
+    time.sleep(1)
+    
     # Product webhook'unu kaydet
+    logger.info(f"Product webhook kaydı başlatılıyor: {PRODUCT_WEBHOOK_URL}")
     product_result = register_webhook("product", PRODUCT_WEBHOOK_URL)
     
-    return jsonify({
+    # Sonuçları ekstra bilgilerle birlikte döndür
+    result = {
         "success": order_result["success"] and product_result["success"],
         "order_webhook": order_result,
-        "product_webhook": product_result
-    })
+        "product_webhook": product_result,
+        "message": "Webhook kayıt işlemleri tamamlandı",
+        "api_status": "Erişilebilir" if api_check.get("success", False) else "Erişilemez",
+    }
+    
+    if not result["success"]:
+        result["error_details"] = {
+            "api_check_result": api_check.get("message", ""),
+            "suggestion": "Trendyol API servisi geçici olarak kullanılamıyor olabilir. Daha sonra tekrar deneyin."
+        }
+    
+    logger.info(f"Webhook kayıt sonuçları: {result['success']}")
+    return jsonify(result)
 
 def add_log(level, message):
     """Webhook loglarına yeni bir log ekler"""
