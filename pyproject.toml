@@ -45,7 +45,6 @@ plotly = "^6.0.0"
 analysis = "^0.1.7"
 extensions = "^0.4"
 openai = "^1.65.4"
-flask-cors = "^5.0.1"
 
 [tool.pyright]
 # https://github.com/microsoft/pyright/blob/main/docs/configuration.md

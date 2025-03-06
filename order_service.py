@@ -114,93 +114,74 @@ async def fetch_orders_page(session, url, headers, params, semaphore):
 
 
 def process_all_orders(all_orders_data):
-    """
-    Tüm siparişleri işler
-    """
     try:
-        from flask import current_app
+        api_order_numbers = set()
+        new_orders = []
+
+        # Mevcut siparişleri al
+        existing_orders = Order.query.all()
+        existing_orders_dict = {order.order_number: order for order in existing_orders}
         
-        # Uygulama bağlamı kontrolü
-        if not current_app:
-            from app import app
-            app_context = app.app_context()
-            app_context.push()
-        else:
-            app_context = None
-            
-        try:
-            api_order_numbers = set()
-            new_orders = []
+        # Arşivdeki siparişleri kontrol et
+        from models import Archive
+        archived_orders = Archive.query.all()
+        archived_orders_set = {order.order_number for order in archived_orders}
+        
+        logger.info(f"API'den {len(all_orders_data)} sipariş alındı, veritabanında {len(existing_orders)} sipariş var, arşivde {len(archived_orders)} sipariş var.")
 
-            # Mevcut siparişleri al
-            existing_orders = Order.query.all()
-            existing_orders_dict = {order.order_number: order for order in existing_orders}
+        for order_data in all_orders_data:
+            order_number = str(order_data.get('orderNumber') or order_data.get('id'))
+            api_order_numbers.add(order_number)
+            order_status = order_data.get('status')
 
-            # Arşivdeki siparişleri kontrol et
-            from models import Archive
-            archived_orders = Archive.query.all()
-            archived_orders_set = {order.order_number for order in archived_orders}
+            # Eğer sipariş arşivdeyse, işleme alma
+            if order_number in archived_orders_set:
+                logger.info(f"Sipariş {order_number} arşivde bulunduğundan işleme alınmadı.")
+                continue
 
-            logger.info(f"API'den {len(all_orders_data)} sipariş alındı, veritabanında {len(existing_orders)} sipariş var, arşivde {len(archived_orders)} sipariş var.")
-
-            for order_data in all_orders_data:
-                order_number = str(order_data.get('orderNumber') or order_data.get('id'))
-                api_order_numbers.add(order_number)
-                order_status = order_data.get('status')
-
-                # Eğer sipariş arşivdeyse, işleme alma
-                if order_number in archived_orders_set:
-                    logger.info(f"Sipariş {order_number} arşivde bulunduğundan işleme alınmadı.")
+            if order_number in existing_orders_dict:
+                existing_order = existing_orders_dict[order_number]
+                if existing_order.status == 'Delivered':
+                    # 'Delivered' siparişleri güncellemiyoruz
                     continue
+                # Siparişi güncelle
+                update_existing_order(existing_order, order_data, order_status)
+            else:
+                # Sipariş arşivde değilse ve mevcut siparişlerde yoksa yeni sipariş olarak ekle
+                combined_order = combine_line_items(order_data, order_status)
+                new_order = Order(**combined_order)
+                new_orders.append(new_order)
 
-                if order_number in existing_orders_dict:
-                    existing_order = existing_orders_dict[order_number]
-                    if existing_order.status == 'Delivered':
-                        # 'Delivered' siparişleri güncellemiyoruz
-                        continue
-                    # Siparişi güncelle
-                    update_existing_order(existing_order, order_data, order_status)
-                else:
-                    # Sipariş arşivde değilse ve mevcut siparişlerde yoksa yeni sipariş olarak ekle
-                    combined_order = combine_line_items(order_data, order_status)
-                    new_order = Order(**combined_order)
-                    new_orders.append(new_order)
+        # Toplu ekleme
+        if new_orders:
+            db.session.bulk_save_objects(new_orders)
+            logger.info(f"Toplam yeni eklenen sipariş sayısı: {len(new_orders)}")
 
-            # Toplu ekleme
-            if new_orders:
-                db.session.bulk_save_objects(new_orders)
-                logger.info(f"Toplam yeni eklenen sipariş sayısı: {len(new_orders)}")
+        db.session.commit()
 
-            db.session.commit()
+        # Veritabanında olmayan siparişleri sil, ancak 'Delivered' siparişleri silme
+        existing_order_numbers = set(existing_orders_dict.keys())
+        orders_to_delete_numbers = existing_order_numbers - api_order_numbers
 
-            # Veritabanında olmayan siparişleri sil, ancak 'Delivered' siparişleri silme
-            existing_order_numbers = set(existing_orders_dict.keys())
-            orders_to_delete_numbers = existing_order_numbers - api_order_numbers
+        if orders_to_delete_numbers:
+            # 'Delivered' siparişleri silineceklerden çıkar
+            delivered_orders = Order.query.filter(
+                Order.order_number.in_(orders_to_delete_numbers),
+                Order.status == 'Delivered'
+            ).all()
+            delivered_order_numbers = {order.order_number for order in delivered_orders}
+            # Silinecek sipariş numaralarını güncelle
+            orders_to_delete_numbers = orders_to_delete_numbers - delivered_order_numbers
 
             if orders_to_delete_numbers:
-                # 'Delivered' siparişleri silineceklerden çıkar
-                delivered_orders = Order.query.filter(
-                    Order.order_number.in_(orders_to_delete_numbers),
-                    Order.status == 'Delivered'
-                ).all()
-                delivered_order_numbers = {order.order_number for order in delivered_orders}
-                # Silinecek sipariş numaralarını güncelle
-                orders_to_delete_numbers = orders_to_delete_numbers - delivered_order_numbers
-
-                if orders_to_delete_numbers:
-                    # Kalan siparişleri sil
-                    Order.query.filter(Order.order_number.in_(orders_to_delete_numbers)).delete(synchronize_session=False)
-                    logger.info(f"Silinen siparişler: {orders_to_delete_numbers}")
-                    db.session.commit()
-                else:
-                    logger.info("Silinecek sipariş yok.")
+                # Kalan siparişleri sil
+                Order.query.filter(Order.order_number.in_(orders_to_delete_numbers)).delete(synchronize_session=False)
+                logger.info(f"Silinen siparişler: {orders_to_delete_numbers}")
+                db.session.commit()
             else:
                 logger.info("Silinecek sipariş yok.")
-
-        finally:
-            # Eğer biz push ettiysek, pop edelim
-            if app_context is not None:
-                app_context.pop()
+        else:
+            logger.info("Silinecek sipariş yok.")
 
     except SQLAlchemyError as e:
         logger.error(f"Veritabanı hatası: {e}")

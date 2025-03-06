@@ -6,7 +6,7 @@ from flask_sqlalchemy import SQLAlchemy
 from models import db, Base
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 # Logging ayarları
 import logging
@@ -46,7 +46,8 @@ db.init_app(app)
 # Trendyol API servisleri
 from product_service import product_service_bp
 from claims_service import claims_service_bp
-# Blueprint'ler aşağıda toplu olarak kaydedilecek
+app.register_blueprint(product_service_bp)
+app.register_blueprint(claims_service_bp)
 
 with app.app_context():
     # Eksik sütunu ekle
@@ -86,9 +87,6 @@ from openai_service import openai_bp
 from siparisler import siparisler_bp
 
 
-# Yeni update_data_bp'yi içe aktaralım
-from update_data_service import update_data_bp
-
 blueprints = [
     order_service_bp,
     update_service_bp,
@@ -107,9 +105,8 @@ blueprints = [
     stock_report_bp,
     openai_bp,
     siparisler_bp,
-    product_service_bp,  # Burada bir kez kaydediyoruz
-    claims_service_bp,
-    update_data_bp  # Veri güncelleme blueprint'i
+    product_service_bp,
+    claims_service_bp
 ]
 
 for bp in blueprints:
@@ -164,95 +161,14 @@ def fetch_and_save_returns():
         data = fetch_data_from_api()
         save_to_database(data)
 
-def fetch_and_update_products():
-    with app.app_context():
-        try:
-            logger.info("Ürün güncelleme başlatıldı")
-            from product_service import fetch_trendyol_products_async
-            import asyncio
-            asyncio.run(fetch_trendyol_products_async())
-            logger.info("Ürün güncelleme tamamlandı")
-        except Exception as e:
-            logger.error(f"Ürün güncelleme hatası: {e}")
-
-def fetch_and_update_orders():
-    with app.app_context():
-        try:
-            logger.info("Sipariş güncelleme başlatıldı")
-            from order_service import fetch_trendyol_orders_async
-            import asyncio
-            asyncio.run(fetch_trendyol_orders_async())
-            logger.info("Sipariş güncelleme tamamlandı")
-        except Exception as e:
-            logger.error(f"Sipariş güncelleme hatası: {e}")
-
-def fetch_and_update_claims():
-    with app.app_context():
-        try:
-            logger.info("İade/talep güncelleme başlatıldı")
-            from claims_service import fetch_claims_async
-            import asyncio
-            asyncio.run(fetch_claims_async())
-            logger.info("İade/talep güncelleme tamamlandı")
-        except Exception as e:
-            logger.error(f"İade/talep güncelleme hatası: {e}")
-
 def schedule_jobs(app):
     scheduler = BackgroundScheduler(timezone="Europe/Istanbul")
-    
-    # İadeler - Her gün 23:50'de
-    scheduler.add_job(func=fetch_and_save_returns, trigger='cron', hour=23, minute=50, 
-                     id='returns_job', name='İadeleri Güncelle')
-    
-    # Ürünler - Her 3 saatte bir
-    scheduler.add_job(func=fetch_and_update_products, trigger='interval', hours=3, 
-                     id='products_job', name='Ürünleri Güncelle')
-    
-    # Siparişler - Her 30 dakikada bir
-    scheduler.add_job(func=fetch_and_update_orders, trigger='interval', minutes=30, 
-                     id='orders_job', name='Siparişleri Güncelle')
-    
-    # İade/Talepler - Her saat başı
-    scheduler.add_job(func=fetch_and_update_claims, trigger='interval', hours=1, 
-                     id='claims_job', name='İade/Talepleri Güncelle')
-    
-    # Başlangıçta hepsini bir kez çalıştır (uygulama bağlamını geçirerek)
-    def run_with_app_context(func):
-        with app.app_context():
-            func()
-    
-    scheduler.add_job(
-        func=lambda: run_with_app_context(fetch_and_update_products), 
-        trigger='date', 
-        run_date=datetime.now() + timedelta(seconds=60),
-        id='initial_products_job', 
-        name='İlk Ürün Güncellemesi'
-    )
-    
-    scheduler.add_job(
-        func=lambda: run_with_app_context(fetch_and_update_orders), 
-        trigger='date', 
-        run_date=datetime.now() + timedelta(seconds=120),
-        id='initial_orders_job', 
-        name='İlk Sipariş Güncellemesi'
-    )
-    
+    # Her gün 23:50'de çalışacak cron job
+    scheduler.add_job(func=fetch_and_save_returns, trigger='cron', hour=23, minute=50)
     scheduler.start()
-    logger.info("Zamanlayıcı başlatıldı - Otomatik veri güncelleme işleri planlandı")
 
 # schedule_jobs fonksiyonunu app.run'dan önce çağır:
 schedule_jobs(app)
-
-# Otomatik veri güncelleme sistemini başlat
-def init_auto_update():
-    """Uygulama başlatıldığında otomatik güncelleme sistemini başlatır"""
-    from update_data_service import start_continuous_update
-    # Uygulamanın başlangıcında sürekli güncelleme sistemini başlat
-    start_continuous_update()
-    logger.info("Otomatik veri güncelleme sistemi başlatıldı")
-
-with app.app_context():
-    init_auto_update()
 
 if __name__ == '__main__':
     debug_mode = os.environ.get('FLASK_DEBUG', 'False') == 'True'

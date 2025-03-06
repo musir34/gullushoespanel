@@ -1,3 +1,4 @@
+
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 import base64
 import aiohttp
@@ -115,31 +116,33 @@ def process_all_products(all_products_data):
         # Mevcut ürünleri al
         existing_products = Product.query.all()
         existing_products_dict = {product.barcode: product for product in existing_products}
-
+        
         # Yeni ürünleri toplu kaydetmek için liste
         new_products = []
         updated_products = []
-
+        
         # Trendyol API'den gelen tüm ürünlerin barkodlarını tutalım
         api_barcodes = set()
-
+        
         for product_data in all_products_data:
             # Temel ürün bilgilerini çıkar
             barcode = product_data.get('barcode', '')
             if not barcode:
                 continue
-
+                
             api_barcodes.add(barcode)
-
+            
             # Ürün verilerini hazırla
             product_data_dict = {
                 'barcode': barcode,
                 'title': product_data.get('title', ''),
                 'product_main_id': str(product_data.get('productMainId', '')),
-                'category_name': product_data.get('categoryName', ''),  # Düzeltildi: categoryName -> category_name
+                'category_id': str(product_data.get('categoryId', '')),
+                'category_name': product_data.get('categoryName', ''),
                 'quantity': product_data.get('quantity', 0),
                 'list_price': product_data.get('listPrice', 0),
                 'sale_price': product_data.get('salePrice', 0),
+                'vat_rate': product_data.get('vatRate', 0),
                 'brand': product_data.get('brand', ''),
                 'color': product_data.get('color', ''),
                 'size': product_data.get('size', ''),
@@ -147,13 +150,7 @@ def process_all_products(all_products_data):
                 'images': product_data.get('images', [''])[0] if product_data.get('images') else '',
                 'last_update_date': datetime.now()
             }
-
-            # vat_rate parametresini Product modeliniz desteklemiyorsa kaldıralım
-            # API'den gelen verilerden vat_rate'i çıkaralım
-            if "vat_rate" in product_data_dict:
-                del product_data_dict["vat_rate"]
-
-
+            
             if barcode in existing_products_dict:
                 # Mevcut ürünü güncelle
                 existing_product = existing_products_dict[barcode]
@@ -164,18 +161,18 @@ def process_all_products(all_products_data):
                 # Yeni ürün oluştur
                 new_product = Product(**product_data_dict)
                 new_products.append(new_product)
-
+        
         # Yeni ürünleri toplu olarak ekle
         if new_products:
             db.session.bulk_save_objects(new_products)
             logger.info(f"Toplam {len(new_products)} yeni ürün eklendi")
-
+            
         # Güncellenmiş ürünleri kaydet
         if updated_products:
             for product in updated_products:
                 db.session.add(product)
             logger.info(f"Toplam {len(updated_products)} ürün güncellendi")
-
+        
         # Veritabanında olup API'de olmayan ürünleri pasife çek
         # Bu kısım opsiyonel, ihtiyaca göre aktifleştirilebilir
         # existing_barcodes = set(existing_products_dict.keys())
@@ -186,10 +183,10 @@ def process_all_products(all_products_data):
         #         product.is_active = False
         #         db.session.add(product)
         #     logger.info(f"Toplam {len(removed_barcodes)} ürün pasife çekildi")
-
+        
         db.session.commit()
         logger.info("Ürün veritabanı güncellendi")
-
+        
     except Exception as e:
         db.session.rollback()
         logger.error(f"Hata: process_all_products - {e}")
@@ -208,15 +205,15 @@ async def get_product_categories():
             "Authorization": f"Basic {b64_auth_str}",
             "Content-Type": "application/json"
         }
-
+        
         async with aiohttp.ClientSession() as session:
             async with session.get(url, headers=headers) as response:
                 if response.status != 200:
                     return jsonify({'success': False, 'error': f"API hatası: {response.status}"}), 500
-
+                    
                 data = await response.json()
                 return jsonify({'success': True, 'categories': data})
-
+                
     except Exception as e:
         logger.error(f"Hata: get_product_categories - {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -229,28 +226,28 @@ async def get_brands():
     """
     try:
         name = request.args.get('name', '')
-
+        
         auth_str = f"{API_KEY}:{API_SECRET}"
         b64_auth_str = base64.b64encode(auth_str.encode()).decode('utf-8')
-
+        
         if name:
             url = f"{BASE_URL}brands/by-name?name={name}"
         else:
             url = f"{BASE_URL}brands" 
-
+            
         headers = {
             "Authorization": f"Basic {b64_auth_str}",
             "Content-Type": "application/json"
         }
-
+        
         async with aiohttp.ClientSession() as session:
             async with session.get(url, headers=headers) as response:
                 if response.status != 200:
                     return jsonify({'success': False, 'error': f"API hatası: {response.status}"}), 500
-
+                    
                 data = await response.json()
                 return jsonify({'success': True, 'brands': data})
-
+                
     except Exception as e:
         logger.error(f"Hata: get_brands - {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -269,15 +266,15 @@ async def get_category_attributes(category_id):
             "Authorization": f"Basic {b64_auth_str}",
             "Content-Type": "application/json"
         }
-
+        
         async with aiohttp.ClientSession() as session:
             async with session.get(url, headers=headers) as response:
                 if response.status != 200:
                     return jsonify({'success': False, 'error': f"API hatası: {response.status}"}), 500
-
+                    
                 data = await response.json()
                 return jsonify({'success': True, 'attributes': data})
-
+                
     except Exception as e:
         logger.error(f"Hata: get_category_attributes - {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -289,22 +286,14 @@ async def update_price_stock():
     Seçilen ürünlerin fiyat ve stok bilgilerini Trendyol'da günceller
     """
     try:
-        from lock_manager import LockManager
-        
         data = request.json
         if not data or 'items' not in data:
             return jsonify({'success': False, 'error': 'Geçersiz veri formatı'}), 400
-
+            
         items = data['items']
         if not items:
             return jsonify({'success': False, 'error': 'Güncellenecek ürün bulunamadı'}), 400
             
-        # Stok güncelleme için genel kilit
-        lock_acquired = LockManager.acquire_lock("stok_guncelleme", timeout=30)
-        if not lock_acquired:
-            logger.error("Stok güncelleme kilidi alınamadı, işlem iptal edildi.")
-            return jsonify({'success': False, 'error': 'Sistem şu anda yoğun, lütfen tekrar deneyin.'}), 503
-
         auth_str = f"{API_KEY}:{API_SECRET}"
         b64_auth_str = base64.b64encode(auth_str.encode()).decode('utf-8')
         url = f"{BASE_URL}suppliers/{SUPPLIER_ID}/products/price-and-inventory"
@@ -312,7 +301,7 @@ async def update_price_stock():
             "Authorization": f"Basic {b64_auth_str}",
             "Content-Type": "application/json"
         }
-
+        
         # API formatına uygun veri dönüşümü
         api_items = []
         for item in items:
@@ -323,17 +312,17 @@ async def update_price_stock():
                 "listPrice": item.get('listPrice', item.get('salePrice'))
             }
             api_items.append(api_item)
-
+            
         payload = {"items": api_items}
-
+        
         async with aiohttp.ClientSession() as session:
             async with session.post(url, headers=headers, json=payload) as response:
                 response_data = await response.json()
-
+                
                 if response.status != 200:
                     logger.error(f"API Error: {response.status} - {response_data}")
                     return jsonify({'success': False, 'error': f"API hatası: {response_data}"}), 500
-
+                    
                 # Veritabanında da aynı güncellemeleri yapalım
                 for item in items:
                     barcode = item.get('barcode')
@@ -344,19 +333,16 @@ async def update_price_stock():
                         product.list_price = item.get('listPrice', item.get('salePrice'))
                         product.last_update_date = datetime.now()
                         db.session.add(product)
-
+                
                 db.session.commit()
-
+                
                 return jsonify({
                     'success': True, 
                     'message': 'Ürün fiyat ve stok bilgileri güncellendi',
                     'api_response': response_data
                 })
-
+                
     except Exception as e:
         db.session.rollback()
         logger.error(f"Hata: update_price_stock - {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
-    finally:
-        # Her durumda kilidi serbest bırak
-        LockManager.release_lock("stok_guncelleme")

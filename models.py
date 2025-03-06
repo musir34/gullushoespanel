@@ -185,7 +185,6 @@ class Product(db.Model):
     title = db.Column(db.String)
     hidden = db.Column(db.Boolean, default=False)
     product_main_id = db.Column(db.String)
-    category_name = db.Column(db.String)  # categoryName için gerekli alan
     quantity = db.Column(db.Integer)
     images = db.Column(db.String)
     variants = db.Column(db.String)
@@ -198,16 +197,14 @@ class Product(db.Model):
     sale_price = db.Column(db.Float)
     list_price = db.Column(db.Float)
     currency_type = db.Column(db.String)
-    vat_rate = db.Column(db.Float, nullable=True, default=0.18)  # KDV oranı
 
     def __init__(self, barcode, original_product_barcode, title, product_main_id, 
                  quantity, images, variants, size, color, archived, locked, on_sale,
-                 reject_reason, sale_price, list_price, currency_type, category_name=None):
+                 reject_reason, sale_price, list_price, currency_type):
         self.barcode = barcode
         self.original_product_barcode = original_product_barcode
         self.title = title
         self.product_main_id = product_main_id
-        self.category_name = category_name  # categoryName için yeni parametre
         self.quantity = quantity
         self.images = images
         self.variants = variants
@@ -314,31 +311,6 @@ class Degisim(db.Model):
 
     def __repr__(self):
         return f"<Exchange {self.degisim_no}>"
-
-# Claim (İade/Talep) modeli
-class Claim(db.Model):
-    __tablename__ = 'claims'
-
-    id = db.Column(db.Integer, primary_key=True)
-    claim_id = db.Column(db.String(50), unique=True, nullable=False)
-    order_number = db.Column(db.String(50), nullable=True)
-    status = db.Column(db.String(50), nullable=True)
-    claim_type = db.Column(db.String(50), nullable=True)
-    claim_reason = db.Column(db.String(255), nullable=True)
-    creation_date = db.Column(db.DateTime, nullable=True)
-    last_modified_date = db.Column(db.DateTime, nullable=True)
-    customer_name = db.Column(db.String(100), nullable=True)
-    customer_email = db.Column(db.String(100), nullable=True)
-    customer_phone = db.Column(db.String(20), nullable=True)
-    barcode = db.Column(db.String(50), nullable=True)
-    product_name = db.Column(db.String(255), nullable=True)
-    quantity = db.Column(db.Integer, nullable=True)
-    price = db.Column(db.Float, nullable=True)
-    notes = db.Column(db.Text, nullable=True)
-    processed = db.Column(db.Boolean, default=False)
-
-    def __repr__(self):
-        return f"<Claim {self.claim_id}>"
 
 # Veritabanı modelleri burada tanımlanacak
 
