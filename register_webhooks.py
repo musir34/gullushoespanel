@@ -93,7 +93,8 @@ def register_webhook(webhook_type, webhook_url):
                         "AWAITING", "UNPACKED", "AT_COLLECTION_POINT", "VERIFIED"]
         elif webhook_type.lower() == "product":
             name = "ProductWebhook"
-            statuses = ["CREATED", "UPDATED", "PRICE_CHANGED", "STOCK_CHANGED"]
+            # Trendyol API'si ürün webhook'larında da sipariş statülerini bekliyor, belgelemeye göre düzeltildi
+            statuses = ["CREATED", "PICKING", "INVOICED", "SHIPPED"]
         else:
             logger.error(f"Geçersiz webhook tipi: {webhook_type}")
             return False
@@ -112,7 +113,8 @@ def register_webhook(webhook_type, webhook_url):
         
         response = requests.post(url, headers=headers, json=data)
         
-        if response.status_code == 200:
+        # 200 veya 201 her ikisi de başarı kabul edilir
+        if response.status_code in [200, 201]:
             logger.info(f"Webhook başarıyla kaydedildi: {webhook_type}")
             webhook_id = response.json().get("id")
             logger.info(f"Webhook ID: {webhook_id}")

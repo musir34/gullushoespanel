@@ -1,4 +1,3 @@
-
 {% extends "base.html" %}
 
 {% block content %}
@@ -45,6 +44,8 @@
               <i class="bi bi-cloud-arrow-up"></i> Webhook'ları Kaydet
             </button>
           </div>
+          <div id="status-message" class="alert mt-3" style="display: none;"></div>
+          <div id="detailed-error" class="alert alert-info mt-3" style="display: none;"></div>
         </div>
       </div>
     </div>
@@ -178,17 +179,17 @@
 document.addEventListener('DOMContentLoaded', function() {
   // Sayfa yüklendiğinde webhook durumunu kontrol et
   checkWebhookStatus();
-  
+
   // Webhook durumu kontrol butonuna tıklama
   document.getElementById('checkStatus').addEventListener('click', function() {
     checkWebhookStatus();
   });
-  
+
   // Webhook kayıt butonuna tıklama
   document.getElementById('registerWebhooks').addEventListener('click', function() {
     registerWebhooks();
   });
-  
+
   // Düzenli aralıklarla webhook durumunu kontrol et (60 saniyede bir)
   setInterval(checkWebhookStatus, 60000);
 });
@@ -198,19 +199,19 @@ function checkWebhookStatus() {
   // Durum göstergelerini "Kontrol Ediliyor..." olarak ayarla
   const orderStatus = document.getElementById('orderWebhookStatus');
   const productStatus = document.getElementById('productWebhookStatus');
-  
+
   orderStatus.className = 'badge bg-secondary';
   orderStatus.textContent = 'Kontrol Ediliyor...';
-  
+
   productStatus.className = 'badge bg-secondary';
   productStatus.textContent = 'Kontrol Ediliyor...';
-  
+
   // API çağrısı yap
   fetch('/api/webhook-status')
     .then(response => response.json())
     .then(data => {
       console.log('Webhook durumu:', data);
-      
+
       // Sipariş webhook durumunu güncelle
       if (data.order_webhook_active) {
         orderStatus.className = 'badge bg-success';
@@ -219,7 +220,7 @@ function checkWebhookStatus() {
         orderStatus.className = 'badge bg-danger';
         orderStatus.textContent = 'Pasif';
       }
-      
+
       // Ürün webhook durumunu güncelle
       if (data.product_webhook_active) {
         productStatus.className = 'badge bg-success';
@@ -228,10 +229,10 @@ function checkWebhookStatus() {
         productStatus.className = 'badge bg-danger';
         productStatus.textContent = 'Pasif';
       }
-      
+
       // Olay tablolarını güncelle
       updateEventTables(data.recent_order_events, data.recent_product_events);
-      
+
       // Hata varsa göster
       if (data.error) {
         showToast('Webhook Durumu Hatası', data.error, 'error');
@@ -240,11 +241,11 @@ function checkWebhookStatus() {
     .catch(error => {
       console.error('Webhook durumu kontrol edilirken hata:', error);
       showToast('Hata', 'Webhook durumu kontrol edilirken bir hata oluştu.', 'error');
-      
+
       // Hata durumunda durum göstergelerini güncelle
       orderStatus.className = 'badge bg-danger';
       orderStatus.textContent = 'Hata';
-      
+
       productStatus.className = 'badge bg-danger';
       productStatus.textContent = 'Hata';
     });
@@ -255,10 +256,10 @@ function registerWebhooks() {
   // Butonları devre dışı bırak
   document.getElementById('registerWebhooks').disabled = true;
   document.getElementById('checkStatus').disabled = true;
-  
+
   // İşlem göstergesini göster
   showToast('İşlem Başlatıldı', 'Webhook kayıt işlemi başlatıldı...', 'info');
-  
+
   // API çağrısı yap
   fetch('/api/register-webhooks', {
     method: 'POST',
@@ -266,24 +267,42 @@ function registerWebhooks() {
       'Content-Type': 'application/json'
     }
   })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
     .then(data => {
       // Butonları tekrar aktif hale getir
       document.getElementById('registerWebhooks').disabled = false;
       document.getElementById('checkStatus').disabled = false;
-      
+      document.getElementById('status-message').style.display = 'none';
+      document.getElementById('detailed-error').style.display = 'none';
+
+
       if (data.success) {
         showToast('Başarılı', 'Webhook\'lar başarıyla kaydedildi.', 'success');
         // Webhook durumunu güncelle
         setTimeout(checkWebhookStatus, 2000);
       } else {
-        showToast('Hata', data.error || 'Webhook kayıt işlemi başarısız oldu.', 'error');
+        // Show detailed error message
+        const statusMessage = document.getElementById('status-message');
+        const detailedError = document.getElementById('detailed-error');
+        statusMessage.className = 'alert alert-danger mt-3';
+        statusMessage.textContent = 'Webhook kayıt işlemi başarısız oldu. Detaylar aşağıda.';
+        statusMessage.style.display = 'block';
+
+        detailedError.className = 'alert alert-warning mt-3';
+        detailedError.textContent = data.error || 'Bilinmeyen hata';
+        detailedError.style.display = 'block';
+
       }
     })
     .catch(error => {
       console.error('Webhook kayıt hatası:', error);
-      showToast('Hata', 'Webhook kayıt işlemi sırasında bir hata oluştu.', 'error');
-      
+      showToast('Hata', 'Webhook kayıt işlemi sırasında bir hata oluştu: ' + error.message, 'error');
+
       // Butonları tekrar aktif hale getir
       document.getElementById('registerWebhooks').disabled = false;
       document.getElementById('checkStatus').disabled = false;
@@ -295,11 +314,11 @@ function updateEventTables(orderEvents, productEvents) {
   // Sipariş olayları tablosunu güncelle
   const orderEventsTable = document.getElementById('orderEventsTable');
   orderEventsTable.innerHTML = '';
-  
+
   if (orderEvents && orderEvents.length > 0) {
     orderEvents.forEach((event, index) => {
       const row = document.createElement('tr');
-      
+
       row.innerHTML = `
         <td>${event.timestamp || ''}</td>
         <td>${event.order_number || ''}</td>
@@ -314,7 +333,7 @@ function updateEventTables(orderEvents, productEvents) {
           </button>
         </td>
       `;
-      
+
       orderEventsTable.appendChild(row);
     });
   } else {
@@ -322,15 +341,15 @@ function updateEventTables(orderEvents, productEvents) {
     row.innerHTML = '<td colspan="4" class="text-center">Henüz sipariş olayı kaydedilmemiş.</td>';
     orderEventsTable.appendChild(row);
   }
-  
+
   // Ürün olayları tablosunu güncelle
   const productEventsTable = document.getElementById('productEventsTable');
   productEventsTable.innerHTML = '';
-  
+
   if (productEvents && productEvents.length > 0) {
     productEvents.forEach((event, index) => {
       const row = document.createElement('tr');
-      
+
       row.innerHTML = `
         <td>${event.timestamp || ''}</td>
         <td>${event.barcode || ''}</td>
@@ -345,7 +364,7 @@ function updateEventTables(orderEvents, productEvents) {
           </button>
         </td>
       `;
-      
+
       productEventsTable.appendChild(row);
     });
   } else {
@@ -358,7 +377,7 @@ function updateEventTables(orderEvents, productEvents) {
 // Sipariş durumuna göre badge sınıfı döndür
 function getStatusBadgeClass(status) {
   if (!status) return 'bg-secondary';
-  
+
   switch (status.toUpperCase()) {
     case 'DELIVERED':
       return 'bg-success';
@@ -381,7 +400,7 @@ function getStatusBadgeClass(status) {
 // Olay tipine göre badge sınıfı döndür
 function getTypeBadgeClass(type) {
   if (!type) return 'bg-secondary';
-  
+
   switch (type) {
     case 'ProductCreated':
       return 'bg-success';
@@ -403,14 +422,14 @@ function showEventDetails(eventType, index) {
     .then(response => response.json())
     .then(data => {
       const events = eventType === 'order' ? data.recent_order_events : data.recent_product_events;
-      
+
       if (events && events.length > index) {
         const event = events[index];
         const eventDetailContent = document.getElementById('eventDetailContent');
-        
+
         // JSON formatında göster
         eventDetailContent.textContent = JSON.stringify(event, null, 2);
-        
+
         // Modalı göster
         const modal = new bootstrap.Modal(document.getElementById('eventDetailModal'));
         modal.show();
@@ -440,11 +459,11 @@ function showToast(title, message, type = 'info') {
   const toastContainer = document.createElement('div');
   toastContainer.className = 'position-fixed bottom-0 end-0 p-3';
   toastContainer.style.zIndex = '5';
-  
-  const bgClass = type === 'error' ? 'bg-danger' : 
-                  type === 'success' ? 'bg-success' : 
+
+  const bgClass = type === 'error' ? 'bg-danger' :
+                  type === 'success' ? 'bg-success' :
                   type === 'warning' ? 'bg-warning' : 'bg-info';
-  
+
   toastContainer.innerHTML = `
     <div class="toast align-items-center text-white ${bgClass} border-0" role="alert" aria-live="assertive" aria-atomic="true">
       <div class="d-flex">
@@ -455,16 +474,16 @@ function showToast(title, message, type = 'info') {
       </div>
     </div>
   `;
-  
+
   document.body.appendChild(toastContainer);
-  
+
   const toastElement = toastContainer.querySelector('.toast');
   const toast = new bootstrap.Toast(toastElement, { autohide: true, delay: 5000 });
-  
+
   toast.show();
-  
+
   // Toast kapandığında container'ı kaldır
-  toastElement.addEventListener('hidden.bs.toast', function () {
+  toastElement.addEventListener('hidden.bs.toast', function() {
     document.body.removeChild(toastContainer);
   });
 }

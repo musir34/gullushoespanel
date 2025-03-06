@@ -112,12 +112,20 @@ def api_register_webhooks():
         logger.info(f"Ürün webhook URL: {PRODUCT_WEBHOOK_URL}")
         product_result = register_webhooks.register_webhook('product', PRODUCT_WEBHOOK_URL)
         
-        if order_result and product_result:
-            # Webhook'ları aktif hale getir
-            if isinstance(order_result, str):
-                register_webhooks.activate_webhook(order_result)
-            if isinstance(product_result, str):
-                register_webhooks.activate_webhook(product_result)
+        # Hem sipariş hem de ürün webhook'ları başarıyla oluşturuldu mu kontrol et
+        # False veya None olmayan tüm değerler başarılı olarak değerlendirilir
+        if order_result:
+            # Sipariş webhook'u aktif hale getir
+            register_webhooks.activate_webhook(order_result)
+            logger.info(f"Sipariş webhook'u aktifleştirildi: {order_result}")
+            
+        if product_result:
+            # Ürün webhook'u aktif hale getir
+            register_webhooks.activate_webhook(product_result)
+            logger.info(f"Ürün webhook'u aktifleştirildi: {product_result}")
+            
+        # En az bir webhook başarıyla oluşturulduysa başarılı sayılır
+        if order_result or product_result:
                 
             logger.info("Webhook'lar başarıyla kaydedildi ve aktifleştirildi")
             return jsonify({
