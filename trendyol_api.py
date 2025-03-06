@@ -16,19 +16,8 @@ BASE_URL = "https://api.trendyol.com/sapigw/"
 import socket
 def get_public_ip():
     try:
-        # Replit URL veya IP'yi alma girişimi
-        replit_domain = os.getenv("REPL_SLUG")
-        replit_owner = os.getenv("REPL_OWNER")
-        
-        if replit_domain and replit_owner:
-            return f"https://{replit_domain}-{replit_owner}.repl.co"
-        
-        # Alternatif olarak, genel IP adresi kullanma
-        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        s.connect(("8.8.8.8", 80))
-        ip = s.getsockname()[0]
-        s.close()
-        return f"http://{ip}"
+        # Replit URL kullanma
+        return "https://sadasdadsa-apdurrahmankuli.replit.app"
     except:
         return "https://sadasdadsa-apdurrahmankuli.replit.app"  # Varsayılan değer
 

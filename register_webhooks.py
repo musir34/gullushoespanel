@@ -82,6 +82,12 @@ def register_webhook(webhook_type, webhook_url):
     webhook_url: Webhook URL'i
     """
     try:
+        # URL'de "workspace" yerine "sadasdadsa" olduğundan emin ol
+        if "workspace" in webhook_url:
+            webhook_url = webhook_url.replace("workspace", "sadasdadsa")
+            webhook_url = webhook_url.replace(".repl.co", ".replit.app")
+            logger.info(f"URL düzeltildi: {webhook_url}")
+            
         url = f"{API_BASE_URL}{SUPPLIER_ID}/webhooks"
         headers = get_auth_headers()
         

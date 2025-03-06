@@ -17,7 +17,7 @@ logger.addHandler(handler)
 # Webhook URL'leri
 REPLIT_DOMAIN = os.environ.get("REPL_SLUG")
 REPLIT_OWNER = os.environ.get("REPL_OWNER")
-BASE_URL = f"https://{REPLIT_DOMAIN}-{REPLIT_OWNER}.repl.co" if REPLIT_DOMAIN and REPLIT_OWNER else "https://sadasdadsa-apdurrahmankuli.replit.app"
+BASE_URL = "https://sadasdadsa-apdurrahmankuli.replit.app"
 
 ORDER_WEBHOOK_URL = f"{BASE_URL}/webhook/orders"
 PRODUCT_WEBHOOK_URL = f"{BASE_URL}/webhook/products"
