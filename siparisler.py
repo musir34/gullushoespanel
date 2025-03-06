@@ -9,7 +9,10 @@ logger = order_logger
 
 siparisler_bp = Blueprint('siparisler_bp', __name__)
 
+from transaction_guard import prevent_concurrent_transactions
+
 @siparisler_bp.route('/yeni-siparis', methods=['GET', 'POST'])
+@prevent_concurrent_transactions("siparis_olustur")
 def yeni_siparis():
     logger.debug(">> yeni_siparis fonksiyonu çağrıldı. Request method: %s", request.method)
 
@@ -60,25 +63,35 @@ def yeni_siparis():
         logger.debug("Request Headers: %s", request.headers)
         logger.debug("Request Content-Type: %s", request.content_type)
 
-        # Hem JSON hem de form verisi desteği
-        if request.is_json:
-            logger.debug("İstek JSON formatında.")
-            data = request.get_json()
-        else:
-            logger.debug("İstek FORM formatında.")
-            form_data = request.form
-            logger.debug("Form verisi: %s", form_data)
-            data = {
-                'musteri_adi': form_data.get('musteri_adi'),
-                'musteri_soyadi': form_data.get('musteri_soyadi'),
-                'musteri_adres': form_data.get('musteri_adres'),
-                'musteri_telefon': form_data.get('musteri_telefon'),
-                'toplam_tutar': float(form_data.get('toplam_tutar', 0)),
-                'notlar': form_data.get('notlar', ''),
-                'urunler': json.loads(form_data.get('urunler', '[]'))
-            }
+        # Lock Manager'ı import et
+        from lock_manager import LockManager
+        
+        # Sipariş oluşturma için genel kilit
+        lock_acquired = LockManager.acquire_lock("siparis_olusturma", timeout=30)
+        if not lock_acquired:
+            logger.error("Sipariş oluşturma kilidi alınamadı, işlem iptal edildi.")
+            return jsonify({'success': False, 'error': 'Sistem şu anda yoğun, lütfen tekrar deneyin.'}), 503
 
-        logger.debug("İşlenecek data: %s", data)
+        try:
+            # Hem JSON hem de form verisi desteği
+            if request.is_json:
+                logger.debug("İstek JSON formatında.")
+                data = request.get_json()
+            else:
+                logger.debug("İstek FORM formatında.")
+                form_data = request.form
+                logger.debug("Form verisi: %s", form_data)
+                data = {
+                    'musteri_adi': form_data.get('musteri_adi'),
+                    'musteri_soyadi': form_data.get('musteri_soyadi'),
+                    'musteri_adres': form_data.get('musteri_adres'),
+                    'musteri_telefon': form_data.get('musteri_telefon'),
+                    'toplam_tutar': float(form_data.get('toplam_tutar', 0)),
+                    'notlar': form_data.get('notlar', ''),
+                    'urunler': json.loads(form_data.get('urunler', '[]'))
+                }
+
+            logger.debug("İşlenecek data: %s", data)
 
         # Sipariş numarası oluştur
         siparis_no = f"SP{datetime.now().strftime('%Y%m%d%H%M%S')}"
@@ -126,6 +139,9 @@ def yeni_siparis():
         logger.error("Sipariş kaydedilirken hata oluştu: %s", e)
         logger.debug("Traceback: %s", traceback.format_exc())
         return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        # Her durumda kilidi serbest bırak
+        LockManager.release_lock("siparis_olusturma")
 
 
 @siparisler_bp.route('/api/product/<barcode>')

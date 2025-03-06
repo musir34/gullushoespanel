@@ -289,6 +289,8 @@ async def update_price_stock():
     Seçilen ürünlerin fiyat ve stok bilgilerini Trendyol'da günceller
     """
     try:
+        from lock_manager import LockManager
+        
         data = request.json
         if not data or 'items' not in data:
             return jsonify({'success': False, 'error': 'Geçersiz veri formatı'}), 400
@@ -296,6 +298,12 @@ async def update_price_stock():
         items = data['items']
         if not items:
             return jsonify({'success': False, 'error': 'Güncellenecek ürün bulunamadı'}), 400
+            
+        # Stok güncelleme için genel kilit
+        lock_acquired = LockManager.acquire_lock("stok_guncelleme", timeout=30)
+        if not lock_acquired:
+            logger.error("Stok güncelleme kilidi alınamadı, işlem iptal edildi.")
+            return jsonify({'success': False, 'error': 'Sistem şu anda yoğun, lütfen tekrar deneyin.'}), 503
 
         auth_str = f"{API_KEY}:{API_SECRET}"
         b64_auth_str = base64.b64encode(auth_str.encode()).decode('utf-8')
@@ -349,3 +357,6 @@ async def update_price_stock():
         db.session.rollback()
         logger.error(f"Hata: update_price_stock - {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        # Her durumda kilidi serbest bırak
+        LockManager.release_lock("stok_guncelleme")
