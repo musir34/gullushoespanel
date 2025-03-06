@@ -17,9 +17,18 @@ API_KEY = os.environ.get("TRENDYOL_API_KEY", "test_api_key")
 API_SECRET = os.environ.get("TRENDYOL_API_SECRET", "test_api_secret")
 WEBHOOK_SECRET = os.environ.get("WEBHOOK_SECRET", "webhook_secret_token")
 
-# Webhook URL'leri
-ORDER_WEBHOOK_URL = os.environ.get("ORDER_WEBHOOK_URL", "https://your-domain.com/webhook/orders")
-PRODUCT_WEBHOOK_URL = os.environ.get("PRODUCT_WEBHOOK_URL", "https://your-domain.com/webhook/products")
+# Webhook URL'leri - Dinamik olarak uygulama URL'sinden oluştur
+def get_base_url():
+    """Mevcut uygulamanın URL'sini belirler"""
+    # Replit'te çalışırken
+    if 'REPL_SLUG' in os.environ and 'REPL_OWNER' in os.environ:
+        return f"https://{os.environ.get('REPL_SLUG')}.{os.environ.get('REPL_OWNER')}.repl.co"
+    
+    # Çevreden veya varsayılan
+    return os.environ.get("APP_URL", "https://siparis-yonetim.repl.co")
+
+ORDER_WEBHOOK_URL = os.environ.get("ORDER_WEBHOOK_URL", f"{get_base_url()}/webhook/orders")
+PRODUCT_WEBHOOK_URL = os.environ.get("PRODUCT_WEBHOOK_URL", f"{get_base_url()}/webhook/products")
 
 
 def get_registered_webhooks():

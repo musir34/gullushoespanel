@@ -19,8 +19,28 @@ logs = []
 api_status = {"status": "unknown", "last_checked": None}
 
 # Webhook endpoint tanımları
-ORDER_WEBHOOK_URL = "https://your-domain.com/webhook/orders"
-PRODUCT_WEBHOOK_URL = "https://your-domain.com/webhook/products"
+# Uygulama URL'sini otomatik olarak al - böylece her ortamda çalışacak şekilde
+import os
+from flask import request
+
+def get_base_url():
+    """Mevcut uygulamanın URL'sini belirler"""
+    # Replit'te çalışırken
+    if 'REPL_SLUG' in os.environ and 'REPL_OWNER' in os.environ:
+        return f"https://{os.environ.get('REPL_SLUG')}.{os.environ.get('REPL_OWNER')}.repl.co"
+    
+    # Değilse, request'ten elde et
+    return os.environ.get("APP_URL", request.host_url.rstrip('/'))
+
+# Dinamik webhook URL'leri
+def get_order_webhook_url():
+    return f"{get_base_url()}/webhook/orders"
+
+def get_product_webhook_url():
+    return f"{get_base_url()}/webhook/products"
+
+ORDER_WEBHOOK_URL = get_order_webhook_url()
+PRODUCT_WEBHOOK_URL = get_product_webhook_url()
 
 # Maksimum log sayısı
 MAX_LOGS = 100
