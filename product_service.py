@@ -140,7 +140,6 @@ def process_all_products(all_products_data):
                 'quantity': product_data.get('quantity', 0),
                 'list_price': product_data.get('listPrice', 0),
                 'sale_price': product_data.get('salePrice', 0),
-                'vat_rate': product_data.get('vatRate', 0),
                 'brand': product_data.get('brand', ''),
                 'color': product_data.get('color', ''),
                 'size': product_data.get('size', ''),
@@ -148,6 +147,12 @@ def process_all_products(all_products_data):
                 'images': product_data.get('images', [''])[0] if product_data.get('images') else '',
                 'last_update_date': datetime.now()
             }
+
+            # vat_rate parametresini Product modeliniz desteklemiyorsa kaldıralım
+            # API'den gelen verilerden vat_rate'i çıkaralım
+            if "vat_rate" in product_data_dict:
+                del product_data_dict["vat_rate"]
+
 
             if barcode in existing_products_dict:
                 # Mevcut ürünü güncelle

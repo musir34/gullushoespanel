@@ -183,6 +183,16 @@ def update_claims():
     try:
         claims_logger.info("İadeler/talepler güncellenmeye başlanıyor...")
         
+        # Önce Claim modeli import edilebiliyor mu kontrol et
+        try:
+            from models import Claim
+            claims_logger.info("Claim modeli başarıyla import edildi")
+        except ImportError as ie:
+            claims_logger.error(f"Claim modeli bulunamadı: {str(ie)}")
+            claims_logger.info("İadeler/talepler güncellemesi atlanıyor. Veritabanı modeli eksik.")
+            save_update_info('claims', False, 0)
+            return False
+        
         from claims_service import fetch_claims_async
         try:
             # İade/talepleri güncelleme kodunu burada çalıştır
@@ -194,13 +204,17 @@ def update_claims():
             claims_logger.info(f"İadeler/talepler güncellendi. Toplam iade/talep sayısı: {claim_count}")
             return True
         except Exception as e:
+            import traceback
             claims_logger.error(f"İadeler/talepler güncellenirken hata: {str(e)}")
+            claims_logger.error(f"Hata detayı: {traceback.format_exc()}")
             save_update_info('claims', False, 0)
             return False
 
     except Exception as e:
         # Global logger'ı kullan
+        import traceback
         logger.exception(f"update_claims fonksiyonunda beklenmedik hata: {e}")
+        logger.error(f"Hata detayı: {traceback.format_exc()}")
         return False
 
 
