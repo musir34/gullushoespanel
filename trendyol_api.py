@@ -9,8 +9,8 @@ SUPPLIER_ID = os.getenv("SUPPLIER_ID")  # SATICI ID
 # Webhook güvenlik anahtarı (eğer çevre değişkeni yoksa rastgele oluştur)
 WEBHOOK_SECRET = os.getenv("WEBHOOK_SECRET") or secrets.token_hex(16)
 
-# Trendyol API için temel URL
-BASE_URL = "https://api.trendyol.com/sapigw/"
+# Trendyol API için temel URL (Güncellenmiş URL)
+BASE_URL = "https://apigw.trendyol.com/integration/webhook/"
 
 # Webhook URL'leri
 # Replit'in web URL'sini almak için os.environ'dan Replit domain'ini alıyoruz

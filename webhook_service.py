@@ -65,11 +65,16 @@ def webhook_dashboard():
 @webhook_bp.route('/api/test-trendyol-connection')
 def test_trendyol_connection():
     """Trendyol API bağlantısını test etme endpoint'i"""
-    from trendyol_api import test_connection
+    from register_webhooks import get_registered_webhooks
     
     try:
-        result = test_connection()
-        return jsonify(result)
+        result = get_registered_webhooks()
+        return jsonify({
+            "success": result.get("success", False),
+            "message": result.get("message", "Sonuç alınamadı"),
+            "data": result.get("webhooks", []),
+            "api_version": "Yeni API (integration/webhook)"
+        })
     except Exception as e:
         logger.error(f"Trendyol bağlantı testi başarısız: {str(e)}")
         return jsonify({

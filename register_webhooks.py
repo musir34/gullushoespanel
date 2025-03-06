@@ -1,4 +1,3 @@
-
 import os
 import requests
 import json
@@ -23,7 +22,7 @@ def get_base_url():
     # Replit'te çalışırken
     if 'REPL_SLUG' in os.environ and 'REPL_OWNER' in os.environ:
         return f"https://{os.environ.get('REPL_SLUG')}.{os.environ.get('REPL_OWNER')}.repl.co"
-    
+
     # Çevreden veya varsayılan
     return os.environ.get("APP_URL", "https://siparis-yonetim.repl.co")
 
@@ -36,28 +35,28 @@ def get_registered_webhooks():
     Trendyol API'sine kayıtlı webhook'ları getirir
     """
     logger.info("Kayıtlı webhook'lar getiriliyor")
-    
+
     try:
         # Authentication header'ı oluştur (Base64 ile kodlanmış)
         auth_str = f"{API_KEY}:{API_SECRET}"
         b64_auth_str = base64.b64encode(auth_str.encode()).decode('utf-8')
-        
-        # API endpointi ve headers
-        url = f"{BASE_URL}suppliers/{SUPPLIER_ID}/webhooks"
+
+        # API endpointi ve headers (Yeni Trendyol API formatı)
+        url = f"{BASE_URL}sellers/{SUPPLIER_ID}/webhooks"
         headers = {
             "Authorization": f"Basic {b64_auth_str}",
             "Content-Type": "application/json"
         }
-        
+
         # Yeniden deneme mekanizması
         max_retries = 3
         retry_count = 0
-        
+
         while retry_count < max_retries:
             try:
                 # API isteği gönder
                 response = requests.get(url, headers=headers, timeout=15)
-                
+
                 # Başarılı yanıt kontrolü
                 if response.status_code == 200:
                     try:
@@ -81,11 +80,11 @@ def get_registered_webhooks():
                         "message": f"Webhook'lar getirilemedi. Durum kodu: {response.status_code}",
                         "error": response.text
                     }
-            
+
             except requests.exceptions.RequestException as e:
                 retry_count += 1
                 logger.warning(f"Webhook'lar getirilemedi (Servis Kullanılamıyor)! Yeniden deneme: {retry_count}/{max_retries}")
-                
+
                 if retry_count >= max_retries:
                     logger.error(f"Webhook'lar getirilemedi! Maksimum yeniden deneme sayısına ({max_retries}) ulaşıldı.")
                     return {
@@ -93,15 +92,15 @@ def get_registered_webhooks():
                         "message": "Servis geçici olarak kullanılamıyor.",
                         "error": str(e)
                     }
-                
+
                 # Yeniden denemeden önce bekleyin (her seferinde daha uzun süre bekleyin)
                 time.sleep(retry_count * 2)
-        
+
         return {
             "success": False,
             "message": "Webhook'lar alınamadı"
         }
-    
+
     except Exception as e:
         logger.error(f"Webhook'lar getirilirken hata oluştu: {str(e)}")
         logger.debug(f"Traceback: {traceback.format_exc()}")
@@ -115,28 +114,28 @@ def get_registered_webhooks():
 def register_webhook(webhook_type, webhook_url):
     """
     Belirli tipte bir webhook'u API'ye kaydeder
-    
+
     Args:
         webhook_type (str): Webhook tipi ("order" veya "product")
         webhook_url (str): Webhook'un gönderileceği URL
-    
+
     Returns:
         dict: İşlem sonucu
     """
     logger.info(f"{webhook_type.title()} webhook kaydı yapılıyor: {webhook_url}")
-    
+
     try:
         # Authentication header'ı oluştur
         auth_str = f"{API_KEY}:{API_SECRET}"
         b64_auth_str = base64.b64encode(auth_str.encode()).decode('utf-8')
-        
-        # API endpointi ve headers
-        url = f"{BASE_URL}suppliers/{SUPPLIER_ID}/webhooks"
+
+        # API endpointi ve headers (Yeni Trendyol API formatı)
+        url = f"{BASE_URL}sellers/{SUPPLIER_ID}/webhooks"
         headers = {
             "Authorization": f"Basic {b64_auth_str}",
             "Content-Type": "application/json"
         }
-        
+
         # Webhook tipine göre olayları belirle
         if webhook_type.lower() == "order":
             webhook_name = "OrderWebhook"
@@ -150,7 +149,7 @@ def register_webhook(webhook_type, webhook_url):
                 "success": False,
                 "message": f"Geçersiz webhook tipi: {webhook_type}"
             }
-        
+
         # Webhook payload'ı oluştur
         payload = {
             "name": webhook_name,
@@ -158,18 +157,18 @@ def register_webhook(webhook_type, webhook_url):
             "authToken": WEBHOOK_SECRET,
             "events": events
         }
-        
+
         try:
             # API isteği gönder - yeniden deneme mekanizması
             max_retries = 3
             retry_count = 0
             retry_delay = 2  # saniye
-            
+
             while retry_count < max_retries:
                 try:
                     logger.info(f"{webhook_type.title()} webhook kaydı için API isteği gönderiliyor (Deneme: {retry_count+1}/{max_retries})")
                     response = requests.post(url, headers=headers, json=payload, timeout=15)
-                    
+
                     # Başarı durumu kontrolü
                     if response.status_code in [200, 201]:
                         logger.info(f"{webhook_type.title()} webhook başarıyla kaydedildi")
@@ -182,7 +181,7 @@ def register_webhook(webhook_type, webhook_url):
                     elif response.status_code == 556:
                         retry_count += 1
                         error_msg = f"{webhook_type.title()} webhook kaydı başarısız: Servis Kullanılamıyor (556). "
-                        
+
                         if retry_count < max_retries:
                             error_msg += f"Yeniden deneniyor ({retry_count}/{max_retries})..."
                             logger.warning(error_msg)
@@ -223,7 +222,7 @@ def register_webhook(webhook_type, webhook_url):
                 "message": f"{webhook_type.title()} webhook kaydı sırasında beklenmeyen hata",
                 "error": str(e)
             }
-    
+
     except Exception as e:
         logger.error(f"{webhook_type.title()} webhook kaydedilirken hata: {str(e)}")
         logger.debug(f"Traceback: {traceback.format_exc()}")
