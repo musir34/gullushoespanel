@@ -121,11 +121,23 @@ def process_all_orders(all_orders_data):
         # Mevcut siparişleri al
         existing_orders = Order.query.all()
         existing_orders_dict = {order.order_number: order for order in existing_orders}
+        
+        # Arşivdeki siparişleri kontrol et
+        from models import Archive
+        archived_orders = Archive.query.all()
+        archived_orders_set = {order.order_number for order in archived_orders}
+        
+        logger.info(f"API'den {len(all_orders_data)} sipariş alındı, veritabanında {len(existing_orders)} sipariş var, arşivde {len(archived_orders)} sipariş var.")
 
         for order_data in all_orders_data:
             order_number = str(order_data.get('orderNumber') or order_data.get('id'))
             api_order_numbers.add(order_number)
             order_status = order_data.get('status')
+
+            # Eğer sipariş arşivdeyse, işleme alma
+            if order_number in archived_orders_set:
+                logger.info(f"Sipariş {order_number} arşivde bulunduğundan işleme alınmadı.")
+                continue
 
             if order_number in existing_orders_dict:
                 existing_order = existing_orders_dict[order_number]
@@ -135,7 +147,7 @@ def process_all_orders(all_orders_data):
                 # Siparişi güncelle
                 update_existing_order(existing_order, order_data, order_status)
             else:
-                # Yeni siparişi ekle
+                # Sipariş arşivde değilse ve mevcut siparişlerde yoksa yeni sipariş olarak ekle
                 combined_order = combine_line_items(order_data, order_status)
                 new_order = Order(**combined_order)
                 new_orders.append(new_order)
