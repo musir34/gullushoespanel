@@ -25,7 +25,16 @@ def webhook_dashboard():
     """
     Webhook izleme dashboardu
     """
-    from trendyol_api import ORDER_WEBHOOK_URL, PRODUCT_WEBHOOK_URL
+    from trendyol_api import ORDER_WEBHOOK_URL, PRODUCT_WEBHOOK_URL, API_KEY, API_SECRET, SUPPLIER_ID
+    
+    # API durumunu kontrol et
+    api_status = {
+        "api_key_set": bool(API_KEY),
+        "api_secret_set": bool(API_SECRET),
+        "supplier_id_set": bool(SUPPLIER_ID),
+        "order_webhook_url": ORDER_WEBHOOK_URL,
+        "product_webhook_url": PRODUCT_WEBHOOK_URL,
+    }
     
     # Log dosyasının son 100 satırını oku
     try:
@@ -35,12 +44,75 @@ def webhook_dashboard():
     except:
         logs = "Log dosyası bulunamadı."
     
+    # Webhook olayları
+    order_event_list = order_events[-20:] if order_events else []
+    product_event_list = product_events[-20:] if product_events else []
+
+@webhook_bp.route('/api/test-trendyol-connection')
+def test_trendyol_connection():
+    """
+    Trendyol API bağlantısını test eder
+    """
+    try:
+        import requests
+        import base64
+        from trendyol_api import API_KEY, API_SECRET, BASE_URL
+        
+        # API kimlik bilgilerini kontrol et
+        if not API_KEY or not API_SECRET:
+            return jsonify({
+                'success': False, 
+                'message': 'API kimlik bilgileri tanımlı değil.',
+                'details': {
+                    'api_key_set': bool(API_KEY),
+                    'api_secret_set': bool(API_SECRET)
+                }
+            })
+        
+        # Basit bir API çağrısı yap (suppliers endpoints)
+        auth_str = f"{API_KEY}:{API_SECRET}"
+        b64_auth_str = base64.b64encode(auth_str.encode()).decode('utf-8')
+        
+        headers = {
+            "Authorization": f"Basic {b64_auth_str}",
+            "Content-Type": "application/json"
+        }
+        
+        logger.info("Trendyol API bağlantı testi yapılıyor...")
+        response = requests.get(f"{BASE_URL}suppliers", headers=headers, timeout=5)
+        
+        if response.status_code == 200:
+            logger.info("Trendyol API bağlantı testi başarılı!")
+            return jsonify({
+                'success': True,
+                'message': 'Trendyol API bağlantısı başarılı!',
+                'status_code': response.status_code
+            })
+        else:
+            logger.error(f"Trendyol API bağlantı testi başarısız! Durum kodu: {response.status_code}")
+            return jsonify({
+                'success': False,
+                'message': f'Trendyol API bağlantısı başarısız: {response.status_code}',
+                'response': response.text,
+                'status_code': response.status_code
+            })
+    
+    except Exception as e:
+        logger.error(f"Trendyol API bağlantı testi hatası: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': f'Bağlantı hatası: {str(e)}',
+            'error': str(e)
+        })
+
+    
     return render_template('webhook_dashboard.html', 
                           order_webhook_url=ORDER_WEBHOOK_URL,
                           product_webhook_url=PRODUCT_WEBHOOK_URL,
-                          order_events=order_events[-20:],  # Son 20 olay
-                          product_events=product_events[-20:],  # Son 20 olay
-                          logs=logs)
+                          order_events=order_event_list, 
+                          product_events=product_event_list,
+                          logs=logs,
+                          api_status=api_status)
 
 @webhook_bp.route('/api/webhook-status')
 def webhook_status():
