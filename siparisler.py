@@ -298,7 +298,18 @@ def siparis_guncelle(siparis_no):
             logger.debug("Güncellenecek sipariş bulunamadı, sipariş no: %s", siparis_no)
             return jsonify({'success': False, 'message': 'Sipariş bulunamadı'})
 
-        data = request.get_json()
+        # Hem JSON hem de form verisini destekle
+        if request.is_json:
+            data = request.get_json()
+        else:
+            data = request.form.to_dict()
+            # Form verisi içindeki 'urunler' alanı varsa JSON'a dönüştür
+            if 'urunler' in data and data['urunler']:
+                try:
+                    data['urunler'] = json.loads(data['urunler'])
+                except:
+                    pass
+                    
         logger.debug("Güncelleme için gelen data: %s", data)
 
         # Temel bilgileri güncelle

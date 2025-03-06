@@ -803,10 +803,25 @@ document.querySelector('form').addEventListener('submit', async function(e) {
   formData.append('notlar', orderData.notlar);
   formData.append('urunler', JSON.stringify(orderData.urunler));
 
-  // POST isteği
+  // Verileri JSON formatına çevir
+  const jsonData = {
+    musteri_adi: orderData.musteri_adi,
+    musteri_soyadi: orderData.musteri_soyadi,
+    musteri_adres: orderData.musteri_adres,
+    musteri_telefon: orderData.musteri_telefon,
+    toplam_tutar: orderData.toplam_tutar,
+    notlar: orderData.notlar,
+    urunler: orderData.urunler,
+    durum: document.getElementById('status').value
+  };
+
+  // POST isteği (JSON formatında)
   fetch(isEditMode ? `/siparis-guncelle/${siparisNo}` : '/yeni-siparis', {
     method: 'POST',
-    body: formData
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(jsonData)
   })
     .then(response => response.json())
     .then(data => {
