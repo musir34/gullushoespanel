@@ -46,8 +46,7 @@ db.init_app(app)
 # Trendyol API servisleri
 from product_service import product_service_bp
 from claims_service import claims_service_bp
-app.register_blueprint(product_service_bp)
-app.register_blueprint(claims_service_bp)
+# Blueprint'lerin kaydını toplu olarak en sonda yapacağız
 
 with app.app_context():
     # Eksik sütunu ekle
@@ -105,8 +104,8 @@ blueprints = [
     stock_report_bp,
     openai_bp,
     siparisler_bp,
-    product_service_bp,
-    claims_service_bp
+    product_service_bp,  # Son iki blueprint'i listenin sonunda tutuyoruz
+    claims_service_bp    # fakat liste kayıt sırasında kullanılacak
 ]
 
 for bp in blueprints:
