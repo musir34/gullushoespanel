@@ -226,13 +226,160 @@ def satis_analizi():
         analiz_sonucu = response.choices[0].message.content.strip()
         logger.debug(f"Satış analizi sonucu oluşturuldu")
 
+        # Token kullanım bilgilerini al
+        prompt_tokens = response.usage.prompt_tokens
+        completion_tokens = response.usage.completion_tokens
+        total_tokens = response.usage.total_tokens
+
+        # OpenAI fiyatlandırma (TL cinsinden yaklaşık değerler)
+        prompt_cost_per_1k = 0.15 * 33  # 0.15$ per 1K tokens * yaklaşık TL kuru
+        completion_cost_per_1k = 0.20 * 33  # 0.20$ per 1K tokens * yaklaşık TL kuru
+
+        # Maliyet hesaplaması (TL)
+        prompt_cost = (prompt_tokens / 1000) * prompt_cost_per_1k
+        completion_cost = (completion_tokens / 1000) * completion_cost_per_1k
+        total_cost = prompt_cost + completion_cost
+
         return jsonify({
             'success': True,
-            'analiz': analiz_sonucu
+            'analiz': analiz_sonucu,
+            'token_usage': {
+                'prompt_tokens': prompt_tokens,
+                'completion_tokens': completion_tokens,
+                'total_tokens': total_tokens,
+                'estimated_cost': round(total_cost, 5)
+            }
         })
 
     except Exception as e:
         logger.error(f"OpenAI satış analizi hatası: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@openai_bp.route('/ai/trend-tahmini', methods=['POST'])
+def trend_tahmini():
+    """
+    Satış verilerine göre gelecek dönem tahminleri yapar
+    """
+    logger.debug(">> trend_tahmini fonksiyonu çağrıldı")
+
+    try:
+        # POST verilerini al
+        data = request.get_json()
+
+        if not data or 'gecmis_veriler' not in data:
+            logger.error("Geçersiz veri formatı, 'gecmis_veriler' alanı bulunamadı")
+            return jsonify({'success': False, 'error': 'Geçersiz veri formatı. "gecmis_veriler" alanı gerekli.'}), 400
+
+        gecmis_veriler = data['gecmis_veriler']
+        tahmin_suresi = data.get('tahmin_suresi', 'bir ay')  # varsayılan bir ay
+        logger.debug(f"Tahmin için geçmiş veriler alındı. Tahmin süresi: {tahmin_suresi}")
+
+        # OpenAI API çağrısı
+        response = client.chat.completions.create(
+            model=DEFAULT_MODEL,
+            messages=[
+                {"role": "system", "content": "Sen bir satış tahmin ve trend analizi uzmanısın. Geçmiş satış verilerine bakarak gelecek dönem için tahminler yap."},
+                {"role": "user", "content": f"Aşağıdaki geçmiş satış verilerini analiz ederek gelecek {tahmin_suresi} için satış tahminleri yap. Mümkünse sayısal değerler ve yüzdelik değişimler belirt.\n\nGeçmiş Veriler:\n{str(gecmis_veriler)}"}
+            ],
+            max_tokens=1000,
+            temperature=0.4
+        )
+
+        # Yanıtı işle
+        tahmin_sonucu = response.choices[0].message.content.strip()
+        logger.debug(f"Trend tahmini sonucu oluşturuldu")
+
+        # Token kullanım bilgilerini al
+        prompt_tokens = response.usage.prompt_tokens
+        completion_tokens = response.usage.completion_tokens
+        total_tokens = response.usage.total_tokens
+
+        # OpenAI fiyatlandırma (TL cinsinden yaklaşık değerler)
+        prompt_cost_per_1k = 0.15 * 33  # 0.15$ per 1K tokens * yaklaşık TL kuru
+        completion_cost_per_1k = 0.20 * 33  # 0.20$ per 1K tokens * yaklaşık TL kuru
+
+        # Maliyet hesaplaması (TL)
+        prompt_cost = (prompt_tokens / 1000) * prompt_cost_per_1k
+        completion_cost = (completion_tokens / 1000) * completion_cost_per_1k
+        total_cost = prompt_cost + completion_cost
+
+        return jsonify({
+            'success': True,
+            'tahmin': tahmin_sonucu,
+            'token_usage': {
+                'prompt_tokens': prompt_tokens,
+                'completion_tokens': completion_tokens,
+                'total_tokens': total_tokens,
+                'estimated_cost': round(total_cost, 5)
+            }
+        })
+
+    except Exception as e:
+        logger.error(f"OpenAI trend tahmini hatası: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@openai_bp.route('/ai/dashboard-analiz', methods=['POST'])
+def dashboard_analiz():
+    """
+    Dashboard verileri için özet ve öngörüleri oluşturur
+    """
+    logger.debug(">> dashboard_analiz fonksiyonu çağrıldı")
+
+    try:
+        # POST verilerini al
+        data = request.get_json()
+
+        if not data or 'dashboard_verileri' not in data:
+            logger.error("Geçersiz veri formatı, 'dashboard_verileri' alanı bulunamadı")
+            return jsonify({'success': False, 'error': 'Geçersiz veri formatı. "dashboard_verileri" alanı gerekli.'}), 400
+
+        dashboard_verileri = data['dashboard_verileri']
+        logger.debug(f"Dashboard verileri analiz için alındı")
+
+        # OpenAI API çağrısı
+        response = client.chat.completions.create(
+            model=DEFAULT_MODEL,
+            messages=[
+                {"role": "system", "content": "Sen bir e-ticaret ve satış analiz uzmanısın. Dashboard verilerini analiz ederek önemli içgörüler çıkar ve eylem önerilerinde bulun."},
+                {"role": "user", "content": f"Aşağıdaki e-ticaret dashboard verilerini analiz et. Önemli trendleri, anormal değişimleri belirle ve iş sahibine somut önerilerde bulun:\n\n{str(dashboard_verileri)}"}
+            ],
+            max_tokens=800,
+            temperature=0.3
+        )
+
+        # Yanıtı işle
+        analiz_sonucu = response.choices[0].message.content.strip()
+        logger.debug(f"Dashboard analizi sonucu oluşturuldu")
+
+        # Token kullanım bilgilerini al
+        prompt_tokens = response.usage.prompt_tokens
+        completion_tokens = response.usage.completion_tokens
+        total_tokens = response.usage.total_tokens
+
+        # OpenAI fiyatlandırma (TL cinsinden yaklaşık değerler)
+        prompt_cost_per_1k = 0.15 * 33  # 0.15$ per 1K tokens * yaklaşık TL kuru
+        completion_cost_per_1k = 0.20 * 33  # 0.20$ per 1K tokens * yaklaşık TL kuru
+
+        # Maliyet hesaplaması (TL)
+        prompt_cost = (prompt_tokens / 1000) * prompt_cost_per_1k
+        completion_cost = (completion_tokens / 1000) * completion_cost_per_1k
+        total_cost = prompt_cost + completion_cost
+
+        return jsonify({
+            'success': True,
+            'analiz': analiz_sonucu,
+            'token_usage': {
+                'prompt_tokens': prompt_tokens,
+                'completion_tokens': completion_tokens,
+                'total_tokens': total_tokens,
+                'estimated_cost': round(total_cost, 5)
+            }
+        })
+
+    except Exception as e:
+        logger.error(f"OpenAI dashboard analizi hatası: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @openai_bp.route('/ai-analiz', methods=['GET'])
