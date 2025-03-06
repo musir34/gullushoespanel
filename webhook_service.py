@@ -47,6 +47,14 @@ def webhook_dashboard():
     # Webhook olayları
     order_event_list = order_events[-20:] if order_events else []
     product_event_list = product_events[-20:] if product_events else []
+    
+    return render_template('webhook_dashboard.html', 
+                          order_webhook_url=ORDER_WEBHOOK_URL,
+                          product_webhook_url=PRODUCT_WEBHOOK_URL,
+                          order_events=order_event_list, 
+                          product_events=product_event_list,
+                          logs=logs,
+                          api_status=api_status)
 
 @webhook_bp.route('/api/test-trendyol-connection')
 def test_trendyol_connection():
