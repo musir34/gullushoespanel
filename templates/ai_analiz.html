@@ -60,11 +60,182 @@
         </div>
       </div>
     </div>
+    
+    <div class="col-lg-12 mb-4">
+      <div class="card h-100">
+        <div class="card-header bg-warning text-dark">
+          <h5 class="mb-0">Satış Analizleri Özeti</h5>
+        </div>
+        <div class="card-body">
+          <form id="salesAnalysisForm">
+            <div class="row">
+              <div class="col-md-4">
+                <div class="mb-3">
+                  <label for="time-period" class="form-label">Zaman Aralığı:</label>
+                  <select class="form-control" id="time-period">
+                    <option value="last7">Son 7 Gün</option>
+                    <option value="last30" selected>Son 30 Gün</option>
+                    <option value="this_month">Bu Ay</option>
+                    <option value="custom">Özel Aralık</option>
+                  </select>
+                </div>
+              </div>
+              <div class="col-md-8" id="custom-date-range" style="display: none;">
+                <div class="row">
+                  <div class="col-md-6">
+                    <div class="mb-3">
+                      <label for="start-date" class="form-label">Başlangıç Tarihi:</label>
+                      <input type="date" class="form-control" id="start-date">
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="mb-3">
+                      <label for="end-date" class="form-label">Bitiş Tarihi:</label>
+                      <input type="date" class="form-control" id="end-date">
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <button type="submit" class="btn btn-warning">Analiz Et</button>
+          </form>
+          <div class="mt-4" id="sales-analysis-result"></div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+  // Zaman aralığı seçimi için kontrol
+  document.getElementById('time-period').addEventListener('change', function() {
+    const customDateRange = document.getElementById('custom-date-range');
+    if (this.value === 'custom') {
+      customDateRange.style.display = 'block';
+    } else {
+      customDateRange.style.display = 'none';
+    }
+  });
+  
+  // Satış Analizleri
+  document.getElementById('salesAnalysisForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const resultDiv = document.getElementById('sales-analysis-result');
+    resultDiv.innerHTML = '<div class="alert alert-info">Veriler analiz ediliyor, lütfen bekleyin...</div>';
+    
+    const timePeriod = document.getElementById('time-period').value;
+    let params = { quick_filter: timePeriod };
+    
+    // Özel tarih aralığı seçilmişse
+    if (timePeriod === 'custom') {
+      const startDate = document.getElementById('start-date').value;
+      const endDate = document.getElementById('end-date').value;
+      
+      if (!startDate || !endDate) {
+        resultDiv.innerHTML = '<div class="alert alert-danger">Lütfen başlangıç ve bitiş tarihlerini belirtin</div>';
+        return;
+      }
+      
+      params = { start_date: startDate, end_date: endDate };
+    }
+    
+    try {
+      // Önce satış istatistiklerini API'den al
+      const statsResponse = await fetch('/api/sales-stats?' + new URLSearchParams(params));
+      const statsData = await statsResponse.json();
+      
+      if (!statsData.success) {
+        throw new Error(statsData.error || 'Veri alınamadı');
+      }
+      
+      // Satış verileri alındı, şimdi AI özeti için gönder
+      const aiResponse = await fetch('/ai/analyze-text', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: `Aşağıdaki satış analiz verilerini özet olarak değerlendir, önemli trendleri, en çok satanları ve dikkat çeken noktaları belirt:
+          
+          Toplam Sipariş: ${statsData.total_orders || 0}
+          Toplam Satılan Ürün: ${statsData.total_items_sold || 0}
+          Toplam Ciro: ${statsData.total_revenue || 0} TL
+          
+          En Çok Satan Ürünler: ${JSON.stringify(statsData.product_sales_chart?.slice(0, 5) || [])}
+          
+          Satış verisi dönemi: ${params.quick_filter || params.start_date + ' - ' + params.end_date}`
+        })
+      });
+      
+      const aiData = await aiResponse.json();
+      
+      if (!aiData.success) {
+        throw new Error(aiData.error || 'AI analizi yapılamadı');
+      }
+      
+      // Sonuçları göster
+      resultDiv.innerHTML = `
+        <div class="card mt-3">
+          <div class="card-header bg-light">
+            <h5 class="mb-0">Satış Özeti</h5>
+          </div>
+          <div class="card-body">
+            <div class="row mb-4">
+              <div class="col-md-4 text-center">
+                <div class="border rounded p-3">
+                  <h3>${statsData.total_orders || 0}</h3>
+                  <p class="text-muted mb-0">Toplam Sipariş</p>
+                </div>
+              </div>
+              <div class="col-md-4 text-center">
+                <div class="border rounded p-3">
+                  <h3>${statsData.total_items_sold || 0}</h3>
+                  <p class="text-muted mb-0">Satılan Ürün</p>
+                </div>
+              </div>
+              <div class="col-md-4 text-center">
+                <div class="border rounded p-3">
+                  <h3>${statsData.total_revenue ? statsData.total_revenue.toLocaleString('tr-TR') : 0} ₺</h3>
+                  <p class="text-muted mb-0">Toplam Ciro</p>
+                </div>
+              </div>
+            </div>
+            
+            <h5>AI Analiz Özeti:</h5>
+            <div class="ai-analysis p-3 border rounded bg-light">
+              ${aiData.analysis.replace(/\n/g, '<br>')}
+            </div>
+            
+            <h5 class="mt-4">En Çok Satan Ürünler:</h5>
+            <div class="table-responsive">
+              <table class="table table-striped">
+                <thead>
+                  <tr>
+                    <th>Ürün ID</th>
+                    <th>Satış Adedi</th>
+                    <th>Toplam Ciro</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${statsData.product_sales_chart?.slice(0, 5).map(product => `
+                    <tr>
+                      <td>${product.product_id}</td>
+                      <td>${product.sale_count}</td>
+                      <td>${product.total_revenue.toLocaleString('tr-TR')} ₺</td>
+                    </tr>
+                  `).join('') || '<tr><td colspan="3">Veri bulunamadı</td></tr>'}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      `;
+    } catch (error) {
+      console.error('Hata:', error);
+      resultDiv.innerHTML = `<div class="alert alert-danger">Bir hata oluştu: ${error.message}</div>`;
+    }
+  });
+  
   // Metin Analizi
   document.getElementById('textAnalysisForm').addEventListener('submit', async function(e) {
     e.preventDefault();

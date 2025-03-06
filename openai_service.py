@@ -14,6 +14,9 @@ load_dotenv()
 # OpenAI istemcisini oluştur
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
+# Model seçimi - Daha hızlı ve ekonomik model olarak o3 mini (gpt-3.5-turbo)
+DEFAULT_MODEL = "gpt-3.5-turbo"  # o3 mini - daha ekonomik ve hızlı
+
 # Blueprint oluşturma
 openai_bp = Blueprint('openai_bp', __name__)
 
@@ -43,9 +46,9 @@ def analyze_text():
         user_text = data['text']
         logger.debug(f"Analiz edilecek metin: {user_text[:50]}...")
         
-        # OpenAI API çağrısı - yeni sürüm
+        # OpenAI API çağrısı - o3 mini ile
         response = client.chat.completions.create(
-            model="gpt-3.5-turbo",  # veya tercih ettiğiniz model
+            model=DEFAULT_MODEL,  # o3 mini - daha ekonomik ve hızlı
             messages=[
                 {"role": "system", "content": "Sen bir metin analiz uzmanısın. Verilen metni analiz et ve önemli noktaları vurgula."},
                 {"role": "user", "content": user_text}
@@ -86,9 +89,9 @@ def siparis_ozeti():
         siparis_bilgileri = data['siparis_bilgileri']
         logger.debug(f"Özeti çıkarılacak sipariş bilgileri alındı")
         
-        # OpenAI API çağrısı - yeni sürüm
+        # OpenAI API çağrısı - o3 mini ile
         response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model=DEFAULT_MODEL,
             messages=[
                 {"role": "system", "content": "Sen bir sipariş analiz uzmanısın. Verilen sipariş bilgilerini inceleyip özet çıkar ve önemli noktaları vurgula."},
                 {"role": "user", "content": str(siparis_bilgileri)}
@@ -143,9 +146,9 @@ def urun_onerileri():
         Her ürün için şunları belirt: ad, açıklama, fiyat ve öneri sebebi.
         """
         
-        # OpenAI API çağrısı - yeni sürüm
+        # OpenAI API çağrısı - o3 mini ile
         response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model=DEFAULT_MODEL,
             messages=[
                 {"role": "system", "content": "Sen bir ürün öneri uzmanısın. Müşteri profiline göre en uygun ürünleri öner."},
                 {"role": "user", "content": prompt}
@@ -167,6 +170,48 @@ def urun_onerileri():
         logger.error(f"OpenAI ürün önerileri hatası: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
+
+@openai_bp.route('/ai/satis-analizi', methods=['POST'])
+def satis_analizi():
+    """
+    Satış verilerini AI ile analiz eder
+    """
+    logger.debug(">> satis_analizi fonksiyonu çağrıldı")
+    
+    try:
+        # POST verilerini al
+        data = request.get_json()
+        
+        if not data or 'satis_verileri' not in data:
+            logger.error("Geçersiz veri formatı, 'satis_verileri' alanı bulunamadı")
+            return jsonify({'success': False, 'error': 'Geçersiz veri formatı. "satis_verileri" alanı gerekli.'}), 400
+            
+        satis_verileri = data['satis_verileri']
+        logger.debug(f"Analiz edilecek satış verileri alındı")
+        
+        # OpenAI API çağrısı - o3 mini ile
+        response = client.chat.completions.create(
+            model=DEFAULT_MODEL,
+            messages=[
+                {"role": "system", "content": "Sen bir satış analiz uzmanısın. Verilen satış verilerini analiz et, trendleri belirle ve önemli noktaları vurgula."},
+                {"role": "user", "content": str(satis_verileri)}
+            ],
+            max_tokens=800,
+            temperature=0.3
+        )
+        
+        # Yanıtı işle
+        analiz_sonucu = response.choices[0].message.content.strip()
+        logger.debug(f"Satış analizi sonucu oluşturuldu")
+        
+        return jsonify({
+            'success': True,
+            'analiz': analiz_sonucu
+        })
+        
+    except Exception as e:
+        logger.error(f"OpenAI satış analizi hatası: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @openai_bp.route('/ai-analiz', methods=['GET'])
 def ai_analiz_sayfasi():
