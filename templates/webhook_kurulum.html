@@ -3,426 +3,470 @@
 
 {% block content %}
 <div class="container mt-4">
-  <div class="row">
+  <h2 class="mb-4">Trendyol Webhook Kurulum ve İzleme Paneli</h2>
+
+  <div class="alert alert-info mb-4">
+    <h5>Webhook Nedir?</h5>
+    <p>Webhook'lar, Trendyol'daki sipariş ve ürün değişikliklerinin gerçek zamanlı olarak sisteminize bildirilmesini sağlar. Bu sayede, siparişler ve ürünlerle ilgili güncellemeleri anında alabilirsiniz.</p>
+  </div>
+
+  <div class="row mb-4">
     <div class="col-12">
-      <div class="card shadow mb-4">
+      <div class="card">
         <div class="card-header bg-primary text-white">
-          <h5 class="mb-0">Trendyol Webhook Kurulumu</h5>
+          <h5 class="card-title mb-0">Webhook Durumu</h5>
         </div>
         <div class="card-body">
-          <div class="alert alert-info">
-            <p><i class="bi bi-info-circle"></i> <strong>Webhook nedir?</strong> Webhook, siparişlerinizi çekmek için sürekli API sorgularına ihtiyaç duymadan, belirli olaylar gerçekleştiğinde Trendyol'un sizin belirlediğiniz URL'ye otomatik bildirim göndermesini sağlayan bir mekanizmadır.</p>
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+              <h5>Sipariş Webhook URL:</h5>
+              <code id="orderWebhookUrl">{{ order_webhook_url }}</code>
+            </div>
+            <div>
+              <span id="orderWebhookStatus" class="badge bg-secondary">Kontrol Ediliyor...</span>
+            </div>
           </div>
+          <hr>
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+              <h5>Ürün Webhook URL:</h5>
+              <code id="productWebhookUrl">{{ product_webhook_url }}</code>
+            </div>
+            <div>
+              <span id="productWebhookStatus" class="badge bg-secondary">Kontrol Ediliyor...</span>
+            </div>
+          </div>
+          <hr>
+          <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+            <button class="btn btn-primary" id="checkStatus">
+              <i class="bi bi-arrow-repeat"></i> Webhook Durumunu Kontrol Et
+            </button>
+            <button class="btn btn-success" id="registerWebhooks">
+              <i class="bi bi-cloud-arrow-up"></i> Webhook'ları Kaydet
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
-          <h5 class="mt-4">1. Endpoint Bilgileri</h5>
+  <div class="row mb-4">
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-header bg-info text-white">
+          <h5 class="card-title mb-0">Son Sipariş Olayları</h5>
+        </div>
+        <div class="card-body">
           <div class="table-responsive">
-            <table class="table table-bordered">
-              <thead class="table-light">
+            <table class="table table-striped table-sm">
+              <thead>
                 <tr>
-                  <th>Webhook Tipi</th>
-                  <th>URL</th>
-                  <th>Açıklama</th>
+                  <th>Zaman</th>
+                  <th>Sipariş No</th>
+                  <th>Durum</th>
+                  <th>İşlemler</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody id="orderEventsTable">
+                {% for event in order_events %}
                 <tr>
-                  <td>Sipariş Bildirimleri</td>
-                  <td><code>{{ order_webhook_url }}</code></td>
-                  <td>Sipariş oluşturma, statü değişim bildirimleri</td>
+                  <td>{{ event.timestamp }}</td>
+                  <td>{{ event.order_number }}</td>
+                  <td>
+                    <span class="badge {% if event.status == 'DELIVERED' %}bg-success{% elif event.status == 'CANCELLED' %}bg-danger{% else %}bg-primary{% endif %}">
+                      {{ event.status }}
+                    </span>
+                  </td>
+                  <td>
+                    <button class="btn btn-sm btn-info" onclick="showEventDetails('order', {{ loop.index0 }})">
+                      <i class="bi bi-eye"></i>
+                    </button>
+                  </td>
                 </tr>
-                <tr>
-                  <td>Ürün Bildirimleri</td>
-                  <td><code>{{ product_webhook_url }}</code></td>
-                  <td>Ürün, fiyat ve stok değişim bildirimleri</td>
-                </tr>
+                {% endfor %}
               </tbody>
             </table>
           </div>
-
-          <h5 class="mt-4">2. Webhook Durumu</h5>
-          <div class="row">
-            <div class="col-md-6">
-              <div class="card mb-3">
-                <div class="card-header">
-                  Sipariş Webhook Durumu
-                </div>
-                <div class="card-body">
-                  <div id="orderWebhookStatus" class="d-flex align-items-center">
-                    <div class="spinner-border spinner-border-sm me-2" role="status"></div>
-                    <span>Kontrol ediliyor...</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="col-md-6">
-              <div class="card mb-3">
-                <div class="card-header">
-                  Ürün Webhook Durumu
-                </div>
-                <div class="card-body">
-                  <div id="productWebhookStatus" class="d-flex align-items-center">
-                    <div class="spinner-border spinner-border-sm me-2" role="status"></div>
-                    <span>Kontrol ediliyor...</span>
-                  </div>
-                </div>
-              </div>
-            </div>
+          {% if not order_events %}
+          <div class="alert alert-warning">Henüz sipariş olayı kaydedilmemiş.</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-header bg-success text-white">
+          <h5 class="card-title mb-0">Son Ürün Olayları</h5>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-striped table-sm">
+              <thead>
+                <tr>
+                  <th>Zaman</th>
+                  <th>Barkod</th>
+                  <th>Tip</th>
+                  <th>İşlemler</th>
+                </tr>
+              </thead>
+              <tbody id="productEventsTable">
+                {% for event in product_events %}
+                <tr>
+                  <td>{{ event.timestamp }}</td>
+                  <td>{{ event.barcode }}</td>
+                  <td>
+                    <span class="badge {% if event.type == 'ProductCreated' %}bg-success{% elif event.type == 'PriceChanged' %}bg-warning{% else %}bg-info{% endif %}">
+                      {{ event.type }}
+                    </span>
+                  </td>
+                  <td>
+                    <button class="btn btn-sm btn-info" onclick="showEventDetails('product', {{ loop.index0 }})">
+                      <i class="bi bi-eye"></i>
+                    </button>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
           </div>
+          {% if not product_events %}
+          <div class="alert alert-warning">Henüz ürün olayı kaydedilmemiş.</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
 
-          <div class="d-grid gap-2 d-md-flex justify-content-md-center mt-4">
-            <button class="btn btn-success" onclick="registerWebhooks()">
-              <i class="bi bi-plus-circle"></i> Webhook'ları Kaydet/Güncelle
-            </button>
-            <button class="btn btn-primary" onclick="checkWebhookStatus()">
-              <i class="bi bi-arrow-repeat"></i> Durumu Yenile
-            </button>
+  <div class="row">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header bg-dark text-white">
+          <h5 class="card-title mb-0">Webhook Logları</h5>
+        </div>
+        <div class="card-body">
+          <div class="btn-group mb-3">
+            <button class="btn btn-outline-primary" onclick="filterLogs('all')">Tümü</button>
+            <button class="btn btn-outline-primary" onclick="filterLogs('order')">Sipariş</button>
+            <button class="btn btn-outline-primary" onclick="filterLogs('product')">Ürün</button>
+            <button class="btn btn-outline-danger" onclick="filterLogs('error')">Hatalar</button>
           </div>
-
-          <h5 class="mt-5">3. Son Bildirimler</h5>
-          <ul class="nav nav-tabs" id="myTab" role="tablist">
-            <li class="nav-item" role="presentation">
-              <button class="nav-link active" id="order-tab" data-bs-toggle="tab" data-bs-target="#order-events" type="button">Sipariş Bildirimleri</button>
-            </li>
-            <li class="nav-item" role="presentation">
-              <button class="nav-link" id="product-tab" data-bs-toggle="tab" data-bs-target="#product-events" type="button">Ürün Bildirimleri</button>
-            </li>
-            <li class="nav-item" role="presentation">
-              <button class="nav-link" id="logs-tab" data-bs-toggle="tab" data-bs-target="#logs" type="button">Loglar</button>
-            </li>
-          </ul>
-          
-          <div class="tab-content mt-3">
-            <div class="tab-pane fade show active" id="order-events">
-              <div class="table-responsive">
-                <table class="table table-striped table-sm">
-                  <thead>
-                    <tr>
-                      <th>Tarih</th>
-                      <th>Sipariş No</th>
-                      <th>Durum</th>
-                      <th>Detay</th>
-                    </tr>
-                  </thead>
-                  <tbody id="orderEvents">
-                    <tr>
-                      <td colspan="4" class="text-center">Henüz bildirim alınmadı</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-            
-            <div class="tab-pane fade" id="product-events">
-              <div class="table-responsive">
-                <table class="table table-striped table-sm">
-                  <thead>
-                    <tr>
-                      <th>Tarih</th>
-                      <th>Barkod</th>
-                      <th>İşlem</th>
-                      <th>Detay</th>
-                    </tr>
-                  </thead>
-                  <tbody id="productEvents">
-                    <tr>
-                      <td colspan="4" class="text-center">Henüz bildirim alınmadı</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-            
-            <div class="tab-pane fade" id="logs">
-              <div class="mb-3">
-                <label for="logType" class="form-label">Log Tipi:</label>
-                <select class="form-select" id="logType" onchange="refreshLogs()">
-                  <option value="all">Tümü</option>
-                  <option value="order">Sipariş</option>
-                  <option value="product">Ürün</option>
-                  <option value="error">Hata</option>
-                </select>
-              </div>
-              <div class="card">
-                <div class="card-body">
-                  <pre id="logContent" class="bg-light p-3" style="max-height: 400px; overflow: auto;">{{ logs }}</pre>
-                </div>
-              </div>
-              <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-2">
-                <button class="btn btn-sm btn-primary" onclick="refreshLogs()">
-                  <i class="bi bi-arrow-repeat"></i> Logları Yenile
-                </button>
-              </div>
-            </div>
+          <div class="logs-container bg-dark text-light p-3 rounded" style="height: 400px; overflow-y: auto;">
+            <pre id="logsContent">{{ logs }}</pre>
           </div>
-
-          <h5 class="mt-5">4. Trendyol Webhook Kurulum Adımları</h5>
-          <div class="card">
-            <div class="card-body">
-              <ol>
-                <li>Trendyol Satıcı Paneli'ne giriş yapın.</li>
-                <li>Hesap Bilgilerim > Entegrasyon Bilgileri sayfasına gidin.</li>
-                <li>API KEY ve API SECRET KEY bilgilerinizi kontrol edin.</li>
-                <li>Bu bilgileri .env dosyanızda veya trendyol_api.py dosyasında güncelleyin.</li>
-                <li>Trendyol'da webhook kullanmak için yukarıdaki "Webhook'ları Kaydet" butonuna tıklayın.</li>
-                <li>İlk webhook ayarlandıktan sonra, Trendyol otomatik olarak webhooklar yoluyla bildirim göndermeye başlayacaktır.</li>
-              </ol>
-            </div>
-          </div>
-
         </div>
       </div>
     </div>
   </div>
 </div>
 
+<!-- Olay Detay Modalı -->
+<div class="modal fade" id="eventDetailModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Olay Detayı</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <pre id="eventDetailContent" class="bg-light p-3 rounded" style="max-height: 400px; overflow-y: auto;"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
-// Sayfa yüklendiğinde webhook durumunu kontrol et
 document.addEventListener('DOMContentLoaded', function() {
+  // Sayfa yüklendiğinde webhook durumunu kontrol et
   checkWebhookStatus();
+  
+  // Webhook durumu kontrol butonuna tıklama
+  document.getElementById('checkStatus').addEventListener('click', function() {
+    checkWebhookStatus();
+  });
+  
+  // Webhook kayıt butonuna tıklama
+  document.getElementById('registerWebhooks').addEventListener('click', function() {
+    registerWebhooks();
+  });
+  
+  // Düzenli aralıklarla webhook durumunu kontrol et (60 saniyede bir)
+  setInterval(checkWebhookStatus, 60000);
 });
 
-// Webhook durumunu kontrol et
+// Webhook durumu kontrolü
 function checkWebhookStatus() {
+  // Durum göstergelerini "Kontrol Ediliyor..." olarak ayarla
+  const orderStatus = document.getElementById('orderWebhookStatus');
+  const productStatus = document.getElementById('productWebhookStatus');
+  
+  orderStatus.className = 'badge bg-secondary';
+  orderStatus.textContent = 'Kontrol Ediliyor...';
+  
+  productStatus.className = 'badge bg-secondary';
+  productStatus.textContent = 'Kontrol Ediliyor...';
+  
+  // API çağrısı yap
   fetch('/api/webhook-status')
     .then(response => response.json())
     .then(data => {
-      // Sipariş webhook durumu
-      const orderStatusElement = document.getElementById('orderWebhookStatus');
-      orderStatusElement.innerHTML = '';
+      console.log('Webhook durumu:', data);
       
-      let orderStatus = 'Pasif';
-      let orderStatusClass = 'text-danger';
-      
+      // Sipariş webhook durumunu güncelle
       if (data.order_webhook_active) {
-        orderStatus = 'Aktif';
-        orderStatusClass = 'text-success';
+        orderStatus.className = 'badge bg-success';
+        orderStatus.textContent = 'Aktif';
+      } else {
+        orderStatus.className = 'badge bg-danger';
+        orderStatus.textContent = 'Pasif';
       }
       
-      orderStatusElement.innerHTML = `
-        <div class="d-flex align-items-center">
-          <div class="me-2 ${orderStatusClass}"><i class="bi bi-circle-fill"></i></div>
-          <span>Webhook Durumu: <strong>${orderStatus}</strong></span>
-        </div>
-      `;
-      
-      // Ürün webhook durumu
-      const productStatusElement = document.getElementById('productWebhookStatus');
-      productStatusElement.innerHTML = '';
-      
-      let productStatus = 'Pasif';
-      let productStatusClass = 'text-danger';
-      
+      // Ürün webhook durumunu güncelle
       if (data.product_webhook_active) {
-        productStatus = 'Aktif';
-        productStatusClass = 'text-success';
+        productStatus.className = 'badge bg-success';
+        productStatus.textContent = 'Aktif';
+      } else {
+        productStatus.className = 'badge bg-danger';
+        productStatus.textContent = 'Pasif';
       }
       
-      productStatusElement.innerHTML = `
-        <div class="d-flex align-items-center">
-          <div class="me-2 ${productStatusClass}"><i class="bi bi-circle-fill"></i></div>
-          <span>Webhook Durumu: <strong>${productStatus}</strong></span>
-        </div>
-      `;
-
       // Olay tablolarını güncelle
       updateEventTables(data.recent_order_events, data.recent_product_events);
+      
+      // Hata varsa göster
+      if (data.error) {
+        showToast('Webhook Durumu Hatası', data.error, 'error');
+      }
     })
     .catch(error => {
       console.error('Webhook durumu kontrol edilirken hata:', error);
+      showToast('Hata', 'Webhook durumu kontrol edilirken bir hata oluştu.', 'error');
       
-      document.getElementById('orderWebhookStatus').innerHTML = `
-        <div class="text-danger">
-          <i class="bi bi-exclamation-triangle"></i> Durum kontrol edilirken hata oluştu.
-        </div>
-      `;
+      // Hata durumunda durum göstergelerini güncelle
+      orderStatus.className = 'badge bg-danger';
+      orderStatus.textContent = 'Hata';
       
-      document.getElementById('productWebhookStatus').innerHTML = `
-        <div class="text-danger">
-          <i class="bi bi-exclamation-triangle"></i> Durum kontrol edilirken hata oluştu.
-        </div>
-      `;
+      productStatus.className = 'badge bg-danger';
+      productStatus.textContent = 'Hata';
     });
 }
 
-// Webhook'ları kaydet
+// Webhook kayıt işlemi
 function registerWebhooks() {
-  if (confirm('Trendyol API\'ye yeni webhook\'ları kaydetmek istediğinizden emin misiniz?')) {
-    // Butonları devre dışı bırak
-    document.querySelectorAll('button').forEach(btn => {
-      btn.disabled = true;
-    });
-    
-    fetch('/api/register-webhooks', {
-      method: 'POST'
-    })
-      .then(response => response.json())
-      .then(data => {
-        // Butonları tekrar etkinleştir
-        document.querySelectorAll('button').forEach(btn => {
-          btn.disabled = false;
-        });
-        
-        if (data.success) {
-          alert('Webhook\'lar başarıyla kaydedildi!');
-          checkWebhookStatus();
-        } else {
-          alert('Webhook kaydı sırasında bir hata oluştu: ' + data.error);
-        }
-      })
-      .catch(error => {
-        // Butonları tekrar etkinleştir
-        document.querySelectorAll('button').forEach(btn => {
-          btn.disabled = false;
-        });
-        
-        console.error('Webhook kaydı sırasında hata:', error);
-        alert('Webhook kaydı sırasında bir hata oluştu');
-      });
-  }
-}
-
-// Logları yenile
-function refreshLogs() {
-  const logType = document.getElementById('logType').value;
+  // Butonları devre dışı bırak
+  document.getElementById('registerWebhooks').disabled = true;
+  document.getElementById('checkStatus').disabled = true;
   
-  fetch(`/api/webhook-logs?type=${logType}`)
+  // İşlem göstergesini göster
+  showToast('İşlem Başlatıldı', 'Webhook kayıt işlemi başlatıldı...', 'info');
+  
+  // API çağrısı yap
+  fetch('/api/register-webhooks', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  })
     .then(response => response.json())
     .then(data => {
-      document.getElementById('logContent').textContent = data.logs;
+      // Butonları tekrar aktif hale getir
+      document.getElementById('registerWebhooks').disabled = false;
+      document.getElementById('checkStatus').disabled = false;
+      
+      if (data.success) {
+        showToast('Başarılı', 'Webhook\'lar başarıyla kaydedildi.', 'success');
+        // Webhook durumunu güncelle
+        setTimeout(checkWebhookStatus, 2000);
+      } else {
+        showToast('Hata', data.error || 'Webhook kayıt işlemi başarısız oldu.', 'error');
+      }
     })
     .catch(error => {
-      console.error('Loglar getirilirken hata:', error);
-      document.getElementById('logContent').textContent = 'Loglar yüklenirken bir hata oluştu.';
+      console.error('Webhook kayıt hatası:', error);
+      showToast('Hata', 'Webhook kayıt işlemi sırasında bir hata oluştu.', 'error');
+      
+      // Butonları tekrar aktif hale getir
+      document.getElementById('registerWebhooks').disabled = false;
+      document.getElementById('checkStatus').disabled = false;
     });
 }
 
 // Olay tablolarını güncelle
 function updateEventTables(orderEvents, productEvents) {
-  // Sipariş olayları tablosu
-  const orderEventsTable = document.getElementById('orderEvents');
+  // Sipariş olayları tablosunu güncelle
+  const orderEventsTable = document.getElementById('orderEventsTable');
   orderEventsTable.innerHTML = '';
   
   if (orderEvents && orderEvents.length > 0) {
-    orderEvents.forEach(event => {
+    orderEvents.forEach((event, index) => {
       const row = document.createElement('tr');
       
-      const timestamp = document.createElement('td');
-      timestamp.textContent = event.timestamp || '-';
-      
-      const orderNo = document.createElement('td');
-      orderNo.textContent = event.order_number || '-';
-      
-      const status = document.createElement('td');
-      status.innerHTML = `<span class="badge bg-${getStatusBadgeColor(event.status)}">${event.status || '-'}</span>`;
-      
-      const detail = document.createElement('td');
-      detail.innerHTML = `<button class="btn btn-sm btn-outline-info" onclick="showEventDetail('order', ${JSON.stringify(event).replace(/"/g, '&quot;')})">
-        <i class="bi bi-info-circle"></i>
-      </button>`;
-      
-      row.appendChild(timestamp);
-      row.appendChild(orderNo);
-      row.appendChild(status);
-      row.appendChild(detail);
+      row.innerHTML = `
+        <td>${event.timestamp || ''}</td>
+        <td>${event.order_number || ''}</td>
+        <td>
+          <span class="badge ${getStatusBadgeClass(event.status)}">
+            ${event.status || ''}
+          </span>
+        </td>
+        <td>
+          <button class="btn btn-sm btn-info" onclick="showEventDetails('order', ${index})">
+            <i class="bi bi-eye"></i>
+          </button>
+        </td>
+      `;
       
       orderEventsTable.appendChild(row);
     });
   } else {
-    orderEventsTable.innerHTML = `<tr><td colspan="4" class="text-center">Henüz bildirim alınmadı</td></tr>`;
+    const row = document.createElement('tr');
+    row.innerHTML = '<td colspan="4" class="text-center">Henüz sipariş olayı kaydedilmemiş.</td>';
+    orderEventsTable.appendChild(row);
   }
   
-  // Ürün olayları tablosu
-  const productEventsTable = document.getElementById('productEvents');
+  // Ürün olayları tablosunu güncelle
+  const productEventsTable = document.getElementById('productEventsTable');
   productEventsTable.innerHTML = '';
   
   if (productEvents && productEvents.length > 0) {
-    productEvents.forEach(event => {
+    productEvents.forEach((event, index) => {
       const row = document.createElement('tr');
       
-      const timestamp = document.createElement('td');
-      timestamp.textContent = event.timestamp || '-';
-      
-      const barcode = document.createElement('td');
-      barcode.textContent = event.barcode || '-';
-      
-      const action = document.createElement('td');
-      action.textContent = event.type || '-';
-      
-      const detail = document.createElement('td');
-      detail.innerHTML = `<button class="btn btn-sm btn-outline-info" onclick="showEventDetail('product', ${JSON.stringify(event).replace(/"/g, '&quot;')})">
-        <i class="bi bi-info-circle"></i>
-      </button>`;
-      
-      row.appendChild(timestamp);
-      row.appendChild(barcode);
-      row.appendChild(action);
-      row.appendChild(detail);
+      row.innerHTML = `
+        <td>${event.timestamp || ''}</td>
+        <td>${event.barcode || ''}</td>
+        <td>
+          <span class="badge ${getTypeBadgeClass(event.type)}">
+            ${event.type || ''}
+          </span>
+        </td>
+        <td>
+          <button class="btn btn-sm btn-info" onclick="showEventDetails('product', ${index})">
+            <i class="bi bi-eye"></i>
+          </button>
+        </td>
+      `;
       
       productEventsTable.appendChild(row);
     });
   } else {
-    productEventsTable.innerHTML = `<tr><td colspan="4" class="text-center">Henüz bildirim alınmadı</td></tr>`;
+    const row = document.createElement('tr');
+    row.innerHTML = '<td colspan="4" class="text-center">Henüz ürün olayı kaydedilmemiş.</td>';
+    productEventsTable.appendChild(row);
   }
 }
 
-// Durum badge rengini belirle
-function getStatusBadgeColor(status) {
-  switch (status) {
-    case 'CREATED':
-      return 'primary';
-    case 'PICKING':
-    case 'INVOICED':
-    case 'AWAITING':
-      return 'info';
-    case 'SHIPPED':
-      return 'warning';
+// Sipariş durumuna göre badge sınıfı döndür
+function getStatusBadgeClass(status) {
+  if (!status) return 'bg-secondary';
+  
+  switch (status.toUpperCase()) {
     case 'DELIVERED':
-    case 'VERIFIED':
-      return 'success';
+      return 'bg-success';
     case 'CANCELLED':
     case 'UNDELIVERED':
     case 'RETURNED':
-    case 'UNSUPPLIED':
-      return 'danger';
+      return 'bg-danger';
+    case 'SHIPPED':
+      return 'bg-info';
+    case 'CREATED':
+      return 'bg-primary';
+    case 'PICKING':
+    case 'INVOICED':
+      return 'bg-warning';
     default:
-      return 'secondary';
+      return 'bg-secondary';
   }
 }
 
-// Olay detayını göster
-function showEventDetail(type, event) {
-  // Detay modalı HTML'i
-  const modalHTML = `
-    <div class="modal fade" id="eventDetailModal" tabindex="-1">
-      <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">${type === 'order' ? 'Sipariş' : 'Ürün'} Bildirimi Detayı</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-          </div>
-          <div class="modal-body">
-            <pre class="bg-light p-3" style="max-height: 400px; overflow: auto;">${JSON.stringify(event, null, 2)}</pre>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
-          </div>
+// Olay tipine göre badge sınıfı döndür
+function getTypeBadgeClass(type) {
+  if (!type) return 'bg-secondary';
+  
+  switch (type) {
+    case 'ProductCreated':
+      return 'bg-success';
+    case 'ProductUpdated':
+      return 'bg-info';
+    case 'PriceChanged':
+      return 'bg-warning';
+    case 'StockChanged':
+      return 'bg-primary';
+    default:
+      return 'bg-secondary';
+  }
+}
+
+// Olay detaylarını göster
+function showEventDetails(eventType, index) {
+  // API çağrısı yap
+  fetch(`/api/webhook-status`)
+    .then(response => response.json())
+    .then(data => {
+      const events = eventType === 'order' ? data.recent_order_events : data.recent_product_events;
+      
+      if (events && events.length > index) {
+        const event = events[index];
+        const eventDetailContent = document.getElementById('eventDetailContent');
+        
+        // JSON formatında göster
+        eventDetailContent.textContent = JSON.stringify(event, null, 2);
+        
+        // Modalı göster
+        const modal = new bootstrap.Modal(document.getElementById('eventDetailModal'));
+        modal.show();
+      }
+    })
+    .catch(error => {
+      console.error('Olay detayları alınırken hata:', error);
+      showToast('Hata', 'Olay detayları alınırken bir hata oluştu.', 'error');
+    });
+}
+
+// Log filtreleme
+function filterLogs(type) {
+  fetch(`/api/webhook-logs?type=${type}`)
+    .then(response => response.json())
+    .then(data => {
+      document.getElementById('logsContent').textContent = data.logs;
+    })
+    .catch(error => {
+      console.error('Log filtreleme hatası:', error);
+      showToast('Hata', 'Loglar filtrelenirken bir hata oluştu.', 'error');
+    });
+}
+
+// Bildirim göster
+function showToast(title, message, type = 'info') {
+  const toastContainer = document.createElement('div');
+  toastContainer.className = 'position-fixed bottom-0 end-0 p-3';
+  toastContainer.style.zIndex = '5';
+  
+  const bgClass = type === 'error' ? 'bg-danger' : 
+                  type === 'success' ? 'bg-success' : 
+                  type === 'warning' ? 'bg-warning' : 'bg-info';
+  
+  toastContainer.innerHTML = `
+    <div class="toast align-items-center text-white ${bgClass} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+      <div class="d-flex">
+        <div class="toast-body">
+          <strong>${title}</strong>: ${message}
         </div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
       </div>
     </div>
   `;
   
-  // Varsa eski modalı kaldır
-  const oldModal = document.getElementById('eventDetailModal');
-  if (oldModal) {
-    oldModal.remove();
-  }
+  document.body.appendChild(toastContainer);
   
-  // Yeni modalı ekle
-  document.body.insertAdjacentHTML('beforeend', modalHTML);
+  const toastElement = toastContainer.querySelector('.toast');
+  const toast = new bootstrap.Toast(toastElement, { autohide: true, delay: 5000 });
   
-  // Modalı göster
-  const modal = new bootstrap.Modal(document.getElementById('eventDetailModal'));
-  modal.show();
+  toast.show();
+  
+  // Toast kapandığında container'ı kaldır
+  toastElement.addEventListener('hidden.bs.toast', function () {
+    document.body.removeChild(toastContainer);
+  });
 }
 </script>
 {% endblock %}

@@ -53,22 +53,28 @@ def webhook_status():
     # Webhook'ların durumunu kontrol et
     try:
         import register_webhooks
-        webhooks = register_webhooks.get_registered_webhooks()
+        status_info = register_webhooks.check_webhook_status()
         
-        order_webhook_active = any(w.get('name') == 'OrderWebhook' for w in webhooks)
-        product_webhook_active = any(w.get('name') == 'ProductWebhook' for w in webhooks)
+        # Sonuçlar ve olayları birleştir
+        response_data = {
+            'order_webhook_active': status_info.get('order_webhook_active', False),
+            'product_webhook_active': status_info.get('product_webhook_active', False),
+            'total_webhooks': status_info.get('total_webhooks', 0),
+            'recent_order_events': order_events[-20:],  # Son 20 olay
+            'recent_product_events': product_events[-20:]  # Son 20 olay
+        }
         
-        return jsonify({
-            'order_webhook_active': order_webhook_active,
-            'product_webhook_active': product_webhook_active,
-            'recent_order_events': order_events[-20:],
-            'recent_product_events': product_events[-20:]
-        })
+        # Hata varsa ekle
+        if 'error' in status_info:
+            response_data['error'] = status_info['error']
+            
+        return jsonify(response_data)
     except Exception as e:
-        logger.error(f"Webhook durumu kontrol edilirken hata: {str(e)}")
+        logger.error(f"Webhook durumu kontrol edilirken hata: {str(e)}", exc_info=True)
         return jsonify({
             'order_webhook_active': False,
             'product_webhook_active': False,
+            'total_webhooks': 0,
             'recent_order_events': [],
             'recent_product_events': [],
             'error': str(e)
@@ -84,24 +90,51 @@ def api_register_webhooks():
         
         # Önce mevcut webhook'ları al
         existing_webhooks = register_webhooks.get_registered_webhooks()
+        logger.info(f"Mevcut webhook sayısı: {len(existing_webhooks)}")
         
         # Mevcut webhook'ları sil
+        deleted_count = 0
         for webhook in existing_webhooks:
             webhook_id = webhook.get('id')
             if webhook_id:
-                register_webhooks.delete_webhook(webhook_id)
+                result = register_webhooks.delete_webhook(webhook_id)
+                if result:
+                    deleted_count += 1
+                    
+        logger.info(f"Silinen webhook sayısı: {deleted_count}")
         
         # Yeni webhook'ları kaydet
         from trendyol_api import ORDER_WEBHOOK_URL, PRODUCT_WEBHOOK_URL
+        
+        logger.info(f"Sipariş webhook URL: {ORDER_WEBHOOK_URL}")
         order_result = register_webhooks.register_webhook('order', ORDER_WEBHOOK_URL)
+        
+        logger.info(f"Ürün webhook URL: {PRODUCT_WEBHOOK_URL}")
         product_result = register_webhooks.register_webhook('product', PRODUCT_WEBHOOK_URL)
         
         if order_result and product_result:
-            return jsonify({'success': True})
+            # Webhook'ları aktif hale getir
+            if isinstance(order_result, str):
+                register_webhooks.activate_webhook(order_result)
+            if isinstance(product_result, str):
+                register_webhooks.activate_webhook(product_result)
+                
+            logger.info("Webhook'lar başarıyla kaydedildi ve aktifleştirildi")
+            return jsonify({
+                'success': True, 
+                'order_webhook_id': order_result,
+                'product_webhook_id': product_result
+            })
         else:
-            return jsonify({'success': False, 'error': 'Webhook kayıt işlemi başarısız'})
+            logger.warning(f"Webhook kayıt işlemi kısmen başarısız: Sipariş: {order_result}, Ürün: {product_result}")
+            return jsonify({
+                'success': False, 
+                'error': 'Webhook kayıt işlemi başarısız',
+                'order_result': order_result,
+                'product_result': product_result
+            })
     except Exception as e:
-        logger.error(f"Webhook kayıt hatası: {str(e)}")
+        logger.error(f"Webhook kayıt hatası: {str(e)}", exc_info=True)
         return jsonify({'success': False, 'error': str(e)})
 
 @webhook_bp.route('/api/webhook-logs')
