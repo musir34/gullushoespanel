@@ -216,14 +216,26 @@ def schedule_jobs(app):
     scheduler.add_job(func=fetch_and_update_claims, trigger='interval', hours=1, 
                      id='claims_job', name='İade/Talepleri Güncelle')
     
-    # Başlangıçta hepsini bir kez çalıştır
-    scheduler.add_job(func=fetch_and_update_products, trigger='date', 
-                     run_date=datetime.now() + timedelta(seconds=60),
-                     id='initial_products_job', name='İlk Ürün Güncellemesi')
+    # Başlangıçta hepsini bir kez çalıştır (uygulama bağlamını geçirerek)
+    def run_with_app_context(func):
+        with app.app_context():
+            func()
     
-    scheduler.add_job(func=fetch_and_update_orders, trigger='date', 
-                     run_date=datetime.now() + timedelta(seconds=120),
-                     id='initial_orders_job', name='İlk Sipariş Güncellemesi')
+    scheduler.add_job(
+        func=lambda: run_with_app_context(fetch_and_update_products), 
+        trigger='date', 
+        run_date=datetime.now() + timedelta(seconds=60),
+        id='initial_products_job', 
+        name='İlk Ürün Güncellemesi'
+    )
+    
+    scheduler.add_job(
+        func=lambda: run_with_app_context(fetch_and_update_orders), 
+        trigger='date', 
+        run_date=datetime.now() + timedelta(seconds=120),
+        id='initial_orders_job', 
+        name='İlk Sipariş Güncellemesi'
+    )
     
     scheduler.start()
     logger.info("Zamanlayıcı başlatıldı - Otomatik veri güncelleme işleri planlandı")

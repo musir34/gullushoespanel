@@ -143,16 +143,14 @@ def update_orders():
     try:
         logger.info("Siparişler güncellenmeye başlanıyor...")
         from order_service import fetch_trendyol_orders_async
-        from flask import current_app
         
-        # Uygulama bağlamı oluştur
-        with current_app.app_context():
-            asyncio.run(fetch_trendyol_orders_async())
-            # Sipariş sayısını al
-            from models import Order
-            order_count = Order.query.count()
-            save_update_info('orders', True, order_count)
-            logger.info(f"Siparişler güncellendi. Toplam sipariş sayısı: {order_count}")
+        # Uygulama bağlamı zaten ana thread tarafından oluşturuldu
+        asyncio.run(fetch_trendyol_orders_async())
+        # Sipariş sayısını al
+        from models import Order
+        order_count = Order.query.count()
+        save_update_info('orders', True, order_count)
+        logger.info(f"Siparişler güncellendi. Toplam sipariş sayısı: {order_count}")
         return True
     except Exception as e:
         logger.error(f"Siparişler güncellenirken hata: {e}")
@@ -164,16 +162,14 @@ def update_products():
     try:
         logger.info("Ürünler güncellenmeye başlanıyor...")
         from product_service import fetch_trendyol_products_async
-        from flask import current_app
         
-        # Uygulama bağlamı oluştur
-        with current_app.app_context():
-            asyncio.run(fetch_trendyol_products_async())
-            # Ürün sayısını al
-            from models import Product
-            product_count = Product.query.count()
-            save_update_info('products', True, product_count)
-            logger.info(f"Ürünler güncellendi. Toplam ürün sayısı: {product_count}")
+        # Uygulama bağlamı zaten ana thread tarafından oluşturuldu
+        asyncio.run(fetch_trendyol_products_async())
+        # Ürün sayısını al
+        from models import Product
+        product_count = Product.query.count()
+        save_update_info('products', True, product_count)
+        logger.info(f"Ürünler güncellendi. Toplam ürün sayısı: {product_count}")
         return True
     except Exception as e:
         logger.error(f"Ürünler güncellenirken hata: {e}")
@@ -185,16 +181,14 @@ def update_claims():
     try:
         logger.info("İadeler/talepler güncellenmeye başlanıyor...")
         from claims_service import fetch_claims_async
-        from flask import current_app
         
-        # Uygulama bağlamı oluştur
-        with current_app.app_context():
-            asyncio.run(fetch_claims_async())
-            # İade/talep sayısını al
-            from models import Claim
-            claim_count = Claim.query.count()
-            save_update_info('claims', True, claim_count)
-            logger.info(f"İadeler/talepler güncellendi. Toplam iade/talep sayısı: {claim_count}")
+        # Uygulama bağlamı zaten ana thread tarafından oluşturuldu
+        asyncio.run(fetch_claims_async())
+        # İade/talep sayısını al
+        from models import Claim
+        claim_count = Claim.query.count()
+        save_update_info('claims', True, claim_count)
+        logger.info(f"İadeler/talepler güncellendi. Toplam iade/talep sayısı: {claim_count}")
         return True
     except Exception as e:
         logger.error(f"İadeler/talepler güncellenirken hata: {e}")
@@ -205,13 +199,16 @@ def continuous_update_worker():
     """Sürekli güncelleme yapan arka plan iş parçacığı"""
     global UPDATING
     
-    # Flask uygulamasını almak için Flask'in kendisini içe aktar
-    from flask import current_app
+    # Flask uygulamasını almak için
+    from app import app  # app.py'den doğrudan uygulama örneğini içe aktar
     
     logger.info("Sürekli güncelleme sistemi başlatıldı")
     
-    # Uygulama bağlamını başlatma
-    with current_app.app_context():
+    # Uygulamayı doğrudan referans al
+    app_context = app.app_context()
+    app_context.push()  # Uygulama bağlamını etkinleştir
+    
+    try:
         logger.info("Uygulama bağlamı oluşturuldu")
         
         while True:
@@ -244,6 +241,11 @@ def continuous_update_worker():
                 logger.error(f"Sürekli güncelleme sırasında hata: {e}")
                 UPDATING = False
                 time.sleep(60)  # Hata durumunda 1 dakika bekle ve tekrar dene
+    except Exception as e:
+        logger.error(f"Uygulama bağlamı oluşturulurken hata: {e}")
+    finally:
+        # İş parçacığı sonlandığında uygulama bağlamını kapat
+        app_context.pop()
 
 def start_continuous_update():
     """Sürekli güncelleme sistemini başlat"""
