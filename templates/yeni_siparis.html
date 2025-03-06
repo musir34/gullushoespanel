@@ -14,6 +14,103 @@
     <div class="table-responsive">
       <table class="table table-striped table-hover">
         <thead class="table-dark">
+
+<!-- Toast bildirim sistemi -->
+<style>
+#toastContainer {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 9999;
+}
+
+.toast {
+  min-width: 250px;
+  margin-bottom: 10px;
+  padding: 15px;
+  border-radius: 4px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+  animation: slideIn 0.3s ease-out;
+  transition: opacity 0.3s ease-out;
+}
+
+.toast.show {
+  opacity: 1;
+}
+
+.toast.success {
+  background-color: #d4edda;
+  border-left: 5px solid #28a745;
+  color: #155724;
+}
+
+.toast.error {
+  background-color: #f8d7da;
+  border-left: 5px solid #dc3545;
+  color: #721c24;
+}
+
+.toast.info {
+  background-color: #d1ecf1;
+  border-left: 5px solid #17a2b8;
+  color: #0c5460;
+}
+
+@keyframes slideIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.form-group label.required:after {
+  content: " *";
+  color: red;
+}
+
+.btn-group-sm > .btn, .btn-sm {
+  font-size: 0.8rem;
+}
+
+/* İyileştirilmiş form kontrolü stilleri */
+.form-control:focus {
+  border-color: #80bdff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.is-invalid {
+  border-color: #dc3545 !important;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%23dc3545' viewBox='0 0 12 12'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23dc3545' stroke='none'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right calc(0.375em + 0.1875rem) center;
+  background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+}
+
+.invalid-feedback {
+  display: none;
+  width: 100%;
+  margin-top: 0.25rem;
+  font-size: 80%;
+  color: #dc3545;
+}
+
+.is-invalid ~ .invalid-feedback {
+  display: block;
+}
+
+/* Ürün listesi görselleştirme */
+.product-item {
+  transition: all 0.3s ease;
+}
+
+.product-item:hover {
+  background-color: #f8f9fa;
+}
+
+/* Sipariş butonları için iyileştirmeler */
+.btn-action {
+  min-width: 100px;
+}
+</style>
+
           <tr>
             <th>Sipariş No</th>
             <th>Müşteri</th>
@@ -58,24 +155,72 @@
         <div class="card-body">
           <div class="row">
             <div class="col-md-6 mb-3">
-              <label for="customer_name">Ad:</label>
-              <input type="text" class="form-control" id="customer_name" name="customer_name" required>
+              <label for="customer_name" class="required">Ad:</label>
+              <input type="text" class="form-control" id="customer_name" name="customer_name" required 
+                     oninput="validateField(this, 'Lütfen müşteri adını giriniz')" 
+                     placeholder="Müşteri adı">
+              <div class="invalid-feedback">Lütfen müşteri adını giriniz</div>
             </div>
             <div class="col-md-6 mb-3">
-              <label for="customer_surname">Soyad:</label>
-              <input type="text" class="form-control" id="customer_surname" name="customer_surname" required>
+              <label for="customer_surname" class="required">Soyad:</label>
+              <input type="text" class="form-control" id="customer_surname" name="customer_surname" required
+                     oninput="validateField(this, 'Lütfen müşteri soyadını giriniz')"
+                     placeholder="Müşteri soyadı">
+              <div class="invalid-feedback">Lütfen müşteri soyadını giriniz</div>
             </div>
           </div>
           <div class="mb-3">
-            <label for="customer_phone">Telefon:</label>
-            <input type="tel" class="form-control" id="customer_phone" name="customer_phone" required>
+            <label for="customer_phone" class="required">Telefon:</label>
+            <input type="tel" class="form-control" id="customer_phone" name="customer_phone" required
+                   oninput="validatePhone(this)" 
+                   placeholder="05XX XXX XX XX">
+            <div class="invalid-feedback">Lütfen geçerli bir telefon numarası giriniz</div>
           </div>
           <div class="mb-3">
-            <label for="customer_address">Adres:</label>
-            <textarea class="form-control" id="customer_address" name="customer_address" rows="3" required></textarea>
+            <label for="customer_address" class="required">Adres:</label>
+            <textarea class="form-control" id="customer_address" name="customer_address" rows="3" required
+                      oninput="validateField(this, 'Lütfen adres bilgisi giriniz')"
+                      placeholder="Müşteri açık adresi"></textarea>
+            <div class="invalid-feedback">Lütfen adres bilgisi giriniz</div>
           </div>
         </div>
       </div>
+      
+      <script>
+      // Form validasyon yardımcıları
+      function validateField(input, message) {
+        if (input.value.trim() === '') {
+          input.classList.add('is-invalid');
+          input.nextElementSibling.innerText = message;
+          return false;
+        } else {
+          input.classList.remove('is-invalid');
+          return true;
+        }
+      }
+      
+      function validatePhone(input) {
+        const phoneRegex = /^(05)[0-9][0-9][0-9]{7}$/;
+        const value = input.value.replace(/\s+/g, '');
+        
+        if (value === '') {
+          input.classList.add('is-invalid');
+          input.nextElementSibling.innerText = 'Telefon numarası boş olamaz';
+          return false;
+        } else if (!phoneRegex.test(value)) {
+          input.classList.add('is-invalid');
+          input.nextElementSibling.innerText = 'Geçerli bir telefon numarası giriniz (05XX XXX XX XX)';
+          return false;
+        } else {
+          input.classList.remove('is-invalid');
+          // Telefon numarasını formatla: 05XX XXX XX XX
+          if (value.length === 11) {
+            input.value = value.replace(/(\d{3})(\d{3})(\d{2})(\d{2})/, '$1 $2 $3 $4');
+          }
+          return true;
+        }
+      }
+      </script>
 
       <!-- Ürün Bilgileri -->
       <div class="card mb-4">
@@ -406,6 +551,92 @@ async function processMultipleProducts() {
           const response = await fetch(`/api/product/${barcode.trim()}`);
           const data = await response.json();
 
+<!-- Sipariş Durum Değişim Özelliği -->
+<script>
+// Siparişin durumunu değiştiren yardımcı fonksiyon
+async function changeOrderStatus(siparis_no, yeni_durum) {
+  try {
+    const response = await fetch(`/siparis-guncelle/${siparis_no}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ durum: yeni_durum })
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      showToast('success', `Sipariş durumu "${yeni_durum}" olarak güncellendi`);
+      // Gerekirse sayfayı yenile veya sipariş listesini güncelle
+      setTimeout(() => window.location.reload(), 1500);
+    } else {
+      showToast('error', `Hata: ${data.error || 'Durum güncellenemedi'}`);
+    }
+  } catch (error) {
+    console.error('Durum değiştirme hatası:', error);
+    showToast('error', `Sistem hatası: ${error.message}`);
+  }
+}
+
+// Sayfa yüklendiğinde form elemanlarını doğrula
+document.addEventListener('DOMContentLoaded', function() {
+  // Sayfa yüklendiğinde tüm form alanlarını kontrol et
+  const form = document.querySelector('form');
+  if (form) {
+    const requiredInputs = form.querySelectorAll('[required]');
+    requiredInputs.forEach(input => {
+      input.addEventListener('blur', function() {
+        if (this.type === 'tel') {
+          validatePhone(this);
+        } else {
+          validateField(this, `Lütfen ${this.name.replace('customer_', '')} alanını doldurun`);
+        }
+      });
+    });
+  }
+  
+  // Barkod alanına odaklanma ve "Enter" tuşu ile arama yapma
+  const barcodeInput = document.getElementById('barcode');
+  if (barcodeInput) {
+    barcodeInput.addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        searchProduct();
+      }
+    });
+    
+    // Sayfa yüklendiğinde barkod alanına odaklan
+    setTimeout(() => {
+      if (document.getElementById('orderForm').classList.contains('d-none')) {
+        // Eğer form gizliyse odaklanma
+      } else {
+        barcodeInput.focus();
+      }
+    }, 500);
+  }
+});
+</script>
+
+<!-- Sipariş durumu renklerini ayarlama -->
+<style>
+.badge.bg-Yeni, .badge.bg-new { background-color: #17a2b8 !important; }
+.badge.bg-İşleniyor, .badge.bg-processing { background-color: #fd7e14 !important; }
+.badge.bg-Hazırlanıyor, .badge.bg-preparing { background-color: #6f42c1 !important; }
+.badge.bg-Kargoya-Verildi, .badge.bg-shipped { background-color: #007bff !important; }
+.badge.bg-Tamamlandı, .badge.bg-completed { background-color: #28a745 !important; }
+.badge.bg-İptal-Edildi, .badge.bg-cancelled { background-color: #dc3545 !important; }
+
+.order-row {
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+.order-row:hover {
+  background-color: rgba(0,123,255,0.1) !important;
+}
+</style>
+
+
           if (data.success) {
             const item = {
               barcode: barcode.trim(),
@@ -694,69 +925,105 @@ async function siparisiSil(siparisNo) {
 // Form gönderimi (Yeni sipariş veya Düzenleme)
 document.querySelector('form').addEventListener('submit', async function(e) {
   e.preventDefault();
+  
+  try {
+    // Form validasyonu
+    const musteriAdi = document.getElementById('customer_name').value.trim();
+    const musteriSoyadi = document.getElementById('customer_surname').value.trim();
+    const musteriAdres = document.getElementById('customer_address').value.trim();
+    const musteriTelefon = document.getElementById('customer_phone').value.trim();
+    
+    // Hata kontrolü
+    let hatalar = [];
+    if (!musteriAdi) hatalar.push('Müşteri adı boş olamaz');
+    if (!musteriSoyadi) hatalar.push('Müşteri soyadı boş olamaz');
+    if (!musteriAdres) hatalar.push('Adres boş olamaz');
+    if (!musteriTelefon) hatalar.push('Telefon numarası boş olamaz');
+    if (orderItems.length === 0) hatalar.push('Lütfen siparişe en az bir ürün ekleyin!');
+    
+    if (hatalar.length > 0) {
+      showToast('error', hatalar.join('<br>'));
+      return;
+    }
+    
+    // Yükleniyor göstergesi 
+    showToast('info', 'Sipariş kaydediliyor...', 3000);
+    
+    const isEditMode = this.dataset.mode === 'edit';
+    const siparisNo = this.dataset.siparisNo;
+    
+    // Toplam tutarı doğru şekilde hesapla
+    const subtotal = orderItems.reduce((sum, item) => sum + item.total, 0);
+    const totalDiscount = orderItems.reduce((sum, item) => sum + (item.discount || 0), 0);
+    const finalTotal = subtotal - totalDiscount;
 
-  if (orderItems.length === 0) {
-    alert('Lütfen siparişe en az bir ürün ekleyin!');
-    return;
-  }
+    // Sipariş verileri
+    const orderData = {
+      musteri_adi: musteriAdi,
+      musteri_soyadi: musteriSoyadi,
+      musteri_adres: musteriAdres,
+      musteri_telefon: musteriTelefon,
+      toplam_tutar: finalTotal,
+      notlar: document.getElementById('status').value, // Düzeltme: durumu notlar alanına kaydet
+      durum: document.getElementById('status').value,
+      urunler: orderItems.map(item => ({
+        barkod: item.barcode,
+        urun_adi: item.title,
+        adet: item.quantity,
+        birim_fiyat: item.price,
+        renk: item.color || '',
+        beden: item.size || '',
+        toplam_fiyat: (item.total - item.discount) || 0,
+        urun_gorseli: item.imageUrl || ''
+      }))
+    };
 
-  const isEditMode = this.dataset.mode === 'edit';
-  const siparisNo = this.dataset.siparisNo;
-
-  // Sipariş verileri
-  const orderData = {
-    musteri_adi: document.getElementById('customer_name').value,
-    musteri_soyadi: document.getElementById('customer_surname').value,
-    musteri_adres: document.getElementById('customer_address').value,
-    musteri_telefon: document.getElementById('customer_phone').value,
-    toplam_tutar: parseFloat(
-      document
-        .getElementById('total-amount')
-        .textContent.replace(' TL', '')
-        .replace(/<[^>]+>/g, '')
-    ),
-    notlar: '',
-    urunler: orderItems.map(item => ({
-      barkod: item.barcode,
-      urun_adi: item.title,
-      adet: item.quantity,
-      birim_fiyat: item.price,
-      renk: item.color,
-      beden: item.size,
-      toplam_fiyat: item.total - item.discount
-    }))
-  };
-
-  // FormData oluştur
-  const formData = new FormData(this);
-  formData.append('musteri_adi', orderData.musteri_adi);
-  formData.append('musteri_soyadi', orderData.musteri_soyadi);
-  formData.append('musteri_adres', orderData.musteri_adres);
-  formData.append('musteri_telefon', orderData.musteri_telefon);
-  formData.append('toplam_tutar', orderData.toplam_tutar);
-  formData.append('notlar', orderData.notlar);
-  formData.append('urunler', JSON.stringify(orderData.urunler));
-
-  // POST isteği
-  fetch(isEditMode ? `/siparis-guncelle/${siparisNo}` : '/yeni-siparis', {
-    method: 'POST',
-    body: formData
-  })
-    .then(response => response.json())
-    .then(data => {
-      if (data.success) {
-        alert(isEditMode ? 'Sipariş başarıyla güncellendi!' : 'Sipariş başarıyla oluşturuldu!');
+    // JSON Content-Type ile gönderim (FormData yerine)
+    const response = await fetch(isEditMode ? `/siparis-guncelle/${siparisNo}` : '/yeni-siparis', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(orderData)
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      showToast('success', isEditMode ? 'Sipariş başarıyla güncellendi!' : 'Sipariş başarıyla oluşturuldu!');
+      setTimeout(() => {
         hideOrderForm();
         window.location.reload(); // Listeyi yenile
-      } else {
-        alert('Sipariş oluşturulurken bir hata oluştu!');
-      }
-    })
-    .catch(error => {
-      console.error('Hata:', error);
-      alert('Bir hata oluştu!');
-    });
+      }, 1500);
+    } else {
+      showToast('error', `Hata: ${data.error || 'Sipariş kaydedilirken bir sorun oluştu'}`);
+    }
+  } catch (error) {
+    console.error('Form gönderim hatası:', error);
+    showToast('error', `Beklenmeyen hata: ${error.message}`);
+  }
 });
+
+// Toast bildirim fonksiyonu
+function showToast(type, message, duration = 5000) {
+  const toastContainer = document.getElementById('toastContainer');
+  const toast = document.createElement('div');
+  toast.className = `toast ${type} show`;
+  toast.innerHTML = `
+    <div class="toast-header">
+      <strong class="me-auto">${type === 'success' ? 'Başarılı' : type === 'error' ? 'Hata' : 'Bilgi'}</strong>
+      <button type="button" class="btn-close" onclick="this.parentElement.parentElement.remove()"></button>
+    </div>
+    <div class="toast-body">${message}</div>
+  `;
+  
+  toastContainer.appendChild(toast);
+  
+  setTimeout(() => {
+    toast.classList.remove('show');
+    setTimeout(() => toast.remove(), 500);
+  }, duration);
+}
 </script>
   <div id="toastContainer"></div>
 {% endblock %}

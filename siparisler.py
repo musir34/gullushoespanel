@@ -60,7 +60,7 @@ def yeni_siparis():
         logger.debug("Request Headers: %s", request.headers)
         logger.debug("Request Content-Type: %s", request.content_type)
 
-        # Hem JSON hem de form verisi desteği
+        # Veri formatını kontrol et ve işle
         if request.is_json:
             logger.debug("İstek JSON formatında.")
             data = request.get_json()
@@ -68,17 +68,41 @@ def yeni_siparis():
             logger.debug("İstek FORM formatında.")
             form_data = request.form
             logger.debug("Form verisi: %s", form_data)
+            
+            # Form verisi içinde JSON string olabilir
+            urunler = []
+            try:
+                urunler_json = form_data.get('urunler')
+                if urunler_json:
+                    urunler = json.loads(urunler_json)
+            except json.JSONDecodeError as e:
+                logger.error("Ürünler JSON çözümlenemedi: %s", e)
+                urunler = []
+                
             data = {
-                'musteri_adi': form_data.get('musteri_adi'),
-                'musteri_soyadi': form_data.get('musteri_soyadi'),
-                'musteri_adres': form_data.get('musteri_adres'),
-                'musteri_telefon': form_data.get('musteri_telefon'),
-                'toplam_tutar': float(form_data.get('toplam_tutar', 0)),
+                'musteri_adi': form_data.get('musteri_adi', ''),
+                'musteri_soyadi': form_data.get('musteri_soyadi', ''),
+                'musteri_adres': form_data.get('musteri_adres', ''),
+                'musteri_telefon': form_data.get('musteri_telefon', ''),
+                'toplam_tutar': float(form_data.get('toplam_tutar', 0) or 0),
                 'notlar': form_data.get('notlar', ''),
-                'urunler': json.loads(form_data.get('urunler', '[]'))
+                'durum': form_data.get('durum', 'Yeni'),
+                'urunler': urunler
             }
 
         logger.debug("İşlenecek data: %s", data)
+        
+        # Veri doğrulama
+        if not data.get('musteri_adi'):
+            return jsonify({'success': False, 'error': 'Müşteri adı boş olamaz'}), 400
+        if not data.get('musteri_soyadi'):
+            return jsonify({'success': False, 'error': 'Müşteri soyadı boş olamaz'}), 400
+        if not data.get('musteri_adres'):
+            return jsonify({'success': False, 'error': 'Müşteri adresi boş olamaz'}), 400
+        if not data.get('musteri_telefon'):
+            return jsonify({'success': False, 'error': 'Müşteri telefonu boş olamaz'}), 400
+        if not data.get('urunler'):
+            return jsonify({'success': False, 'error': 'Sipariş en az bir ürün içermelidir'}), 400
 
         # Sipariş numarası oluştur
         siparis_no = f"SP{datetime.now().strftime('%Y%m%d%H%M%S')}"
@@ -92,6 +116,7 @@ def yeni_siparis():
             musteri_adres=data['musteri_adres'],
             musteri_telefon=data['musteri_telefon'],
             toplam_tutar=data['toplam_tutar'],
+            durum=data.get('durum', 'Yeni'),
             notlar=data.get('notlar', '')
         )
         logger.debug("YeniSiparis nesnesi oluşturuldu: %s", yeni_siparis)
@@ -103,13 +128,37 @@ def yeni_siparis():
         # Ürünleri kaydet
         for urun in data['urunler']:
             logger.debug("Siparişe eklenecek ürün: %s", urun)
+            
+            # Ürün verilerini doğrula ve varsayılan değerler ata
+            urun_barkod = urun.get('barkod', '')
+            urun_adi = urun.get('urun_adi', '')
+            
+            try:
+                adet = int(urun.get('adet', 1))
+                if adet <= 0:
+                    adet = 1
+            except (ValueError, TypeError):
+                adet = 1
+                
+            try:
+                birim_fiyat = float(urun.get('birim_fiyat', 0))
+                if birim_fiyat < 0:
+                    birim_fiyat = 0
+            except (ValueError, TypeError):
+                birim_fiyat = 0
+                
+            try:
+                toplam_fiyat = adet * birim_fiyat
+            except (ValueError, TypeError):
+                toplam_fiyat = 0
+            
             siparis_urun = SiparisUrun(
                 siparis_id=yeni_siparis.id,
-                urun_barkod=urun['barkod'],
-                urun_adi=urun['urun_adi'],
-                adet=urun['adet'],
-                birim_fiyat=urun['birim_fiyat'],
-                toplam_fiyat=urun['adet'] * urun['birim_fiyat'],
+                urun_barkod=urun_barkod,
+                urun_adi=urun_adi,
+                adet=adet,
+                birim_fiyat=birim_fiyat,
+                toplam_fiyat=toplam_fiyat,
                 renk=urun.get('renk', ''),
                 beden=urun.get('beden', ''),
                 urun_gorseli=urun.get('urun_gorseli', '')
@@ -119,7 +168,11 @@ def yeni_siparis():
 
         db.session.commit()
         logger.info("Sipariş başarıyla kaydedildi: %s", siparis_no)
-        return jsonify({'success': True, 'message': 'Sipariş başarıyla kaydedildi'})
+        return jsonify({
+            'success': True, 
+            'message': 'Sipariş başarıyla kaydedildi',
+            'siparis_no': siparis_no  # Başarılı yanıtta sipariş numarasını da gönder
+        })
 
     except Exception as e:
         db.session.rollback()
@@ -271,19 +324,60 @@ def siparis_detay(siparis_no):
 
         if not siparis:
             logger.debug("Sipariş bulunamadı, sipariş no: %s", siparis_no)
-            return "Sipariş bulunamadı", 404
+            return jsonify({'success': False, 'error': 'Sipariş bulunamadı'}), 404
 
         urunler = SiparisUrun.query.filter_by(siparis_id=siparis.id).all()
         logger.debug("Siparişe ait %d adet ürün bulundu.", len(urunler))
         logger.debug("Ürünler: %s", urunler)
-
-        return render_template('siparis_detay_partial.html',
-                               siparis=siparis,
-                               urunler=urunler)
+        
+        # Response formatını istekte HTML, JSON gibi tercih edilene göre belirle
+        accept_header = request.headers.get('Accept', '')
+        if 'application/json' in accept_header:
+            # JSON yanıtı oluştur
+            urun_listesi = []
+            for urun in urunler:
+                urun_listesi.append({
+                    'id': urun.id,
+                    'barkod': urun.urun_barkod,
+                    'urun_adi': urun.urun_adi,
+                    'adet': urun.adet,
+                    'birim_fiyat': urun.birim_fiyat,
+                    'toplam_fiyat': urun.toplam_fiyat,
+                    'renk': urun.renk or '',
+                    'beden': urun.beden or '',
+                    'urun_gorseli': urun.urun_gorseli or ''
+                })
+                
+            return jsonify({
+                'success': True,
+                'siparis': {
+                    'siparis_no': siparis.siparis_no,
+                    'musteri_adi': siparis.musteri_adi,
+                    'musteri_soyadi': siparis.musteri_soyadi,
+                    'musteri_adres': siparis.musteri_adres,
+                    'musteri_telefon': siparis.musteri_telefon,
+                    'toplam_tutar': float(siparis.toplam_tutar or 0),
+                    'durum': siparis.durum,
+                    'siparis_tarihi': siparis.siparis_tarihi.isoformat() if siparis.siparis_tarihi else None,
+                    'notlar': siparis.notlar or ''
+                },
+                'urunler': urun_listesi
+            })
+        else:
+            # HTML şablonu döndür
+            return render_template('siparis_detay_partial.html',
+                                  siparis=siparis,
+                                  urunler=urunler)
     except Exception as e:
         logger.error("Sipariş detayı görüntülenirken hata: %s", e)
         logger.debug("Traceback: %s", traceback.format_exc())
-        return "Bir hata oluştu", 500
+        
+        # Hata yanıtı formatını belirle
+        accept_header = request.headers.get('Accept', '')
+        if 'application/json' in accept_header:
+            return jsonify({'success': False, 'error': str(e)}), 500
+        else:
+            return "Bir hata oluştu: " + str(e), 500
 
 
 @siparisler_bp.route('/siparis-guncelle/<siparis_no>', methods=['POST'])
@@ -296,10 +390,47 @@ def siparis_guncelle(siparis_no):
 
         if not siparis:
             logger.debug("Güncellenecek sipariş bulunamadı, sipariş no: %s", siparis_no)
-            return jsonify({'success': False, 'message': 'Sipariş bulunamadı'})
+            return jsonify({'success': False, 'error': 'Sipariş bulunamadı'}), 404
 
-        data = request.get_json()
+        # İstek içeriğini kontrol et
+        logger.debug("Request Content-Type: %s", request.content_type)
+        if request.is_json:
+            data = request.get_json()
+        else:
+            # Form verisi olabilir
+            form_data = request.form
+            
+            # Form içinde JSON dizesi kontrolü
+            urunler = []
+            try:
+                urunler_json = form_data.get('urunler')
+                if urunler_json:
+                    urunler = json.loads(urunler_json)
+            except json.JSONDecodeError as e:
+                logger.error("Ürünler JSON çözümlenemedi: %s", e)
+                urunler = []
+                
+            data = {
+                'musteri_adi': form_data.get('musteri_adi', siparis.musteri_adi),
+                'musteri_soyadi': form_data.get('musteri_soyadi', siparis.musteri_soyadi), 
+                'musteri_adres': form_data.get('musteri_adres', siparis.musteri_adres),
+                'musteri_telefon': form_data.get('musteri_telefon', siparis.musteri_telefon),
+                'durum': form_data.get('durum', siparis.durum),
+                'notlar': form_data.get('notlar', siparis.notlar),
+                'urunler': urunler
+            }
+        
         logger.debug("Güncelleme için gelen data: %s", data)
+
+        # Veri doğrulama
+        if not data.get('musteri_adi'):
+            return jsonify({'success': False, 'error': 'Müşteri adı boş olamaz'}), 400
+        if not data.get('musteri_soyadi'):
+            return jsonify({'success': False, 'error': 'Müşteri soyadı boş olamaz'}), 400
+        if not data.get('musteri_adres'):
+            return jsonify({'success': False, 'error': 'Müşteri adresi boş olamaz'}), 400
+        if not data.get('musteri_telefon'):
+            return jsonify({'success': False, 'error': 'Müşteri telefonu boş olamaz'}), 400
 
         # Temel bilgileri güncelle
         eski_durum = siparis.durum
@@ -309,13 +440,17 @@ def siparis_guncelle(siparis_no):
         siparis.musteri_soyadi = data.get('musteri_soyadi', siparis.musteri_soyadi)
         siparis.musteri_adres = data.get('musteri_adres', siparis.musteri_adres)
         siparis.musteri_telefon = data.get('musteri_telefon', siparis.musteri_telefon)
-        siparis.durum = data.get('durum', siparis.durum)
+        
+        # Durum değişikliği kontrolü
+        yeni_durum = data.get('durum')
+        if yeni_durum and yeni_durum != eski_durum:
+            logger.info("Sipariş durumu değişti: %s -> %s", eski_durum, yeni_durum)
+            siparis.durum = yeni_durum
+        
         siparis.notlar = data.get('notlar', siparis.notlar)
 
-        logger.debug("Sipariş güncellendi. Önceki durum: %s, Yeni durum: %s", eski_durum, siparis.durum)
-
         # Ürünleri güncelle
-        if 'urunler' in data:
+        if 'urunler' in data and data['urunler']:
             logger.debug("Siparişe ait ürünler güncelleniyor. Var olan ürünler silinecek, yenileri eklenecek...")
             # Önce mevcut ürünleri sil
             silinen_sayisi = SiparisUrun.query.filter_by(siparis_id=siparis.id).delete()
@@ -325,15 +460,35 @@ def siparis_guncelle(siparis_no):
             toplam_tutar = 0
             for urun in data['urunler']:
                 logger.debug("Yeni eklenecek ürün: %s", urun)
+                
+                # Değerleri güvenli bir şekilde al
+                try:
+                    adet = int(urun.get('adet', 1))
+                    if adet <= 0:
+                        adet = 1
+                except (ValueError, TypeError):
+                    adet = 1
+                    
+                try:
+                    birim_fiyat = float(urun.get('birim_fiyat', 0))
+                    if birim_fiyat < 0:
+                        birim_fiyat = 0
+                except (ValueError, TypeError):
+                    birim_fiyat = 0
+                
+                barkod = urun.get('barkod', '')
+                urun_adi = urun.get('urun_adi', '')
+                
                 yeni_urun = SiparisUrun(
                     siparis_id=siparis.id,
-                    urun_barkod=urun['barkod'],
-                    urun_adi=urun['urun_adi'],
-                    adet=urun['adet'],
-                    birim_fiyat=urun['birim_fiyat'],
-                    toplam_fiyat=urun['adet'] * urun['birim_fiyat'],
+                    urun_barkod=barkod,
+                    urun_adi=urun_adi,
+                    adet=adet,
+                    birim_fiyat=birim_fiyat,
+                    toplam_fiyat=adet * birim_fiyat,
                     renk=urun.get('renk', ''),
-                    beden=urun.get('beden', '')
+                    beden=urun.get('beden', ''),
+                    urun_gorseli=urun.get('urun_gorseli', '')
                 )
                 db.session.add(yeni_urun)
                 toplam_tutar += yeni_urun.toplam_fiyat
@@ -343,13 +498,21 @@ def siparis_guncelle(siparis_no):
 
         db.session.commit()
         logger.info("Sipariş başarıyla güncellendi: %s", siparis_no)
-        return jsonify({'success': True, 'message': 'Sipariş başarıyla güncellendi'})
+        return jsonify({
+            'success': True, 
+            'message': 'Sipariş başarıyla güncellendi',
+            'siparis': {
+                'siparis_no': siparis.siparis_no,
+                'durum': siparis.durum,
+                'toplam_tutar': float(siparis.toplam_tutar or 0)
+            }
+        })
 
     except Exception as e:
         db.session.rollback()
         logger.error("Sipariş güncellenirken hata oluştu: %s", e)
         logger.debug("Traceback: %s", traceback.format_exc())
-        return jsonify({'success': False, 'message': str(e)}), 500
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @siparisler_bp.route('/siparis-sil/<siparis_no>', methods=['DELETE'])
