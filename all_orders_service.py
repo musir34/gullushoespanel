@@ -9,17 +9,27 @@ def get_all_orders():
     """
     Retrieve and display all orders with pagination and search functionality and caching
     """
-    # Redis istemcisini import et ve kontrol et
-    try:
-        from cache_config import redis_client
-        cache_key = f"orders_page_{request.args.get('page', 1)}_{request.args.get('search', '')}"
-        cached_data = redis_client.get(cache_key)
+    # Flask uygulama bağlamı kontrolü
+    from flask import current_app
+    if not current_app:
+        from app import app
+        app_context = app.app_context()
+        app_context.push()
+    else:
+        app_context = None
         
-        if cached_data:
-            return cached_data
-    except (ImportError, AttributeError, Exception) as e:
-        # Redis istemcisi mevcut değilse veya hata oluşursa geç
-        pass
+    try:
+        # Redis istemcisini import et ve kontrol et
+        try:
+            from cache_config import redis_client
+            cache_key = f"orders_page_{request.args.get('page', 1)}_{request.args.get('search', '')}"
+            cached_data = redis_client.get(cache_key)
+            
+            if cached_data:
+                return cached_data
+        except (ImportError, AttributeError, Exception) as e:
+            # Redis istemcisi mevcut değilse veya hata oluşursa geç
+            pass
     # Get page parameters
     page = int(request.args.get('page', 1))
     per_page = 50
@@ -58,10 +68,16 @@ def get_all_orders():
         order.details = [{'sku': sku, 'barcode': barcode} 
                         for sku, barcode in zip(skus, barcodes)]
 
-    return render_template(
+    rendered_template = render_template(
         'order_list.html',
         orders=orders,
         page=page,
         total_pages=paginated_orders.pages,
         total_orders_count=paginated_orders.total
     )
+    
+    # Eğer biz push ettiysek, pop edelim
+    if app_context is not None:
+        app_context.pop()
+        
+    return rendered_template

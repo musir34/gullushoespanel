@@ -1,4 +1,16 @@
 
+import logging
+
+# Loglama ayarları
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+handler = logging.FileHandler('claims_service.log')
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+logger.addHandler(handler)
+
+
+
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 import base64
 import aiohttp

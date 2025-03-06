@@ -119,7 +119,16 @@ def process_all_orders(all_orders_data):
     """
     try:
         from flask import current_app
-        with current_app.app_context():
+        
+        # Uygulama bağlamı kontrolü
+        if not current_app:
+            from app import app
+            app_context = app.app_context()
+            app_context.push()
+        else:
+            app_context = None
+            
+        try:
             api_order_numbers = set()
             new_orders = []
 
@@ -187,6 +196,11 @@ def process_all_orders(all_orders_data):
                     logger.info("Silinecek sipariş yok.")
             else:
                 logger.info("Silinecek sipariş yok.")
+
+        finally:
+            # Eğer biz push ettiysek, pop edelim
+            if app_context is not None:
+                app_context.pop()
 
     except SQLAlchemyError as e:
         logger.error(f"Veritabanı hatası: {e}")
