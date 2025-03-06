@@ -1,4 +1,3 @@
-
 {% extends "base.html" %}
 
 {% block content %}
@@ -6,7 +5,7 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 <div class="container mt-4">
   <h2 class="text-center mb-4">AI Analiz Paneli</h2>
-  
+
   <div class="row">
     <div class="col-lg-4 mb-4">
       <div class="card h-100">
@@ -25,7 +24,7 @@
         </div>
       </div>
     </div>
-    
+
     <div class="col-lg-4 mb-4">
       <div class="card h-100">
         <div class="card-header bg-success text-white">
@@ -43,7 +42,7 @@
         </div>
       </div>
     </div>
-    
+
     <div class="col-lg-4 mb-4">
       <div class="card h-100">
         <div class="card-header bg-info text-white">
@@ -62,7 +61,7 @@
         </div>
       </div>
     </div>
-    
+
     <div class="col-lg-12 mb-4">
       <div class="card h-100">
         <div class="card-header bg-warning text-dark">
@@ -119,62 +118,62 @@ document.addEventListener('DOMContentLoaded', function() {
       customDateRange.style.display = 'none';
     }
   });
-  
+
   // Satış Analizleri
   document.getElementById('salesAnalysisForm').addEventListener('submit', async function(e) {
     e.preventDefault();
-    
+
     const resultDiv = document.getElementById('sales-analysis-result');
     resultDiv.innerHTML = '<div class="alert alert-info">Veriler analiz ediliyor, lütfen bekleyin...</div>';
-    
+
     const timePeriod = document.getElementById('time-period').value;
     let params = { quick_filter: timePeriod };
-    
+
     // Özel tarih aralığı seçilmişse
     if (timePeriod === 'custom') {
       const startDate = document.getElementById('start-date').value;
       const endDate = document.getElementById('end-date').value;
-      
+
       if (!startDate || !endDate) {
         resultDiv.innerHTML = '<div class="alert alert-danger">Lütfen başlangıç ve bitiş tarihlerini belirtin</div>';
         return;
       }
-      
+
       params = { start_date: startDate, end_date: endDate };
     }
-    
+
     try {
       // Önce satış istatistiklerini API'den al
       const statsResponse = await fetch('/api/sales-stats?' + new URLSearchParams(params));
       const statsData = await statsResponse.json();
-      
+
       if (!statsData.success) {
         throw new Error(statsData.error || 'Veri alınamadı');
       }
-      
+
       // Satış verileri alındı, şimdi AI özeti için gönder
       const aiResponse = await fetch('/ai/analyze-text', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           text: `Aşağıdaki satış analiz verilerini özet olarak değerlendir, önemli trendleri, en çok satanları ve dikkat çeken noktaları belirt:
-          
+
           Toplam Sipariş: ${statsData.total_orders || 0}
           Toplam Satılan Ürün: ${statsData.total_items_sold || 0}
           Toplam Ciro: ${statsData.total_revenue || 0} TL
-          
+
           En Çok Satan Ürünler: ${JSON.stringify(statsData.product_sales_chart?.slice(0, 5) || [])}
-          
+
           Satış verisi dönemi: ${params.quick_filter || params.start_date + ' - ' + params.end_date}`
         })
       });
-      
+
       const aiData = await aiResponse.json();
-      
+
       if (!aiData.success) {
         throw new Error(aiData.error || 'AI analizi yapılamadı');
       }
-      
+
       // Sonuçları göster
       resultDiv.innerHTML = `
         <div class="card mt-3">
@@ -202,12 +201,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
               </div>
             </div>
-            
+
             <h5>AI Analiz Özeti:</h5>
             <div class="ai-analysis p-3 border rounded bg-light">
               ${aiData.analysis.replace(/\n/g, '<br>')}
             </div>
-            
+
             ${aiData.token_usage ? `
             <div class="mt-3 p-2 bg-light border rounded">
               <h6><i class="bi bi-coin"></i> Token Kullanımı:</h6>
@@ -221,7 +220,7 @@ document.addEventListener('DOMContentLoaded', function() {
               </div>
             </div>
             ` : ''}
-            
+
             <h5 class="mt-4">En Çok Satan Ürünler:</h5>
             <div class="table-responsive">
               <table class="table table-striped">
@@ -251,16 +250,16 @@ document.addEventListener('DOMContentLoaded', function() {
       resultDiv.innerHTML = `<div class="alert alert-danger">Bir hata oluştu: ${error.message}</div>`;
     }
   });
-  
+
   // Metin Analizi
   document.getElementById('textAnalysisForm').addEventListener('submit', async function(e) {
     e.preventDefault();
-    
+
     const resultDiv = document.getElementById('text-result');
     resultDiv.innerHTML = '<div class="spinner-border text-primary" role="status"><span class="visually-hidden">Yükleniyor...</span></div>';
-    
+
     const text = document.getElementById('text-input').value;
-    
+
     try {
       const response = await fetch('/ai/analyze-text', {
         method: 'POST',
@@ -269,10 +268,15 @@ document.addEventListener('DOMContentLoaded', function() {
         },
         body: JSON.stringify({ text: text }),
       });
-      
+
       const data = await response.json();
-      
+
       if (data.success) {
+        // Token kullanımını güncelle
+        if (data.token_usage) {
+          updateTokenUsageSummary(data.token_usage);
+        }
+
         let tokenHtml = '';
         if (data.token_usage) {
           const tokenUsage = data.token_usage;
@@ -290,7 +294,7 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
           `;
         }
-        
+
         resultDiv.innerHTML = `
           <div class="alert alert-success mt-3">
             <h5>Analiz Sonucu:</h5>
@@ -305,25 +309,25 @@ document.addEventListener('DOMContentLoaded', function() {
       resultDiv.innerHTML = `<div class="alert alert-danger">İstek hatası: ${error.message}</div>`;
     }
   });
-  
+
   // Sipariş Özeti
   document.getElementById('orderAnalysisForm').addEventListener('submit', async function(e) {
     e.preventDefault();
-    
+
     const resultDiv = document.getElementById('order-result');
     resultDiv.innerHTML = '<div class="spinner-border text-success" role="status"><span class="visually-hidden">Yükleniyor...</span></div>';
-    
+
     const orderId = document.getElementById('order-id').value;
-    
+
     try {
       // Önce sipariş bilgilerini al
       const orderDataResponse = await fetch(`/siparis-detay/${orderId}`);
-      
+
       if (!orderDataResponse.ok) {
         resultDiv.innerHTML = `<div class="alert alert-danger">Sipariş bulunamadı</div>`;
         return;
       }
-      
+
       // Sonra AI özeti için gönder
       const response = await fetch('/ai/siparis-ozeti', {
         method: 'POST',
@@ -334,10 +338,15 @@ document.addEventListener('DOMContentLoaded', function() {
           siparis_bilgileri: await orderDataResponse.text()
         }),
       });
-      
+
       const data = await response.json();
-      
+
       if (data.success) {
+        // Token kullanımını güncelle
+        if (data.token_usage) {
+          updateTokenUsageSummary(data.token_usage);
+        }
+
         let tokenHtml = '';
         if (data.token_usage) {
           const tokenUsage = data.token_usage;
@@ -355,7 +364,7 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
           `;
         }
-        
+
         resultDiv.innerHTML = `
           <div class="alert alert-success mt-3">
             <h5>Sipariş Özeti:</h5>
@@ -370,17 +379,17 @@ document.addEventListener('DOMContentLoaded', function() {
       resultDiv.innerHTML = `<div class="alert alert-danger">İstek hatası: ${error.message}</div>`;
     }
   });
-  
+
   // Ürün Önerileri
   document.getElementById('productRecommendationForm').addEventListener('submit', async function(e) {
     e.preventDefault();
-    
+
     const resultDiv = document.getElementById('recommendation-result');
     resultDiv.innerHTML = '<div class="spinner-border text-info" role="status"><span class="visually-hidden">Yükleniyor...</span></div>';
-    
+
     const customerId = document.getElementById('customer-id').value;
     const customerProfile = document.getElementById('customer-profile').value;
-    
+
     try {
       const response = await fetch('/ai/urun-onerileri', {
         method: 'POST',
@@ -391,10 +400,15 @@ document.addEventListener('DOMContentLoaded', function() {
           musteri_profili: `Müşteri ID: ${customerId}\n${customerProfile}`,
         }),
       });
-      
+
       const data = await response.json();
-      
+
       if (data.success) {
+        // Token kullanımını güncelle
+        if (data.token_usage) {
+          updateTokenUsageSummary(data.token_usage);
+        }
+
         let tokenHtml = '';
         if (data.token_usage) {
           const tokenUsage = data.token_usage;
@@ -412,7 +426,7 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
           `;
         }
-        
+
         resultDiv.innerHTML = `
           <div class="alert alert-info mt-3">
             <h5>Ürün Önerileri:</h5>
@@ -427,6 +441,11 @@ document.addEventListener('DOMContentLoaded', function() {
       resultDiv.innerHTML = `<div class="alert alert-danger">İstek hatası: ${error.message}</div>`;
     }
   });
+
+  function updateTokenUsageSummary(tokenUsage) {
+    // Placeholder function -  Replace with actual implementation to update the summary display
+    console.log("Token usage:", tokenUsage);
+  }
 });
 </script>
 
@@ -435,12 +454,12 @@ document.addEventListener('DOMContentLoaded', function() {
     transition: transform 0.3s;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   }
-  
+
   .card:hover {
     transform: translateY(-5px);
     box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
   }
-  
+
   .analysis-result, .order-summary, .product-recommendations {
     white-space: pre-line;
     max-height: 300px;
