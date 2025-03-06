@@ -231,6 +231,13 @@ def schedule_jobs(app):
 # schedule_jobs fonksiyonunu app.run'dan önce çağır:
 schedule_jobs(app)
 
+# Otomatik veri güncelleme sistemini başlat
+with app.app_context():
+    from update_data_service import start_continuous_update
+    # Uygulamanın başlangıcında sürekli güncelleme sistemini başlat
+    start_continuous_update()
+    logger.info("Otomatik veri güncelleme sistemi başlatıldı")
+
 if __name__ == '__main__':
     debug_mode = os.environ.get('FLASK_DEBUG', 'False') == 'True'
     app.run(host='0.0.0.0', port=8080, debug=debug_mode)

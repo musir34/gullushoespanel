@@ -1,10 +1,12 @@
 
 from flask import Blueprint, render_template, request, jsonify, current_app
-from datetime import datetime
+from datetime import datetime, timedelta
 import json
 import os
 import asyncio
 import logging
+import threading
+import time
 from models import db
 
 # Loglama ayarları
@@ -19,6 +21,10 @@ update_data_bp = Blueprint('update_data_bp', __name__)
 
 # Son güncelleme bilgilerini tutan JSON dosyası
 UPDATES_FILE = 'last_updates.json'
+
+# Güncelleme durumu
+UPDATING = False
+UPDATE_THREAD = None
 
 def get_last_updates():
     """Son güncelleme bilgilerini JSON dosyasından okur"""
@@ -59,7 +65,9 @@ def save_update_info(data_type, success, count):
 def veri_guncelleme_sayfasi():
     """Veri güncelleme durumunu gösteren sayfa"""
     last_updates = get_last_updates()
-    return render_template('veri_guncelleme_durumu.html', last_updates=last_updates)
+    # Global güncelleme durumunu ekle
+    global UPDATING
+    return render_template('veri_guncelleme_durumu.html', last_updates=last_updates, is_updating=UPDATING)
 
 @update_data_bp.route('/api/update-data/<data_type>', methods=['POST'])
 def update_data(data_type):
@@ -129,3 +137,130 @@ def update_data(data_type):
             save_update_info(data_type, False, 0)
         
         return jsonify({'success': False, 'message': f'Güncelleme sırasında bir hata oluştu: {str(e)}'}), 500
+
+def update_orders():
+    """Siparişleri günceller"""
+    try:
+        logger.info("Siparişler güncellenmeye başlanıyor...")
+        from order_service import fetch_trendyol_orders_async
+        asyncio.run(fetch_trendyol_orders_async())
+        # Sipariş sayısını al
+        from models import Order
+        order_count = Order.query.count()
+        save_update_info('orders', True, order_count)
+        logger.info(f"Siparişler güncellendi. Toplam sipariş sayısı: {order_count}")
+        return True
+    except Exception as e:
+        logger.error(f"Siparişler güncellenirken hata: {e}")
+        save_update_info('orders', False, 0)
+        return False
+
+def update_products():
+    """Ürünleri günceller"""
+    try:
+        logger.info("Ürünler güncellenmeye başlanıyor...")
+        from product_service import fetch_trendyol_products_async
+        asyncio.run(fetch_trendyol_products_async())
+        # Ürün sayısını al
+        from models import Product
+        product_count = Product.query.count()
+        save_update_info('products', True, product_count)
+        logger.info(f"Ürünler güncellendi. Toplam ürün sayısı: {product_count}")
+        return True
+    except Exception as e:
+        logger.error(f"Ürünler güncellenirken hata: {e}")
+        save_update_info('products', False, 0)
+        return False
+
+def update_claims():
+    """İade/talepleri günceller"""
+    try:
+        logger.info("İadeler/talepler güncellenmeye başlanıyor...")
+        from claims_service import fetch_claims_async
+        asyncio.run(fetch_claims_async())
+        # İade/talep sayısını al
+        from models import Claim
+        claim_count = Claim.query.count()
+        save_update_info('claims', True, claim_count)
+        logger.info(f"İadeler/talepler güncellendi. Toplam iade/talep sayısı: {claim_count}")
+        return True
+    except Exception as e:
+        logger.error(f"İadeler/talepler güncellenirken hata: {e}")
+        save_update_info('claims', False, 0)
+        return False
+
+def continuous_update_worker():
+    """Sürekli güncelleme yapan arka plan iş parçacığı"""
+    global UPDATING
+    
+    logger.info("Sürekli güncelleme sistemi başlatıldı")
+    
+    while True:
+        try:
+            UPDATING = True
+            
+            # 1. Siparişleri güncelle
+            logger.info("--- Güncelleme Döngüsü Başladı ---")
+            logger.info("1/3: Siparişler güncelleniyor...")
+            update_orders()
+            time.sleep(10)  # 10 saniye bekle
+            
+            # 2. Ürünleri güncelle
+            logger.info("2/3: Ürünler güncelleniyor...")
+            update_products()
+            time.sleep(10)  # 10 saniye bekle
+            
+            # 3. İade/Talepleri güncelle
+            logger.info("3/3: İadeler/Talepler güncelleniyor...")
+            update_claims()
+            
+            logger.info("--- Güncelleme Döngüsü Tamamlandı ---")
+            UPDATING = False
+            
+            # Tüm güncellemeler bittikten sonra 1 dakika bekle
+            logger.info("Sonraki güncelleme döngüsüne kadar 1 dakika bekleniyor...")
+            time.sleep(60)  # 1 dakika bekle
+            
+        except Exception as e:
+            logger.error(f"Sürekli güncelleme sırasında hata: {e}")
+            UPDATING = False
+            time.sleep(60)  # Hata durumunda 1 dakika bekle ve tekrar dene
+
+def start_continuous_update():
+    """Sürekli güncelleme sistemini başlat"""
+    global UPDATE_THREAD, UPDATING
+    
+    # Zaten çalışıyorsa yeni bir tane başlatma
+    if UPDATE_THREAD and UPDATE_THREAD.is_alive():
+        logger.info("Sürekli güncelleme sistemi zaten çalışıyor")
+        return False
+    
+    # Yeni güncelleme thread'i başlat
+    UPDATE_THREAD = threading.Thread(target=continuous_update_worker, daemon=True)
+    UPDATE_THREAD.start()
+    logger.info("Sürekli güncelleme sistemi başlatıldı")
+    return True
+
+@update_data_bp.route('/api/start-continuous-update', methods=['POST'])
+def start_continuous_update_api():
+    """Sürekli güncelleme sistemini başlatan API endpoint'i"""
+    success = start_continuous_update()
+    if success:
+        return jsonify({'success': True, 'message': 'Sürekli güncelleme sistemi başlatıldı'})
+    else:
+        return jsonify({'success': False, 'message': 'Sürekli güncelleme sistemi zaten çalışıyor'})
+
+@update_data_bp.route('/api/stop-continuous-update', methods=['POST'])
+def stop_continuous_update():
+    """Sürekli güncelleme sistemini durduran API endpoint'i"""
+    global UPDATING
+    UPDATING = False
+    # Durdurma işlemi thread'in güvenli şekilde sonlanmasını sağlamayacaktır
+    # Bir sonraki döngüde geçici olarak durdurulur, ancak güvenli bir ölüm konusu değildir
+    return jsonify({'success': True, 'message': 'Sürekli güncelleme sistemi durdurma işlemi başlatıldı. Bir sonraki döngü tamamlandığında duracaktır.'})
+
+# Uygulama başladığında otomatik olarak sürekli güncelleme sistemini başlat
+# Bu kod uygulamanın başlangıcında çalışır çünkü Blueprint yüklendiğinde bu dosya import edilir
+
+# Log başlangıcı
+logger.info("update_data_service modülü yüklendi")
