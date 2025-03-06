@@ -6,7 +6,7 @@ from flask_sqlalchemy import SQLAlchemy
 from models import db, Base
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 # Logging ayarları
 import logging
