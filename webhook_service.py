@@ -212,7 +212,7 @@ def handle_order_webhook():
     Trendyol'dan gelen sipariş webhook'larını işler
     """
     try:
-        logger.info("Sipariş webhook'u alındı")
+        logger.info("===== Sipariş webhook'u alındı =====")
 
         # İsteğin tüm içeriğini detaylı logla
         logger.info(f"Webhook Headers: {dict(request.headers)}")
@@ -227,13 +227,20 @@ def handle_order_webhook():
         api_key = request.headers.get('X-API-Key')
         webhook_secret = current_app.config.get('WEBHOOK_SECRET', '')
         
-        # Test aşaması için API Key kontrolünü geçici olarak devre dışı bırakalım
-        # Bu satırı canlı ortamda kaldırın!
-        api_key_check = True 
+        logger.info(f"Gelen API Key: {api_key}")
+        logger.info(f"Beklenen API Key: {webhook_secret}")
         
-        if not api_key_check and api_key != webhook_secret:
-            logger.warning(f"Webhook API Key doğrulaması başarısız: {api_key}")
-            return jsonify({"status": "error", "message": "Geçersiz API Key"}), 401
+        # API Key kontrolünü geçici olarak devre dışı bırakalım
+        api_key_check = True
+        
+        if not api_key_check:
+            if api_key != webhook_secret:
+                logger.warning(f"Webhook API Key doğrulaması başarısız: {api_key}")
+                return jsonify({"status": "error", "message": "Geçersiz API Key"}), 401
+            else:
+                logger.info("API Key doğrulaması başarılı")
+        else:
+            logger.info("API Key kontrolü devre dışı bırakıldı, tüm istekler kabul ediliyor")
 
         # JSON verisini al
         try:
@@ -249,13 +256,14 @@ def handle_order_webhook():
 
         # Sipariş durumu doğrudan webhook_data üzerinden alınabilir
         status = webhook_data.get('shipmentPackageStatus', '')
-        logger.info(f"Sipariş Durumu: {status}")
+        order_number = webhook_data.get('orderNumber', '')
+        logger.info(f"Sipariş Numarası: {order_number}, Durumu: {status}")
 
         # Webhook içeriğini kaydet (izleme için)
         order_events.append({
             'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
             'status': status,
-            'order_number': webhook_data.get('orderNumber', ''),
+            'order_number': order_number,
             'data': webhook_data
         })
 
@@ -263,16 +271,25 @@ def handle_order_webhook():
         if len(order_events) > 100:
             order_events.pop(0)
 
+        # Test siparişi mi kontrol et
+        is_test = order_number.startswith('TEST')
+        if is_test:
+            logger.info("Bu bir test siparişi, veritabanına kaydedilmeyecek")
+            return jsonify({"status": "success", "message": "Test webhook başarıyla işlendi"}), 200
+
         # Sipariş durumuna göre işlem
         if status == "CREATED":
+            logger.info(f"Yeni sipariş (CREATED) işleniyor: {order_number}")
             handle_order_created(webhook_data)
         elif status in ["PICKING", "INVOICED", "SHIPPED", "CANCELLED", "DELIVERED", 
                      "UNDELIVERED", "RETURNED", "UNSUPPLIED", "AWAITING", 
                      "UNPACKED", "AT_COLLECTION_POINT", "VERIFIED"]:
+            logger.info(f"Sipariş durum değişikliği ({status}) işleniyor: {order_number}")
             handle_order_status_changed(webhook_data)
         else:
             logger.warning(f"Bilinmeyen sipariş durumu: {status}")
 
+        logger.info(f"Webhook başarıyla işlendi: {order_number}")
         return jsonify({"status": "success", "message": "Webhook başarıyla işlendi"}), 200
 
     except Exception as e:
