@@ -177,9 +177,10 @@ def update_products():
 
 def update_claims():
     """İade/talepleri günceller"""
+    # Claims logger'ı fonksiyon dışında tanımlayalım
+    from logger_config import app_logger as claims_logger
+    
     try:
-        # Logger'ı en başta tanımla
-        from logger_config import app_logger as claims_logger
         claims_logger.info("İadeler/talepler güncellenmeye başlanıyor...")
         
         from claims_service import fetch_claims_async
@@ -198,7 +199,7 @@ def update_claims():
             return False
 
     except Exception as e:
-        # Global logger'ı kullan, claims_logger erişilemeyebilir
+        # Global logger'ı kullan
         logger.exception(f"update_claims fonksiyonunda beklenmedik hata: {e}")
         return False
 
