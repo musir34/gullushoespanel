@@ -11,12 +11,9 @@ language = "python3"
 requiredFiles = [".replit", "replit.nix"]
 
 [deployment]
-run = ["python3", "app.py"]
+run = ["sh", "-c", "python3 app.py"]
 deploymentTarget = "cloudrun"
-
-[[ports]]
-localPort = 6379
-externalPort = 3000
+build = ["sh", "-c", "pip install -r requirements.txt"]
 
 [[ports]]
 localPort = 8080
