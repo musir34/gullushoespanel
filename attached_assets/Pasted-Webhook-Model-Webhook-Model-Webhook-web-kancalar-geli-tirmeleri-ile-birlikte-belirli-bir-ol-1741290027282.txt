@@ -1,0 +1,218 @@
+Webhook Model
+Webhook Model
+Webhook ( web kancaları ) geliştirmeleri ile birlikte , belirli bir olay ve ya işlem gerçekleştiğinde başka bir uygulamayı otomatik olarak bilgilendirebileceğiz.
+
+Siparişlerinizi çekmek için kullandığınız getshipmentpackage servisini kullanarak veri almak yerine , webhookla ( web kancaları ile ) ,olayın meydana geldiği zaman tetiklenen sizlerin paylaştığı özel bir URL’ye istek gönderen bir mekanizma kullanılmaktadır.
+
+Webhook Servisi
+Trendyol Satıcı Merkezi'ndeki sipariş pakerleri ile ilgili bildirim almak için webhook aboneliklerini kullanabilirsiniz. Siparişlerin aşağıdaki statuleri için webhook kullanılabilir
+
+"CREATED"
+"PICKING"
+"INVOICED"
+"SHIPPED"
+"CANCELLED"
+"DELIVERED"
+"UNDELIVERED"
+"RETURNED"
+"UNSUPPLIED"
+"AWAITING"
+"UNPACKED"
+"AT_COLLECTION_POINT"
+"VERIFIED"
+Tüm statuleri tek bir webhook yaratma servisi ile elde edebilirsiniz. Yapılan istekler statu farketmeksizin full order datası olarak iletilecek olup, satıcıların, siparişin istenen durumunu alabilmesi için webhook hizmetini aşağıda ki modele göre sağlamanız gerekmektedir.
+
+Webhook Authorization
+İzin verilen 2 tür yetkilendirme yöntemi vardır: "BASIC_AUTHENTICATION" veya "API_KEY". Webhook isteğinizi oluştururken "AuthenticationType" adlı alanda ilgili yöntemlerden birini kullanmalısınız.
+
+"AuthenticationType" alanı "API_KEY" ise, "apiKey" alanı zorunludur ve "username" ve "password" alanları gönderilmeyebilir.
+"AuthenticationType" alanı "BASIC_AUTHENTICATION" ise, "username" ve "password" alanları zorunludur. "apiKey" alanı gönderilmeyebilir.
+Webhook Yeniden Tetikleme Modeli
+Webhook servislerinde hata alınması durumunda, sistem otomatik olarak aksiyon alacak olup ilgili webhook isteğini pasife alacaktır, bu kapsamda satıcılarımıza iki adet mail iletiyor olacağız.
+
+1.Mailde hata alınan webhook ID ile ilgili bilgileri paylaşıyor olup, bu servise istek atmaya devam edeceğimiz süreyi sizinle paylaşıyor olacağız.
+2.Mailde ise ilgili sürenin sonuna geldiğimizi ve hata alınan webhook ID nin pasife alındığını sizlere bildirmiş olacağız.
+Pasife alınan webhooklarınızı servisinizdeki sorunu giderdikten sonra aktife alabilirsiniz.
+
+Webhook Önemli Notlar
+Webhook servislerinize yapılan herhangi bir başarısız istek olması durumunda, Trendyol, başarılı olana kadar her 5 dakikada bir başarısız istekleri iletecektir. (Bu gelecekte değiştirilecektir)
+Webhook ile veri gönderimi her zaman olanaklı olamadığı için, ilgili servis üzerinden, Trendyol'dan periyodik olarak veri almak için geliştirme yapmanız tavsiye edilmektedir.
+Örneğin sipariş datası için bir webhook isteği oluşturduysanız, getshipmentpackage servisini kullanarak periyodik olarak datalarınızı eşitlemenizi öneririz.
+Webhook servislerinizin endpointi "Trendyol", "Dolap", "Localhost" ibareleri içermemelidir.
+1 satıcı için oluşturulabileceek maksimum webhook sayısı 15 dir. Pasife alınan webhooklarda burdaki sayıya dahildir. Maksimum webhook sayısını aşarsanız var olan webhooklarınızdan uygun olanı silip yeniden webhook tanımlayabilirsiniz
+Webhook Request Modeli
+Şu anda satıcıların getShipmentPackages hizmetiyle yalnızca aynı modele sahip siparişleri kullanmasına izin veriyoruz.
+
+Request tipi JSON formatında olmalıdır.
+Request methodu POST olmalıdır.
+Trendyol siparişleri aşağıdaki modele göre iletiyor olacak
+
+
+{
+   "shipmentAddress":{
+      "id":12695298,
+      "firstName":"Easy",
+      "lastName":"Return",
+      "company":"",
+      "address1":"Easy Return Adres Easy Return Adres",
+      "address2":"",
+      "addressLines": {
+         "addressLine1": "xxx",
+         "addressLine2": "xxx"
+      },
+      "city":"İstanbul",
+      "cityCode":34,
+      "district":"Kadıköy",
+      "districtId":31,
+      "countyId": 0, //CEE bölgesi için gelecektir.
+      "countyName": "XXX", //CEE bölgesi için gelecektir.
+      "shortAddress": "xxx", //GULF bölgesi için gelecektir.
+      "stateName": "xxx", //GULF bölgesi için gelecektir.
+      "postalCode":"34000",
+      "countryCode":"TR",
+      "neighborhoodId":29202,
+      "neighborhood":"Suadiye Mah",
+      "phone":null,
+      "fullAddress":"Easy Return Adres Easy Return Adres     Kadıköy İstanbul",
+      "fullName":"Easy Return"
+   },
+   "orderNumber":"1236923056",
+   "grossAmount":1500.00,
+   "totalDiscount":0.00,
+   "totalTyDiscount":0.00,
+   "taxNumber":null,
+   "invoiceAddress":{
+      "id":12695297,
+      "firstName":"Easy",
+      "lastName":"Return",
+      "company":"",
+      "address1":"Easy Return Adres Easy Return Adres",
+      "address2":"",
+      "addressLines": {
+         "addressLine1": "xxx",
+         "addressLine2": "xxx"
+      },
+      "city":"İstanbul",
+      "cityCode":34,
+      "district":"Kadıköy",
+      "districtId":31,
+      "countyId": 0, //CEE bölgesi için gelecektir.
+      "countyName": "XXX", //CEE bölgesi için gelecektir.
+      "shortAddress": "xxx", //GULF bölgesi için gelecektir.
+      "stateName": "xxx", //GULF bölgesi için gelecektir.
+      "postalCode":"34000",
+      "countryCode":"TR",
+      "neighborhoodId":29202,
+      "neighborhood":"Suadiye Mah",
+      "phone":null,
+      "fullAddress":"Easy Return Adres Easy Return Adres     Kadıköy İstanbul",
+      "fullName":"Easy Return"
+   },
+   "customerFirstName":"Easy",
+   "customerEmail":"pf+dba5o3yy@trendyolmail.com",
+   "customerId":21904472,
+   "customerLastName":"Return",
+   "id":58746490,
+   "cargoTrackingNumber":7250000138899004,
+   "cargoProviderName":"Yurtiçi Kargo Marketplace",
+   "cargoSenderNumber":"5645645",
+   "lines":[
+      {
+         "quantity":5,
+         "salesCampaignId":61,
+         "productSize":"Tek Ebat",
+         "merchantSku":"merchantSku",
+         "productName":"Playstation 7 SONYPS55, one size",
+         "productCode":68661256,
+         "productOrigin":"Tr",
+         "merchantId":2738,
+         "amount":300.00,
+         "discount":0.00,
+         "tyDiscount":0.00,
+         "discountDetails":[
+            {
+               "lineItemPrice":300.00,
+               "lineItemDiscount":0.00,
+               "lineItemTyDiscount":0.00
+            },
+            {
+               "lineItemPrice":300.00,
+               "lineItemDiscount":0.00,
+               "lineItemTyDiscount":0.00
+            },
+            {
+               "lineItemPrice":300.00,
+               "lineItemDiscount":0.00,
+               "lineItemTyDiscount":0.00
+            },
+            {
+               "lineItemPrice":300.00,
+               "lineItemDiscount":0.00,
+               "lineItemTyDiscount":0.00
+            },
+            {
+               "lineItemPrice":300.00,
+               "lineItemDiscount":0.00,
+               "lineItemTyDiscount":0.00
+            }
+         ],
+         "currencyCode":"TRY",
+         "productColor":"Mavi",
+         "id":7392373,
+         "sku":"578419588",
+         "vatBaseAmount":18.00,
+         "barcode":"578419588",
+         "orderLineItemStatusName":"Invoiced",
+         "price":300.00,
+         "fastDeliveryOptions":[
+            {
+               "type":"SameDayShipping"
+            }
+         ]
+      }
+   ],
+   "orderDate":1722004687794,
+   "tcIdentityNumber":"11111111111",
+   "currencyCode":"TRY",
+   "packageHistories":[
+      {
+         "createdDate":1721993888991,
+         "status":"Awaiting"
+      },
+      {
+         "createdDate":1721993901711,
+         "status":"Created"
+      },
+      {
+         "createdDate":1722298887684,
+         "status":"Invoiced"
+      }
+   ],
+   "shipmentPackageStatus":"Invoiced",
+   "status":"Invoiced",
+   "whoPays":1,
+   "deliveryType":"normal",
+   "timeSlotId":0,
+   "estimatedDeliveryStartDate":1674887878000,
+   "estimatedDeliveryEndDate":1674887878000,
+   "totalPrice":1500.00,
+   "deliveryAddressType":"Shipment",
+   "agreedDeliveryDate":1722113940000,
+   "fastDelivery":false,
+   "originShipmentDate":1721993888977,
+   "lastModifiedDate":1722298887684,
+   "commercial":false,
+   "fastDeliveryType":"",
+   "deliveredByService":false,
+   "agreedDeliveryDateExtendible":false,
+   "extendedAgreedDeliveryDate":0,
+   "agreedDeliveryExtensionEndDate":0,
+   "agreedDeliveryExtensionStartDate":0,
+   "warehouseId":144854,
+   "groupDeal":false,
+   "invoiceLink":"",
+   "micro":false,
+   "giftBoxRequested":false,
+   "3pByTrendyol":false,
+   "containsDangerousProduct":false
+}
