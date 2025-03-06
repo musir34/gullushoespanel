@@ -1,233 +1,175 @@
-import os
+
 import requests
-import json
 import base64
-import time
-from logger_config import app_logger
-import traceback
+import json
+import logging
+from trendyol_api import API_KEY, API_SECRET, SUPPLIER_ID, BASE_URL, ORDER_WEBHOOK_URL, PRODUCT_WEBHOOK_URL, WEBHOOK_SECRET
 
-# Log ayarları
-logger = app_logger
-
-# API yapılandırması
-BASE_URL = os.environ.get("TRENDYOL_API_URL", "https://api.trendyol.com/sapigw/")
-SUPPLIER_ID = os.environ.get("TRENDYOL_SUPPLIER_ID", "123456")
-API_KEY = os.environ.get("TRENDYOL_API_KEY", "test_api_key")
-API_SECRET = os.environ.get("TRENDYOL_API_SECRET", "test_api_secret")
-WEBHOOK_SECRET = os.environ.get("WEBHOOK_SECRET", "webhook_secret_token")
-
-# Webhook URL'leri - Dinamik olarak uygulama URL'sinden oluştur
-def get_base_url():
-    """Mevcut uygulamanın URL'sini belirler"""
-    # Replit'te çalışırken
-    if 'REPL_SLUG' in os.environ and 'REPL_OWNER' in os.environ:
-        return f"https://{os.environ.get('REPL_SLUG')}.{os.environ.get('REPL_OWNER')}.repl.co"
-
-    # Çevreden veya varsayılan
-    return os.environ.get("APP_URL", "https://siparis-yonetim.repl.co")
-
-ORDER_WEBHOOK_URL = os.environ.get("ORDER_WEBHOOK_URL", f"{get_base_url()}/webhook/orders")
-PRODUCT_WEBHOOK_URL = os.environ.get("PRODUCT_WEBHOOK_URL", f"{get_base_url()}/webhook/products")
-
-
-def get_registered_webhooks():
-    """
-    Trendyol API'sine kayıtlı webhook'ları getirir
-    """
-    logger.info("Kayıtlı webhook'lar getiriliyor")
-
-    try:
-        # Authentication header'ı oluştur (Base64 ile kodlanmış)
-        auth_str = f"{API_KEY}:{API_SECRET}"
-        b64_auth_str = base64.b64encode(auth_str.encode()).decode('utf-8')
-
-        # API endpointi ve headers (Yeni Trendyol API formatı)
-        url = f"{BASE_URL}sellers/{SUPPLIER_ID}/webhooks"
-        headers = {
-            "Authorization": f"Basic {b64_auth_str}",
-            "Content-Type": "application/json"
-        }
-
-        # Yeniden deneme mekanizması
-        max_retries = 3
-        retry_count = 0
-
-        while retry_count < max_retries:
-            try:
-                # API isteği gönder
-                response = requests.get(url, headers=headers, timeout=15)
-
-                # Başarılı yanıt kontrolü
-                if response.status_code == 200:
-                    try:
-                        webhook_data = response.json()
-                        return {
-                            "success": True,
-                            "webhooks": webhook_data,
-                            "message": "Webhook'lar başarıyla alındı"
-                        }
-                    except json.JSONDecodeError as e:
-                        logger.error(f"Webhook yanıtı JSON formatında değil: {e}")
-                        return {
-                            "success": False,
-                            "message": "Webhook yanıtı JSON formatında değil",
-                            "error": str(e)
-                        }
-                else:
-                    logger.warning(f"Webhook'lar getirilemedi! Durum kodu: {response.status_code}, Yanıt: {response.text}")
-                    return {
-                        "success": False,
-                        "message": f"Webhook'lar getirilemedi. Durum kodu: {response.status_code}",
-                        "error": response.text
-                    }
-
-            except requests.exceptions.RequestException as e:
-                retry_count += 1
-                logger.warning(f"Webhook'lar getirilemedi (Servis Kullanılamıyor)! Yeniden deneme: {retry_count}/{max_retries}")
-
-                if retry_count >= max_retries:
-                    logger.error(f"Webhook'lar getirilemedi! Maksimum yeniden deneme sayısına ({max_retries}) ulaşıldı.")
-                    return {
-                        "success": False,
-                        "message": "Servis geçici olarak kullanılamıyor.",
-                        "error": str(e)
-                    }
-
-                # Yeniden denemeden önce bekleyin (her seferinde daha uzun süre bekleyin)
-                time.sleep(retry_count * 2)
-
-        return {
-            "success": False,
-            "message": "Webhook'lar alınamadı"
-        }
-
-    except Exception as e:
-        logger.error(f"Webhook'lar getirilirken hata oluştu: {str(e)}")
-        logger.debug(f"Traceback: {traceback.format_exc()}")
-        return {
-            "success": False,
-            "message": "Webhook'lar alınırken bir hata oluştu.",
-            "error": str(e)
-        }
-
+# Loglama ayarları
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    filename='webhook_registration.log'
+)
+logger = logging.getLogger(__name__)
 
 def register_webhook(webhook_type, webhook_url):
     """
-    Belirli tipte bir webhook'u API'ye kaydeder
-
+    Trendyol API'sine webhook kaydı yapar
+    
     Args:
-        webhook_type (str): Webhook tipi ("order" veya "product")
-        webhook_url (str): Webhook'un gönderileceği URL
-
+        webhook_type: Webhook tipi ('order' veya 'product')
+        webhook_url: Webhook URL'i
+    
     Returns:
-        dict: İşlem sonucu
+        bool: İşlem başarılıysa True, değilse False
     """
-    logger.info(f"{webhook_type.title()} webhook kaydı yapılıyor: {webhook_url}")
-
     try:
         # Authentication header'ı oluştur
         auth_str = f"{API_KEY}:{API_SECRET}"
         b64_auth_str = base64.b64encode(auth_str.encode()).decode('utf-8')
-
-        # API endpointi ve headers (Yeni Trendyol API formatı)
-        url = f"{BASE_URL}sellers/{SUPPLIER_ID}/webhooks"
+        
+        # API endpointi ve headers
+        url = f"{BASE_URL}suppliers/{SUPPLIER_ID}/webhooks"
         headers = {
             "Authorization": f"Basic {b64_auth_str}",
             "Content-Type": "application/json"
         }
-
-        # Webhook tipine göre olayları belirle
-        if webhook_type.lower() == "order":
-            webhook_name = "OrderWebhook"
+        
+        # Webhook tipi için uygun API payload'ını oluştur
+        if webhook_type == 'order':
             events = ["OrderCreated", "OrderStatusChanged", "PackageStatusChanged"]
-        elif webhook_type.lower() == "product":
-            webhook_name = "ProductWebhook"
+            name = "OrderWebhook"
+        elif webhook_type == 'product':
             events = ["ProductCreated", "ProductUpdated", "PriceChanged", "StockChanged"]
+            name = "ProductWebhook"
         else:
-            logger.error(f"Geçersiz webhook tipi: {webhook_type}")
-            return {
-                "success": False,
-                "message": f"Geçersiz webhook tipi: {webhook_type}"
-            }
-
-        # Webhook payload'ı oluştur
+            logger.error(f"Bilinmeyen webhook tipi: {webhook_type}")
+            return False
+        
+        # API isteği için veri
         payload = {
-            "name": webhook_name,
+            "name": name,
             "url": webhook_url,
-            "authToken": WEBHOOK_SECRET,
+            "authToken": WEBHOOK_SECRET,  # Webhook güvenlik anahtarı
             "events": events
         }
-
-        try:
-            # API isteği gönder - yeniden deneme mekanizması
-            max_retries = 3
-            retry_count = 0
-            retry_delay = 2  # saniye
-
-            while retry_count < max_retries:
-                try:
-                    logger.info(f"{webhook_type.title()} webhook kaydı için API isteği gönderiliyor (Deneme: {retry_count+1}/{max_retries})")
-                    response = requests.post(url, headers=headers, json=payload, timeout=15)
-
-                    # Başarı durumu kontrolü
-                    if response.status_code in [200, 201]:
-                        logger.info(f"{webhook_type.title()} webhook başarıyla kaydedildi")
-                        return {
-                            "success": True,
-                            "message": f"{webhook_type.title()} webhook başarıyla kaydedildi",
-                            "response": response.json() if response.text else {}
-                        }
-                    # Servis Kullanılamıyor hatası - yeniden dene
-                    elif response.status_code == 556:
-                        retry_count += 1
-                        error_msg = f"{webhook_type.title()} webhook kaydı başarısız: Servis Kullanılamıyor (556). "
-
-                        if retry_count < max_retries:
-                            error_msg += f"Yeniden deneniyor ({retry_count}/{max_retries})..."
-                            logger.warning(error_msg)
-                            time.sleep(retry_delay * retry_count)  # Her seferinde daha uzun bekleme
-                        else:
-                            error_msg += "Maksimum deneme sayısına ulaşıldı."
-                            logger.error(error_msg)
-                            return {
-                                "success": False,
-                                "message": f"{webhook_type.title()} webhook kaydedilemedi - Servis Kullanılamıyor",
-                                "error": response.text,
-                                "status_code": response.status_code
-                            }
-                    # Diğer hata durumları
-                    else:
-                        logger.error(f"{webhook_type.title()} webhook kaydedilemedi. Durum: {response.status_code}, Yanıt: {response.text}")
-                        return {
-                            "success": False,
-                            "message": f"{webhook_type.title()} webhook kaydedilemedi",
-                            "error": response.text,
-                            "status_code": response.status_code
-                        }
-                except requests.exceptions.RequestException as req_err:
-                    retry_count += 1
-                    if retry_count >= max_retries:
-                        logger.error(f"API isteği başarısız: {str(req_err)}")
-                        return {
-                            "success": False,
-                            "message": f"API bağlantı hatası: {str(req_err)}",
-                            "error": str(req_err)
-                        }
-                    logger.warning(f"API bağlantı hatası, yeniden deneme {retry_count}/{max_retries}: {str(req_err)}")
-                    time.sleep(retry_delay * retry_count)
-        except Exception as e:
-            logger.error(f"{webhook_type.title()} webhook kaydı sırasında beklenmeyen hata: {str(e)}")
-            return {
-                "success": False,
-                "message": f"{webhook_type.title()} webhook kaydı sırasında beklenmeyen hata",
-                "error": str(e)
-            }
-
+        
+        logger.info(f"Webhook kaydı yapılıyor: {webhook_type} - {webhook_url}")
+        logger.debug(f"Payload: {payload}")
+        
+        # POST isteği gönder
+        response = requests.post(url, headers=headers, json=payload)
+        
+        # Yanıtı kontrol et
+        if response.status_code in (200, 201):
+            logger.info(f"Webhook kaydı başarılı: {webhook_type}")
+            logger.debug(f"API Yanıtı: {response.json()}")
+            return True
+        else:
+            logger.error(f"Webhook kaydı başarısız! Durum kodu: {response.status_code}")
+            logger.error(f"API Yanıtı: {response.text}")
+            return False
+            
     except Exception as e:
-        logger.error(f"{webhook_type.title()} webhook kaydedilirken hata: {str(e)}")
-        logger.debug(f"Traceback: {traceback.format_exc()}")
-        return {
-            "success": False,
-            "message": f"{webhook_type.title()} webhook kaydedilemedi",
-            "error": str(e)
+        logger.error(f"Webhook kaydında hata: {str(e)}")
+        return False
+
+def get_registered_webhooks():
+    """
+    Mevcut kayıtlı webhook'ları listeler
+    
+    Returns:
+        list: Kayıtlı webhook listesi veya hata durumunda boş liste
+    """
+    try:
+        # Authentication header'ı oluştur
+        auth_str = f"{API_KEY}:{API_SECRET}"
+        b64_auth_str = base64.b64encode(auth_str.encode()).decode('utf-8')
+        
+        # API endpointi ve headers
+        url = f"{BASE_URL}suppliers/{SUPPLIER_ID}/webhooks"
+        headers = {
+            "Authorization": f"Basic {b64_auth_str}",
+            "Content-Type": "application/json"
         }
+        
+        # GET isteği gönder
+        logger.info("Kayıtlı webhook'lar getiriliyor")
+        response = requests.get(url, headers=headers)
+        
+        # Yanıtı kontrol et
+        if response.status_code == 200:
+            webhooks = response.json()
+            logger.info(f"Toplam {len(webhooks)} webhook bulundu")
+            return webhooks
+        else:
+            logger.error(f"Webhook'lar getirilemedi! Durum kodu: {response.status_code}")
+            logger.error(f"API Yanıtı: {response.text}")
+            return []
+            
+    except Exception as e:
+        logger.error(f"Webhook'ları getirirken hata: {str(e)}")
+        return []
+
+def delete_webhook(webhook_id):
+    """
+    Kayıtlı bir webhook'u siler
+    
+    Args:
+        webhook_id: Silinecek webhook ID'si
+    
+    Returns:
+        bool: İşlem başarılıysa True, değilse False
+    """
+    try:
+        # Authentication header'ı oluştur
+        auth_str = f"{API_KEY}:{API_SECRET}"
+        b64_auth_str = base64.b64encode(auth_str.encode()).decode('utf-8')
+        
+        # API endpointi ve headers
+        url = f"{BASE_URL}suppliers/{SUPPLIER_ID}/webhooks/{webhook_id}"
+        headers = {
+            "Authorization": f"Basic {b64_auth_str}",
+            "Content-Type": "application/json"
+        }
+        
+        # DELETE isteği gönder
+        logger.info(f"Webhook siliniyor: {webhook_id}")
+        response = requests.delete(url, headers=headers)
+        
+        # Yanıtı kontrol et
+        if response.status_code == 200:
+            logger.info(f"Webhook başarıyla silindi: {webhook_id}")
+            return True
+        else:
+            logger.error(f"Webhook silinemedi! Durum kodu: {response.status_code}")
+            logger.error(f"API Yanıtı: {response.text}")
+            return False
+            
+    except Exception as e:
+        logger.error(f"Webhook silinirken hata: {str(e)}")
+        return False
+
+if __name__ == "__main__":
+    # Mevcut webhook'ları listele
+    print("Mevcut webhook'lar listeleniyor...")
+    webhooks = get_registered_webhooks()
+    for i, webhook in enumerate(webhooks, 1):
+        print(f"{i}. {webhook.get('name')} - {webhook.get('url')}")
+        print(f"   Olaylar: {', '.join(webhook.get('events', []))}")
+        print(f"   ID: {webhook.get('id')}")
+        print("-" * 50)
+    
+    # Yeni webhook'ları kaydet
+    print("\nYeni webhook'lar kaydediliyor...")
+    
+    # Sipariş webhook'u
+    order_result = register_webhook('order', ORDER_WEBHOOK_URL)
+    print(f"Sipariş webhook kaydı: {'Başarılı' if order_result else 'Başarısız'}")
+    
+    # Ürün webhook'u
+    product_result = register_webhook('product', PRODUCT_WEBHOOK_URL)
+    print(f"Ürün webhook kaydı: {'Başarılı' if product_result else 'Başarısız'}")
+    
+    print("\nİşlem tamamlandı!")
