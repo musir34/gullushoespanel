@@ -184,27 +184,17 @@ def verify_webhook_signature(request):
     Webhook imzasını doğrula (güvenlik için)
     Not: Trendyol'un dokümantasyonuna göre bu kısım düzenlenmelidir
     """
-    # Trendyol, webhook'larda genellikle Signature veya API Key ile doğrulama yapar
-    # Ancak Nisan 2024 sonrası değişikliklerle bu yapı değişmiş olabilir
-    
-    # API Key doğrulama (headers'da olabilir)
-    api_key = request.headers.get('X-API-Key', '')
+    # Örnek: Trendyol'dan gelen özel bir header ile doğrulama
+    signature = request.headers.get('X-Trendyol-Signature', '')
     webhook_secret = current_app.config.get('WEBHOOK_SECRET', '')
-    
-    # Trendyol, belirli durumlarda API Key olmadan da webhook gönderebilir
-    # Veya farklı bir header kullanabilir, bu yüzden loglayalım
-    logger.info(f"Gelen webhook bilgileri: Headers: {dict(request.headers)}")
-    logger.info(f"Webhook veri içeriği: {request.data[:500] if request.data else 'Veri yok'}")
-    
-    # Eğer API Key kontrolü yapmak istemiyorsak, her zaman True döndürebiliriz
-    # Bu güvenlik riski oluşturabilir ama test aşamasında kullanışlı olabilir
-    # return True
-    
-    if api_key and api_key == webhook_secret:
-        return True
-    
-    logger.warning(f"Webhook API Key doğrulaması başarısız: Gelen: {api_key}")
-    return False
+
+    # Gerçek implementasyonda imza doğrulama algoritması kullanılmalıdır
+    # Bu örnek sadece basit bir kontrol sağlar
+    if not signature or signature != webhook_secret:
+        logger.warning(f"Webhook imza doğrulaması başarısız: {signature}")
+        return False
+
+    return True
 
 @webhook_bp.route('/webhook/orders', methods=['POST'])
 def handle_order_webhook():
@@ -214,35 +204,19 @@ def handle_order_webhook():
     try:
         logger.info("Sipariş webhook'u alındı")
 
-        # İsteğin tüm içeriğini detaylı logla
-        logger.info(f"Webhook Headers: {dict(request.headers)}")
-        request_data = request.data.decode('utf-8') if request.data else "Veri yok"
-        logger.info(f"Webhook RAW İçeriği: {request_data[:1000]}")
-        
-        # Content type kontrolü
-        content_type = request.headers.get('Content-Type', '')
-        logger.info(f"Webhook Content-Type: {content_type}")
+        # İsteğin içeriğini logla (debug için)
+        logger.debug(f"Webhook İçeriği: {request.data.decode('utf-8')}")
 
         # API Key doğrulama
         api_key = request.headers.get('X-API-Key')
         webhook_secret = current_app.config.get('WEBHOOK_SECRET', '')
-        
-        # Test aşaması için API Key kontrolünü geçici olarak devre dışı bırakalım
-        # Bu satırı canlı ortamda kaldırın!
-        api_key_check = True 
-        
-        if not api_key_check and api_key != webhook_secret:
+
+        if api_key != webhook_secret:
             logger.warning(f"Webhook API Key doğrulaması başarısız: {api_key}")
             return jsonify({"status": "error", "message": "Geçersiz API Key"}), 401
 
         # JSON verisini al
-        try:
-            webhook_data = request.json
-            logger.info(f"Parsed JSON data: {webhook_data}")
-        except Exception as e:
-            logger.error(f"JSON parse hatası: {str(e)}")
-            return jsonify({"status": "error", "message": f"JSON parse hatası: {str(e)}"}), 400
-            
+        webhook_data = request.json
         if not webhook_data:
             logger.error("Webhook verisi boş veya geçersiz JSON formatında")
             return jsonify({"status": "error", "message": "Geçersiz veri formatı"}), 400
