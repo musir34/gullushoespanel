@@ -16,7 +16,6 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 
 from siparisler import siparisler_bp
-app.register_blueprint(siparisler_bp)
 app.secret_key = os.environ.get('SECRET_KEY', 'varsayılan_anahtar')
 
 # Veritabanı ayarları
@@ -43,7 +42,7 @@ with app.app_context():
     # Eksik sütunu ekle
     from sqlalchemy import text
     db.session.execute(text('ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_date TIMESTAMP'))
-    
+
     # Yeni tabloları oluştur
     from models import YeniSiparis, SiparisUrun
     db.create_all()
@@ -73,6 +72,8 @@ from iade_islemleri import iade_islemleri, fetch_data_from_api, save_to_database
 from siparis_fisi import siparis_fisi_bp
 from analysis import analysis_bp
 from stock_report import stock_report_bp
+from openai_service import openai_bp #Added OpenAI blueprint import
+
 
 blueprints = [
     order_service_bp,
@@ -89,7 +90,8 @@ blueprints = [
     iade_islemleri,
     siparis_fisi_bp,
     analysis_bp,
-    stock_report_bp
+    stock_report_bp,
+    openai_bp #Added OpenAI blueprint to the list
 ]
 
 for bp in blueprints:
@@ -106,16 +108,16 @@ def check_authentication():
         'login_logout.verify_totp',
         'login_logout.logout'
     ]
-    
+
     # Oturum süresini ayarla - 1 ay (30 gün)
     app.permanent_session_lifetime = timedelta(days=30)
-    
+
     # Eğer izin verilen rotalara istek yapılmışsa ve kullanıcı henüz giriş yapmamışsa
     if request.endpoint not in allowed_routes:
         if 'username' not in session:
             flash('Lütfen giriş yapınız.', 'danger')
             return redirect(url_for('login_logout.login'))
-        
+
         # Kullanıcı giriş yapmış ama TOTP doğrulaması yapmamışsa
         if 'pending_user' in session and request.endpoint != 'login_logout.verify_totp':
             return redirect(url_for('login_logout.verify_totp'))

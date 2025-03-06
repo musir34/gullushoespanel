@@ -1,0 +1,210 @@
+
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2 class="text-center mb-4">AI Analiz Paneli</h2>
+  
+  <div class="row">
+    <div class="col-lg-4 mb-4">
+      <div class="card h-100">
+        <div class="card-header bg-primary text-white">
+          <h5 class="mb-0">Metin Analizi</h5>
+        </div>
+        <div class="card-body">
+          <form id="textAnalysisForm">
+            <div class="mb-3">
+              <label for="text-input" class="form-label">Analiz Edilecek Metin:</label>
+              <textarea class="form-control" id="text-input" rows="6" placeholder="Analiz etmek istediğiniz metni girin..."></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">Analiz Et</button>
+          </form>
+          <div class="mt-3" id="text-result"></div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-lg-4 mb-4">
+      <div class="card h-100">
+        <div class="card-header bg-success text-white">
+          <h5 class="mb-0">Sipariş Özeti</h5>
+        </div>
+        <div class="card-body">
+          <form id="orderAnalysisForm">
+            <div class="mb-3">
+              <label for="order-id" class="form-label">Sipariş Numarası:</label>
+              <input type="text" class="form-control" id="order-id" placeholder="Örn: SP202304150001">
+            </div>
+            <button type="submit" class="btn btn-success">Özet Çıkar</button>
+          </form>
+          <div class="mt-3" id="order-result"></div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-lg-4 mb-4">
+      <div class="card h-100">
+        <div class="card-header bg-info text-white">
+          <h5 class="mb-0">Ürün Önerileri</h5>
+        </div>
+        <div class="card-body">
+          <form id="productRecommendationForm">
+            <div class="mb-3">
+              <label for="customer-id" class="form-label">Müşteri Bilgileri:</label>
+              <input type="text" class="form-control mb-2" id="customer-id" placeholder="Müşteri ID veya ismi">
+              <textarea class="form-control" id="customer-profile" rows="4" placeholder="Müşteri profil bilgileri (yaş, cinsiyet, satın alma geçmişi vb.)"></textarea>
+            </div>
+            <button type="submit" class="btn btn-info">Öneriler Al</button>
+          </form>
+          <div class="mt-3" id="recommendation-result"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Metin Analizi
+  document.getElementById('textAnalysisForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const resultDiv = document.getElementById('text-result');
+    resultDiv.innerHTML = '<div class="spinner-border text-primary" role="status"><span class="visually-hidden">Yükleniyor...</span></div>';
+    
+    const text = document.getElementById('text-input').value;
+    
+    try {
+      const response = await fetch('/ai/analyze-text', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ text: text }),
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        resultDiv.innerHTML = `
+          <div class="alert alert-success mt-3">
+            <h5>Analiz Sonucu:</h5>
+            <div class="analysis-result">${data.analysis.replace(/\n/g, '<br>')}</div>
+          </div>
+        `;
+      } else {
+        resultDiv.innerHTML = `<div class="alert alert-danger">Hata: ${data.error}</div>`;
+      }
+    } catch (error) {
+      resultDiv.innerHTML = `<div class="alert alert-danger">İstek hatası: ${error.message}</div>`;
+    }
+  });
+  
+  // Sipariş Özeti
+  document.getElementById('orderAnalysisForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const resultDiv = document.getElementById('order-result');
+    resultDiv.innerHTML = '<div class="spinner-border text-success" role="status"><span class="visually-hidden">Yükleniyor...</span></div>';
+    
+    const orderId = document.getElementById('order-id').value;
+    
+    try {
+      // Önce sipariş bilgilerini al
+      const orderDataResponse = await fetch(`/siparis-detay/${orderId}`);
+      
+      if (!orderDataResponse.ok) {
+        resultDiv.innerHTML = `<div class="alert alert-danger">Sipariş bulunamadı</div>`;
+        return;
+      }
+      
+      // Sonra AI özeti için gönder
+      const response = await fetch('/ai/siparis-ozeti', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          siparis_bilgileri: await orderDataResponse.text()
+        }),
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        resultDiv.innerHTML = `
+          <div class="alert alert-success mt-3">
+            <h5>Sipariş Özeti:</h5>
+            <div class="order-summary">${data.ozet.replace(/\n/g, '<br>')}</div>
+          </div>
+        `;
+      } else {
+        resultDiv.innerHTML = `<div class="alert alert-danger">Hata: ${data.error}</div>`;
+      }
+    } catch (error) {
+      resultDiv.innerHTML = `<div class="alert alert-danger">İstek hatası: ${error.message}</div>`;
+    }
+  });
+  
+  // Ürün Önerileri
+  document.getElementById('productRecommendationForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const resultDiv = document.getElementById('recommendation-result');
+    resultDiv.innerHTML = '<div class="spinner-border text-info" role="status"><span class="visually-hidden">Yükleniyor...</span></div>';
+    
+    const customerId = document.getElementById('customer-id').value;
+    const customerProfile = document.getElementById('customer-profile').value;
+    
+    try {
+      const response = await fetch('/ai/urun-onerileri', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          musteri_profili: `Müşteri ID: ${customerId}\n${customerProfile}`,
+        }),
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        resultDiv.innerHTML = `
+          <div class="alert alert-info mt-3">
+            <h5>Ürün Önerileri:</h5>
+            <div class="product-recommendations">${data.oneriler.replace(/\n/g, '<br>')}</div>
+          </div>
+        `;
+      } else {
+        resultDiv.innerHTML = `<div class="alert alert-danger">Hata: ${data.error}</div>`;
+      }
+    } catch (error) {
+      resultDiv.innerHTML = `<div class="alert alert-danger">İstek hatası: ${error.message}</div>`;
+    }
+  });
+});
+</script>
+
+<style>
+  .card {
+    transition: transform 0.3s;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+  
+  .card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+  }
+  
+  .analysis-result, .order-summary, .product-recommendations {
+    white-space: pre-line;
+    max-height: 300px;
+    overflow-y: auto;
+    padding: 10px;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+    font-size: 0.9rem;
+  }
+</style>
+{% endblock %}
