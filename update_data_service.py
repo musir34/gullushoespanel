@@ -143,12 +143,16 @@ def update_orders():
     try:
         logger.info("Siparişler güncellenmeye başlanıyor...")
         from order_service import fetch_trendyol_orders_async
-        asyncio.run(fetch_trendyol_orders_async())
-        # Sipariş sayısını al
-        from models import Order
-        order_count = Order.query.count()
-        save_update_info('orders', True, order_count)
-        logger.info(f"Siparişler güncellendi. Toplam sipariş sayısı: {order_count}")
+        from flask import current_app
+        
+        # Uygulama bağlamı oluştur
+        with current_app.app_context():
+            asyncio.run(fetch_trendyol_orders_async())
+            # Sipariş sayısını al
+            from models import Order
+            order_count = Order.query.count()
+            save_update_info('orders', True, order_count)
+            logger.info(f"Siparişler güncellendi. Toplam sipariş sayısı: {order_count}")
         return True
     except Exception as e:
         logger.error(f"Siparişler güncellenirken hata: {e}")
@@ -160,12 +164,16 @@ def update_products():
     try:
         logger.info("Ürünler güncellenmeye başlanıyor...")
         from product_service import fetch_trendyol_products_async
-        asyncio.run(fetch_trendyol_products_async())
-        # Ürün sayısını al
-        from models import Product
-        product_count = Product.query.count()
-        save_update_info('products', True, product_count)
-        logger.info(f"Ürünler güncellendi. Toplam ürün sayısı: {product_count}")
+        from flask import current_app
+        
+        # Uygulama bağlamı oluştur
+        with current_app.app_context():
+            asyncio.run(fetch_trendyol_products_async())
+            # Ürün sayısını al
+            from models import Product
+            product_count = Product.query.count()
+            save_update_info('products', True, product_count)
+            logger.info(f"Ürünler güncellendi. Toplam ürün sayısı: {product_count}")
         return True
     except Exception as e:
         logger.error(f"Ürünler güncellenirken hata: {e}")
@@ -177,12 +185,16 @@ def update_claims():
     try:
         logger.info("İadeler/talepler güncellenmeye başlanıyor...")
         from claims_service import fetch_claims_async
-        asyncio.run(fetch_claims_async())
-        # İade/talep sayısını al
-        from models import Claim
-        claim_count = Claim.query.count()
-        save_update_info('claims', True, claim_count)
-        logger.info(f"İadeler/talepler güncellendi. Toplam iade/talep sayısı: {claim_count}")
+        from flask import current_app
+        
+        # Uygulama bağlamı oluştur
+        with current_app.app_context():
+            asyncio.run(fetch_claims_async())
+            # İade/talep sayısını al
+            from models import Claim
+            claim_count = Claim.query.count()
+            save_update_info('claims', True, claim_count)
+            logger.info(f"İadeler/talepler güncellendi. Toplam iade/talep sayısı: {claim_count}")
         return True
     except Exception as e:
         logger.error(f"İadeler/talepler güncellenirken hata: {e}")
@@ -193,38 +205,45 @@ def continuous_update_worker():
     """Sürekli güncelleme yapan arka plan iş parçacığı"""
     global UPDATING
     
+    # Flask uygulamasını almak için Flask'in kendisini içe aktar
+    from flask import current_app
+    
     logger.info("Sürekli güncelleme sistemi başlatıldı")
     
-    while True:
-        try:
-            UPDATING = True
-            
-            # 1. Siparişleri güncelle
-            logger.info("--- Güncelleme Döngüsü Başladı ---")
-            logger.info("1/3: Siparişler güncelleniyor...")
-            update_orders()
-            time.sleep(10)  # 10 saniye bekle
-            
-            # 2. Ürünleri güncelle
-            logger.info("2/3: Ürünler güncelleniyor...")
-            update_products()
-            time.sleep(10)  # 10 saniye bekle
-            
-            # 3. İade/Talepleri güncelle
-            logger.info("3/3: İadeler/Talepler güncelleniyor...")
-            update_claims()
-            
-            logger.info("--- Güncelleme Döngüsü Tamamlandı ---")
-            UPDATING = False
-            
-            # Tüm güncellemeler bittikten sonra 1 dakika bekle
-            logger.info("Sonraki güncelleme döngüsüne kadar 1 dakika bekleniyor...")
-            time.sleep(60)  # 1 dakika bekle
-            
-        except Exception as e:
-            logger.error(f"Sürekli güncelleme sırasında hata: {e}")
-            UPDATING = False
-            time.sleep(60)  # Hata durumunda 1 dakika bekle ve tekrar dene
+    # Uygulama bağlamını başlatma
+    with current_app.app_context():
+        logger.info("Uygulama bağlamı oluşturuldu")
+        
+        while True:
+            try:
+                UPDATING = True
+                
+                # 1. Siparişleri güncelle
+                logger.info("--- Güncelleme Döngüsü Başladı ---")
+                logger.info("1/3: Siparişler güncelleniyor...")
+                update_orders()
+                time.sleep(10)  # 10 saniye bekle
+                
+                # 2. Ürünleri güncelle
+                logger.info("2/3: Ürünler güncelleniyor...")
+                update_products()
+                time.sleep(10)  # 10 saniye bekle
+                
+                # 3. İade/Talepleri güncelle
+                logger.info("3/3: İadeler/Talepler güncelleniyor...")
+                update_claims()
+                
+                logger.info("--- Güncelleme Döngüsü Tamamlandı ---")
+                UPDATING = False
+                
+                # Tüm güncellemeler bittikten sonra 1 dakika bekle
+                logger.info("Sonraki güncelleme döngüsüne kadar 1 dakika bekleniyor...")
+                time.sleep(60)  # 1 dakika bekle
+                
+            except Exception as e:
+                logger.error(f"Sürekli güncelleme sırasında hata: {e}")
+                UPDATING = False
+                time.sleep(60)  # Hata durumunda 1 dakika bekle ve tekrar dene
 
 def start_continuous_update():
     """Sürekli güncelleme sistemini başlat"""

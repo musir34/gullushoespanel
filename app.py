@@ -232,11 +232,15 @@ def schedule_jobs(app):
 schedule_jobs(app)
 
 # Otomatik veri güncelleme sistemini başlat
-with app.app_context():
+def init_auto_update():
+    """Uygulama başlatıldığında otomatik güncelleme sistemini başlatır"""
     from update_data_service import start_continuous_update
     # Uygulamanın başlangıcında sürekli güncelleme sistemini başlat
     start_continuous_update()
     logger.info("Otomatik veri güncelleme sistemi başlatıldı")
+
+with app.app_context():
+    init_auto_update()
 
 if __name__ == '__main__':
     debug_mode = os.environ.get('FLASK_DEBUG', 'False') == 'True'
