@@ -3,65 +3,84 @@ import requests
 import json
 import logging
 from datetime import datetime
-import argparse
+import sys
+import os
 
 # Log yapılandırması
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger('webhook_test')
+handler = logging.FileHandler('webhook_test.log')
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+logger.addHandler(handler)
 
-def test_webhook_connection(webhook_url, secret_key):
+# Webhook URL'leri
+REPLIT_DOMAIN = os.environ.get("REPL_SLUG")
+REPLIT_OWNER = os.environ.get("REPL_OWNER")
+BASE_URL = f"https://{REPLIT_DOMAIN}-{REPLIT_OWNER}.repl.co" if REPLIT_DOMAIN and REPLIT_OWNER else "https://sadasdadsa-apdurrahmankuli.replit.app"
+
+ORDER_WEBHOOK_URL = f"{BASE_URL}/webhook/orders"
+PRODUCT_WEBHOOK_URL = f"{BASE_URL}/webhook/products"
+
+# Webhook API Key
+API_KEY = "test_api_key"  # webhook_service.py dosyasında belirtilen WEBHOOK_SECRET ile aynı olmalı
+
+def check_webhook_status():
     """
-    Webhook bağlantısını test eder
+    Webhook'ların durumunu kontrol eder
     """
-    logger.info(f"Webhook bağlantı testi başlatılıyor: {webhook_url}")
-    
-    headers = {
-        "Content-Type": "application/json",
-        "X-API-Key": secret_key
-    }
-    
-    # Basit bir test mesajı
-    test_data = {
-        "test": True,
-        "timestamp": datetime.now().isoformat(),
-        "message": "Bu bir test bildirimdir"
-    }
+    logger.info("Webhook durumu kontrol ediliyor...")
     
     try:
-        response = requests.post(webhook_url, json=test_data, headers=headers)
-        logger.info(f"Yanıt: HTTP {response.status_code} - {response.text}")
+        import register_webhooks
+        status_info = register_webhooks.check_webhook_status()
         
-        if response.status_code == 200:
-            logger.info("✅ Webhook bağlantı testi başarılı!")
-            return True
-        else:
-            logger.error(f"❌ Webhook bağlantı testi başarısız: HTTP {response.status_code}")
-            return False
+        logger.info(f"Toplam {status_info.get('total_webhooks', 0)} webhook kayıtlı")
+        
+        # Webhook detaylarını göster
+        webhook_details = status_info.get('webhook_details', [])
+        for webhook in webhook_details:
+            logger.info(f"Webhook ID: {webhook.get('id')}")
+            logger.info(f"Durum: {webhook.get('status')}")
+            logger.info(f"URL: {webhook.get('url')}")
+        
+        # Bağlantı testi
+        if webhook_details and webhook_details[0].get('url'):
+            webhook_url = webhook_details[0].get('url')
+            logger.info(f"Webhook bağlantı testi başlatılıyor: {webhook_url}")
+            
+            try:
+                response = requests.get(webhook_url.replace('/orders', ''), timeout=5)
+                logger.info(f"Bağlantı yanıtı: HTTP {response.status_code}")
+                
+                if response.status_code == 200:
+                    logger.info("✅ Webhook endpoint'i erişilebilir")
+                else:
+                    logger.error(f"❌ Webhook endpoint'i hata döndürdü: HTTP {response.status_code}")
+            except Exception as e:
+                logger.error(f"❌ Bağlantı hatası: {str(e)}")
+                
+        return status_info
+        
     except Exception as e:
-        logger.error(f"❌ Bağlantı hatası: {str(e)}")
-        return False
+        logger.error(f"Webhook durumu kontrol edilirken hata: {str(e)}")
+        return None
 
-def test_order_webhook(webhook_url, secret_key):
+def test_order_webhook():
     """
     Sipariş webhook'unu test eder
     """
-    logger.info(f"Sipariş webhook testi başlatılıyor: {webhook_url}")
-    
-    # Webhook API key başlığı ekle
-    headers = {
-        "Content-Type": "application/json",
-        "X-API-Key": secret_key
-    }
+    logger.info(f"Sipariş webhook testi başlatılıyor: {ORDER_WEBHOOK_URL}")
     
     # Örnek bir sipariş webhook verisi
-    order_data = {
+    data = {
         "orderNumber": f"TEST{datetime.now().strftime('%Y%m%d%H%M%S')}",
         "shipmentPackageStatus": "CREATED",
         "order": {
             "id": f"TEST{datetime.now().strftime('%Y%m%d%H%M%S')}",
             "orderNumber": f"TEST{datetime.now().strftime('%Y%m%d%H%M%S')}",
             "status": "Created",
-            "orderDate": int(datetime.now().timestamp() * 1000),
+            "orderDate": datetime.now().isoformat(),
             "customerEmail": "test@example.com",
             "customerFirstName": "Test",
             "customerLastName": "User",
@@ -91,35 +110,36 @@ def test_order_webhook(webhook_url, secret_key):
         }
     }
 
+    headers = {
+        "Content-Type": "application/json",
+        "X-API-Key": API_KEY
+    }
+
+    logger.info(f"Test webhook verisi gönderiliyor: {data}")
+
     try:
-        response = requests.post(webhook_url, json=order_data, headers=headers)
-        logger.info(f"Yanıt: HTTP {response.status_code} - {response.text[:200]}")
+        response = requests.post(ORDER_WEBHOOK_URL, json=data, headers=headers, timeout=10)
+        logger.info(f"Webhook yanıtı: Status {response.status_code}, Yanıt: {response.text}")
         
         if response.status_code == 200:
             logger.info("✅ Sipariş webhook testi başarılı!")
             return True
         else:
-            logger.error(f"❌ Sipariş webhook testi başarısız: HTTP {response.status_code}")
-            if response.status_code == 401:
-                logger.error("   Kimlik doğrulama hatası - API Key kontrol edin")
+            logger.error(f"❌ Sipariş webhook testi başarısız. Status: {response.status_code}")
             return False
+            
     except Exception as e:
-        logger.error(f"❌ Webhook test hatası: {str(e)}")
+        logger.error(f"⚠️ Sipariş webhook test hatası: {str(e)}")
         return False
 
-def test_product_webhook(webhook_url, secret_key):
+def test_product_webhook():
     """
     Ürün webhook'unu test eder
     """
-    logger.info(f"Ürün webhook testi başlatılıyor: {webhook_url}")
-    
-    headers = {
-        "Content-Type": "application/json",
-        "X-API-Key": secret_key
-    }
+    logger.info(f"Ürün webhook testi başlatılıyor: {PRODUCT_WEBHOOK_URL}")
     
     # Örnek bir ürün webhook verisi
-    product_data = {
+    data = {
         "product": {
             "barcode": f"TEST-BARCODE-{datetime.now().strftime('%Y%m%d%H%M%S')}",
             "title": "Test Ürün",
@@ -138,160 +158,123 @@ def test_product_webhook(webhook_url, secret_key):
         }
     }
 
+    headers = {
+        "Content-Type": "application/json",
+        "X-API-Key": API_KEY
+    }
+    
+    logger.info(f"Test ürün webhook verisi gönderiliyor: {data}")
+    
     try:
-        response = requests.post(webhook_url, json=product_data, headers=headers)
-        logger.info(f"Yanıt: HTTP {response.status_code} - {response.text[:200]}")
+        response = requests.post(PRODUCT_WEBHOOK_URL, json=data, headers=headers, timeout=10)
+        logger.info(f"Ürün webhook yanıtı: Status {response.status_code}, Yanıt: {response.text}")
         
         if response.status_code == 200:
             logger.info("✅ Ürün webhook testi başarılı!")
             return True
         else:
-            logger.error(f"❌ Ürün webhook testi başarısız: HTTP {response.status_code}")
+            logger.error(f"❌ Ürün webhook testi başarısız. Status: {response.status_code}")
             return False
-    except Exception as e:
-        logger.error(f"❌ Webhook test hatası: {str(e)}")
-        return False
-
-def view_webhook_status():
-    """
-    Webhook durumunu görüntüler
-    """
-    try:
-        from trendyol_api import WEBHOOK_SECRET
-        from webhook_service import app_logger
-        import register_webhooks
-        
-        logger.info("Webhook durumu kontrol ediliyor...")
-        
-        # Kayıtlı webhook'ları al
-        webhooks = register_webhooks.get_registered_webhooks()
-        logger.info(f"Toplam {len(webhooks)} webhook kayıtlı")
-        
-        for webhook in webhooks:
-            webhook_id = webhook.get('id', '')
-            webhook_status = webhook.get('status', '')
-            webhook_url = webhook.get('url', '')
             
-            logger.info(f"Webhook ID: {webhook_id}")
-            logger.info(f"Durum: {webhook_status}")
-            logger.info(f"URL: {webhook_url}")
-            
-            # URL aktif mi kontrol et
-            if webhook_url:
-                test_webhook_connection(webhook_url, WEBHOOK_SECRET)
-        
-        return True
     except Exception as e:
-        logger.error(f"Webhook durumu görüntülenemedi: {str(e)}")
+        logger.error(f"⚠️ Ürün webhook test hatası: {str(e)}")
         return False
 
-def deactivate_all_webhooks():
+def check_dns_resolution(domain):
     """
-    Tüm webhook'ları devre dışı bırakır
+    Belirtilen domain'in DNS çözümlemesini test eder
+    """
+    import socket
+    logger.info(f"DNS çözümleme testi: {domain}")
+    
+    try:
+        ip = socket.gethostbyname(domain)
+        logger.info(f"✅ DNS çözümleme başarılı: {domain} -> {ip}")
+        return True
+    except socket.gaierror:
+        logger.error(f"❌ DNS çözümleme hatası: {domain}")
+        return False
+
+def check_direct_connectivity():
+    """
+    Replit URL'nin doğrudan erişilebilirliğini test eder
+    """
+    domain = BASE_URL.replace("https://", "")
+    
+    import socket
+    logger.info(f"Doğrudan bağlantı testi: {domain}")
+    
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimeout(5)
+        s.connect((domain, 443))
+        s.close()
+        logger.info(f"✅ Doğrudan bağlantı başarılı: {domain}:443")
+        return True
+    except Exception as e:
+        logger.error(f"❌ Doğrudan bağlantı hatası: {str(e)}")
+        return False
+
+def update_webhook_url_in_database():
+    """
+    Webhook URL'lerini veritabanında günceller
     """
     try:
         import register_webhooks
+        order_webhook = register_webhooks.register_webhook('order', ORDER_WEBHOOK_URL)
         
-        webhooks = register_webhooks.get_registered_webhooks()
-        logger.info(f"Toplam {len(webhooks)} webhook devre dışı bırakılacak")
+        if order_webhook:
+            if register_webhooks.activate_webhook(order_webhook):
+                logger.info(f"✅ Webhook kaydedildi ve aktifleştirildi: {ORDER_WEBHOOK_URL}")
+                return True
+            else:
+                logger.error("❌ Webhook aktifleştirilemedi")
+        else:
+            logger.error("❌ Webhook kaydedilemedi")
         
-        for webhook in webhooks:
-            webhook_id = webhook.get('id', '')
-            if webhook_id:
-                result = register_webhooks.deactivate_webhook(webhook_id)
-                if result:
-                    logger.info(f"Webhook başarıyla devre dışı bırakıldı: {webhook_id}")
-                else:
-                    logger.error(f"Webhook devre dışı bırakılamadı: {webhook_id}")
-        
-        return True
-    except Exception as e:
-        logger.error(f"Webhook'lar devre dışı bırakılırken hata: {str(e)}")
         return False
-
-def activate_all_webhooks():
-    """
-    Tüm webhook'ları aktifleştirir
-    """
-    try:
-        import register_webhooks
-        
-        webhooks = register_webhooks.get_registered_webhooks()
-        logger.info(f"Toplam {len(webhooks)} webhook aktifleştirilecek")
-        
-        for webhook in webhooks:
-            webhook_id = webhook.get('id', '')
-            if webhook_id:
-                result = register_webhooks.activate_webhook(webhook_id)
-                if result:
-                    logger.info(f"Webhook başarıyla aktifleştirildi: {webhook_id}")
-                else:
-                    logger.error(f"Webhook aktifleştirilemedi: {webhook_id}")
-        
-        return True
     except Exception as e:
-        logger.error(f"Webhook'lar aktifleştirilirken hata: {str(e)}")
+        logger.error(f"❌ Webhook URL güncelleme hatası: {str(e)}")
         return False
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Trendyol Webhook Test Aracı')
-    parser.add_argument('--status', action='store_true', help='Webhook durumunu görüntüle')
-    parser.add_argument('--test-order', action='store_true', help='Sipariş webhook\'unu test et')
-    parser.add_argument('--test-product', action='store_true', help='Ürün webhook\'unu test et')
-    parser.add_argument('--deactivate', action='store_true', help='Tüm webhook\'ları devre dışı bırak')
-    parser.add_argument('--activate', action='store_true', help='Tüm webhook\'ları aktifleştir')
-    parser.add_argument('--url', help='Webhook URL\'i (varsayılan olarak trendyol_api.py\'den alınır)')
-    parser.add_argument('--secret', help='API Key (varsayılan olarak trendyol_api.py\'den alınır)')
+    print("=============================================")
+    print("   TRENDYOL WEBHOOK TEST ARACI   ")
+    print("=============================================")
+    print(f"Kullanılan ana URL: {BASE_URL}")
+    print(f"Sipariş webhook URL: {ORDER_WEBHOOK_URL}")
+    print(f"Ürün webhook URL: {PRODUCT_WEBHOOK_URL}")
+    print("=============================================")
+    print("1. Webhook durumunu kontrol et")
+    print("2. Sipariş webhook testi")
+    print("3. Ürün webhook testi")
+    print("4. Her iki webhook'u da test et")
+    print("5. Tüm bağlantı testlerini çalıştır")
+    print("6. Webhook URL'lerini güncelle")
+    print("q. Çıkış")
     
-    args = parser.parse_args()
+    choice = input("\nSeçiminiz (1/2/3/4/5/6/q): ")
     
-    # Parametreler için trendyol_api modülünü yükle
-    from trendyol_api import ORDER_WEBHOOK_URL, PRODUCT_WEBHOOK_URL, WEBHOOK_SECRET
-    
-    webhook_order_url = args.url if args.url else ORDER_WEBHOOK_URL
-    webhook_product_url = args.url if args.url else PRODUCT_WEBHOOK_URL
-    secret_key = args.secret if args.secret else WEBHOOK_SECRET
-    
-    if args.status:
-        view_webhook_status()
-    
-    if args.deactivate:
-        deactivate_all_webhooks()
-    
-    if args.activate:
-        activate_all_webhooks()
-    
-    if args.test_order:
-        test_order_webhook(webhook_order_url, secret_key)
-    
-    if args.test_product:
-        test_product_webhook(webhook_product_url, secret_key)
-    
-    # Hiçbir argüman verilmemişse interaktif menü göster
-    if not any(vars(args).values()):
-        print("=============================================")
-        print("   TRENDYOL WEBHOOK TEST ARACI   ")
-        print("=============================================")
-        print("1. Webhook durumunu görüntüle")
-        print("2. Sipariş webhook testi")
-        print("3. Ürün webhook testi")
-        print("4. Tüm webhook'ları devre dışı bırak")
-        print("5. Tüm webhook'ları aktifleştir")
-        print("q. Çıkış")
-        
-        choice = input("\nSeçiminiz (1/2/3/4/5/q): ")
-        
-        if choice == "1":
-            view_webhook_status()
-        elif choice == "2":
-            test_order_webhook(webhook_order_url, secret_key)
-        elif choice == "3":
-            test_product_webhook(webhook_product_url, secret_key)
-        elif choice == "4":
-            deactivate_all_webhooks()
-        elif choice == "5":
-            activate_all_webhooks()
-        elif choice.lower() == "q":
-            print("Programdan çıkılıyor...")
-        else:
-            print("Geçersiz seçim!")
+    if choice == "1":
+        check_webhook_status()
+    elif choice == "2":
+        test_order_webhook()
+    elif choice == "3":
+        test_product_webhook()
+    elif choice == "4":
+        test_order_webhook()
+        print("\n")
+        test_product_webhook()
+    elif choice == "5":
+        domain = BASE_URL.replace("https://", "")
+        check_dns_resolution(domain)
+        check_direct_connectivity()
+        check_webhook_status()
+        test_order_webhook()
+        test_product_webhook()
+    elif choice == "6":
+        update_webhook_url_in_database()
+    elif choice.lower() == "q":
+        print("Programdan çıkılıyor...")
+    else:
+        print("Geçersiz seçim!")

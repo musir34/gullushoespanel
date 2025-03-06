@@ -21,7 +21,7 @@ def get_public_ip():
         replit_owner = os.getenv("REPL_OWNER")
         
         if replit_domain and replit_owner:
-            return f"https://{replit_domain}.{replit_owner}.repl.co"
+            return f"https://{replit_domain}-{replit_owner}.repl.co"
         
         # Alternatif olarak, genel IP adresi kullanma
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -30,7 +30,7 @@ def get_public_ip():
         s.close()
         return f"http://{ip}"
     except:
-        return "https://your-domain.com"  # Varsayılan değer
+        return "https://sadasdadsa-apdurrahmankuli.replit.app"  # Varsayılan değer
 
 WEBHOOK_BASE_URL = os.getenv("WEBHOOK_BASE_URL", get_public_ip())
 ORDER_WEBHOOK_URL = f"{WEBHOOK_BASE_URL}/webhook/orders"

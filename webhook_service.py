@@ -225,22 +225,39 @@ def handle_order_webhook():
 
         # API Key doğrulama
         api_key = request.headers.get('X-API-Key')
-        webhook_secret = current_app.config.get('WEBHOOK_SECRET', '')
+        webhook_secret = current_app.config.get('WEBHOOK_SECRET', 'test_api_key')
         
         logger.info(f"Gelen API Key: {api_key}")
         logger.info(f"Beklenen API Key: {webhook_secret}")
         
-        # API Key kontrolünü geçici olarak devre dışı bırakalım
-        api_key_check = True
+        # Trendyol'dan gelen isteklerde API Key olmayabilir
+        # Bu yüzden API Key kontrolünü esnek yapıyoruz
         
-        if not api_key_check:
-            if api_key != webhook_secret:
-                logger.warning(f"Webhook API Key doğrulaması başarısız: {api_key}")
-                return jsonify({"status": "error", "message": "Geçersiz API Key"}), 401
-            else:
-                logger.info("API Key doğrulaması başarılı")
+        # Eğer API Key Header'ı var ve doğru değilse ret et
+        if api_key and api_key != webhook_secret:
+            logger.warning(f"Webhook API Key doğrulaması başarısız: {api_key}")
+            return jsonify({"status": "error", "message": "Geçersiz API Key"}), 401
+        elif api_key and api_key == webhook_secret:
+            logger.info("API Key doğrulaması başarılı")
         else:
-            logger.info("API Key kontrolü devre dışı bırakıldı, tüm istekler kabul ediliyor")
+            # API Key yok, ama gelen isteği kontrol et
+            # Trendyol'dan gelen isteklerde bazı özel alanlar mutlaka bulunur
+            if request.is_json:
+                data = request.json
+                # Trendyol siparişlerinde bu alanlar bulunur
+                has_order_number = data.get('orderNumber') or (data.get('order') and data.get('order').get('orderNumber'))
+                has_status = data.get('shipmentPackageStatus') or (data.get('order') and data.get('order').get('status'))
+                
+                if has_order_number and has_status:
+                    logger.info("Trendyol siparişi olarak doğrulandı - API Key olmaksızın kabul edildi")
+                else:
+                    logger.warning("API Key yok ve Trendyol siparişi olarak doğrulanamadı")
+                    return jsonify({"status": "error", "message": "Doğrulama başarısız"}), 401
+            else:
+                logger.warning("API Key yok ve JSON verisi değil - ret edildi")
+                return jsonify({"status": "error", "message": "Geçersiz istek formatı"}), 400
+                
+            logger.info("API Key kontrolü esnek modda çalışıyor, Trendyol istekleri için kabul edildi")
 
         # JSON verisini al
         try:
@@ -379,17 +396,26 @@ def handle_order_created(data):
     Yeni sipariş oluşturulduğunda çalışır
     """
     try:
+        # Log raw data for debugging
+        logger.info(f"Sipariş webhook verileri: {json.dumps(data, indent=2)}")
+        
+        # Check if data has the order node or is itself the order data
         order_data = data.get('order', {})
+        if not order_data and 'orderNumber' in data:
+            order_data = data
+            
         order_number = str(order_data.get('orderNumber') or order_data.get('id', ''))
 
         # Bu olayı order_events listesine ekle
         from datetime import datetime
-        order_events.append({
+        order_event = {
             'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
             'type': 'OrderCreated',
             'order_number': order_number,
             'status': order_data.get('status', 'Created')
-        })
+        }
+        order_events.append(order_event)
+        logger.info(f"Sipariş olayı kaydedildi: {order_event}")
 
         # Listeyi maksimum 100 olayla sınırla
         if len(order_events) > 100:
@@ -399,26 +425,39 @@ def handle_order_created(data):
             logger.error("Sipariş numarası bulunamadı")
             return
 
+        # Log sipariş bilgileri
+        logger.info(f"İşlenen sipariş: Numara={order_number}, Durum={order_data.get('status', 'Created')}")
+        
+        # Sipariş ürünleri
+        lines = order_data.get('lines', [])
+        if lines:
+            logger.info(f"Sipariş ürünleri: {len(lines)} adet ürün")
+            for i, line in enumerate(lines):
+                logger.info(f"Ürün {i+1}: {line.get('title')} - {line.get('barcode')} - {line.get('quantity')} adet")
+
         # Sipariş veritabanında var mı kontrol et
-        existing_order = Order.query.filter_by(order_number=order_number).first()
-        if existing_order:
-            logger.info(f"Sipariş zaten mevcut: {order_number}, güncelleniyor")
-            # Mevcut siparişi güncelle (order_service.py'daki update_existing_order fonksiyonunu çağır)
-            from order_service import update_existing_order, create_order_details
-            update_existing_order(existing_order, order_data, order_data.get('status', 'Created'))
-        else:
-            logger.info(f"Yeni sipariş oluşturuluyor: {order_number}")
-            # Yeni sipariş oluştur (order_service.py'daki combine_line_items fonksiyonunu çağır)
-            from order_service import combine_line_items
-            combined_order = combine_line_items(order_data, order_data.get('status', 'Created'))
-            new_order = Order(**combined_order)
-            db.session.add(new_order)
+        try:
+            existing_order = Order.query.filter_by(order_number=order_number).first()
+            if existing_order:
+                logger.info(f"Sipariş zaten mevcut: {order_number}, güncelleniyor")
+                # Mevcut siparişi güncelle
+                from order_service import update_existing_order
+                update_existing_order(existing_order, order_data, order_data.get('status', 'Created'))
+            else:
+                logger.info(f"Yeni sipariş oluşturuluyor: {order_number}")
+                # Yeni sipariş oluştur
+                from order_service import combine_line_items
+                combined_order = combine_line_items(order_data, order_data.get('status', 'Created'))
+                new_order = Order(**combined_order)
+                db.session.add(new_order)
 
-        db.session.commit()
-        logger.info(f"Sipariş başarıyla kaydedildi: {order_number}")
-
+            db.session.commit()
+            logger.info(f"Sipariş başarıyla kaydedildi: {order_number}")
+        except Exception as inner_e:
+            logger.error(f"Sipariş veritabanı işlemi hatası: {str(inner_e)}", exc_info=True)
+            db.session.rollback()
+            
     except Exception as e:
-        db.session.rollback()
         logger.error(f"Sipariş oluşturma hatası: {str(e)}", exc_info=True)
 
 def handle_order_status_changed(data):
