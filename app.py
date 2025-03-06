@@ -68,11 +68,12 @@ from get_products import get_products_bp
 from all_orders_service import all_orders_service_bp
 from new_orders_service import new_orders_service_bp
 from processed_orders_service import processed_orders_service_bp
-from iade_islemleri import iade_islemleri, fetch_data_from_api, save_to_database  # iade_islemleri'nden import ettiğimizi varsayıyorum
+from iade_islemleri import iade_islemleri, fetch_data_from_api, save_to_database
 from siparis_fisi import siparis_fisi_bp
 from analysis import analysis_bp
 from stock_report import stock_report_bp
-from openai_service import openai_bp #Added OpenAI blueprint import
+from openai_service import openai_bp
+from siparisler import siparisler_bp
 
 
 blueprints = [
@@ -91,7 +92,8 @@ blueprints = [
     siparis_fisi_bp,
     analysis_bp,
     stock_report_bp,
-    openai_bp #Added OpenAI blueprint to the list
+    openai_bp,
+    siparisler_bp
 ]
 
 for bp in blueprints:
