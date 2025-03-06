@@ -292,3 +292,111 @@ async def reject_claim(claim_id):
         logger.error(f"Hata: reject_claim - {e}")
         flash(f'İade talebi reddedilirken bir hata oluştu: {str(e)}', 'error')
         return redirect(url_for('claims_service.claims_list'))
+async def fetch_claims_async():
+    """
+    Trendyol API'den iade/talep verilerini asenkron olarak çeker ve veritabanını günceller
+    """
+    try:
+        import aiohttp
+        import asyncio
+        import base64
+        import json
+        import time
+        from datetime import datetime, timedelta
+        from trendyol_api import API_KEY, API_SECRET, SUPPLIER_ID
+        import logging
+        from models import db, Claim  # Claim modelinizin adına göre düzenleyin
+        
+        logger = logging.getLogger(__name__)
+        
+        # Son 30 günlük talepleri çek
+        end_date = int(time.time() * 1000)
+        start_date = int((datetime.now() - timedelta(days=30)).timestamp() * 1000)
+
+        url = f'https://api.trendyol.com/sapigw/suppliers/{SUPPLIER_ID}/claims'
+        credentials = f'{API_KEY}:{API_SECRET}'
+        encoded_credentials = base64.b64encode(credentials.encode('utf-8')).decode('utf-8')
+        headers = {
+            'Authorization': f'Basic {encoded_credentials}',
+            'Content-Type': 'application/json'
+        }
+
+        all_claims = []
+        page = 0
+        size = 100
+        
+        async with aiohttp.ClientSession() as session:
+            while True:
+                params = {
+                    'size': size,
+                    'page': page,
+                    'startDate': start_date,
+                    'endDate': end_date,
+                    'sortColumn': 'CLAIM_DATE',
+                    'sortDirection': 'DESC'
+                }
+                
+                try:
+                    async with session.get(url, headers=headers, params=params) as response:
+                        if response.status != 200:
+                            logger.error(f"API isteği başarısız oldu: {response.status} - {await response.text()}")
+                            break
+                        
+                        data = await response.json()
+                        
+                        if not isinstance(data, dict):
+                            logger.error("API beklenen formatta JSON dönmedi.")
+                            break
+                        
+                        content = data.get('content')
+                        if not content:
+                            logger.debug("Daha fazla iade/talep yok, döngü sonlandırılıyor.")
+                            break
+                        
+                        all_claims.extend(content)
+                        
+                        # Sayfalama için - son sayfaya gelindiyse döngüden çık
+                        total_pages = data.get('totalPages', 0)
+                        if page >= total_pages - 1:
+                            break
+                        
+                        page += 1
+                        
+                except Exception as e:
+                    logger.error(f"Talep verisi çekilirken hata: {e}")
+                    break
+                
+        logger.info(f"Toplam {len(all_claims)} adet talep çekildi.")
+        
+        # Veritabanını güncelle
+        # Burada kendi modelinize ve veritabanı yapınıza göre işlem yapmanız gerekiyor
+        # Örnek olarak:
+        for claim_data in all_claims:
+            try:
+                claim_id = claim_data.get('id')
+                existing_claim = Claim.query.filter_by(claim_id=claim_id).first()
+                
+                if existing_claim:
+                    # Mevcut talebi güncelle
+                    existing_claim.status = claim_data.get('status')
+                    existing_claim.last_updated = datetime.now()
+                    # Diğer alanları güncelle
+                else:
+                    # Yeni talep oluştur
+                    new_claim = Claim(
+                        claim_id=claim_id,
+                        status=claim_data.get('status'),
+                        # Diğer alanları doldur
+                    )
+                    db.session.add(new_claim)
+                    
+            except Exception as e:
+                logger.error(f"Talep verisi kaydedilirken hata (ID: {claim_data.get('id')}): {e}")
+                continue
+                
+        db.session.commit()
+        logger.info("Talep verileri başarıyla güncellendi.")
+        
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Talep verileri güncellenirken bir hata oluştu: {e}")
