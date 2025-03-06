@@ -271,6 +271,16 @@ function checkWebhookStatus() {
         // Trendyol'un tek webhook desteği sebebiyle, uyarı olarak göster
         productStatus.className = 'badge bg-warning';
         productStatus.textContent = hasActiveWebhook ? 'Trendyol Kısıtlaması' : 'Pasif';
+        
+        // Trendyol kısıtlaması ile ilgili açıklama ekle
+        if (hasActiveWebhook && !document.getElementById('webhook-restriction-warning')) {
+          const restrictionDiv = document.createElement('div');
+          restrictionDiv.id = 'webhook-restriction-warning';
+          restrictionDiv.className = 'alert alert-warning mt-3';
+          restrictionDiv.innerHTML = '<strong>Trendyol Kısıtlaması:</strong> Trendyol API\'si her satıcı için yalnızca bir adet aktif webhook\'a izin vermektedir. Şu anda sipariş webhook\'u aktif olduğu için, ürün webhook\'u aktif edilemiyor. Her ikisini birden kullanmak isterseniz, sipariş webhook\'u üzerinden gelen bildirimler içerisinde ürün bilgilerini de alabilirsiniz.';
+          
+          document.querySelector('.card-body').appendChild(restrictionDiv);
+        }
       }
       
       // Trendyol'un webhook sınırlamasını belirt

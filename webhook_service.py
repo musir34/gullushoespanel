@@ -132,7 +132,7 @@ def api_register_webhooks():
             return jsonify({
                 'success': True, 
                 'message': 'Sipariş webhook\'u başarıyla kaydedildi',
-                'note': 'Trendyol API sadece bir webhook desteklemektedir, ürün webhook\'u yerine sipariş webhook\'u kullanılacaktır'
+                'note': 'Trendyol API sadece bir webhook desteklemektedir, ürün webhook\'u yerine sipariş webhook\'u kullanılacaktır. Bu Trendyol\'un kısıtlamasıdır ve değiştirilemez.'
             })
         elif product_webhook_activated:
             logger.info("Ürün webhook'u başarıyla kaydedildi ve aktifleştirildi")
