@@ -178,25 +178,28 @@ def update_products():
 def update_claims():
     """İade/talepleri günceller"""
     try:
-        logger.info("İadeler/talepler güncellenmeye başlanıyor...")
+        # Logger'ı en başta tanımla
+        from logger_config import app_logger as claims_logger
+        claims_logger.info("İadeler/talepler güncellenmeye başlanıyor...")
+        
         from claims_service import fetch_claims_async
         try:
-            from logger_config import app_logger as logger
             # İade/talepleri güncelleme kodunu burada çalıştır
             asyncio.run(fetch_claims_async())
             # İade/talep sayısını al
             from models import Claim
             claim_count = Claim.query.count()
             save_update_info('claims', True, claim_count)
-            logger.info(f"İadeler/talepler güncellendi. Toplam iade/talep sayısı: {claim_count}")
+            claims_logger.info(f"İadeler/talepler güncellendi. Toplam iade/talep sayısı: {claim_count}")
             return True
         except Exception as e:
-            logger.error(f"İadeler/talepler güncellenirken hata: {str(e)}")
+            claims_logger.error(f"İadeler/talepler güncellenirken hata: {str(e)}")
             save_update_info('claims', False, 0)
             return False
 
     except Exception as e:
-        logger.exception(f"update_claims fonksiyonunda beklenmedik hata: {e}") # daha genel bir hata yakalama
+        # Global logger'ı kullan, claims_logger erişilemeyebilir
+        logger.exception(f"update_claims fonksiyonunda beklenmedik hata: {e}")
         return False
 
 

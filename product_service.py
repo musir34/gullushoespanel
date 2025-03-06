@@ -136,7 +136,7 @@ def process_all_products(all_products_data):
                 'barcode': barcode,
                 'title': product_data.get('title', ''),
                 'product_main_id': str(product_data.get('productMainId', '')),
-                'category_name': product_data.get('categoryName', ''),
+                'categoryName': product_data.get('categoryName', ''),  # category_name yerine categoryName kullanılmalı
                 'quantity': product_data.get('quantity', 0),
                 'list_price': product_data.get('listPrice', 0),
                 'sale_price': product_data.get('salePrice', 0),
