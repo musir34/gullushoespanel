@@ -198,15 +198,20 @@ def check_webhook_status():
             })
             
             # Durum kontrolü - API yanıtlarından gelen değerleri kontrol et
-            if webhook_name == "OrderWebhook":
-                # Durumu string olarak karşılaştır, büyük/küçük harf duyarlılığını kaldır
-                if str(webhook_status).upper() == "ACTIVE":
+            # Webhook adı veya URL'ye göre tür belirle
+            is_order_webhook = webhook_name == "OrderWebhook" or "webhook/orders" in webhook_url
+            is_product_webhook = webhook_name == "ProductWebhook" or "webhook/products" in webhook_url
+            
+            # Statü kontrolü
+            if str(webhook_status).upper() == "ACTIVE":
+                if is_order_webhook:
                     order_webhook_active = True
                     logger.info(f"Sipariş webhook'u aktif olarak işaretlendi. Durum: {webhook_status}")
-            elif webhook_name == "ProductWebhook":
-                if str(webhook_status).upper() == "ACTIVE":
+                elif is_product_webhook:
                     product_webhook_active = True
                     logger.info(f"Ürün webhook'u aktif olarak işaretlendi. Durum: {webhook_status}")
+                else:
+                    logger.warning(f"Tanımlanamayan aktif webhook bulundu: {webhook_name}, URL: {webhook_url}")
         
         result = {
             "order_webhook_active": order_webhook_active,

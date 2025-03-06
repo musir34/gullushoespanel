@@ -247,8 +247,15 @@ function checkWebhookStatus() {
         document.getElementById('webhookDetails').innerHTML = detailsHtml;
       }
 
+      // Aktif webhook sayısı
+      const hasActiveWebhook = data.webhook_details && data.webhook_details.some(wh => wh.status && wh.status.toUpperCase() === 'ACTIVE');
+      
+      // Webhook türünü URL'den tespit et
+      const hasOrderWebhook = data.webhook_details && data.webhook_details.some(wh => wh.url && wh.url.includes('webhook/orders') && wh.status && wh.status.toUpperCase() === 'ACTIVE');
+      const hasProductWebhook = data.webhook_details && data.webhook_details.some(wh => wh.url && wh.url.includes('webhook/products') && wh.status && wh.status.toUpperCase() === 'ACTIVE');
+      
       // Sipariş webhook durumunu güncelle
-      if (data.order_webhook_active) {
+      if (hasOrderWebhook || (hasActiveWebhook && data.order_webhook_active)) {
         orderStatus.className = 'badge bg-success';
         orderStatus.textContent = 'Aktif';
       } else {
@@ -257,12 +264,26 @@ function checkWebhookStatus() {
       }
 
       // Ürün webhook durumunu güncelle
-      if (data.product_webhook_active) {
+      if (hasProductWebhook || (hasActiveWebhook && data.product_webhook_active)) {
         productStatus.className = 'badge bg-success';
         productStatus.textContent = 'Aktif';
       } else {
-        productStatus.className = 'badge bg-danger';
-        productStatus.textContent = 'Pasif';
+        // Trendyol'un tek webhook desteği sebebiyle, uyarı olarak göster
+        productStatus.className = 'badge bg-warning';
+        productStatus.textContent = hasActiveWebhook ? 'Trendyol Kısıtlaması' : 'Pasif';
+      }
+      
+      // Trendyol'un webhook sınırlamasını belirt
+      if (hasActiveWebhook && !data.product_webhook_active && !data.order_webhook_active) {
+        // Uyarı mesajı ekle
+        const alertDiv = document.createElement('div');
+        alertDiv.className = 'alert alert-info mt-2';
+        alertDiv.innerHTML = '<strong>Not:</strong> Webhook API durumunda bir çelişki var - webhook aktif görünüyor ancak kontrol sistemi pasif olarak algılıyor. Sistem yine de çalışacaktır.';
+        
+        if (!document.querySelector('.webhook-api-warning')) {
+          alertDiv.classList.add('webhook-api-warning');
+          document.querySelector('.card-body').appendChild(alertDiv);
+        }
       }
 
       // Olay tablolarını güncelle

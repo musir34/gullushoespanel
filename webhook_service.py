@@ -1,4 +1,3 @@
-
 from flask import Blueprint, request, jsonify, current_app, render_template
 import json
 import logging
@@ -29,7 +28,7 @@ def webhook_dashboard():
     Webhook izleme dashboardu
     """
     from trendyol_api import ORDER_WEBHOOK_URL, PRODUCT_WEBHOOK_URL
-    
+
     # Log dosyasının son 100 satırını oku
     try:
         with open('webhook_service.log', 'r') as f:
@@ -37,7 +36,7 @@ def webhook_dashboard():
         logs = ''.join(logs)
     except:
         logs = "Log dosyası bulunamadı."
-    
+
     return render_template('webhook_kurulum.html', 
                           order_webhook_url=ORDER_WEBHOOK_URL,
                           product_webhook_url=PRODUCT_WEBHOOK_URL,
@@ -54,7 +53,7 @@ def webhook_status():
     try:
         import register_webhooks
         status_info = register_webhooks.check_webhook_status()
-        
+
         # Sonuçlar ve olayları birleştir
         response_data = {
             'order_webhook_active': status_info.get('order_webhook_active', False),
@@ -64,14 +63,14 @@ def webhook_status():
             'recent_order_events': order_events[-20:],  # Son 20 olay
             'recent_product_events': product_events[-20:]  # Son 20 olay
         }
-        
+
         # Durumu loglama
         logger.info(f"API webhook durumu yanıtı: {response_data}")
-        
+
         # Hata varsa ekle
         if 'error' in status_info:
             response_data['error'] = status_info['error']
-            
+
         return jsonify(response_data)
     except Exception as e:
         logger.error(f"Webhook durumu kontrol edilirken hata: {str(e)}", exc_info=True)
@@ -91,11 +90,11 @@ def api_register_webhooks():
     """
     try:
         import register_webhooks
-        
+
         # Önce mevcut webhook'ları al
         existing_webhooks = register_webhooks.get_registered_webhooks()
         logger.info(f"Mevcut webhook sayısı: {len(existing_webhooks)}")
-        
+
         # Mevcut webhook'ları sil
         deleted_count = 0
         for webhook in existing_webhooks:
@@ -104,47 +103,49 @@ def api_register_webhooks():
                 result = register_webhooks.delete_webhook(webhook_id)
                 if result:
                     deleted_count += 1
-                    
+
         logger.info(f"Silinen webhook sayısı: {deleted_count}")
-        
+
         # Yeni webhook'ları kaydet
         from trendyol_api import ORDER_WEBHOOK_URL, PRODUCT_WEBHOOK_URL
-        
+
         logger.info(f"Sipariş webhook URL: {ORDER_WEBHOOK_URL}")
         order_result = register_webhooks.register_webhook('order', ORDER_WEBHOOK_URL)
-        
+
         logger.info(f"Ürün webhook URL: {PRODUCT_WEBHOOK_URL}")
         product_result = register_webhooks.register_webhook('product', PRODUCT_WEBHOOK_URL)
-        
-        # Hem sipariş hem de ürün webhook'ları başarıyla oluşturuldu mu kontrol et
-        # False veya None olmayan tüm değerler başarılı olarak değerlendirilir
+
+        order_webhook_activated = False
+        product_webhook_activated = False
+
         if order_result:
-            # Sipariş webhook'u aktif hale getir
-            register_webhooks.activate_webhook(order_result)
-            logger.info(f"Sipariş webhook'u aktifleştirildi: {order_result}")
-            
+            if register_webhooks.activate_webhook(order_result):
+                order_webhook_activated = True
+
         if product_result:
-            # Ürün webhook'u aktif hale getir
-            register_webhooks.activate_webhook(product_result)
-            logger.info(f"Ürün webhook'u aktifleştirildi: {product_result}")
-            
-        # En az bir webhook başarıyla oluşturulduysa başarılı sayılır
-        if order_result or product_result:
-                
+            if register_webhooks.activate_webhook(product_result):
+                product_webhook_activated = True
+
+        # Trendyol'un sadece 1 webhook sınırlaması
+        if order_webhook_activated:
             logger.info("Webhook'lar başarıyla kaydedildi ve aktifleştirildi")
             return jsonify({
                 'success': True, 
-                'order_webhook_id': order_result,
-                'product_webhook_id': product_result
+                'message': 'Sipariş webhook\'u başarıyla kaydedildi',
+                'note': 'Trendyol API sadece bir webhook desteklemektedir, ürün webhook\'u yerine sipariş webhook\'u kullanılacaktır'
+            })
+        elif product_webhook_activated:
+            logger.info("Ürün webhook'u başarıyla kaydedildi ve aktifleştirildi")
+            return jsonify({
+                'success': True, 
+                'message': 'Ürün webhook\'u başarıyla kaydedildi',
+                'note': 'Trendyol API sadece bir webhook desteklemektedir'
             })
         else:
-            logger.warning(f"Webhook kayıt işlemi kısmen başarısız: Sipariş: {order_result}, Ürün: {product_result}")
-            return jsonify({
-                'success': False, 
-                'error': 'Webhook kayıt işlemi başarısız',
-                'order_result': order_result,
-                'product_result': product_result
-            })
+            logger.warning(f"Webhook kayıt işlemi başarısız: Sipariş: {order_webhook_activated}, Ürün: {product_webhook_activated}")
+            return jsonify({'success': False, 'error': 'Webhook kayıt işlemi başarısız oldu'})
+
+
     except Exception as e:
         logger.error(f"Webhook kayıt hatası: {str(e)}", exc_info=True)
         return jsonify({'success': False, 'error': str(e)})
@@ -155,11 +156,11 @@ def webhook_logs():
     Webhook loglarını döndürür
     """
     log_type = request.args.get('type', 'all')
-    
+
     try:
         with open('webhook_service.log', 'r') as f:
             all_logs = f.readlines()
-        
+
         # Log tipine göre filtreleme
         if log_type == 'order':
             filtered_logs = [log for log in all_logs if 'order' in log.lower() or 'sipariş' in log.lower()]
@@ -169,10 +170,10 @@ def webhook_logs():
             filtered_logs = [log for log in all_logs if 'error' in log.lower() or 'hata' in log.lower()]
         else:
             filtered_logs = all_logs
-        
+
         # Son 200 log satırı döndür
         logs = ''.join(filtered_logs[-200:])
-        
+
         return jsonify({'logs': logs})
     except Exception as e:
         logger.error(f"Log dosyası okunurken hata: {str(e)}")
@@ -186,13 +187,13 @@ def verify_webhook_signature(request):
     # Örnek: Trendyol'dan gelen özel bir header ile doğrulama
     signature = request.headers.get('X-Trendyol-Signature', '')
     webhook_secret = current_app.config.get('WEBHOOK_SECRET', '')
-    
+
     # Gerçek implementasyonda imza doğrulama algoritması kullanılmalıdır
     # Bu örnek sadece basit bir kontrol sağlar
     if not signature or signature != webhook_secret:
         logger.warning(f"Webhook imza doğrulaması başarısız: {signature}")
         return False
-    
+
     return True
 
 @webhook_bp.route('/webhook/orders', methods=['POST'])
@@ -202,28 +203,28 @@ def handle_order_webhook():
     """
     try:
         logger.info("Sipariş webhook'u alındı")
-        
+
         # İsteğin içeriğini logla (debug için)
         logger.debug(f"Webhook İçeriği: {request.data.decode('utf-8')}")
-        
+
         # API Key doğrulama
         api_key = request.headers.get('X-API-Key')
         webhook_secret = current_app.config.get('WEBHOOK_SECRET', '')
-        
+
         if api_key != webhook_secret:
             logger.warning(f"Webhook API Key doğrulaması başarısız: {api_key}")
             return jsonify({"status": "error", "message": "Geçersiz API Key"}), 401
-        
+
         # JSON verisini al
         webhook_data = request.json
         if not webhook_data:
             logger.error("Webhook verisi boş veya geçersiz JSON formatında")
             return jsonify({"status": "error", "message": "Geçersiz veri formatı"}), 400
-        
+
         # Sipariş durumu doğrudan webhook_data üzerinden alınabilir
         status = webhook_data.get('shipmentPackageStatus', '')
         logger.info(f"Sipariş Durumu: {status}")
-        
+
         # Webhook içeriğini kaydet (izleme için)
         order_events.append({
             'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
@@ -231,11 +232,11 @@ def handle_order_webhook():
             'order_number': webhook_data.get('orderNumber', ''),
             'data': webhook_data
         })
-        
+
         # Listeyi maksimum 100 olayla sınırla
         if len(order_events) > 100:
             order_events.pop(0)
-        
+
         # Sipariş durumuna göre işlem
         if status == "CREATED":
             handle_order_created(webhook_data)
@@ -245,9 +246,9 @@ def handle_order_webhook():
             handle_order_status_changed(webhook_data)
         else:
             logger.warning(f"Bilinmeyen sipariş durumu: {status}")
-        
+
         return jsonify({"status": "success", "message": "Webhook başarıyla işlendi"}), 200
-        
+
     except Exception as e:
         logger.error(f"Sipariş webhook işleme hatası: {str(e)}", exc_info=True)
         return jsonify({"status": "error", "message": str(e)}), 500
@@ -259,44 +260,44 @@ def handle_product_webhook():
     """
     try:
         logger.info("Ürün webhook'u alındı")
-        
+
         # İsteğin içeriğini logla (debug için)
         logger.debug(f"Webhook İçeriği: {request.data.decode('utf-8')}")
-        
+
         # API Key doğrulama
         api_key = request.headers.get('X-API-Key')
         webhook_secret = current_app.config.get('WEBHOOK_SECRET', '')
-        
+
         if api_key != webhook_secret:
             logger.warning(f"Webhook API Key doğrulaması başarısız: {api_key}")
             return jsonify({"status": "error", "message": "Geçersiz API Key"}), 401
-        
+
         # JSON verisini al
         webhook_data = request.json
         if not webhook_data:
             logger.error("Webhook verisi boş veya geçersiz JSON formatında")
             return jsonify({"status": "error", "message": "Geçersiz veri formatı"}), 400
-        
+
         # Webhook olayının tipini belirle
         event_type = None
-        
+
         # Ürün yaratma/güncelleme bilgisi varsa
         if 'product' in webhook_data:
             if webhook_data.get('productCode', '') not in product_events_processed:
                 event_type = 'ProductCreated'
             else:
                 event_type = 'ProductUpdated'
-                
+
         # Fiyat değişikliği bilgisi varsa
         elif 'price' in webhook_data or 'salePrice' in webhook_data or 'listPrice' in webhook_data:
             event_type = 'PriceChanged'
-            
+
         # Stok değişikliği bilgisi varsa
         elif 'quantity' in webhook_data or 'stock' in webhook_data:
             event_type = 'StockChanged'
-        
+
         logger.info(f"Belirlenen webhook tipi: {event_type}")
-        
+
         # Webhook içeriğini kaydet (izleme için)
         product_events.append({
             'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
@@ -304,11 +305,11 @@ def handle_product_webhook():
             'barcode': webhook_data.get('barcode', ''),
             'data': webhook_data
         })
-        
+
         # Listeyi maksimum 100 olayla sınırla
         if len(product_events) > 100:
             product_events.pop(0)
-        
+
         # Olay tipine göre işlem
         if event_type == 'ProductCreated':
             handle_product_created(webhook_data)
@@ -323,9 +324,9 @@ def handle_product_webhook():
             handle_stock_changed(webhook_data)
         else:
             logger.warning(f"Bilinmeyen webhook içeriği: {webhook_data}")
-        
+
         return jsonify({"status": "success", "message": "Webhook başarıyla işlendi"}), 200
-        
+
     except Exception as e:
         logger.error(f"Ürün webhook işleme hatası: {str(e)}", exc_info=True)
         return jsonify({"status": "error", "message": str(e)}), 500
@@ -337,7 +338,7 @@ def handle_order_created(data):
     try:
         order_data = data.get('order', {})
         order_number = str(order_data.get('orderNumber') or order_data.get('id', ''))
-        
+
         # Bu olayı order_events listesine ekle
         from datetime import datetime
         order_events.append({
@@ -346,15 +347,15 @@ def handle_order_created(data):
             'order_number': order_number,
             'status': order_data.get('status', 'Created')
         })
-        
+
         # Listeyi maksimum 100 olayla sınırla
         if len(order_events) > 100:
             order_events.pop(0)
-        
+
         if not order_number:
             logger.error("Sipariş numarası bulunamadı")
             return
-            
+
         # Sipariş veritabanında var mı kontrol et
         existing_order = Order.query.filter_by(order_number=order_number).first()
         if existing_order:
@@ -369,10 +370,10 @@ def handle_order_created(data):
             combined_order = combine_line_items(order_data, order_data.get('status', 'Created'))
             new_order = Order(**combined_order)
             db.session.add(new_order)
-            
+
         db.session.commit()
         logger.info(f"Sipariş başarıyla kaydedildi: {order_number}")
-            
+
     except Exception as e:
         db.session.rollback()
         logger.error(f"Sipariş oluşturma hatası: {str(e)}", exc_info=True)
@@ -385,7 +386,7 @@ def handle_order_status_changed(data):
         order_data = data.get('order', {})
         order_number = str(order_data.get('orderNumber') or order_data.get('id', ''))
         new_status = order_data.get('status')
-        
+
         # Bu olayı order_events listesine ekle
         from datetime import datetime
         order_events.append({
@@ -394,15 +395,15 @@ def handle_order_status_changed(data):
             'order_number': order_number,
             'status': new_status
         })
-        
+
         # Listeyi maksimum 100 olayla sınırla
         if len(order_events) > 100:
             order_events.pop(0)
-        
+
         if not order_number or not new_status:
             logger.error("Sipariş numarası veya durum bulunamadı")
             return
-            
+
         # Siparişi bul ve durumunu güncelle
         order = Order.query.filter_by(order_number=order_number).first()
         if order:
@@ -412,7 +413,7 @@ def handle_order_status_changed(data):
             logger.info(f"Sipariş durumu güncellendi: {order_number}")
         else:
             logger.warning(f"Güncellenmek istenen sipariş bulunamadı: {order_number}")
-            
+
     except Exception as e:
         db.session.rollback()
         logger.error(f"Sipariş durumu güncelleme hatası: {str(e)}", exc_info=True)
@@ -425,11 +426,11 @@ def handle_package_status_changed(data):
         package_data = data.get('package', {})
         package_id = str(package_data.get('id', ''))
         new_status = package_data.get('status')
-        
+
         if not package_id or not new_status:
             logger.error("Paket ID veya durum bulunamadı")
             return
-            
+
         # Pakete ait siparişi bul
         order = Order.query.filter_by(package_number=package_id).first()
         if order:
@@ -439,7 +440,7 @@ def handle_package_status_changed(data):
             logger.info(f"Paket durumu güncellendi: {package_id}")
         else:
             logger.warning(f"Güncellenmek istenen paket bulunamadı: {package_id}")
-            
+
     except Exception as e:
         db.session.rollback()
         logger.error(f"Paket durumu güncelleme hatası: {str(e)}", exc_info=True)
@@ -451,7 +452,7 @@ def handle_product_created(data):
     try:
         product_data = data.get('product', {})
         barcode = product_data.get('barcode', '')
-        
+
         # Bu olayı product_events listesine ekle
         from datetime import datetime
         product_events.append({
@@ -460,15 +461,15 @@ def handle_product_created(data):
             'barcode': barcode,
             'action': 'Yeni ürün eklendi'
         })
-        
+
         # Listeyi maksimum 100 olayla sınırla
         if len(product_events) > 100:
             product_events.pop(0)
-        
+
         if not barcode:
             logger.error("Ürün barkodu bulunamadı")
             return
-            
+
         # Ürün veritabanında var mı kontrol et
         existing_product = Product.query.filter_by(barcode=barcode).first()
         if existing_product:
@@ -496,10 +497,10 @@ def handle_product_created(data):
                 last_update_date=datetime.now()
             )
             db.session.add(new_product)
-            
+
         db.session.commit()
         logger.info(f"Ürün başarıyla kaydedildi: {barcode}")
-            
+
     except Exception as e:
         db.session.rollback()
         logger.error(f"Ürün oluşturma hatası: {str(e)}", exc_info=True)
@@ -511,11 +512,11 @@ def handle_product_updated(data):
     try:
         product_data = data.get('product', {})
         barcode = product_data.get('barcode', '')
-        
+
         if not barcode:
             logger.error("Ürün barkodu bulunamadı")
             return
-            
+
         # Ürünü bul ve bilgilerini güncelle
         product = Product.query.filter_by(barcode=barcode).first()
         if product:
@@ -525,7 +526,7 @@ def handle_product_updated(data):
             logger.info(f"Ürün bilgileri güncellendi: {barcode}")
         else:
             logger.warning(f"Güncellenmek istenen ürün bulunamadı: {barcode}")
-            
+
     except Exception as e:
         db.session.rollback()
         logger.error(f"Ürün güncelleme hatası: {str(e)}", exc_info=True)
@@ -539,11 +540,11 @@ def handle_price_changed(data):
         barcode = price_data.get('barcode', '')
         new_sale_price = price_data.get('salePrice')
         new_list_price = price_data.get('listPrice')
-        
+
         if not barcode or (new_sale_price is None and new_list_price is None):
             logger.error("Ürün barkodu veya fiyat bilgisi bulunamadı")
             return
-            
+
         # Ürünü bul ve fiyatını güncelle
         product = Product.query.filter_by(barcode=barcode).first()
         if product:
@@ -557,7 +558,7 @@ def handle_price_changed(data):
             logger.info(f"Ürün fiyatı güncellendi: {barcode}")
         else:
             logger.warning(f"Güncellenmek istenen ürün bulunamadı: {barcode}")
-            
+
     except Exception as e:
         db.session.rollback()
         logger.error(f"Ürün fiyat güncelleme hatası: {str(e)}", exc_info=True)
@@ -570,11 +571,11 @@ def handle_stock_changed(data):
         stock_data = data.get('stockChange', {})
         barcode = stock_data.get('barcode', '')
         new_quantity = stock_data.get('quantity')
-        
+
         if not barcode or new_quantity is None:
             logger.error("Ürün barkodu veya stok bilgisi bulunamadı")
             return
-            
+
         # Ürünü bul ve stok durumunu güncelle
         product = Product.query.filter_by(barcode=barcode).first()
         if product:
@@ -585,7 +586,7 @@ def handle_stock_changed(data):
             logger.info(f"Ürün stok durumu güncellendi: {barcode}")
         else:
             logger.warning(f"Güncellenmek istenen ürün bulunamadı: {barcode}")
-            
+
     except Exception as e:
         db.session.rollback()
         logger.error(f"Ürün stok güncelleme hatası: {str(e)}", exc_info=True)
@@ -606,8 +607,8 @@ def update_product_details(product, product_data):
     product.color = product_data.get('color', product.color)
     product.size = product_data.get('size', product.size)
     product.stock_code = product_data.get('stockCode', product.stock_code)
-    
+
     if product_data.get('images'):
         product.images = product_data.get('images', [''])[0]
-        
+
     product.last_update_date = datetime.now()
