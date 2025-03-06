@@ -13,7 +13,12 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Ana uygulama oluşturma
 app = Flask(__name__)
+
+# Asenkron işlemleri destekle
+from flask_cors import CORS
+CORS(app)
 
 from siparisler import siparisler_bp
 app.secret_key = os.environ.get('SECRET_KEY', 'varsayılan_anahtar')
@@ -35,8 +40,14 @@ except Exception as e:
 # Session nesnesini uygulama context'ine ekleyelim
 app.config['Session'] = Session
 
-# SQLAlchemy'yi uygulama ile başlat
+# Flask-SQLAlchemy, Flask-Login ve diğer uzantıları başlat
 db.init_app(app)
+
+# Trendyol API servisleri
+from product_service import product_service_bp
+from claims_service import claims_service_bp
+app.register_blueprint(product_service_bp)
+app.register_blueprint(claims_service_bp)
 
 with app.app_context():
     # Eksik sütunu ekle
@@ -93,7 +104,9 @@ blueprints = [
     analysis_bp,
     stock_report_bp,
     openai_bp,
-    siparisler_bp
+    siparisler_bp,
+    product_service_bp,
+    claims_service_bp
 ]
 
 for bp in blueprints:

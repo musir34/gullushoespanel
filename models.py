@@ -158,7 +158,7 @@ class Order(db.Model):
 
 class ProductArchive(db.Model):
     __tablename__ = 'product_archive'
-    
+
     barcode = db.Column(db.String, primary_key=True)
     original_product_barcode = db.Column(db.String)
     title = db.Column(db.String)
@@ -265,7 +265,7 @@ class Archive(db.Model):
 # Değişim Modeli
 class YeniSiparis(db.Model):
     __tablename__ = 'yeni_siparisler'
-    
+
     id = db.Column(db.Integer, primary_key=True)
     siparis_no = db.Column(db.String, unique=True)
     musteri_adi = db.Column(db.String)
@@ -279,7 +279,7 @@ class YeniSiparis(db.Model):
 
 class SiparisUrun(db.Model):
     __tablename__ = 'siparis_urunler'
-    
+
     id = db.Column(db.Integer, primary_key=True)
     siparis_id = db.Column(db.Integer, db.ForeignKey('yeni_siparisler.id'))
     urun_barkod = db.Column(db.String)
@@ -311,3 +311,30 @@ class Degisim(db.Model):
 
     def __repr__(self):
         return f"<Exchange {self.degisim_no}>"
+
+# Veritabanı modelleri burada tanımlanacak
+
+class Return(db.Model):
+    """İade bilgilerini tutan tablo"""
+    __tablename__ = 'returns'
+
+    id = db.Column(db.Integer, primary_key=True)
+    claim_id = db.Column(db.String(50), unique=True, nullable=False)
+    order_number = db.Column(db.String(50))
+    order_line_id = db.Column(db.String(50))
+    status = db.Column(db.String(50))
+    reason = db.Column(db.String(255))
+    barcode = db.Column(db.String(100))
+    product_name = db.Column(db.String(255))
+    product_color = db.Column(db.String(50))
+    product_size = db.Column(db.String(50))
+    quantity = db.Column(db.Integer, default=0)
+    customer_name = db.Column(db.String(100))
+    address = db.Column(db.Text)
+    create_date = db.Column(db.DateTime)
+    last_modified_date = db.Column(db.DateTime)
+    notes = db.Column(db.Text)
+    details = db.Column(db.Text)  # İade ile ilgili tüm detaylar JSON olarak saklanır
+
+    def __repr__(self):
+        return f"<Return {self.claim_id}>"
