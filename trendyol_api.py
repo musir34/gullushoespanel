@@ -16,10 +16,21 @@ BASE_URL = "https://api.trendyol.com/sapigw/"
 import socket
 def get_public_ip():
     try:
-        # Replit URL kullanma
-        return "https://sadasdadsa-apdurrahmankuli.replit.app"
+        # Replit URL veya IP'yi alma girişimi
+        replit_domain = os.getenv("REPL_SLUG")
+        replit_owner = os.getenv("REPL_OWNER")
+        
+        if replit_domain and replit_owner:
+            return f"https://{replit_domain}.{replit_owner}.repl.co"
+        
+        # Alternatif olarak, genel IP adresi kullanma
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return f"http://{ip}"
     except:
-        return "https://sadasdadsa-apdurrahmankuli.replit.app"  # Varsayılan değer
+        return "https://your-domain.com"  # Varsayılan değer
 
 WEBHOOK_BASE_URL = os.getenv("WEBHOOK_BASE_URL", get_public_ip())
 ORDER_WEBHOOK_URL = f"{WEBHOOK_BASE_URL}/webhook/orders"
