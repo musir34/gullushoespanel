@@ -1,0 +1,42 @@
+INFO:register_webhooks:Kayıtlı webhook'lar başarıyla alındı. Toplam: 1
+INFO:register_webhooks:Webhook durumu kontrolü başladı - Toplam 1 webhook
+INFO:register_webhooks:Webhook bilgisi: ID: 15fb4dcc-0503-44cf-9c3d-9defbc37aa4f, İsim: , Durum: ACTIVE, URL: https://workspace.apdurrahmankuli.repl.co/webhook/orders
+INFO:register_webhooks:Webhook durumu: {'order_webhook_active': False, 'product_webhook_active': False, 'total_webhooks': 1, 'webhook_details': [{'id': '15fb4dcc-0503-44cf-9c3d-9defbc37aa4f', 'name': '', 'status': 'ACTIVE', 'url': 'https://workspace.apdurrahmankuli.repl.co/webhook/orders'}]}
+INFO:webhook_service:API webhook durumu yanıtı: {'order_webhook_active': False, 'product_webhook_active': False, 'total_webhooks': 1, 'webhook_details': [{'id': '15fb4dcc-0503-44cf-9c3d-9defbc37aa4f', 'name': '', 'status': 'ACTIVE', 'url': 'https://workspace.apdurrahmankuli.repl.co/webhook/orders'}], 'recent_order_events': [], 'recent_product_events': []}
+INFO:werkzeug:172.31.128.86 - - [06/Mar/2025 19:54:39] "GET /api/webhook-status HTTP/1.1" 200 -
+INFO:register_webhooks:Kayıtlı webhook'lar başarıyla alındı. Toplam: 1
+INFO:register_webhooks:Webhook durumu kontrolü başladı - Toplam 1 webhook
+INFO:register_webhooks:Webhook bilgisi: ID: 15fb4dcc-0503-44cf-9c3d-9defbc37aa4f, İsim: , Durum: ACTIVE, URL: https://workspace.apdurrahmankuli.repl.co/webhook/orders
+INFO:register_webhooks:Webhook durumu: {'order_webhook_active': False, 'product_webhook_active': False, 'total_webhooks': 1, 'webhook_details': [{'id': '15fb4dcc-0503-44cf-9c3d-9defbc37aa4f', 'name': '', 'status': 'ACTIVE', 'url': 'https://workspace.apdurrahmankuli.repl.co/webhook/orders'}]}
+INFO:webhook_service:API webhook durumu yanıtı: {'order_webhook_active': False, 'product_webhook_active': False, 'total_webhooks': 1, 'webhook_details': [{'id': '15fb4dcc-0503-44cf-9c3d-9defbc37aa4f', 'name': '', 'status': 'ACTIVE', 'url': 'https://workspace.apdurrahmankuli.repl.co/webhook/orders'}], 'recent_order_events': [], 'recent_product_events': []}
+INFO:werkzeug:172.31.128.86 - - [06/Mar/2025 19:54:50] "GET /api/webhook-status HTTP/1.1" 200 -
+INFO:register_webhooks:Kayıtlı webhook'lar başarıyla alındı. Toplam: 1
+INFO:webhook_service:Mevcut webhook sayısı: 1
+INFO:register_webhooks:Webhook başarıyla silindi. ID: 15fb4dcc-0503-44cf-9c3d-9defbc37aa4f
+INFO:webhook_service:Silinen webhook sayısı: 1
+INFO:webhook_service:Sipariş webhook URL: https://workspace.apdurrahmankuli.repl.co/webhook/orders
+INFO:register_webhooks:Webhook kaydediliyor: Tip: order, URL: https://workspace.apdurrahmankuli.repl.co/webhook/orders
+INFO:register_webhooks:Webhook başarıyla kaydedildi: order
+INFO:register_webhooks:Webhook ID: 8caa5819-59c4-439b-b90d-4914ac45e958
+INFO:webhook_service:Ürün webhook URL: https://workspace.apdurrahmankuli.repl.co/webhook/products
+INFO:register_webhooks:Webhook kaydediliyor: Tip: product, URL: https://workspace.apdurrahmankuli.repl.co/webhook/products
+ERROR:register_webhooks:Webhook kayıt hatası: Status: 400, Yanıt: {"timestamp":1741290898297346,"errors":[{"key":"webhook.already.created","message":"Webhook already created. Only one active webhook can be available"}]}
+
+INFO:register_webhooks:Webhook başarıyla aktifleştirildi. ID: 8caa5819-59c4-439b-b90d-4914ac45e958
+INFO:webhook_service:Sipariş webhook'u aktifleştirildi: 8caa5819-59c4-439b-b90d-4914ac45e958
+INFO:webhook_service:Webhook'lar başarıyla kaydedildi ve aktifleştirildi
+INFO:werkzeug:172.31.128.86 - - [06/Mar/2025 19:54:59] "POST /api/register-webhooks HTTP/1.1" 200 -
+INFO:register_webhooks:Kayıtlı webhook'lar başarıyla alındı. Toplam: 1
+INFO:register_webhooks:Webhook durumu kontrolü başladı - Toplam 1 webhook
+INFO:register_webhooks:Webhook bilgisi: ID: 8caa5819-59c4-439b-b90d-4914ac45e958, İsim: , Durum: ACTIVE, URL: https://workspace.apdurrahmankuli.repl.co/webhook/orders
+INFO:register_webhooks:Webhook durumu: {'order_webhook_active': False, 'product_webhook_active': False, 'total_webhooks': 1, 'webhook_details': [{'id': '8caa5819-59c4-439b-b90d-4914ac45e958', 'name': '', 'status': 'ACTIVE', 'url': 'https://workspace.apdurrahmankuli.repl.co/webhook/orders'}]}
+INFO:webhook_service:API webhook durumu yanıtı: {'order_webhook_active': False, 'product_webhook_active': False, 'total_webhooks': 1, 'webhook_details': [{'id': '8caa5819-59c4-439b-b90d-4914ac45e958', 'name': '', 'status': 'ACTIVE', 'url': 'https://workspace.apdurrahmankuli.repl.co/webhook/orders'}], 'recent_order_events': [], 'recent_product_events': []}
+INFO:werkzeug:172.31.128.86 - - [06/Mar/2025 19:55:01] "GET /api/webhook-status HTTP/1.1" 200 -
+INFO:werkzeug:172.31.128.86 - - [06/Mar/2025 19:55:14] "GET /api/webhook-logs?type=all HTTP/1.1" 200 -
+INFO:werkzeug:172.31.128.86 - - [06/Mar/2025 19:55:14] "GET /api/webhook-logs?type=error HTTP/1.1" 200 -
+INFO:register_webhooks:Kayıtlı webhook'lar başarıyla alındı. Toplam: 1
+INFO:register_webhooks:Webhook durumu kontrolü başladı - Toplam 1 webhook
+INFO:register_webhooks:Webhook bilgisi: ID: 8caa5819-59c4-439b-b90d-4914ac45e958, İsim: , Durum: ACTIVE, URL: https://workspace.apdurrahmankuli.repl.co/webhook/orders
+INFO:register_webhooks:Webhook durumu: {'order_webhook_active': False, 'product_webhook_active': False, 'total_webhooks': 1, 'webhook_details': [{'id': '8caa5819-59c4-439b-b90d-4914ac45e958', 'name': '', 'status': 'ACTIVE', 'url': 'https://workspace.apdurrahmankuli.repl.co/webhook/orders'}]}
+INFO:webhook_service:API webhook durumu yanıtı: {'order_webhook_active': False, 'product_webhook_active': False, 'total_webhooks': 1, 'webhook_details': [{'id': '8caa5819-59c4-439b-b90d-4914ac45e958', 'name': '', 'status': 'ACTIVE', 'url': 'https://workspace.apdurrahmankuli.repl.co/webhook/orders'}], 'recent_order_events': [], 'recent_product_events': []}
+INFO:werkzeug:172.31.128.86 - - [06/Mar/2025 19:55:20] "GET /api/webhook-status HTTP/1.1" 200 -
