@@ -550,8 +550,23 @@ async function showOrderDetails(siparisNo) {
     `;
     document.getElementById('orderDetailContent').insertAdjacentHTML('beforeend', footerHtml);
 
-    const modal = new bootstrap.Modal(document.getElementById('orderDetailModal'));
-    modal.show();
+    // Modal'ı açma
+    const modalEl = document.getElementById('orderDetailModal');
+    // Önce var olan bir örnek olup olmadığını kontrol edelim
+    try {
+      const existingModal = bootstrap.Modal.getInstance(modalEl);
+      if (existingModal) {
+        existingModal.show();
+      } else {
+        const modal = new bootstrap.Modal(modalEl);
+        modal.show();
+      }
+    } catch (e) {
+      // Hata alırsak yeni bir modal oluştur
+      console.warn('Modal açılırken hata, yeni bir örnek oluşturuluyor', e);
+      const modal = new bootstrap.Modal(modalEl);
+      modal.show();
+    }
   } catch (error) {
     console.error('Hata:', error);
     alert('Sipariş detayları yüklenirken bir hata oluştu.');
@@ -644,8 +659,35 @@ async function duzenlemeyeAc(siparisNo) {
     // Modal'ı kapat ve form görünümüne geç
     const orderDetailModal = document.getElementById('orderDetailModal');
     if (orderDetailModal) {
-      const modal = bootstrap.Modal.getInstance(orderDetailModal);
-      if (modal) modal.hide();
+      // Bootstrap 5'te Modal.getInstance yerine bu şekilde erişiliyor:
+      const bsModal = orderDetailModal.classList.contains('show') ? 
+                      new bootstrap.Modal(orderDetailModal) : null;
+                      
+      // Modal açıksa kapat
+      if (bsModal || orderDetailModal.classList.contains('show')) {
+        // Bootstrap 5.x için:
+        try {
+          const modalInstance = bootstrap.Modal.getInstance(orderDetailModal);
+          if (modalInstance) {
+            modalInstance.hide();
+          } else {
+            // Modal manuel olarak gizleme:
+            orderDetailModal.classList.remove('show');
+            orderDetailModal.style.display = 'none';
+            document.body.classList.remove('modal-open');
+            const backdrop = document.querySelector('.modal-backdrop');
+            if (backdrop) backdrop.remove();
+          }
+        } catch (e) {
+          console.warn('Modal kapatılırken hata oluştu, manuel kapatılıyor', e);
+          // Modal manuel olarak gizleme:
+          orderDetailModal.classList.remove('show');
+          orderDetailModal.style.display = 'none';
+          document.body.classList.remove('modal-open');
+          const backdrop = document.querySelector('.modal-backdrop');
+          if (backdrop) backdrop.remove();
+        }
+      }
     }
     
     showOrderForm();
@@ -680,7 +722,31 @@ async function siparisiSil(siparisNo) {
 
     if (data.success) {
       alert('Sipariş başarıyla silindi');
-      bootstrap.Modal.getInstance(document.getElementById('orderDetailModal')).hide();
+      
+      // Modal'ı güvenli bir şekilde kapat
+      const modalEl = document.getElementById('orderDetailModal');
+      try {
+        const modalInstance = bootstrap.Modal.getInstance(modalEl);
+        if (modalInstance) {
+          modalInstance.hide();
+        } else {
+          // Manuel kapatma
+          modalEl.classList.remove('show');
+          modalEl.style.display = 'none';
+          document.body.classList.remove('modal-open');
+          const backdrop = document.querySelector('.modal-backdrop');
+          if (backdrop) backdrop.remove();
+        }
+      } catch (e) {
+        console.warn('Modal kapatılırken hata, manuel kapatılıyor', e);
+        // Manuel kapatma
+        modalEl.classList.remove('show');
+        modalEl.style.display = 'none';
+        document.body.classList.remove('modal-open');
+        const backdrop = document.querySelector('.modal-backdrop');
+        if (backdrop) backdrop.remove();
+      }
+      
       window.location.reload();
     } else {
       alert('Sipariş silinirken bir hata oluştu: ' + data.message);
