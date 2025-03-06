@@ -1,4 +1,3 @@
-
 import os
 from flask import Blueprint, request, jsonify, render_template
 from dotenv import load_dotenv
@@ -34,18 +33,18 @@ def analyze_text():
     OpenAI API kullanarak metin analizi yapar
     """
     logger.debug(">> analyze_text fonksiyonu çağrıldı")
-    
+
     try:
         # POST verilerini al
         data = request.get_json()
-        
+
         if not data or 'text' not in data:
             logger.error("Geçersiz veri formatı, 'text' alanı bulunamadı")
             return jsonify({'success': False, 'error': 'Geçersiz veri formatı. "text" alanı gerekli.'}), 400
-            
+
         user_text = data['text']
         logger.debug(f"Analiz edilecek metin: {user_text[:50]}...")
-        
+
         # OpenAI API çağrısı - o3 mini ile
         response = client.chat.completions.create(
             model=DEFAULT_MODEL,  # o3 mini - daha ekonomik ve hızlı
@@ -56,16 +55,16 @@ def analyze_text():
             max_tokens=500,
             temperature=0.5
         )
-        
+
         # Yanıtı işle - yeni API formatı
         analysis_result = response.choices[0].message.content.strip()
         logger.debug(f"OpenAI analiz sonucu: {analysis_result[:50]}...")
-        
+
         return jsonify({
             'success': True,
             'analysis': analysis_result
         })
-        
+
     except Exception as e:
         logger.error(f"OpenAI analiz hatası: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -77,18 +76,18 @@ def siparis_ozeti():
     Sipariş verilerini özetlemek için OpenAI kullanır
     """
     logger.debug(">> siparis_ozeti fonksiyonu çağrıldı")
-    
+
     try:
         # POST verilerini al
         data = request.get_json()
-        
+
         if not data or 'siparis_bilgileri' not in data:
             logger.error("Geçersiz veri formatı, 'siparis_bilgileri' alanı bulunamadı")
             return jsonify({'success': False, 'error': 'Geçersiz veri formatı. "siparis_bilgileri" alanı gerekli.'}), 400
-            
+
         siparis_bilgileri = data['siparis_bilgileri']
         logger.debug(f"Özeti çıkarılacak sipariş bilgileri alındı")
-        
+
         # OpenAI API çağrısı - o3 mini ile
         response = client.chat.completions.create(
             model=DEFAULT_MODEL,
@@ -99,16 +98,16 @@ def siparis_ozeti():
             max_tokens=500,
             temperature=0.3
         )
-        
+
         # Yanıtı işle - yeni API formatı
         ozet = response.choices[0].message.content.strip()
         logger.debug(f"Sipariş özeti oluşturuldu")
-        
+
         return jsonify({
             'success': True,
             'ozet': ozet
         })
-        
+
     except Exception as e:
         logger.error(f"OpenAI sipariş özeti hatası: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -120,32 +119,32 @@ def urun_onerileri():
     Müşteri profiline göre ürün önerileri oluşturur
     """
     logger.debug(">> urun_onerileri fonksiyonu çağrıldı")
-    
+
     try:
         # POST verilerini al
         data = request.get_json()
-        
+
         if not data or 'musteri_profili' not in data:
             logger.error("Geçersiz veri formatı, 'musteri_profili' alanı bulunamadı")
             return jsonify({'success': False, 'error': 'Geçersiz veri formatı. "musteri_profili" alanı gerekli.'}), 400
-            
+
         musteri_profili = data['musteri_profili']
         urun_listesi = data.get('urun_listesi', [])
         logger.debug(f"Müşteri profili ve ürün listesi alındı")
-        
+
         # OpenAI API çağrısı için prompt hazırlama
         prompt = f"""
         Müşteri Profili:
         {musteri_profili}
-        
+
         Mevcut Ürün Listesi:
         {urun_listesi}
-        
+
         Yukarıdaki müşteri profiline göre ve mevcut ürün listesini dikkate alarak 
         bu müşteriye önerebileceğimiz en uygun 5 ürünü JSON formatında listele.
         Her ürün için şunları belirt: ad, açıklama, fiyat ve öneri sebebi.
         """
-        
+
         # OpenAI API çağrısı - o3 mini ile
         response = client.chat.completions.create(
             model=DEFAULT_MODEL,
@@ -156,16 +155,39 @@ def urun_onerileri():
             max_tokens=1000,
             temperature=0.7
         )
-        
-        # Yanıtı işle - yeni API formatı
+
+        # Yanıtı işle
         oneriler = response.choices[0].message.content.strip()
+
+        # Token kullanım bilgilerini al
+        prompt_tokens = response.usage.prompt_tokens
+        completion_tokens = response.usage.completion_tokens
+        total_tokens = response.usage.total_tokens
+
+        # OpenAI fiyatlandırma (TL cinsinden yaklaşık değerler)
+        prompt_cost_per_1k = 0.15 * 33  # 0.15$ per 1K tokens * yaklaşık TL kuru
+        completion_cost_per_1k = 0.20 * 33  # 0.20$ per 1K tokens * yaklaşık TL kuru
+
+        # Maliyet hesaplaması (TL)
+        prompt_cost = (prompt_tokens / 1000) * prompt_cost_per_1k
+        completion_cost = (completion_tokens / 1000) * completion_cost_per_1k
+        total_cost = prompt_cost + completion_cost
+
         logger.debug(f"Ürün önerileri oluşturuldu")
-        
+        logger.debug(f"Token kullanımı - Prompt: {prompt_tokens}, Completion: {completion_tokens}, Toplam: {total_tokens}")
+        logger.debug(f"Tahmini maliyet: {total_cost:.5f} TL")
+
         return jsonify({
             'success': True,
-            'oneriler': oneriler
+            'oneriler': oneriler,
+            'token_usage': {
+                'prompt_tokens': prompt_tokens,
+                'completion_tokens': completion_tokens,
+                'total_tokens': total_tokens,
+                'estimated_cost': round(total_cost, 5)
+            }
         })
-        
+
     except Exception as e:
         logger.error(f"OpenAI ürün önerileri hatası: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -177,18 +199,18 @@ def satis_analizi():
     Satış verilerini AI ile analiz eder
     """
     logger.debug(">> satis_analizi fonksiyonu çağrıldı")
-    
+
     try:
         # POST verilerini al
         data = request.get_json()
-        
+
         if not data or 'satis_verileri' not in data:
             logger.error("Geçersiz veri formatı, 'satis_verileri' alanı bulunamadı")
             return jsonify({'success': False, 'error': 'Geçersiz veri formatı. "satis_verileri" alanı gerekli.'}), 400
-            
+
         satis_verileri = data['satis_verileri']
         logger.debug(f"Analiz edilecek satış verileri alındı")
-        
+
         # OpenAI API çağrısı - o3 mini ile
         response = client.chat.completions.create(
             model=DEFAULT_MODEL,
@@ -199,16 +221,16 @@ def satis_analizi():
             max_tokens=800,
             temperature=0.3
         )
-        
+
         # Yanıtı işle
         analiz_sonucu = response.choices[0].message.content.strip()
         logger.debug(f"Satış analizi sonucu oluşturuldu")
-        
+
         return jsonify({
             'success': True,
             'analiz': analiz_sonucu
         })
-        
+
     except Exception as e:
         logger.error(f"OpenAI satış analizi hatası: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
