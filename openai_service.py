@@ -17,6 +17,14 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 # Blueprint oluşturma
 openai_bp = Blueprint('openai_bp', __name__)
 
+@openai_bp.route('/ai-analiz')
+def ai_analiz():
+    """
+    AI analiz panelini gösteren sayfa
+    """
+    logger.debug("AI analiz sayfası açılıyor")
+    return render_template('ai_analiz.html')
+
 @openai_bp.route('/ai/analyze-text', methods=['POST'])
 def analyze_text():
     """
