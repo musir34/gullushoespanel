@@ -54,6 +54,7 @@ def get_product_sales(start_date: datetime, end_date: datetime):
             Order.product_main_id.label('product_main_id'),
             Order.product_color.label('color'),
             Order.product_size.label('size'),
+            Order.merchant_sku.label('merchant_sku'),
             func.count(Order.id).label('sale_count'),
             func.sum(Order.amount).label('total_revenue'),
             func.avg(Order.amount).label('average_price'),
@@ -218,6 +219,7 @@ def get_sales_stats():
                 'product_id': stat.product_main_id,
                 'color': stat.color,
                 'size': stat.size,
+                'merchant_sku': stat.merchant_sku,
                 'sale_count': int(stat.sale_count or 0),
                 'total_revenue': round(float(stat.total_revenue or 0), 2),
                 'average_price': round(float(stat.average_price or 0), 2)
