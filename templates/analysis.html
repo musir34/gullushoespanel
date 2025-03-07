@@ -260,6 +260,17 @@
     </div>
   </div>
 
+/* Yükleme göstergesi stilleri */
+.loading-indicator {
+  z-index: 10;
+}
+
+.spinner-border {
+  width: 3rem;
+  height: 3rem;
+}
+
+
   <!-- Dördüncü Sıra - AI Öngörüleri ve Tablo -->
   <div class="row mb-4">
     <!-- AI Öngörüleri -->
@@ -523,9 +534,27 @@
   // Sales Stats verilerini yükle
   async function loadSalesStats(queryParams = '') {
     try {
+      // Yükleme gösterimini ekle
+      document.querySelectorAll('.card-body').forEach(card => {
+        if (!card.querySelector('.loading-indicator')) {
+          const loadingDiv = document.createElement('div');
+          loadingDiv.className = 'loading-indicator position-absolute top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center bg-white bg-opacity-75';
+          loadingDiv.innerHTML = `
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Yükleniyor...</span>
+            </div>
+          `;
+          card.style.position = 'relative';
+          card.appendChild(loadingDiv);
+        }
+      });
+
       const response = await fetch('/api/sales-stats' + queryParams);
       const data = await response.json();
       console.log('API yanıt verisi:', data);
+
+      // Yükleme gösterimini kaldır
+      document.querySelectorAll('.loading-indicator').forEach(el => el.remove());
 
       if (data.success) {
         // Özet Bilgileri doldur
@@ -551,11 +580,40 @@
         populateProductTable(data.product_sales);
       } else {
         console.error('API hatası:', data.error);
-        showError('Veri yüklenirken bir hata oluştu. Lütfen daha sonra tekrar deneyin.');
+        showError('Veri yüklenirken bir hata oluştu: ' + (data.error || 'Bilinmeyen hata'));
+        
+        // Hata durumunda boş veri yapıları ile grafikleri yine de göster
+        createSalesTrendChart([]);
+        createSalesDistributionChart([]);
+        createSalesHoursChart();
+        createReturnsChart([]);
+        createCategorySalesChart();
+        createWeeklyComparisonChart();
+        createSalesPredictionChart();
+        
+        // Boş tablolar göster
+        populateTopProductsTable([]);
+        populateProductTable([]);
       }
     } catch (error) {
+      // Yükleme gösterimini kaldır
+      document.querySelectorAll('.loading-indicator').forEach(el => el.remove());
+      
       console.error('Veri çekme hatası:', error);
-      showError('Sunucu bağlantısında bir sorun oluştu. Lütfen internet bağlantınızı kontrol edin.');
+      showError('Sunucu bağlantısında bir sorun oluştu: ' + error.message);
+      
+      // Hata durumunda boş grafikler göster
+      createSalesTrendChart([]);
+      createSalesDistributionChart([]);
+      createSalesHoursChart();
+      createReturnsChart([]);
+      createCategorySalesChart();
+      createWeeklyComparisonChart();
+      createSalesPredictionChart();
+      
+      // Boş tablolar göster
+      populateTopProductsTable([]);
+      populateProductTable([]);
     }
   }
 
@@ -575,8 +633,29 @@
 
   // Hata mesajı gösterme
   function showError(message) {
-    // Bootstrap toast veya alert
-    alert(message);
+    // Sayfanın üstünde bir uyarı oluştur
+    const alertContainer = document.createElement('div');
+    alertContainer.className = 'container mt-3';
+    
+    const alertDiv = document.createElement('div');
+    alertDiv.className = 'alert alert-danger alert-dismissible fade show';
+    alertDiv.setAttribute('role', 'alert');
+    alertDiv.innerHTML = `
+      <strong>Hata!</strong> ${message}
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Kapat"></button>
+    `;
+    
+    alertContainer.appendChild(alertDiv);
+    
+    // Sayfanın en üstüne ekle
+    const dashboardContainer = document.querySelector('.dashboard-container');
+    dashboardContainer.insertBefore(alertContainer, dashboardContainer.firstChild);
+    
+    // 10 saniye sonra otomatik kapat
+    setTimeout(() => {
+      const bsAlert = new bootstrap.Alert(alertDiv);
+      bsAlert.close();
+    }, 10000);
   }
 
   // Satış Trendi Grafiği

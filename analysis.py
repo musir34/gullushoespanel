@@ -178,17 +178,39 @@ def get_sales_stats():
 
         logger.info(f"Tarih aralığı: {start_date} - {end_date}")
 
-        # Sorguların çalıştırılması
-        daily_sales = get_daily_sales(start_date, end_date)
-        product_sales = get_product_sales(start_date, end_date)
-        returns_stats = get_return_stats(start_date, end_date)
-        exchange_stats = get_exchange_stats(start_date, end_date)
+        # Sorguların çalıştırılması (Her biri için ayrı try-except bloğu)
+        daily_sales = []
+        try:
+            daily_sales = get_daily_sales(start_date, end_date)
+        except Exception as e:
+            logger.error(f"Günlük satış verisi alınırken hata: {str(e)}")
+            db.session.rollback()  # Hata durumunda transaction'ı geri al
+        
+        product_sales = []
+        try:
+            product_sales = get_product_sales(start_date, end_date)
+        except Exception as e:
+            logger.error(f"Ürün satış verisi alınırken hata: {str(e)}")
+            db.session.rollback()
+        
+        returns_stats = []
+        try:
+            returns_stats = get_return_stats(start_date, end_date)
+        except Exception as e:
+            logger.error(f"İade istatistikleri alınırken hata: {str(e)}")
+            db.session.rollback()
+        
+        exchange_stats = []
+        try:
+            exchange_stats = get_exchange_stats(start_date, end_date)
+        except Exception as e:
+            logger.error(f"Değişim istatistikleri alınırken hata: {str(e)}")
+            db.session.rollback()
 
         # --> Toplam değerleri hesaplama (toplam sipariş, satılan ürün, ciro)
-        # daily_sales verisi üzerinden sum() ile hesaplayabiliriz
-        total_orders = sum(stat.order_count or 0 for stat in daily_sales)
-        total_items_sold = sum(stat.total_quantity or 0 for stat in daily_sales)
-        total_revenue = sum(stat.total_amount or 0 for stat in daily_sales)
+        total_orders = sum(stat.order_count or 0 for stat in daily_sales) if daily_sales else 0
+        total_items_sold = sum(stat.total_quantity or 0 for stat in daily_sales) if daily_sales else 0
+        total_revenue = sum(stat.total_amount or 0 for stat in daily_sales) if daily_sales else 0
 
         # Grafik için product_sales verisinin hazırlanması
         product_sales_chart = [{
@@ -197,7 +219,7 @@ def get_sales_stats():
             'product_full': f"{stat.merchant_sku or ''} {stat.color or ''} {stat.size or ''}",
             'sale_count': int(stat.sale_count or 0),
             'total_revenue': round(float(stat.total_revenue or 0), 2)
-        } for stat in product_sales]
+        } for stat in product_sales] if product_sales else []
 
         response = {
             'success': True,
@@ -215,7 +237,7 @@ def get_sales_stats():
                 'average_order_value': round(float(stat.average_order_value or 0), 2),
                 'delivered_count': int(stat.delivered_count or 0),
                 'cancelled_count': int(stat.cancelled_count or 0)
-            } for stat in daily_sales],
+            } for stat in daily_sales] if daily_sales else [],
 
             'product_sales': [{
                 'merchant_sku': stat.merchant_sku or 'Bilinmeyen',
@@ -225,7 +247,7 @@ def get_sales_stats():
                 'sale_count': int(stat.sale_count or 0),
                 'total_revenue': round(float(stat.total_revenue or 0), 2),
                 'average_price': round(float(stat.average_price or 0), 2)
-            } for stat in product_sales],
+            } for stat in product_sales] if product_sales else [],
 
             'product_sales_chart': product_sales_chart,
 
@@ -234,18 +256,20 @@ def get_sales_stats():
                 'count': int(stat.return_count or 0),
                 'unique_orders': int(stat.unique_orders or 0),
                 'average_refund': round(float(stat.average_refund or 0), 2)
-            } for stat in returns_stats],
+            } for stat in returns_stats] if returns_stats else [],
 
             'exchanges': [{
                 'reason': stat.degisim_nedeni,
                 'count': int(stat.exchange_count or 0),
                 'date': stat.date.strftime('%Y-%m-%d') if stat.date else None
-            } for stat in exchange_stats]
+            } for stat in exchange_stats] if exchange_stats else []
         }
 
         return jsonify(response)
     except Exception as e:
         logger.exception("Hata oluştu:")
+        # Genel bir hata durumunda transaction'ı geri al
+        db.session.rollback()
         return jsonify({
             'success': False,
             'error': str(e),
