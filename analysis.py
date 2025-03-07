@@ -95,7 +95,16 @@ def get_return_stats(start_date: datetime, end_date: datetime):
     Belirtilen tarih aralığında iade analiz verilerini döner.
     """
     try:
-        return db.session.query(
+        # ReturnOrder tablosunun var olduğundan emin ol
+        from sqlalchemy import inspect
+        inspector = inspect(db.engine)
+        if not inspector.has_table('return_orders'):
+            logger.warning("ReturnOrder tablosu veritabanında bulunamadı")
+            return []
+            
+        # Session'ı temizle
+        db.session.commit()
+        result = db.session.query(
             func.coalesce(ReturnOrder.return_reason, 'Belirtilmemiş').label('return_reason'),
             func.count(ReturnOrder.id).label('return_count'),
             func.count(distinct(ReturnOrder.order_number)).label('unique_orders'),
@@ -105,8 +114,11 @@ def get_return_stats(start_date: datetime, end_date: datetime):
         ).group_by(
             ReturnOrder.return_reason
         ).all()
+        return result
     except Exception as e:
         logger.error(f"İade istatistikleri sorgusu hatası: {e}")
+        # Session'ı sıfırla
+        db.session.rollback()
         return []
 
 
@@ -115,7 +127,16 @@ def get_exchange_stats(start_date: datetime, end_date: datetime):
     Belirtilen tarih aralığında değişim analiz verilerini döner.
     """
     try:
-        return db.session.query(
+        # Degisim tablosunun var olduğundan emin ol
+        from sqlalchemy import inspect
+        inspector = inspect(db.engine)
+        if not inspector.has_table('degisim'):
+            logger.warning("Degisim tablosu veritabanında bulunamadı")
+            return []
+            
+        # Session'ı temizle
+        db.session.commit()
+        result = db.session.query(
             func.coalesce(Degisim.degisim_nedeni, 'Belirtilmemiş').label('degisim_nedeni'),
             func.count(Degisim.degisim_no).label('exchange_count'),
             func.date(Degisim.degisim_tarihi).label('date')
@@ -127,8 +148,11 @@ def get_exchange_stats(start_date: datetime, end_date: datetime):
         ).order_by(
             func.date(Degisim.degisim_tarihi).desc()
         ).all()
+        return result
     except Exception as e:
         logger.error(f"Değişim istatistikleri sorgusu hatası: {e}")
+        # Session'ı sıfırla
+        db.session.rollback()
         return []
 
 
@@ -146,7 +170,9 @@ def get_sales_stats():
         - quick_filter: 'last7', 'last30', 'today', 'this_month' (opsiyonel)
         - days: Belirtilen gün sayısı (varsayılan 90, quick_filter ve start_date/end_date parametreleri yoksa kullanılır)
     """
-    # Oturum kapama işlemi için try-finally bloğu kullan
+    # Mevcut session'ı kapat ve yeni bir temiz session oluştur
+    db.session.remove()
+    
     try:
         logger.info("API isteği başladı")
         now = datetime.now()
@@ -187,36 +213,41 @@ def get_sales_stats():
 
         logger.info(f"Tarih aralığı: {start_date} - {end_date}")
 
-        # Veri toplama sonuçları için varsayılan boş değerler
+        # Veri toplama sonuçları
         daily_sales = []
         product_sales = []
         returns_stats = []
         exchange_stats = []
 
-        # Her bir sorgu için ayrı bir işlem (transaction) oluştur
+        # Her bir sorgu için tamamen ayrı session oluştur
         # Günlük satış verileri
-        with db.session.begin():
+        try:
             daily_sales = get_daily_sales(start_date, end_date)
+        except Exception as e:
+            logger.error(f"Günlük satış verisi çekilirken hata: {e}")
+            # Hata durumunda session'ı sıfırla
+            db.session.rollback()
         
-        # Ürün satış verileri - yeni bir işlem içinde
-        with db.session.begin():
+        # Ürün satış verileri
+        try:
             product_sales = get_product_sales(start_date, end_date)
+        except Exception as e:
+            logger.error(f"Ürün satış verisi çekilirken hata: {e}")
+            db.session.rollback()
         
-        # İade istatistikleri - yeni bir işlem içinde
-        with db.session.begin():
-            try:
-                returns_stats = get_return_stats(start_date, end_date)
-            except Exception as e:
-                logger.error(f"İade istatistikleri çekilirken hata: {e}")
-                # İşlem zaten with bloğu ile rollback yapılacak
+        # İade istatistikleri
+        try:
+            returns_stats = get_return_stats(start_date, end_date)
+        except Exception as e:
+            logger.error(f"İade istatistikleri çekilirken hata: {e}")
+            db.session.rollback()
         
-        # Değişim istatistikleri - yeni bir işlem içinde
-        with db.session.begin():
-            try:
-                exchange_stats = get_exchange_stats(start_date, end_date)
-            except Exception as e:
-                logger.error(f"Değişim istatistikleri çekilirken hata: {e}")
-                # İşlem zaten with bloğu ile rollback yapılacak
+        # Değişim istatistikleri
+        try:
+            exchange_stats = get_exchange_stats(start_date, end_date)
+        except Exception as e:
+            logger.error(f"Değişim istatistikleri çekilirken hata: {e}")
+            db.session.rollback()
 
         # Toplam değerleri hesaplama (toplam sipariş, satılan ürün, ciro)
         total_orders = sum(stat.order_count or 0 for stat in daily_sales)
@@ -278,7 +309,7 @@ def get_sales_stats():
         
         return jsonify(response)
     except Exception as e:
-        logger.exception("Hata oluştu:")
+        logger.exception(f"API hatası: {str(e)}")
         return jsonify({
             'success': False,
             'error': str(e),
@@ -289,7 +320,4 @@ def get_sales_stats():
         })
     finally:
         # Her durumda mevcut oturumu temizle
-        try:
-            db.session.close()
-        except:
-            pass
+        db.session.close()
