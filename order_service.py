@@ -118,7 +118,7 @@ def process_all_orders(all_orders_data):
         api_order_numbers = set()
         new_orders = []
 
-        # Mevcut siparişleri al
+        # Mevcut siparişleri al - veritabanı sorgusu sayısını azaltmak için tek sorguda al
         existing_orders = Order.query.all()
         existing_orders_dict = {order.order_number: order for order in existing_orders}
         
@@ -129,8 +129,18 @@ def process_all_orders(all_orders_data):
         
         logger.info(f"API'den {len(all_orders_data)} sipariş alındı, veritabanında {len(existing_orders)} sipariş var, arşivde {len(archived_orders)} sipariş var.")
 
+        # İşlenen sipariş numaralarını takip etmek için küme kullan
+        processed_order_numbers = set()
+
         for order_data in all_orders_data:
             order_number = str(order_data.get('orderNumber') or order_data.get('id'))
+            
+            # Her sipariş numarasını yalnızca bir kez işle
+            if order_number in processed_order_numbers:
+                logger.info(f"Sipariş {order_number} bu oturumda zaten işlendi, atlanıyor.")
+                continue
+                
+            processed_order_numbers.add(order_number)
             api_order_numbers.add(order_number)
             order_status = order_data.get('status')
 
@@ -152,12 +162,17 @@ def process_all_orders(all_orders_data):
                 new_order = Order(**combined_order)
                 new_orders.append(new_order)
 
-        # Toplu ekleme
+        # Her 100 yeni sipariş için bir kez commit yap - bellek kullanımını azalt
         if new_orders:
-            db.session.bulk_save_objects(new_orders)
+            chunk_size = 100
+            for i in range(0, len(new_orders), chunk_size):
+                chunk = new_orders[i:i + chunk_size]
+                db.session.bulk_save_objects(chunk)
+                db.session.commit()
             logger.info(f"Toplam yeni eklenen sipariş sayısı: {len(new_orders)}")
-
-        db.session.commit()
+        else:
+            # Güncelleme yaptıysak commit et
+            db.session.commit()
 
         # Veritabanında olmayan siparişleri sil, ancak 'Delivered' siparişleri silme
         existing_order_numbers = set(existing_orders_dict.keys())
@@ -174,10 +189,14 @@ def process_all_orders(all_orders_data):
             orders_to_delete_numbers = orders_to_delete_numbers - delivered_order_numbers
 
             if orders_to_delete_numbers:
-                # Kalan siparişleri sil
-                Order.query.filter(Order.order_number.in_(orders_to_delete_numbers)).delete(synchronize_session=False)
-                logger.info(f"Silinen siparişler: {orders_to_delete_numbers}")
-                db.session.commit()
+                # Kalan siparişleri sil - büyük listelerde hata olmaması için parçalara böl
+                chunk_size = 500
+                orders_to_delete_list = list(orders_to_delete_numbers)
+                for i in range(0, len(orders_to_delete_list), chunk_size):
+                    chunk = orders_to_delete_list[i:i + chunk_size]
+                    Order.query.filter(Order.order_number.in_(chunk)).delete(synchronize_session=False)
+                    db.session.commit()
+                logger.info(f"Silinen sipariş sayısı: {len(orders_to_delete_numbers)}")
             else:
                 logger.info("Silinecek sipariş yok.")
         else:
