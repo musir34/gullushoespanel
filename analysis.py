@@ -62,7 +62,6 @@ def get_product_sales(start_date: datetime, end_date: datetime):
         ).filter(
             Order.order_date.between(start_date, end_date),
             Order.product_main_id.isnot(None),
-            Order.merchant_sku.isnot(None),  # merchant_sku boş olmamalı
             Order.status != 'Cancelled'
         ).group_by(
             Order.product_main_id,
@@ -80,9 +79,10 @@ def get_product_sales(start_date: datetime, end_date: datetime):
         logger.info(f"Bulunan ürün satışı sayısı: {len(product_sales)}")
         for sale in product_sales:
             logger.info(
-                f"Ürün detayı: ID={sale.product_main_id}, Renk={sale.color}, "
-                f"Beden={sale.size}, Adet={sale.sale_count}, Miktar={sale.total_quantity}, "
-                f"Gelir={sale.total_revenue:.2f} TL, Ort. Fiyat={sale.average_price:.2f} TL"
+                f"Ürün detayı: ID={sale.product_main_id}, Merchant SKU={sale.merchant_sku}, "
+                f"Renk={sale.color}, Beden={sale.size}, Adet={sale.sale_count}, "
+                f"Miktar={sale.total_quantity}, Gelir={sale.total_revenue:.2f} TL, "
+                f"Ort. Fiyat={sale.average_price:.2f} TL"
             )
         return product_sales
     except Exception as e:
@@ -193,8 +193,8 @@ def get_sales_stats():
         # Grafik için product_sales verisinin hazırlanması
         product_sales_chart = [{
             'product_id': f"{stat.product_main_id or ''}",
-            'merchant_sku': f"{stat.merchant_sku or ''}",
-            'product_full': f"{stat.product_main_id or ''} {stat.color or ''} {stat.size or ''}",
+            'merchant_sku': f"{stat.merchant_sku or 'Bilinmeyen'}",
+            'product_full': f"{stat.merchant_sku or ''} {stat.color or ''} {stat.size or ''}",
             'sale_count': int(stat.sale_count or 0),
             'total_revenue': round(float(stat.total_revenue or 0), 2)
         } for stat in product_sales]
@@ -218,8 +218,8 @@ def get_sales_stats():
             } for stat in daily_sales],
 
             'product_sales': [{
+                'merchant_sku': stat.merchant_sku or 'Bilinmeyen',
                 'product_id': stat.product_main_id,
-                'merchant_sku': stat.merchant_sku,
                 'color': stat.color,
                 'size': stat.size,
                 'sale_count': int(stat.sale_count or 0),
