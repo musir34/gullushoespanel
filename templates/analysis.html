@@ -1340,21 +1340,25 @@ function initializeCharts() {
   function createReturnsChart(returnsData) {
     try {
       const ctx = document.getElementById('returnsReasonChart').getContext('2d');
+      if (!ctx) {
+        console.error("returnsReasonChart canvas elementi bulunamadı!");
+        return;
+      }
 
       if (!returnsData || returnsData.length === 0) {
         // Örnek veri (API'den veri gelmediğinde)
         returnsData = [
-          { reason: 'Beden uyumsuzluğu', count: 25, unique_orders: 24, average_refund: 542.80 },
-          { reason: 'Kalite sorunu', count: 18, unique_orders: 17, average_refund: 630.50 },
-          { reason: 'Görselden farklı', count: 15, unique_orders: 14, average_refund: 485.25 },
-          { reason: 'Geç teslimat', count: 10, unique_orders: 10, average_refund: 520.75 },
-          { reason: 'Yanlış ürün', count: 8, unique_orders: 8, average_refund: 615.30 }
+          { return_reason: 'Beden uyumsuzluğu', return_count: 25, unique_orders: 24, average_refund: 542.80 },
+          { return_reason: 'Kalite sorunu', return_count: 18, unique_orders: 17, average_refund: 630.50 },
+          { return_reason: 'Görselden farklı', return_count: 15, unique_orders: 14, average_refund: 485.25 },
+          { return_reason: 'Geç teslimat', return_count: 10, unique_orders: 10, average_refund: 520.75 },
+          { return_reason: 'Yanlış ürün', return_count: 8, unique_orders: 8, average_refund: 615.30 }
         ];
       }
 
-      // Nedenleri ve sayıları ayır
-      const reasons = returnsData.map(r => r.reason);
-      const counts = returnsData.map(r => r.count || 0);
+      // Nedenleri ve sayıları ayır - API'den gelen farklı alanları kontrol et
+      const reasons = returnsData.map(r => r.return_reason || r.reason || 'Bilinmiyor');
+      const counts = returnsData.map(r => r.return_count || r.count || 0);
 
       // Grafik renklerini ayarla
       const backgroundColors = [
@@ -1366,51 +1370,66 @@ function initializeCharts() {
       ];
 
       // Mevcut grafiği temizle
-      if (returnsReasonChart) returnsReasonChart.destroy();
+      if (typeof returnsReasonChart !== 'undefined' && returnsReasonChart) {
+        try {
+          returnsReasonChart.destroy();
+        } catch (e) {
+          console.error("Grafik destroy edilirken hata:", e);
+        }
+      }
 
-      // Yeni grafiği oluştur
-      returnsReasonChart = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-          labels: reasons,
-          datasets: [{
-            data: counts,
-            backgroundColor: backgroundColors,
-            borderColor: 'white',
-            borderWidth: 2,
-            hoverOffset: 10
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: {
-              position: 'right',
-              labels: {
-                padding: 20,
-                boxWidth: 12,
-                usePointStyle: true,
-                pointStyle: 'circle'
-              }
-            },
-            tooltip: {
-              callbacks: {
-                label: function(context) {
-                  const value = context.raw;
-                  const total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
-                  const percentage = ((value / total) * 100).toFixed(1);
-                  return `${context.label}: ${value} (%${percentage})`;
+      try {
+        // Yeni grafiği oluştur
+        returnsReasonChart = new Chart(ctx, {
+          type: 'doughnut',
+          data: {
+            labels: reasons,
+            datasets: [{
+              data: counts,
+              backgroundColor: backgroundColors.slice(0, reasons.length),
+              borderColor: 'white',
+              borderWidth: 2,
+              hoverOffset: 10
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: 'right',
+                labels: {
+                  padding: 20,
+                  boxWidth: 12,
+                  usePointStyle: true,
+                  pointStyle: 'circle'
+                }
+              },
+              tooltip: {
+                callbacks: {
+                  label: function(context) {
+                    const value = context.raw;
+                    const total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                    const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                    return `${context.label}: ${value} (%${percentage})`;
+                  }
                 }
               }
-            }
-          },
-          cutout: '65%'
-        }
-      });
+            },
+            cutout: '65%'
+          }
+        });
 
-      // İade Trendi Grafiği (Örnek veri ile)
-      createReturnTrendChart();
+        // İade Trendi Grafiği (Örnek veri ile)
+        createReturnTrendChart();
+      } catch (chartError) {
+        console.error("İade grafiği oluşturma hatası:", chartError);
+        // Canvas'a hata mesajı yazma
+        ctx.font = '14px Arial';
+        ctx.fillStyle = '#6c757d';
+        ctx.textAlign = 'center';
+        ctx.fillText('İade grafiği oluşturulamadı: ' + chartError.message, ctx.canvas.width / 2, 50);
+      }
     } catch (error) {
       console.error("Grafik oluşturma hatası:", error);
     }
@@ -1961,8 +1980,39 @@ function initializeCharts() {
         console.log(`Ürün tablosu için ${productSales.length} satış verisi yükleniyor`);
       }
 
+      // Stok kodlarını temizle ve tekrarları önle
+      const cleanedProducts = [];
+      const processedSkus = new Set();
+      
+      for (const product of productSales) {
+        // Merchant SKU'yu temizle (virgülle ayrılmış kodları ayır)
+        let merchantSku = product.merchant_sku || '';
+        if (typeof merchantSku === 'string' && merchantSku.includes(',')) {
+          merchantSku = merchantSku.split(',')[0].trim();
+        }
+        
+        // Ürün ID'yi de temizle
+        let productId = product.product_id || '';
+        if (typeof productId === 'string' && productId.includes(',')) {
+          productId = productId.split(',')[0].trim();
+        }
+        
+        // Bu SKU daha önce işlendiyse atla
+        const key = `${merchantSku}_${product.color}_${product.size}`;
+        if (processedSkus.has(key)) continue;
+        
+        processedSkus.add(key);
+        
+        // Temizlenmiş ürünü ekle
+        cleanedProducts.push({
+          ...product,
+          merchant_sku: merchantSku,
+          product_id: productId
+        });
+      }
+
       // İlk 20 ürünü göster
-      const limitedData = productSales.slice(0, 20);
+      const limitedData = cleanedProducts.slice(0, 20);
 
       if (limitedData.length === 0) {
         tbody.innerHTML = `

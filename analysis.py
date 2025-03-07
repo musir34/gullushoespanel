@@ -101,15 +101,22 @@ def get_return_stats(start_date: datetime, end_date: datetime):
     """
     try:
         # ReturnOrder tablosunun var olduğundan emin ol
-        from sqlalchemy import inspect
-        inspector = inspect(db.engine)
+        from sqlalchemy import inspect, create_engine
+        from sqlalchemy.orm import sessionmaker
+        from app import DATABASE_URI
+        
+        # Yeni bir bağlantı ve oturum oluştur
+        engine = create_engine(DATABASE_URI)
+        Session = sessionmaker(bind=engine)
+        session = Session()
+        
+        inspector = inspect(engine)
         if not inspector.has_table('return_orders'):
             logger.warning("ReturnOrder tablosu veritabanında bulunamadı")
+            session.close()
             return []
-            
-        # Session'ı temizle
-        db.session.commit()
-        result = db.session.query(
+        
+        result = session.query(
             func.coalesce(ReturnOrder.return_reason, 'Belirtilmemiş').label('return_reason'),
             func.count(ReturnOrder.id).label('return_count'),
             func.count(distinct(ReturnOrder.order_number)).label('unique_orders'),
@@ -119,11 +126,11 @@ def get_return_stats(start_date: datetime, end_date: datetime):
         ).group_by(
             ReturnOrder.return_reason
         ).all()
+        
+        session.close()
         return result
     except Exception as e:
         logger.error(f"İade istatistikleri sorgusu hatası: {e}")
-        # Session'ı sıfırla
-        db.session.rollback()
         return []
 
 
@@ -259,60 +266,152 @@ def get_sales_stats():
             
         except Exception as e:
             logger.error(f"Günlük satış verisi çekilirken hata: {e}")
+            continue_processing = False
             session.rollback()
         
-        # Ürün satış verileri
+        # Ürün satış verileri - ürün kodlarının tekrarlanmasını düzelt
         try:
             from models import Order
+            from sqlalchemy import distinct, func, text
             
             logger.info("Ürün satışları sorgusu başlıyor...")
+            
+            # Kolon kontrolü - Merchant_sku'daki birden fazla değeri ayırıp doğru şekilde işlemeliyiz
+            # JSON details kolonundan ürün verilerini çekme
             product_sales_query = session.query(
-                Order.product_main_id.label('product_main_id'),
-                Order.merchant_sku.label('merchant_sku'),
-                Order.product_color.label('color'),
-                Order.product_size.label('size'),
+                func.json_extract_path_text(Order.details, 'sku').label('merchant_sku'),
+                func.json_extract_path_text(Order.details, 'barcode').label('barcode'),
+                func.json_extract_path_text(Order.details, 'color').label('color'),
+                func.json_extract_path_text(Order.details, 'size').label('size'),
                 func.count(Order.id).label('sale_count'),
                 func.sum(Order.amount).label('total_revenue'),
                 func.avg(Order.amount).label('average_price'),
                 func.sum(Order.quantity).label('total_quantity')
             ).filter(
                 Order.order_date.between(start_date, end_date),
-                Order.product_main_id.isnot(None),
-                Order.merchant_sku.isnot(None),
+                Order.details.isnot(None),
+                Order.details != '[]',
                 Order.status != 'Cancelled'
             ).group_by(
-                Order.product_main_id,
-                Order.merchant_sku,
-                Order.product_color,
-                Order.product_size
+                text("merchant_sku"),
+                text("barcode"),
+                text("color"),
+                text("size")
             ).order_by(
                 func.sum(Order.amount).desc()
             ).limit(50)
             
-            product_sales = product_sales_query.all()
-            logger.info(f"Ürün satışları verileri başarıyla çekildi: {len(product_sales)} kayıt")
+            try:
+                product_sales = product_sales_query.all()
+                logger.info(f"Ürün satışları verileri başarıyla çekildi: {len(product_sales)} kayıt")
+            except Exception as inner_e:
+                logger.error(f"JSON sorgusu başarısız oldu, alternatif sorgu deneniyor: {inner_e}")
+                
+                # Alternatif sorgu - doğrudan kolonları kullan
+                product_sales_query = session.query(
+                    Order.product_main_id.label('product_id'),
+                    Order.merchant_sku.label('merchant_sku'), 
+                    Order.product_color.label('color'),
+                    Order.product_size.label('size'),
+                    func.count(Order.id).label('sale_count'),
+                    func.sum(Order.amount).label('total_revenue'),
+                    func.avg(Order.amount).label('average_price'),
+                    func.sum(Order.quantity).label('total_quantity')
+                ).filter(
+                    Order.order_date.between(start_date, end_date),
+                    Order.merchant_sku.isnot(None),
+                    Order.status != 'Cancelled'
+                ).group_by(
+                    Order.product_main_id,
+                    Order.merchant_sku,
+                    Order.product_color,
+                    Order.product_size
+                ).order_by(
+                    func.sum(Order.amount).desc()
+                ).limit(50)
+                
+                product_sales = product_sales_query.all()
+                logger.info(f"Alternatif ürün satışları verileri başarıyla çekildi: {len(product_sales)} kayıt")
             
         except Exception as e:
             logger.error(f"Ürün satış verisi çekilirken hata: {e}")
             session.rollback()
+            product_sales = []
         
         # Toplam değerleri hesaplama (toplam sipariş, satılan ürün, ciro)
         total_orders = sum(stat.order_count or 0 for stat in daily_sales) if daily_sales else 0
         total_items_sold = sum(stat.total_quantity or 0 for stat in daily_sales) if daily_sales else 0 
         total_revenue = sum(stat.total_amount or 0 for stat in daily_sales) if daily_sales else 0
 
-        # Grafik için product_sales verisinin hazırlanması
+        # Grafik için product_sales verisinin hazırlanması - tek ürün/stok kodunun oluşmasını sağla
         product_sales_chart = []
         try:
-            product_sales_chart = [{
-                'product_id': f"{sale.product_main_id or ''}",
-                'merchant_sku': f"{sale.merchant_sku or ''}",
-                'product_full': f"{sale.product_main_id or ''} {sale.color or ''} {sale.size or ''}",
-                'sale_count': int(sale.sale_count or 0),
-                'total_revenue': round(float(sale.total_revenue or 0), 2)
-            } for sale in product_sales] if product_sales else []
+            if product_sales:
+                # Satış verilerini temizle ve tekrarlanan kodları önle
+                clean_products = {}
+                
+                for sale in product_sales:
+                    merchant_sku = str(sale.merchant_sku or '')
+                    
+                    # Virgülle ayrılmış stok kodlarını temizle
+                    if ',' in merchant_sku:
+                        parts = [part.strip() for part in merchant_sku.split(',')]
+                        merchant_sku = parts[0]  # İlk kodu kullan
+                    
+                    # Eğer zaten bu ürün işlendiyse atla
+                    key = f"{merchant_sku}_{sale.color}_{sale.size}"
+                    if key in clean_products:
+                        continue
+                        
+                    # Yeni ürün olarak ekle
+                    clean_products[key] = {
+                        'product_id': getattr(sale, 'product_id', '') or getattr(sale, 'product_main_id', ''),
+                        'merchant_sku': merchant_sku,
+                        'product_full': f"{merchant_sku} {sale.color or ''} {sale.size or ''}",
+                        'sale_count': int(sale.sale_count or 0),
+                        'total_revenue': round(float(sale.total_revenue or 0), 2)
+                    }
+                
+                product_sales_chart = list(clean_products.values())
+                
         except Exception as e:
             logger.error(f"Ürün satış grafik verisi oluşturulurken hata: {e}")
+            product_sales_chart = []
+
+        # Ürün satışı verilerini de temizle
+        clean_product_sales = []
+        try:
+            if product_sales:
+                processed_skus = set()
+                
+                for sale in product_sales:
+                    merchant_sku = str(sale.merchant_sku or '')
+                    
+                    # Virgülle ayrılmış stok kodlarını temizle
+                    if ',' in merchant_sku:
+                        parts = [part.strip() for part in merchant_sku.split(',')]
+                        merchant_sku = parts[0]  # İlk kodu kullan
+                    
+                    # Eğer zaten bu ürün işlendiyse atla
+                    key = f"{merchant_sku}_{sale.color}_{sale.size}"
+                    if key in processed_skus:
+                        continue
+                        
+                    processed_skus.add(key)
+                    
+                    # Temizlenmiş veriyi ekle
+                    clean_product_sales.append({
+                        'product_id': getattr(sale, 'product_id', '') or getattr(sale, 'product_main_id', ''),
+                        'merchant_sku': merchant_sku,
+                        'color': sale.color,
+                        'size': sale.size,
+                        'sale_count': int(sale.sale_count or 0),
+                        'total_revenue': round(float(sale.total_revenue or 0), 2),
+                        'average_price': round(float(sale.average_price or 0), 2)
+                    })
+        except Exception as e:
+            logger.error(f"Ürün satış verisi temizlenirken hata: {e}")
+            clean_product_sales = []
 
         response = {
             'success': True,
@@ -332,16 +431,7 @@ def get_sales_stats():
                 'cancelled_count': int(stat.cancelled_count or 0)
             } for stat in daily_sales] if daily_sales else [],
 
-            'product_sales': [{
-                'product_id': sale.product_main_id,
-                'merchant_sku': sale.merchant_sku,
-                'color': sale.color,
-                'size': sale.size,
-                'sale_count': int(sale.sale_count or 0),
-                'total_revenue': round(float(sale.total_revenue or 0), 2),
-                'average_price': round(float(sale.average_price or 0), 2)
-            } for sale in product_sales] if product_sales else [],
-
+            'product_sales': clean_product_sales,
             'product_sales_chart': product_sales_chart,
 
             # Return ve Exchange verilerini boş olarak gönderelim
