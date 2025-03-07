@@ -581,7 +581,7 @@
       } else {
         console.error('API hatası:', data.error);
         showError('Veri yüklenirken bir hata oluştu: ' + (data.error || 'Bilinmeyen hata'));
-        
+
         // Hata durumunda boş veri yapıları ile grafikleri yine de göster
         createSalesTrendChart([]);
         createSalesDistributionChart([]);
@@ -590,7 +590,7 @@
         createCategorySalesChart();
         createWeeklyComparisonChart();
         createSalesPredictionChart();
-        
+
         // Boş tablolar göster
         populateTopProductsTable([]);
         populateProductTable([]);
@@ -598,10 +598,10 @@
     } catch (error) {
       // Yükleme gösterimini kaldır
       document.querySelectorAll('.loading-indicator').forEach(el => el.remove());
-      
+
       console.error('Veri çekme hatası:', error);
       showError('Sunucu bağlantısında bir sorun oluştu: ' + error.message);
-      
+
       // Hata durumunda boş grafikler göster
       createSalesTrendChart([]);
       createSalesDistributionChart([]);
@@ -610,7 +610,7 @@
       createCategorySalesChart();
       createWeeklyComparisonChart();
       createSalesPredictionChart();
-      
+
       // Boş tablolar göster
       populateTopProductsTable([]);
       populateProductTable([]);
@@ -636,7 +636,7 @@
     // Sayfanın üstünde bir uyarı oluştur
     const alertContainer = document.createElement('div');
     alertContainer.className = 'container mt-3';
-    
+
     const alertDiv = document.createElement('div');
     alertDiv.className = 'alert alert-danger alert-dismissible fade show';
     alertDiv.setAttribute('role', 'alert');
@@ -644,13 +644,13 @@
       <strong>Hata!</strong> ${message}
       <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Kapat"></button>
     `;
-    
+
     alertContainer.appendChild(alertDiv);
-    
+
     // Sayfanın en üstüne ekle
     const dashboardContainer = document.querySelector('.dashboard-container');
     dashboardContainer.insertBefore(alertContainer, dashboardContainer.firstChild);
-    
+
     // 10 saniye sonra otomatik kapat
     setTimeout(() => {
       const bsAlert = new bootstrap.Alert(alertDiv);
