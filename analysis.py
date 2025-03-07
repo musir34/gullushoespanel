@@ -27,7 +27,8 @@ def get_daily_sales(start_date: datetime, end_date: datetime):
     """
     Belirtilen tarih aralığında günlük satış istatistiklerini döner.
     """
-    return db.session.query(
+    try:
+        return db.session.query(
         func.date(Order.order_date).label('date'),
         func.count(Order.id).label('order_count'),
         func.sum(Order.amount).label('total_amount'),
@@ -42,6 +43,10 @@ def get_daily_sales(start_date: datetime, end_date: datetime):
     ).order_by(
         func.date(Order.order_date).desc()
     ).all()
+    except Exception as e:
+        logger.error(f"Günlük satış verileri çekilirken hata: {e}")
+        db.session.rollback()
+        return []
 
 
 def get_product_sales(start_date: datetime, end_date: datetime):
@@ -170,8 +175,9 @@ def get_sales_stats():
         - quick_filter: 'last7', 'last30', 'today', 'this_month' (opsiyonel)
         - days: Belirtilen gün sayısı (varsayılan 90, quick_filter ve start_date/end_date parametreleri yoksa kullanılır)
     """
-    # Mevcut session'ı kapat ve yeni bir temiz session oluştur
-    db.session.remove()
+    # Her istek için temiz bir session başlat
+    db.session.close()
+    db.session.rollback()
     
     try:
         logger.info("API isteği başladı")
