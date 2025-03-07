@@ -62,8 +62,7 @@ def get_product_sales(start_date: datetime, end_date: datetime):
         ).filter(
             Order.order_date.between(start_date, end_date),
             Order.product_main_id.isnot(None),
-            Order.product_color.isnot(None),
-            Order.product_size.isnot(None),
+            Order.merchant_sku.isnot(None),  # merchant_sku boş olmamalı
             Order.status != 'Cancelled'
         ).group_by(
             Order.product_main_id,
@@ -193,7 +192,9 @@ def get_sales_stats():
 
         # Grafik için product_sales verisinin hazırlanması
         product_sales_chart = [{
-            'product_id': f"{stat.product_main_id or ''} {stat.color or ''} {stat.size or ''}",
+            'product_id': f"{stat.product_main_id or ''}",
+            'merchant_sku': f"{stat.merchant_sku or ''}",
+            'product_full': f"{stat.product_main_id or ''} {stat.color or ''} {stat.size or ''}",
             'sale_count': int(stat.sale_count or 0),
             'total_revenue': round(float(stat.total_revenue or 0), 2)
         } for stat in product_sales]

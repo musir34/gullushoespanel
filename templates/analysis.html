@@ -255,6 +255,7 @@
                 <table class="table table-sm table-hover">
                   <thead class="table-dark">
                     <tr>
+                      <th>Merchant SKU</th>
                       <th>Ürün</th>
                       <th>Adet</th>
                       <th>Toplam Tutar</th>
@@ -430,8 +431,8 @@
                 <table class="table table-hover table-striped" id="productSalesTable">
                   <thead class="table-dark">
                     <tr>
-                      <th>Ürün ID</th>
                       <th>Merchant SKU</th>
+                      <th>Ürün ID</th>
                       <th>Renk</th>
                       <th>Beden</th>
                       <th>Satış Adedi</th>
@@ -1139,7 +1140,7 @@
     const ctx = document.getElementById('productSalesChart').getContext('2d');
     if (productSalesChart) productSalesChart.destroy();
 
-    const productIds = productSalesData.map(item => item.product_id || 'Bilinmeyen');
+    const productIds = productSalesData.map(item => item.merchant_sku || 'Bilinmeyen');
     const saleCounts = productSalesData.map(item => item.sale_count || 0);
     const totalRevenues = productSalesData.map(item => item.total_revenue || 0);
 
@@ -1213,8 +1214,8 @@
     productSales.forEach(product => {
       const row = document.createElement('tr');
       row.innerHTML = `
+        <td><strong>${product.merchant_sku || 'N/A'}</strong></td>
         <td>${product.product_id}</td>
-        <td>${product.merchant_sku || ''}</td>
         <td>${product.color || ''}</td>
         <td>${product.size || ''}</td>
         <td>${product.sale_count || 0}</td>
@@ -1247,6 +1248,7 @@
       const trendIcon = trendDirection === 'up' ? 'arrow-up' : 'arrow-down';
       
       row.innerHTML = `
+        <td><strong>${product.merchant_sku || 'N/A'}</strong></td>
         <td>${product.product_id}</td>
         <td>${product.sale_count || 0}</td>
         <td>${parseFloat(product.total_revenue || 0).toFixed(2)} TL</td>
@@ -1426,7 +1428,7 @@
     const topProducts = productSalesData.slice(0, 5);
     const otherProducts = productSalesData.slice(5);
     
-    const labels = topProducts.map(item => item.product_id || 'Bilinmeyen');
+    const labels = topProducts.map(item => item.merchant_sku || 'Bilinmeyen');
     if (otherProducts.length > 0) {
       labels.push('Diğer');
     }
