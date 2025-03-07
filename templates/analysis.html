@@ -431,6 +431,7 @@
                   <thead class="table-dark">
                     <tr>
                       <th>Ürün ID</th>
+                      <th>Merchant SKU</th>
                       <th>Renk</th>
                       <th>Beden</th>
                       <th>Satış Adedi</th>
@@ -1213,6 +1214,7 @@
       const row = document.createElement('tr');
       row.innerHTML = `
         <td>${product.product_id}</td>
+        <td>${product.merchant_sku || ''}</td>
         <td>${product.color || ''}</td>
         <td>${product.size || ''}</td>
         <td>${product.sale_count || 0}</td>

@@ -52,6 +52,7 @@ def get_product_sales(start_date: datetime, end_date: datetime):
         logger.info("Ürün satışları sorgusu başlıyor...")
         product_sales = db.session.query(
             Order.product_main_id.label('product_main_id'),
+            Order.merchant_sku.label('merchant_sku'),
             Order.product_color.label('color'),
             Order.product_size.label('size'),
             func.count(Order.id).label('sale_count'),
@@ -66,6 +67,7 @@ def get_product_sales(start_date: datetime, end_date: datetime):
             Order.status != 'Cancelled'
         ).group_by(
             Order.product_main_id,
+            Order.merchant_sku,
             Order.product_color,
             Order.product_size
         ).order_by(
@@ -216,6 +218,7 @@ def get_sales_stats():
 
             'product_sales': [{
                 'product_id': stat.product_main_id,
+                'merchant_sku': stat.merchant_sku,
                 'color': stat.color,
                 'size': stat.size,
                 'sale_count': int(stat.sale_count or 0),
