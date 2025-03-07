@@ -68,7 +68,8 @@ def get_product_sales(start_date: datetime, end_date: datetime):
         ).group_by(
             Order.product_main_id,
             Order.product_color,
-            Order.product_size
+            Order.product_size,
+            Order.merchant_sku
         ).order_by(
             func.sum(Order.amount).desc()
         ).limit(50).all()
