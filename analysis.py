@@ -187,7 +187,7 @@ def get_sales_stats():
         SessionLocal = sessionmaker(bind=engine)
         session = SessionLocal()
         
-        logger.info("API isteği başladı: Yeni session oluşturuldu")
+        logger.info("API isteği başladı")
         now = datetime.now()
 
         # Tarih aralığı belirleme önceliği: quick_filter > (start_date, end_date) > days (varsayılan)
@@ -218,7 +218,7 @@ def get_sales_stats():
                 start_date = datetime.strptime(start_date_str, '%Y-%m-%d')
                 end_date = datetime.strptime(end_date_str, '%Y-%m-%d')
             except ValueError:
-                return jsonify({'success': False, 'error': 'Tarih formatı geçersiz. YYYY-MM-DD formatını kullanın.'})
+                return jsonify({'success': False, 'error': 'Tarih formatı geçersiz. YYYY-MM-DD formatını kullanın.', 'daily_sales': [], 'product_sales': [], 'returns': [], 'exchanges': []})
         else:
             days = int(request.args.get('days', 90))
             start_date = now - timedelta(days=days)
@@ -292,19 +292,9 @@ def get_sales_stats():
             product_sales = product_sales_query.all()
             logger.info(f"Ürün satışları verileri başarıyla çekildi: {len(product_sales)} kayıt")
             
-            for sale in product_sales:
-                logger.info(
-                    f"Ürün detayı: ID={sale.product_main_id}, Renk={sale.color}, "
-                    f"Beden={sale.size}, Adet={sale.sale_count}, Miktar={sale.total_quantity}, "
-                    f"Gelir={sale.total_revenue:.2f} TL, Ort. Fiyat={sale.average_price:.2f} TL"
-                )
         except Exception as e:
             logger.error(f"Ürün satış verisi çekilirken hata: {e}")
             session.rollback()
-        
-        # TabloVar kontrolü ile iade ve değişim istatistikleri (hata oluşan kısımları atlayacağız)
-        from sqlalchemy import inspect
-        inspector = inspect(engine)
         
         # Toplam değerleri hesaplama (toplam sipariş, satılan ürün, ciro)
         total_orders = sum(stat.order_count or 0 for stat in daily_sales) if daily_sales else 0
@@ -312,13 +302,17 @@ def get_sales_stats():
         total_revenue = sum(stat.total_amount or 0 for stat in daily_sales) if daily_sales else 0
 
         # Grafik için product_sales verisinin hazırlanması
-        product_sales_chart = [{
-            'product_id': f"{sale.product_main_id or ''}",
-            'merchant_sku': f"{sale.merchant_sku or ''}",
-            'product_full': f"{sale.product_main_id or ''} {sale.color or ''} {sale.size or ''}",
-            'sale_count': int(sale.sale_count or 0),
-            'total_revenue': round(float(sale.total_revenue or 0), 2)
-        } for sale in product_sales] if product_sales else []
+        product_sales_chart = []
+        try:
+            product_sales_chart = [{
+                'product_id': f"{sale.product_main_id or ''}",
+                'merchant_sku': f"{sale.merchant_sku or ''}",
+                'product_full': f"{sale.product_main_id or ''} {sale.color or ''} {sale.size or ''}",
+                'sale_count': int(sale.sale_count or 0),
+                'total_revenue': round(float(sale.total_revenue or 0), 2)
+            } for sale in product_sales] if product_sales else []
+        except Exception as e:
+            logger.error(f"Ürün satış grafik verisi oluşturulurken hata: {e}")
 
         response = {
             'success': True,
@@ -331,7 +325,7 @@ def get_sales_stats():
             'daily_sales': [{
                 'date': stat.date.strftime('%Y-%m-%d') if stat.date else None,
                 'order_count': int(stat.order_count or 0),
-                'total_amount': float(stat.total_amount or 0),
+                'total_amount': float(stat.total_amount or 0) if stat.total_amount else 0,
                 'total_quantity': int(stat.total_quantity or 0),
                 'average_order_value': round(float(stat.average_order_value or 0), 2),
                 'delivered_count': int(stat.delivered_count or 0),
@@ -365,6 +359,7 @@ def get_sales_stats():
             'error': str(e),
             'daily_sales': [],
             'product_sales': [],
+            'product_sales_chart': [],
             'returns': [],
             'exchanges': []
         })
