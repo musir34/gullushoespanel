@@ -178,11 +178,46 @@ def get_sales_stats():
 
         logger.info(f"Tarih aralığı: {start_date} - {end_date}")
 
-        # Sorguların çalıştırılması
-        daily_sales = get_daily_sales(start_date, end_date)
-        product_sales = get_product_sales(start_date, end_date)
-        returns_stats = get_return_stats(start_date, end_date)
-        exchange_stats = get_exchange_stats(start_date, end_date)
+        # Her bir sorgu için yeni bir oturum kullanarak veritabanı hatalarını önle
+        try:
+            # Günlük satış verileri
+            daily_sales = get_daily_sales(start_date, end_date)
+            
+            # Ürün satış verileri
+            product_sales = get_product_sales(start_date, end_date)
+            
+            # İade istatistikleri
+            db.session.close()  # Önceki oturumu kapat
+            db.session.begin()  # Yeni bir işlem başlat
+            try:
+                returns_stats = get_return_stats(start_date, end_date)
+                db.session.commit()
+            except Exception as e:
+                db.session.rollback()
+                logger.error(f"İade istatistikleri çekilirken hata: {e}")
+                returns_stats = []
+            
+            # Değişim istatistikleri
+            db.session.close()  # Önceki oturumu kapat
+            db.session.begin()  # Yeni bir işlem başlat
+            try:
+                exchange_stats = get_exchange_stats(start_date, end_date)
+                db.session.commit()
+            except Exception as e:
+                db.session.rollback()
+                logger.error(f"Değişim istatistikleri çekilirken hata: {e}")
+                exchange_stats = []
+                
+        except Exception as query_error:
+            logger.exception(f"Veritabanı sorgusu hatası: {query_error}")
+            return jsonify({
+                'success': False,
+                'error': str(query_error),
+                'daily_sales': [],
+                'product_sales': [],
+                'returns': [],
+                'exchanges': []
+            })
 
         # --> Toplam değerleri hesaplama (toplam sipariş, satılan ürün, ciro)
         # daily_sales verisi üzerinden sum() ile hesaplayabiliriz
@@ -243,8 +278,18 @@ def get_sales_stats():
             } for stat in exchange_stats]
         }
 
+        # İşlem sonunda oturumu temizle
+        db.session.close()
+        
         return jsonify(response)
     except Exception as e:
+        # Herhangi bir hata durumunda oturumu rollback yap ve temizle
+        try:
+            db.session.rollback()
+            db.session.close()
+        except:
+            pass
+            
         logger.exception("Hata oluştu:")
         return jsonify({
             'success': False,

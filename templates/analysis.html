@@ -2,765 +2,653 @@
 {% extends "base.html" %}
 
 {% block content %}
-<!-- Dış kapsayıcı -->
-<div id="wrapper" class="d-flex">
-
-  <!-- Sidebar -->
-  <nav id="sidebar-wrapper" class="bg-dark border-end">
-    <div class="sidebar-heading text-center py-4 fs-4 text-uppercase fw-bold text-white">
-      <i class="bi bi-bar-chart-fill me-2"></i> Analiz Paneli
-    </div>
-    <div class="list-group list-group-flush">
-      <a href="#" class="list-group-item list-group-item-action bg-dark text-white active" data-section="dashboard">
-        <i class="bi bi-speedometer2 me-2"></i> Dashboard
-      </a>
-      <a href="#" class="list-group-item list-group-item-action bg-dark text-white" data-section="sales">
-        <i class="bi bi-basket-fill me-2"></i> Satışlar
-      </a>
-      <a href="#" class="list-group-item list-group-item-action bg-dark text-white" data-section="returns">
-        <i class="bi bi-arrow-repeat me-2"></i> İadeler
-      </a>
-      <a href="#" class="list-group-item list-group-item-action bg-dark text-white" data-section="products">
-        <i class="bi bi-tags-fill me-2"></i> Ürün Analizleri
-      </a>
-      <a href="#" class="list-group-item list-group-item-action bg-dark text-white" data-section="stock">
-        <i class="bi bi-box-seam me-2"></i> Stok Raporu
-      </a>
-      <a href="#" class="list-group-item list-group-item-action bg-dark text-white" data-section="predictions">
-        <i class="bi bi-graph-up-arrow me-2"></i> Satış Tahminleri
-      </a>
-      <a href="#" class="list-group-item list-group-item-action bg-dark text-white" data-section="ai-insights">
-        <i class="bi bi-robot me-2"></i> AI Öngörüleri
-      </a>
-    </div>
-  </nav>
-  <!-- /Sidebar -->
-
-  <!-- Sayfa İçeriği -->
-  <div id="page-content-wrapper" class="w-100">
-    <!-- Üst Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom py-3">
-      <div class="container-fluid">
-        <button class="btn btn-primary" id="menu-toggle">
-          <i class="bi bi-list"></i>
-        </button>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent">
-          <span class="navbar-toggler-icon"></span>
-        </button>
-
-        <div class="collapse navbar-collapse" id="navbarSupportedContent">
-          <ul class="navbar-nav ms-auto mt-2 mt-lg-0">
-            <li class="nav-item dropdown">
-              <a class="nav-link dropdown-toggle" href="#" id="reportDropdown" role="button" data-bs-toggle="dropdown">
-                <i class="bi bi-file-earmark-text me-1"></i> Raporlar
-              </a>
-              <ul class="dropdown-menu dropdown-menu-end">
-                <li><a class="dropdown-item" href="#" id="exportPDF"><i class="bi bi-file-pdf me-2"></i>PDF olarak dışa aktar</a></li>
-                <li><a class="dropdown-item" href="#" id="exportExcel"><i class="bi bi-file-excel me-2"></i>Excel olarak dışa aktar</a></li>
-                <li><hr class="dropdown-divider"></li>
-                <li><a class="dropdown-item" href="#" id="printReport"><i class="bi bi-printer me-2"></i>Yazdır</a></li>
-              </ul>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="/"><i class="bi bi-house-door me-1"></i> Ana Sayfa</a>
-            </li>
-          </ul>
-        </div>
-      </div>
-    </nav>
-    <!-- /Üst Navbar -->
-
-    <div class="container-fluid py-4">
-      <!-- Başlık -->
-      <h1 class="mb-4">Satış ve İade Analizleri</h1>
-
-      <!-- Bilgi Kartları -->
-      <div class="row mb-4 g-3">
-        <!-- Toplam Sipariş -->
-        <div class="col-md-3">
-          <div class="card info-card shadow-sm">
-            <div class="card-body">
-              <div class="d-flex justify-content-between align-items-center">
-                <div>
-                  <h5 class="card-title mb-0">Toplam Sipariş</h5>
-                  <span id="totalOrders" class="fs-3 fw-bold">0</span>
-                  <div id="orderTrend" class="trend-indicator">
-                    <small class="text-success"><i class="bi bi-arrow-up"></i> %3.2</small>
-                  </div>
-                </div>
-                <div class="icon text-primary">
-                  <i class="bi bi-cart-plus fs-1"></i>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <!-- Toplam Satılan Ürün -->
-        <div class="col-md-3">
-          <div class="card info-card shadow-sm">
-            <div class="card-body">
-              <div class="d-flex justify-content-between align-items-center">
-                <div>
-                  <h5 class="card-title mb-0">Satılan Ürün Adedi</h5>
-                  <span id="totalItemsSold" class="fs-3 fw-bold">0</span>
-                  <div id="itemsTrend" class="trend-indicator">
-                    <small class="text-success"><i class="bi bi-arrow-up"></i> %1.8</small>
-                  </div>
-                </div>
-                <div class="icon text-success">
-                  <i class="bi bi-bag-check fs-1"></i>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <!-- Toplam Ciro -->
-        <div class="col-md-3">
-          <div class="card info-card shadow-sm">
-            <div class="card-body">
-              <div class="d-flex justify-content-between align-items-center">
-                <div>
-                  <h5 class="card-title mb-0">Toplam Ciro (TL)</h5>
-                  <span id="totalRevenue" class="fs-3 fw-bold">0</span>
-                  <div id="revenueTrend" class="trend-indicator">
-                    <small class="text-success"><i class="bi bi-arrow-up"></i> %4.5</small>
-                  </div>
-                </div>
-                <div class="icon text-warning">
-                  <i class="bi bi-cash-coin fs-1"></i>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <!-- İade Oranı -->
-        <div class="col-md-3">
-          <div class="card info-card shadow-sm">
-            <div class="card-body">
-              <div class="d-flex justify-content-between align-items-center">
-                <div>
-                  <h5 class="card-title mb-0">İade Oranı</h5>
-                  <span id="returnRate" class="fs-3 fw-bold">%0</span>
-                  <div id="returnTrend" class="trend-indicator">
-                    <small class="text-danger"><i class="bi bi-arrow-down"></i> %0.5</small>
-                  </div>
-                </div>
-                <div class="icon text-danger">
-                  <i class="bi bi-box-arrow-left fs-1"></i>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <!-- /Bilgi Kartları -->
-
-      <!-- Filtre Seçenekleri Kartı -->
-      <div class="card mb-4 shadow-sm">
-        <div class="card-header bg-secondary text-white">
+<!-- Modern Analiz Paneli Tasarımı -->
+<div class="container-fluid py-3">
+  <!-- Üst Bilgi Kartı -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card bg-gradient-primary-to-secondary shadow-lg">
+        <div class="card-body text-white p-4">
           <div class="d-flex justify-content-between align-items-center">
-            <h5 class="mb-0">Filtre Seçenekleri</h5>
-            <button class="btn btn-sm btn-light" id="toggleFilters">
-              <i class="bi bi-chevron-down"></i>
+            <div>
+              <h2 class="fw-bold mb-1"><i class="bi bi-bar-chart-line-fill me-2"></i> Satış ve İş Analiz Paneli</h2>
+              <p class="mb-0">Satış trendleri, ürün performansı ve müşteri davranışlarını detaylı analiz edin</p>
+            </div>
+            <div class="d-flex">
+              <button id="printReport" class="btn btn-sm btn-light me-2">
+                <i class="bi bi-printer-fill me-1"></i> Yazdır
+              </button>
+              <div class="dropdown">
+                <button class="btn btn-sm btn-light dropdown-toggle" type="button" id="dropdownExport" data-bs-toggle="dropdown" aria-expanded="false">
+                  <i class="bi bi-download me-1"></i> Dışa Aktar
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="dropdownExport">
+                  <li><a class="dropdown-item" href="#" id="exportPDF"><i class="bi bi-file-pdf me-2"></i>PDF</a></li>
+                  <li><a class="dropdown-item" href="#" id="exportExcel"><i class="bi bi-file-excel me-2"></i>Excel</a></li>
+                  <li><a class="dropdown-item" href="#" id="exportCSV"><i class="bi bi-file-text me-2"></i>CSV</a></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filtre Satırı -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card shadow-sm">
+        <div class="card-body p-3">
+          <div class="row g-2 align-items-center">
+            <div class="col-md-auto">
+              <label class="form-label mb-0 fw-semibold">Hızlı Filtre:</label>
+            </div>
+            <div class="col-md-auto">
+              <div class="btn-group" role="group">
+                <button type="button" class="btn btn-outline-primary btn-sm quick-filter active" data-filter="last30">Son 30 Gün</button>
+                <button type="button" class="btn btn-outline-primary btn-sm quick-filter" data-filter="last7">Son 7 Gün</button>
+                <button type="button" class="btn btn-outline-primary btn-sm quick-filter" data-filter="this_month">Bu Ay</button>
+                <button type="button" class="btn btn-outline-primary btn-sm quick-filter" data-filter="today">Bugün</button>
+              </div>
+            </div>
+            <div class="col-md-auto">
+              <div class="vr h-100 mx-2 d-none d-md-block"></div>
+            </div>
+            <div class="col-md-auto">
+              <label class="form-label mb-0 fw-semibold">Özel Tarih:</label>
+            </div>
+            <div class="col-md-auto">
+              <div class="input-group input-group-sm">
+                <input type="date" class="form-control form-control-sm" id="startDate">
+                <span class="input-group-text"><i class="bi bi-arrow-right"></i></span>
+                <input type="date" class="form-control form-control-sm" id="endDate">
+                <button class="btn btn-primary" type="button" id="filterByDate">Uygula</button>
+              </div>
+            </div>
+            <div class="col-md-auto ms-md-auto">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="autoRefresh">
+                <label class="form-check-label" for="autoRefresh">Otomatik Yenile (5dk)</label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Özet Kartları -->
+  <div class="row g-3 mb-4">
+    <!-- Toplam Sipariş -->
+    <div class="col-md-3">
+      <div class="card h-100 border-0 shadow-sm">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start">
+            <div class="stat-content">
+              <h6 class="stat-title text-muted mb-0">Toplam Sipariş</h6>
+              <h3 class="stat-value" id="totalOrders">0</h3>
+              <div class="stat-trend" id="orderTrend">
+                <span class="badge rounded-pill bg-soft-success text-success">
+                  <i class="bi bi-arrow-up me-1"></i>%3.2
+                </span>
+                <small class="text-muted ms-2">vs geçen dönem</small>
+              </div>
+            </div>
+            <div class="stat-icon rounded-circle bg-soft-primary text-primary">
+              <i class="bi bi-cart"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Satılan Ürün Adedi -->
+    <div class="col-md-3">
+      <div class="card h-100 border-0 shadow-sm">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start">
+            <div class="stat-content">
+              <h6 class="stat-title text-muted mb-0">Satılan Ürün Adedi</h6>
+              <h3 class="stat-value" id="totalItemsSold">0</h3>
+              <div class="stat-trend" id="itemsTrend">
+                <span class="badge rounded-pill bg-soft-success text-success">
+                  <i class="bi bi-arrow-up me-1"></i>%1.8
+                </span>
+                <small class="text-muted ms-2">vs geçen dönem</small>
+              </div>
+            </div>
+            <div class="stat-icon rounded-circle bg-soft-success text-success">
+              <i class="bi bi-box-seam"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toplam Ciro -->
+    <div class="col-md-3">
+      <div class="card h-100 border-0 shadow-sm">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start">
+            <div class="stat-content">
+              <h6 class="stat-title text-muted mb-0">Toplam Ciro (TL)</h6>
+              <h3 class="stat-value" id="totalRevenue">0</h3>
+              <div class="stat-trend" id="revenueTrend">
+                <span class="badge rounded-pill bg-soft-success text-success">
+                  <i class="bi bi-arrow-up me-1"></i>%4.5
+                </span>
+                <small class="text-muted ms-2">vs geçen dönem</small>
+              </div>
+            </div>
+            <div class="stat-icon rounded-circle bg-soft-warning text-warning">
+              <i class="bi bi-currency-lira"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- İade Oranı -->
+    <div class="col-md-3">
+      <div class="card h-100 border-0 shadow-sm">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start">
+            <div class="stat-content">
+              <h6 class="stat-title text-muted mb-0">İade Oranı</h6>
+              <h3 class="stat-value" id="returnRate">%0</h3>
+              <div class="stat-trend" id="returnTrend">
+                <span class="badge rounded-pill bg-soft-danger text-danger">
+                  <i class="bi bi-arrow-down me-1"></i>%0.5
+                </span>
+                <small class="text-muted ms-2">vs geçen dönem</small>
+              </div>
+            </div>
+            <div class="stat-icon rounded-circle bg-soft-danger text-danger">
+              <i class="bi bi-arrow-return-left"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ana Grafik ve Tab Bölümü -->
+  <div class="row mb-4">
+    <div class="col-lg-8">
+      <!-- Ana Grafik Kartı -->
+      <div class="card h-100 shadow-sm">
+        <div class="card-header d-flex justify-content-between align-items-center bg-transparent py-3">
+          <h5 class="mb-0 fw-bold">Satış Performansı</h5>
+          <div class="btn-group btn-group-sm" role="group">
+            <button type="button" class="btn btn-outline-secondary active chart-type" data-type="line">
+              <i class="bi bi-graph-up"></i>
+            </button>
+            <button type="button" class="btn btn-outline-secondary chart-type" data-type="bar">
+              <i class="bi bi-bar-chart"></i>
+            </button>
+            <button type="button" class="btn btn-outline-secondary chart-type" data-type="area">
+              <i class="bi bi-area-chart"></i>
             </button>
           </div>
         </div>
-        <div class="card-body" id="filterOptions">
-          <div class="row">
-            <!-- Tarih Aralığı Seçimi -->
-            <div class="col-md-6">
-              <div class="form-group mb-3">
-                <label for="startDate" class="form-label">Başlangıç Tarihi</label>
-                <input type="date" class="form-control" id="startDate">
+        <div class="card-body p-3">
+          <div class="chart-container" style="position: relative; height: 340px;">
+            <canvas id="salesPerformanceChart"></canvas>
+          </div>
+        </div>
+        <div class="card-footer bg-transparent border-0 pt-0">
+          <div class="row text-center">
+            <div class="col-4">
+              <div class="d-flex flex-column">
+                <small class="text-muted mb-1">Ortalama Sipariş Değeri</small>
+                <span class="fw-bold text-primary" id="avgOrderValue">₺0</span>
               </div>
-              <div class="form-group mb-3">
-                <label for="endDate" class="form-label">Bitiş Tarihi</label>
-                <input type="date" class="form-control" id="endDate">
-              </div>
-              <button id="filterByDate" class="btn btn-primary mt-2">Filtrele</button>
             </div>
-            <!-- Hızlı Filtre ve Ek Seçenekler -->
-            <div class="col-md-6">
-              <label class="form-label">Hızlı Filtre</label>
-              <div class="btn-group d-flex mb-3" role="group" aria-label="Quick Filter">
-                <button type="button" class="btn btn-outline-secondary quick-filter" data-filter="last7">Son 7 Gün</button>
-                <button type="button" class="btn btn-outline-secondary quick-filter" data-filter="last30">Son 30 Gün</button>
-                <button type="button" class="btn btn-outline-secondary quick-filter" data-filter="today">Bugün</button>
-                <button type="button" class="btn btn-outline-secondary quick-filter" data-filter="this_month">Bu Ay</button>
+            <div class="col-4">
+              <div class="d-flex flex-column">
+                <small class="text-muted mb-1">Sipariş Başına Ürün</small>
+                <span class="fw-bold text-success" id="itemsPerOrder">0</span>
               </div>
-              
-              <!-- Ek Filtreler -->
+            </div>
+            <div class="col-4">
+              <div class="d-flex flex-column">
+                <small class="text-muted mb-1">Teslim Edilen Siparişler</small>
+                <span class="fw-bold text-info" id="deliveredOrders">0</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <!-- AI Öngörüleri Kartı -->
+      <div class="card h-100 shadow-sm">
+        <div class="card-header py-3 bg-transparent">
+          <div class="d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 fw-bold">
+              <i class="bi bi-robot text-primary me-2"></i>AI Analiz Özeti
+            </h5>
+            <button id="refreshAiInsights" class="btn btn-sm btn-outline-primary">
+              <i class="bi bi-arrow-repeat"></i>
+            </button>
+          </div>
+        </div>
+        <div class="card-body p-3">
+          <div id="aiInsightContainer" class="insight-container">
+            <div class="placeholder-glow mb-3">
+              <span class="placeholder col-7"></span>
+              <span class="placeholder col-4"></span>
+              <span class="placeholder col-4"></span>
+              <span class="placeholder col-6"></span>
+              <span class="placeholder col-8"></span>
+            </div>
+          </div>
+        </div>
+        <div class="card-footer bg-light bg-opacity-50 border-0">
+          <div class="input-group input-group-sm">
+            <input type="text" class="form-control" id="aiQueryInput" placeholder="Veri hakkında soru sorun...">
+            <button class="btn btn-primary" type="button" id="sendAiQuery">
+              <i class="bi bi-send-fill"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Grafik Sekmeleri ve Veri Tabloları -->
+  <div class="row">
+    <div class="col-12 mb-4">
+      <div class="card shadow-sm">
+        <div class="card-header bg-transparent border-bottom-0 pb-0 pt-3">
+          <ul class="nav nav-tabs card-header-tabs" id="analysisTab" role="tablist">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link active" id="products-tab" data-bs-toggle="tab" data-bs-target="#products" type="button" role="tab" aria-selected="true">
+                <i class="bi bi-box-seam me-1"></i>Ürün Performansı
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="returns-tab" data-bs-toggle="tab" data-bs-target="#returns" type="button" role="tab" aria-selected="false">
+                <i class="bi bi-arrow-return-left me-1"></i>İade Analizi
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="customer-tab" data-bs-toggle="tab" data-bs-target="#customer" type="button" role="tab" aria-selected="false">
+                <i class="bi bi-people me-1"></i>Müşteri Davranışları
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="forecast-tab" data-bs-toggle="tab" data-bs-target="#forecast" type="button" role="tab" aria-selected="false">
+                <i class="bi bi-graph-up-arrow me-1"></i>Satış Tahminleri
+              </button>
+            </li>
+          </ul>
+        </div>
+        <div class="card-body p-3">
+          <div class="tab-content" id="analysisTabContent">
+            <!-- Ürün Performansı Tab -->
+            <div class="tab-pane fade show active" id="products" role="tabpanel" aria-labelledby="products-tab">
               <div class="row">
-                <div class="col-md-6">
-                  <div class="form-group mb-3">
-                    <label for="productCategory" class="form-label">Ürün Kategorisi</label>
-                    <select class="form-select" id="productCategory">
-                      <option value="">Tümü</option>
-                      <option value="shoes">Ayakkabı</option>
-                      <option value="clothes">Giyim</option>
-                      <option value="accessories">Aksesuar</option>
-                    </select>
+                <div class="col-lg-5">
+                  <h6 class="border-bottom pb-2 mb-3">En Çok Satan Ürünler</h6>
+                  <div class="chart-container" style="position: relative; height: 300px;">
+                    <canvas id="topProductsChart"></canvas>
                   </div>
                 </div>
-                <div class="col-md-6">
-                  <div class="form-group mb-3">
-                    <label for="orderStatus" class="form-label">Sipariş Durumu</label>
-                    <select class="form-select" id="orderStatus">
-                      <option value="">Tümü</option>
-                      <option value="new">Yeni</option>
-                      <option value="delivered">Teslim Edildi</option>
-                      <option value="cancelled">İptal Edildi</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <!-- /Filtre Seçenekleri Kartı -->
-
-      <!-- Dashboard - Genel Bakış -->
-      <div class="row mb-4" data-section="dashboard">
-        <div class="col-lg-8">
-          <div class="card shadow-sm">
-            <div class="card-header bg-primary text-white">
-              <h5 class="mb-0">Satış Trendi</h5>
-            </div>
-            <div class="card-body">
-              <canvas id="salesTrendChart" height="300"></canvas>
-            </div>
-          </div>
-        </div>
-        <div class="col-lg-4">
-          <div class="card shadow-sm">
-            <div class="card-header bg-success text-white">
-              <h5 class="mb-0">Satış Dağılımı</h5>
-            </div>
-            <div class="card-body">
-              <canvas id="salesDistributionChart" height="300"></canvas>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="row mb-4" data-section="dashboard">
-        <div class="col-lg-6">
-          <div class="card shadow-sm">
-            <div class="card-header bg-info text-white">
-              <h5 class="mb-0">En Çok Satan Ürünler</h5>
-            </div>
-            <div class="card-body">
-              <div class="table-responsive" style="max-height: 300px;">
-                <table class="table table-sm table-hover">
-                  <thead class="table-dark">
-                    <tr>
-                      <th>Merchant SKU</th>
-                      <th>Ürün</th>
-                      <th>Adet</th>
-                      <th>Toplam Tutar</th>
-                      <th>Trend</th>
-                    </tr>
-                  </thead>
-                  <tbody id="topProductsTable">
-                    <!-- JavaScript ile doldurulacak -->
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="col-lg-6">
-          <div class="card shadow-sm">
-            <div class="card-header bg-warning text-dark">
-              <h5 class="mb-0">AI Öngörüleri</h5>
-            </div>
-            <div class="card-body">
-              <div id="aiInsightContainer" class="p-3 border rounded bg-light mb-3" style="max-height: 200px; overflow-y: auto;">
-                <div class="spinner-border text-primary" role="status">
-                  <span class="visually-hidden">Yükleniyor...</span>
-                </div>
-                <p class="placeholder-glow">
-                  <span class="placeholder col-7"></span>
-                  <span class="placeholder col-4"></span>
-                  <span class="placeholder col-4"></span>
-                  <span class="placeholder col-6"></span>
-                  <span class="placeholder col-8"></span>
-                </p>
-              </div>
-              <div class="d-grid">
-                <button id="refreshAiInsights" class="btn btn-outline-warning">
-                  <i class="bi bi-arrow-clockwise me-2"></i>Yeni Öngörü Oluştur
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Satışlar Bölümü -->
-      <div class="row" data-section="sales">
-        <div class="col-lg-12 mb-4">
-          <div class="card shadow-sm">
-            <div class="card-header bg-primary text-white">
-              <h5 class="mb-0">Günlük Satışlar</h5>
-            </div>
-            <div class="card-body">
-              <canvas id="dailySalesChart" height="300"></canvas>
-            </div>
-          </div>
-        </div>
-
-        <div class="col-lg-6 mb-4">
-          <div class="card shadow-sm">
-            <div class="card-header bg-primary text-white">
-              <h5 class="mb-0">Satış Saatleri Analizi</h5>
-            </div>
-            <div class="card-body">
-              <canvas id="salesHoursChart" height="300"></canvas>
-            </div>
-          </div>
-        </div>
-
-        <div class="col-lg-6 mb-4">
-          <div class="card shadow-sm">
-            <div class="card-header bg-primary text-white">
-              <h5 class="mb-0">Ödeme Yöntemleri</h5>
-            </div>
-            <div class="card-body">
-              <canvas id="paymentMethodsChart" height="300"></canvas>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- İadeler Bölümü -->
-      <div class="row" data-section="returns">
-        <div class="col-lg-6 mb-4">
-          <div class="card shadow-sm">
-            <div class="card-header bg-danger text-white">
-              <h5 class="mb-0">İade Nedenleri Dağılımı</h5>
-            </div>
-            <div class="card-body">
-              <canvas id="returnsChart" height="300"></canvas>
-            </div>
-          </div>
-        </div>
-
-        <div class="col-lg-6 mb-4">
-          <div class="card shadow-sm">
-            <div class="card-header bg-danger text-white">
-              <h5 class="mb-0">İade Trendi</h5>
-            </div>
-            <div class="card-body">
-              <canvas id="returnTrendChart" height="300"></canvas>
-            </div>
-          </div>
-        </div>
-
-        <div class="col-lg-12 mb-4">
-          <div class="card shadow-sm">
-            <div class="card-header bg-danger text-white">
-              <h5 class="mb-0">En Çok İade Edilen Ürünler</h5>
-            </div>
-            <div class="card-body">
-              <div class="table-responsive">
-                <table class="table table-sm table-hover">
-                  <thead class="table-dark">
-                    <tr>
-                      <th>Ürün</th>
-                      <th>Renk</th>
-                      <th>Beden</th>
-                      <th>İade Sayısı</th>
-                      <th>İade Oranı</th>
-                      <th>En Sık İade Nedeni</th>
-                    </tr>
-                  </thead>
-                  <tbody id="topReturnedProductsTable">
-                    <!-- JavaScript ile doldurulacak -->
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Ürün Analizleri Bölümü -->
-      <div class="row" data-section="products">
-        <div class="col-lg-12 mb-4">
-          <div class="card shadow-sm">
-            <div class="card-header bg-success text-white">
-              <h5 class="mb-0">Ürün Bazlı Satış Analizi</h5>
-            </div>
-            <div class="card-body">
-              <canvas id="productSalesChart" height="300"></canvas>
-            </div>
-          </div>
-        </div>
-
-        <div class="col-lg-6 mb-4">
-          <div class="card shadow-sm">
-            <div class="card-header bg-success text-white">
-              <h5 class="mb-0">Kategori Performansı</h5>
-            </div>
-            <div class="card-body">
-              <canvas id="categorySalesChart" height="300"></canvas>
-            </div>
-          </div>
-        </div>
-
-        <div class="col-lg-6 mb-4">
-          <div class="card shadow-sm">
-            <div class="card-header bg-success text-white">
-              <h5 class="mb-0">Beden/Renk Dağılımı</h5>
-            </div>
-            <div class="card-body">
-              <canvas id="sizeColorChart" height="300"></canvas>
-            </div>
-          </div>
-        </div>
-
-        <div class="col-lg-12 mb-4">
-          <div class="card shadow-sm">
-            <div class="card-header bg-info text-white">
-              <h5 class="mb-0">Ürün Bazlı Satışlar Tablosu</h5>
-            </div>
-            <div class="card-body">
-              <div class="table-responsive">
-                <table class="table table-hover table-striped" id="productSalesTable">
-                  <thead class="table-dark">
-                    <tr>
-                      <th>Merchant SKU</th>
-                      <th>Ürün ID</th>
-                      <th>Renk</th>
-                      <th>Beden</th>
-                      <th>Satış Adedi</th>
-                      <th>Toplam Gelir</th>
-                      <th>Ortalama Fiyat</th>
-                    </tr>
-                  </thead>
-                  <tbody></tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Stok Raporu Bölümü -->
-      <div class="row" data-section="stock">
-        <div class="col-lg-6 mb-4">
-          <div class="card shadow-sm">
-            <div class="card-header bg-dark text-white">
-              <h5 class="mb-0">Stok Durumu</h5>
-            </div>
-            <div class="card-body">
-              <canvas id="stockStatusChart" height="300"></canvas>
-            </div>
-          </div>
-        </div>
-
-        <div class="col-lg-6 mb-4">
-          <div class="card shadow-sm">
-            <div class="card-header bg-dark text-white">
-              <h5 class="mb-0">Kritik Stok Ürünleri</h5>
-            </div>
-            <div class="card-body">
-              <div class="table-responsive" style="max-height: 300px;">
-                <table class="table table-sm table-hover">
-                  <thead class="table-dark">
-                    <tr>
-                      <th>Ürün</th>
-                      <th>Renk</th>
-                      <th>Beden</th>
-                      <th>Mevcut Stok</th>
-                      <th>Kritik Seviye</th>
-                    </tr>
-                  </thead>
-                  <tbody id="criticalStockTable">
-                    <!-- JavaScript ile doldurulacak -->
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Satış Tahminleri Bölümü -->
-      <div class="row" data-section="predictions">
-        <div class="col-lg-12 mb-4">
-          <div class="card shadow-sm">
-            <div class="card-header bg-primary text-white">
-              <h5 class="mb-0">Gelecek 30 Gün Satış Tahminleri</h5>
-            </div>
-            <div class="card-body">
-              <canvas id="salesPredictionChart" height="300"></canvas>
-            </div>
-          </div>
-        </div>
-
-        <div class="col-lg-6 mb-4">
-          <div class="card shadow-sm">
-            <div class="card-header bg-info text-white">
-              <h5 class="mb-0">Sezonluk Trend Analizi</h5>
-            </div>
-            <div class="card-body">
-              <canvas id="seasonalTrendChart" height="300"></canvas>
-            </div>
-          </div>
-        </div>
-
-        <div class="col-lg-6 mb-4">
-          <div class="card shadow-sm">
-            <div class="card-header bg-warning text-dark">
-              <h5 class="mb-0">Sipariş Tahmini</h5>
-            </div>
-            <div class="card-body">
-              <div class="table-responsive">
-                <table class="table table-sm table-hover">
-                  <thead class="table-dark">
-                    <tr>
-                      <th>Dönem</th>
-                      <th>Sipariş Tahmini</th>
-                      <th>Tahmini Ciro</th>
-                      <th>Güven Aralığı</th>
-                    </tr>
-                  </thead>
-                  <tbody id="orderPredictionTable">
-                    <tr>
-                      <td>Önümüzdeki Hafta</td>
-                      <td>135 ± 12</td>
-                      <td>145,350 ₺</td>
-                      <td>%85</td>
-                    </tr>
-                    <tr>
-                      <td>Önümüzdeki Ay</td>
-                      <td>580 ± 45</td>
-                      <td>624,600 ₺</td>
-                      <td>%80</td>
-                    </tr>
-                    <tr>
-                      <td>Önümüzdeki Çeyrek</td>
-                      <td>1,750 ± 120</td>
-                      <td>1,890,000 ₺</td>
-                      <td>%75</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- AI Öngörüleri Bölümü -->
-      <div class="row" data-section="ai-insights">
-        <div class="col-lg-12 mb-4">
-          <div class="card shadow-sm">
-            <div class="card-header bg-warning text-dark">
-              <h5 class="mb-0">Yapay Zeka Destekli Veri Analizi</h5>
-            </div>
-            <div class="card-body">
-              <div class="row">
-                <div class="col-lg-6">
-                  <h6>Satış Verileri Analizi</h6>
-                  <div id="aiSalesAnalysis" class="p-3 border rounded bg-light mb-3" style="height: 250px; overflow-y: auto;">
-                    <div class="placeholder-glow">
-                      <span class="placeholder col-7"></span>
-                      <span class="placeholder col-4"></span>
-                      <span class="placeholder col-4"></span>
-                      <span class="placeholder col-6"></span>
-                      <span class="placeholder col-8"></span>
+                <div class="col-lg-7">
+                  <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
+                    <h6 class="mb-0">Ürün Satış Detayları</h6>
+                    <div class="input-group input-group-sm" style="width: 250px">
+                      <input type="text" class="form-control" id="productSearch" placeholder="Ürün ara...">
+                      <span class="input-group-text bg-transparent px-2"><i class="bi bi-search"></i></span>
                     </div>
                   </div>
+                  <div class="table-responsive" style="max-height: 300px;">
+                    <table class="table table-sm table-hover align-middle" id="productSalesTable">
+                      <thead class="table-light">
+                        <tr>
+                          <th>Ürün Kodu</th>
+                          <th>Ürün Adı</th>
+                          <th>Renk / Beden</th>
+                          <th class="text-end">Satış Adedi</th>
+                          <th class="text-end">Ciro (TL)</th>
+                          <th class="text-end">Trend</th>
+                        </tr>
+                      </thead>
+                      <tbody></tbody>
+                    </table>
+                  </div>
                 </div>
-                <div class="col-lg-6">
-                  <h6>Aksiyon Önerileri</h6>
-                  <div id="aiActionSuggestions" class="p-3 border rounded bg-light mb-3" style="height: 250px; overflow-y: auto;">
-                    <div class="placeholder-glow">
-                      <span class="placeholder col-7"></span>
-                      <span class="placeholder col-4"></span>
-                      <span class="placeholder col-4"></span>
-                      <span class="placeholder col-6"></span>
-                      <span class="placeholder col-8"></span>
+              </div>
+            </div>
+
+            <!-- İade Analizi Tab -->
+            <div class="tab-pane fade" id="returns" role="tabpanel" aria-labelledby="returns-tab">
+              <div class="row">
+                <div class="col-lg-5">
+                  <h6 class="border-bottom pb-2 mb-3">İade Nedenleri Dağılımı</h6>
+                  <div class="chart-container" style="position: relative; height: 300px;">
+                    <canvas id="returnsReasonChart"></canvas>
+                  </div>
+                </div>
+                <div class="col-lg-7">
+                  <h6 class="border-bottom pb-2 mb-3">İade Eğilimi</h6>
+                  <div class="chart-container" style="position: relative; height: 300px;">
+                    <canvas id="returnsTrendChart"></canvas>
+                  </div>
+                </div>
+                <div class="col-12 mt-4">
+                  <h6 class="border-bottom pb-2 mb-3">En Çok İade Edilen Ürünler</h6>
+                  <div class="table-responsive">
+                    <table class="table table-sm table-hover align-middle" id="topReturnedProductsTable">
+                      <thead class="table-light">
+                        <tr>
+                          <th>Ürün Kodu</th>
+                          <th>Ürün Adı</th>
+                          <th>Renk / Beden</th>
+                          <th class="text-end">İade Sayısı</th>
+                          <th class="text-end">İade Oranı</th>
+                          <th>En Sık İade Nedeni</th>
+                        </tr>
+                      </thead>
+                      <tbody></tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Müşteri Davranışları Tab -->
+            <div class="tab-pane fade" id="customer" role="tabpanel" aria-labelledby="customer-tab">
+              <div class="row">
+                <div class="col-lg-4">
+                  <h6 class="border-bottom pb-2 mb-3">Sipariş Saatleri</h6>
+                  <div class="chart-container" style="position: relative; height: 250px;">
+                    <canvas id="orderHoursChart"></canvas>
+                  </div>
+                </div>
+                <div class="col-lg-4">
+                  <h6 class="border-bottom pb-2 mb-3">Cihaz Dağılımı</h6>
+                  <div class="chart-container" style="position: relative; height: 250px;">
+                    <canvas id="deviceDistributionChart"></canvas>
+                  </div>
+                </div>
+                <div class="col-lg-4">
+                  <h6 class="border-bottom pb-2 mb-3">Ödeme Yöntemleri</h6>
+                  <div class="chart-container" style="position: relative; height: 250px;">
+                    <canvas id="paymentMethodsChart"></canvas>
+                  </div>
+                </div>
+              </div>
+              <div class="row mt-4">
+                <div class="col-12">
+                  <h6 class="border-bottom pb-2 mb-3">Yeni vs Tekrarlayan Müşteriler</h6>
+                  <div class="chart-container" style="position: relative; height: 250px;">
+                    <canvas id="customerTypeChart"></canvas>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Satış Tahminleri Tab -->
+            <div class="tab-pane fade" id="forecast" role="tabpanel" aria-labelledby="forecast-tab">
+              <div class="row">
+                <div class="col-lg-8">
+                  <h6 class="border-bottom pb-2 mb-3">Gelecek 30 Gün Satış Tahmini</h6>
+                  <div class="chart-container" style="position: relative; height: 300px;">
+                    <canvas id="salesForecastChart"></canvas>
+                  </div>
+                </div>
+                <div class="col-lg-4">
+                  <h6 class="border-bottom pb-2 mb-3">Tahmin Özeti</h6>
+                  <div class="table-responsive">
+                    <table class="table table-sm">
+                      <tbody>
+                        <tr>
+                          <td>Önümüzdeki 7 Gün</td>
+                          <td class="fw-bold text-end">135 sipariş</td>
+                          <td class="text-success text-end">+5.2%</td>
+                        </tr>
+                        <tr>
+                          <td>Önümüzdeki 30 Gün</td>
+                          <td class="fw-bold text-end">580 sipariş</td>
+                          <td class="text-success text-end">+8.4%</td>
+                        </tr>
+                        <tr>
+                          <td>Tahmini Ciro (30 gün)</td>
+                          <td class="fw-bold text-end">624,600 ₺</td>
+                          <td class="text-success text-end">+7.1%</td>
+                        </tr>
+                        <tr>
+                          <td>Satış Yoğunluğu</td>
+                          <td class="fw-bold text-end">Haftasonu</td>
+                          <td class="text-end"><i class="bi bi-info-circle text-muted" data-bs-toggle="tooltip" title="Satışların %65'i haftasonu gerçekleşiyor"></i></td>
+                        </tr>
+                        <tr>
+                          <td>En Yüksek Satış Saati</td>
+                          <td class="fw-bold text-end">14:00-16:00</td>
+                          <td class="text-end"><i class="bi bi-info-circle text-muted" data-bs-toggle="tooltip" title="Bu saatlerde toplam satışın %28'i gerçekleşiyor"></i></td>
+                        </tr>
+                        <tr>
+                          <td>Tahmin Doğruluğu</td>
+                          <td class="fw-bold text-end">%85</td>
+                          <td class="text-end"><i class="bi bi-info-circle text-muted" data-bs-toggle="tooltip" title="Son 3 aydaki tahmin başarı oranı"></i></td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <div class="alert alert-info mt-3 mb-0">
+                    <div class="d-flex">
+                      <div class="me-2">
+                        <i class="bi bi-lightbulb-fill"></i>
+                      </div>
+                      <div>
+                        <strong>AI Önerisi:</strong> Çarşamba ve Perşembe günleri için indirim kampanyaları düzenlemek, satış dağılımınızı dengeleyebilir.
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
-
-              <div class="mt-3">
-                <h6>Özel Analiz Sorgusu</h6>
-                <div class="input-group mb-3">
-                  <input type="text" class="form-control" id="aiQueryInput" placeholder="Satış verilerimde hangi ürünler en yüksek karlılık gösteriyor?">
-                  <button class="btn btn-warning" type="button" id="sendAiQuery">
-                    <i class="bi bi-send"></i> Sor
-                  </button>
-                </div>
-                <div id="aiQueryResult" class="p-3 border rounded bg-light mt-3" style="min-height: 100px; display: none;">
-                  <!-- AI yanıtı buraya gelecek -->
-                </div>
-              </div>
             </div>
           </div>
         </div>
       </div>
+    </div>
+  </div>
 
-    </div> <!-- container-fluid -->
-  </div> <!-- /page-content-wrapper -->
-</div> <!-- /wrapper -->
+  <!-- Filtre sonuçları modal -->
+  <div class="modal fade" id="aiQueryResultModal" tabindex="-1" aria-labelledby="aiQueryResultModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="aiQueryResultModalLabel">AI Analiz Sonucu</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+        </div>
+        <div class="modal-body" id="aiQueryResult">
+          <div class="placeholder-glow">
+            <span class="placeholder col-7"></span>
+            <span class="placeholder col-4"></span>
+            <span class="placeholder col-4"></span>
+            <span class="placeholder col-6"></span>
+            <span class="placeholder col-8"></span>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Kapat</button>
+          <button type="button" class="btn btn-sm btn-primary" id="saveQueryResult"><i class="bi bi-save me-1"></i>Kaydet</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
-<!-- STYLES -->
+<!-- ÖZEL STILLER -->
 <style>
-  /* GENEL SAYFA YAPISI */
-  html, body {
-    height: 100%;
-    margin: 0;
-    font-family: 'Segoe UI', Tahoma, sans-serif;
-    background-color: #f8f9fa;
-  }
+:root {
+  --primary-color: #4e73df;
+  --primary-light: #eff2ff;
+  --success-color: #1cc88a;
+  --success-light: #effffa;
+  --warning-color: #f6c23e;
+  --warning-light: #fffcf2;
+  --danger-color: #e74a3b;
+  --danger-light: #fff7f5;
+  --info-color: #36b9cc;
+  --info-light: #f2fcff;
+  --dark-color: #5a5c69;
+  --card-border-radius: 0.75rem;
+  --stat-icon-size: 48px;
+}
 
-  #wrapper {
-    min-height: 100vh;
-    overflow: hidden;
-  }
+/* Genel Stiller */
+.card {
+  border-radius: var(--card-border-radius);
+  border: none;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15) !important;
+}
 
-  /* SIDEBAR STİLLERİ */
-  #sidebar-wrapper {
-    width: 250px;
-    transition: all 0.3s ease;
-  }
-  #sidebar-wrapper .sidebar-heading {
-    background-color: #212529;
-  }
-  #sidebar-wrapper .list-group-item {
-    border: none;
-    background-color: #212529;
-    color: #adb5bd;
-  }
-  #sidebar-wrapper .list-group-item.active {
-    background-color: #495057;
-    color: #fff;
-  }
-  #sidebar-wrapper .list-group-item:hover {
-    background-color: #495057;
-    color: #fff;
-  }
+/* Gradient Arkaplan */
+.bg-gradient-primary-to-secondary {
+  background: linear-gradient(40deg, #4e73df 0%, #6f42c1 100%) !important;
+}
 
-  /* SAYFA İÇERİĞİ */
-  #page-content-wrapper {
-    flex: 1;
-    transition: all 0.3s ease;
-  }
+/* Stat Kartları */
+.stat-icon {
+  width: var(--stat-icon-size);
+  height: var(--stat-icon-size);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+}
+.stat-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin: 0.25rem 0;
+}
+.stat-title {
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
 
-  /* TOGGLE DURUMU */
-  #wrapper.toggled #sidebar-wrapper {
-    margin-left: -250px;
-  }
+/* Yumuşak Renkli Arkaplanlar */
+.bg-soft-primary {
+  background-color: var(--primary-light) !important;
+}
+.bg-soft-success {
+  background-color: var(--success-light) !important;
+}
+.bg-soft-warning {
+  background-color: var(--warning-light) !important;
+}
+.bg-soft-danger {
+  background-color: var(--danger-light) !important;
+}
+.bg-soft-info {
+  background-color: var(--info-light) !important;
+}
 
-  /* INFO CARD */
-  .info-card .icon {
-    font-size: 2rem;
-  }
-  
-  .trend-indicator {
-    font-size: 0.8rem;
-    margin-top: 5px;
-  }
+/* İçerik Konteynerleri */
+.insight-container {
+  max-height: 320px;
+  overflow-y: auto;
+  padding-right: 10px;
+}
+.insight-container::-webkit-scrollbar {
+  width: 5px;
+}
+.insight-container::-webkit-scrollbar-thumb {
+  background-color: rgba(0,0,0,0.1);
+  border-radius: 10px;
+}
 
-  /* CHART CANVAS */
-  canvas {
-    width: 100% !important;
-    max-height: 400px;
+/* Tablo Stilleri */
+.table-hover tbody tr:hover {
+  background-color: rgba(78, 115, 223, 0.05);
+}
+.table th {
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+}
+
+/* Sekme Stilleri */
+.nav-tabs .nav-link {
+  border: none;
+  padding: 0.75rem 1rem;
+  color: var(--dark-color);
+  font-weight: 500;
+}
+.nav-tabs .nav-link.active {
+  color: var(--primary-color);
+  border-bottom: 2px solid var(--primary-color);
+  background-color: transparent;
+}
+.nav-tabs .nav-link:hover:not(.active) {
+  border-bottom: 2px solid rgba(78, 115, 223, 0.3);
+}
+
+/* Animasyonlar */
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+.stat-highlight {
+  animation: pulse 2s infinite;
+}
+
+/* Responsive Ayarlamalar */
+@media (max-width: 768px) {
+  .card-footer .row {
+    flex-direction: column;
   }
-  
-  /* KART ANİMASYONLARI */
-  .card {
-    transition: all 0.3s;
+  .card-footer .col-4 {
+    width: 100%;
+    margin-bottom: 0.5rem;
   }
-  .card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
-  }
-  
-  /* TABLO STİLLERİ */
-  .table-hover tbody tr:hover {
-    background-color: rgba(0, 123, 255, 0.1);
-  }
-  
-  /* PLACEHOLDER STİLLERİ */
-  .placeholder-glow .placeholder {
-    background-color: rgba(0, 0, 0, 0.1);
-  }
+}
 </style>
 
-<!-- SCRIPTS -->
-<!-- Bootstrap 5 & İkonlar (CDN) -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
-<!-- Chart.js ve Zoom Plugin -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@1.3.1/dist/chartjs-plugin-zoom.min.js"></script>
-
+<!-- JAVASCRIPT -->
 <script>
-  // Genel değişkenler
-  let dailySalesChart, returnsChart, productSalesChart, salesTrendChart, 
-      salesDistributionChart, salesHoursChart, paymentMethodsChart, 
-      returnTrendChart, categorySalesChart, sizeColorChart, 
-      stockStatusChart, salesPredictionChart, seasonalTrendChart;
-
-  document.addEventListener("DOMContentLoaded", () => {
-    // Sidebar aç/kapa
-    document.getElementById("menu-toggle").addEventListener("click", function(e) {
-      e.preventDefault();
-      document.getElementById("wrapper").classList.toggle("toggled");
-    });
-
-    // Filtre aç/kapa
-    document.getElementById("toggleFilters").addEventListener("click", function(e) {
-      const filterOptions = document.getElementById("filterOptions");
-      const icon = this.querySelector('i');
-      
-      if (filterOptions.style.display === "none") {
-        filterOptions.style.display = "block";
-        icon.classList.remove("bi-chevron-down");
-        icon.classList.add("bi-chevron-up");
-      } else {
-        filterOptions.style.display = "none";
-        icon.classList.remove("bi-chevron-up");
-        icon.classList.add("bi-chevron-down");
-      }
-    });
-
-    // İlk yüklemede tüm bölümlerin varsayılan olarak gizlenmesi
-    hideAllSections();
-    // Sadece dashboard bölümünü göster
-    showSection('dashboard');
-
-    // Sayfa yüklenince varsayılan verileri getir
+document.addEventListener('DOMContentLoaded', function() {
+  // Tüm chart nesnelerini tanımla
+  let salesPerformanceChart, topProductsChart, returnsReasonChart, returnsTrendChart;
+  let orderHoursChart, deviceDistributionChart, paymentMethodsChart, customerTypeChart;
+  let salesForecastChart;
+  
+  // Sayfa yüklendiğinde verileri getir
+  initializePage();
+  setupEventListeners();
+  
+  // Tooltip'leri aktifleştir
+  const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
+  const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
+  
+  // Sayfa ilk yüklendiğinde çalışacak fonksiyonlar
+  function initializePage() {
+    // API'den verileri çek
     loadSalesStats();
     
-    // AI öngörülerini getir
-    setTimeout(loadAiInsights, 1500);
-
-    // Soldaki menü (sidebar) sekmeleri
-    document.querySelectorAll('.list-group-item').forEach(item => {
-      item.addEventListener('click', function(e) {
-        e.preventDefault();
-        // Aktif sekmeyi güncelle
-        document.querySelectorAll('.list-group-item').forEach(i => i.classList.remove('active'));
-        this.classList.add('active');
-
-        // Seçilen sekmeye göre ilgili kartları göster/gizle
-        const selectedSection = this.getAttribute('data-section');
-        hideAllSections();
-        showSection(selectedSection);
-      });
-    });
-
+    // Tarih alanlarını son 30 gün olarak ayarla
+    setDefaultDateRange();
+    
+    // AI Öngörülerini Yükle
+    setTimeout(loadAiInsights, 1000);
+  }
+  
+  // Olay dinleyicilerini kur
+  function setupEventListeners() {
     // Hızlı filtre butonları
     document.querySelectorAll('.quick-filter').forEach(button => {
       button.addEventListener('click', function() {
@@ -777,46 +665,75 @@
       const startDate = document.getElementById('startDate').value;
       const endDate = document.getElementById('endDate').value;
       if (!startDate || !endDate) {
-        alert('Lütfen başlangıç ve bitiş tarihlerini seçiniz.');
+        showAlert('Lütfen başlangıç ve bitiş tarihlerini seçiniz.', 'warning');
         return;
       }
       loadSalesStats(`?start_date=${startDate}&end_date=${endDate}`);
     });
     
+    // Grafik tipini değiştirme
+    document.querySelectorAll('.chart-type').forEach(button => {
+      button.addEventListener('click', function() {
+        document.querySelectorAll('.chart-type').forEach(btn => btn.classList.remove('active'));
+        this.classList.add('active');
+        
+        const chartType = this.getAttribute('data-type');
+        updateChartType(chartType);
+      });
+    });
+    
+    // Yazdırma işlemi
+    document.getElementById('printReport').addEventListener('click', function() {
+      window.print();
+    });
+    
+    // Dışa aktarma işlemleri
+    document.getElementById('exportPDF').addEventListener('click', function() {
+      showAlert('PDF dışa aktarma işlemi başlatılıyor...', 'info');
+    });
+    
+    document.getElementById('exportExcel').addEventListener('click', function() {
+      showAlert('Excel dışa aktarma işlemi başlatılıyor...', 'info');
+    });
+    
+    document.getElementById('exportCSV').addEventListener('click', function() {
+      showAlert('CSV dışa aktarma işlemi başlatılıyor...', 'info');
+    });
+    
     // AI öngörülerini yenile
     document.getElementById('refreshAiInsights').addEventListener('click', function() {
-      document.getElementById('aiInsightContainer').innerHTML = `
-        <div class="spinner-border text-primary" role="status">
-          <span class="visually-hidden">Yükleniyor...</span>
-        </div>
-        <p class="placeholder-glow">
+      const container = document.getElementById('aiInsightContainer');
+      container.innerHTML = `
+        <div class="placeholder-glow">
           <span class="placeholder col-7"></span>
           <span class="placeholder col-4"></span>
           <span class="placeholder col-4"></span>
           <span class="placeholder col-6"></span>
           <span class="placeholder col-8"></span>
-        </p>
+        </div>
       `;
       loadAiInsights();
     });
     
-    // AI özel sorgu gönderimi
+    // AI sorgu gönderimi
     document.getElementById('sendAiQuery').addEventListener('click', function() {
       const query = document.getElementById('aiQueryInput').value.trim();
       if (!query) {
-        alert('Lütfen bir soru girin.');
+        showAlert('Lütfen bir soru girin.', 'warning');
         return;
       }
       
+      const resultModal = new bootstrap.Modal(document.getElementById('aiQueryResultModal'));
       const resultDiv = document.getElementById('aiQueryResult');
       resultDiv.innerHTML = `
-        <div class="d-flex justify-content-center">
+        <div class="d-flex justify-content-center my-5">
           <div class="spinner-border text-primary" role="status">
             <span class="visually-hidden">Yükleniyor...</span>
           </div>
         </div>
       `;
-      resultDiv.style.display = 'block';
+      
+      resultModal.show();
       
       // AI API çağrısı yapılacak
       setTimeout(() => {
@@ -824,45 +741,44 @@
       }, 1000);
     });
     
-    // Rapor dışa aktarma işlemleri
-    document.getElementById('exportPDF').addEventListener('click', function() {
-      alert('PDF dışa aktarma işlemi başlatılıyor...');
-      // PDF dışa aktarma kodu buraya gelecek
-    });
-    
-    document.getElementById('exportExcel').addEventListener('click', function() {
-      alert('Excel dışa aktarma işlemi başlatılıyor...');
-      // Excel dışa aktarma kodu buraya gelecek
-    });
-    
-    document.getElementById('printReport').addEventListener('click', function() {
-      window.print();
-    });
-  });
-  
-  // Tüm bölümleri gizle
-  function hideAllSections() {
-    document.querySelectorAll('[data-section]').forEach(section => {
-      section.style.display = 'none';
+    // Otomatik yenileme
+    document.getElementById('autoRefresh').addEventListener('change', function() {
+      if (this.checked) {
+        startAutoRefresh();
+        showAlert('Otomatik yenileme aktif (5 dakikada bir)', 'info');
+      } else {
+        stopAutoRefresh();
+      }
     });
   }
   
-  // Belirli bir bölümü göster
-  function showSection(sectionName) {
-    if (sectionName === 'dashboard') {
-      // Dashboard tüm kartları göster
-      document.querySelectorAll('[data-section="dashboard"]').forEach(section => {
-        section.style.display = 'flex';
-      });
-    } else {
-      // Sadece belirtilen bölüme ait kartları göster
-      document.querySelectorAll(`[data-section="${sectionName}"]`).forEach(section => {
-        section.style.display = 'flex';
-      });
+  // API'den verileri çekme
+  let autoRefreshInterval;
+  
+  function startAutoRefresh() {
+    autoRefreshInterval = setInterval(() => {
+      loadSalesStats();
+      showAlert('Veriler otomatik olarak yenilendi', 'info');
+    }, 5 * 60 * 1000); // 5 dakika
+  }
+  
+  function stopAutoRefresh() {
+    if (autoRefreshInterval) {
+      clearInterval(autoRefreshInterval);
     }
   }
-
-  // API'den veri çekme
+  
+  // Varsayılan tarih aralığını ayarla (son 30 gün)
+  function setDefaultDateRange() {
+    const today = new Date();
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(today.getDate() - 30);
+    
+    document.getElementById('endDate').valueAsDate = today;
+    document.getElementById('startDate').valueAsDate = thirtyDaysAgo;
+  }
+  
+  // API'den satış istatistiklerini çek
   async function loadSalesStats(queryParams = '') {
     try {
       const response = await fetch('/api/sales-stats' + queryParams);
@@ -873,182 +789,452 @@
         // Özet Bilgileri doldur
         document.getElementById('totalOrders').innerText = data.total_orders ?? 0;
         document.getElementById('totalItemsSold').innerText = data.total_items_sold ?? 0;
-        document.getElementById('totalRevenue').innerText = (data.total_revenue ?? 0).toLocaleString('tr-TR', { minimumFractionDigits: 2 }) + " TL";
+        document.getElementById('totalRevenue').innerText = (data.total_revenue ?? 0).toLocaleString('tr-TR', { minimumFractionDigits: 2 });
         
         // İade oranı hesapla (varsayılan olarak %5 gösteriyoruz, gerçek veri geldikçe değiştirilecek)
         const returnRate = calculateReturnRate(data);
         document.getElementById('returnRate').innerText = `%${returnRate.toFixed(1)}`;
 
-        // Grafikleri güncelle
-        createDailySalesChart(data.daily_sales);
-        createReturnsChart(data.returns);
-        createProductSalesChart(data.product_sales_chart);
-        createSalesTrendChart(data.daily_sales);
-        createSalesDistributionChart(data.product_sales_chart);
+        // Ortalama sipariş değeri
+        if (data.daily_sales && data.daily_sales.length > 0) {
+          let totalAmount = 0;
+          let totalOrders = 0;
+          
+          data.daily_sales.forEach(day => {
+            totalAmount += (day.total_amount || 0);
+            totalOrders += (day.order_count || 0);
+          });
+          
+          const avgOrderValue = totalOrders > 0 ? (totalAmount / totalOrders) : 0;
+          document.getElementById('avgOrderValue').innerText = `₺${avgOrderValue.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+          
+          // Sipariş başına ürün
+          let totalItems = 0;
+          data.daily_sales.forEach(day => {
+            totalItems += (day.total_quantity || 0);
+          });
+          
+          const itemsPerOrder = totalOrders > 0 ? (totalItems / totalOrders) : 0;
+          document.getElementById('itemsPerOrder').innerText = itemsPerOrder.toFixed(2);
+          
+          // Teslim edilen siparişler
+          let deliveredCount = 0;
+          data.daily_sales.forEach(day => {
+            deliveredCount += (day.delivered_count || 0);
+          });
+          
+          document.getElementById('deliveredOrders').innerText = deliveredCount;
+        }
 
-        // Tabloyu güncelle
-        populateProductTable(data.product_sales);
-        populateTopProductsTable(data.product_sales_chart);
+        // Grafikleri oluştur/güncelle
+        createSalesPerformanceChart(data.daily_sales);
+        createTopProductsChart(data.product_sales_chart || []);
+        createReturnsChart(data.returns || []);
         
-        // Ek Grafikleri oluştur (dummy veri ile)
-        createSalesHoursChart();
-        createPaymentMethodsChart();
-        createReturnTrendChart();
-        createCategorySalesChart();
-        createSizeColorChart();
-        createStockStatusChart();
-        createSalesPredictionChart();
-        createSeasonalTrendChart();
-        
-        // Ek tabloları doldur
-        populateCriticalStockTable();
+        // Tabloları doldur
+        populateProductSalesTable(data.product_sales || []);
         populateTopReturnedProductsTable();
+        
+        // Diğer grafikleri örnek verilerle doldur
+        createCustomerBehaviorCharts();
+        createSalesForecastChart();
       } else {
         console.error('API hatası:', data.error);
-        showError('Veri yüklenirken bir hata oluştu. Lütfen daha sonra tekrar deneyin.');
+        showAlert('Veri yüklenirken bir hata oluştu. Lütfen daha sonra tekrar deneyin.', 'danger');
       }
     } catch (error) {
       console.error('Veri çekme hatası:', error);
-      showError('Sunucu bağlantısında bir sorun oluştu. Lütfen internet bağlantınızı kontrol edin.');
+      showAlert('Sunucu bağlantısında bir sorun oluştu. Lütfen internet bağlantınızı kontrol edin.', 'danger');
     }
   }
   
-  // İade oranı hesaplama
-  function calculateReturnRate(data) {
-    // Gerçek hesaplama yerine şimdilik sabit bir değer döndürüyoruz
-    // Gerçek hesaplama: (iade_sayısı / toplam_sipariş_sayısı) * 100
-    return 5.2; 
-  }
-  
-  // Hata mesajı gösterme
-  function showError(message) {
-    // Bootstrap toast veya alert ile hata mesajı göster
-    alert(message);
-  }
-  
-  // AI Öngörülerini Yükleme
-  function loadAiInsights() {
-    // Gerçek API'ye bağlanmak yerine simüle ediyoruz
-    setTimeout(() => {
-      document.getElementById('aiInsightContainer').innerHTML = `
-        <p><strong>Satış Analizi Öngörüsü:</strong></p>
-        <ul>
-          <li>Son 30 gündeki satışlarınız bir önceki döneme göre %12 artış göstermiş.</li>
-          <li>En çok satış Cumartesi günleri saat 14:00-16:00 arasında gerçekleşiyor.</li>
-          <li>Müşterilerinizin %65'i mobil cihazlardan alışveriş yapıyor.</li>
-          <li>Ayakkabı kategorisinde siyah renk ürünlere olan talep artıyor.</li>
-          <li>İade oranınız sektör ortalamasının %2.3 altında, bu çok iyi bir performans.</li>
-        </ul>
-      `;
-      
-      // AI Insights sayfasındaki diğer alanları da doldur
-      document.getElementById('aiSalesAnalysis').innerHTML = `
-        <p>Satış verilerinize göre, son 30 günde toplam cironuz %12 artış göstermiş durumda. Bu artışın ana kaynağı ayakkabı kategorisindeki yeni ürünler ve özellikle siyah renk ürünlerinizdeki fiyat-performans optimizasyonu.</p>
-        <p>Müşterilerinizin %65'i mobil cihazlardan alışveriş yapıyor. Bu oran geçen aya göre %8 artmış durumda. Mobil uyumlu sayfa tasarımı ve ödeme süreçlerinizdeki iyileştirmeler bu artışta etkili olmuş görünüyor.</p>
-        <p>Hafta sonu satışlarınız hafta içine göre %35 daha yüksek. Cumartesi günleri saat 14:00-16:00 aralığı en yoğun satış döneminiz.</p>
-      `;
-      
-      document.getElementById('aiActionSuggestions').innerHTML = `
-        <ol>
-          <li><strong>Stok Yönetimi:</strong> 38-39 numaralı siyah ayakkabı stok seviyelerinizi artırmanız önerilir. Mevcut trend devam ederse önümüzdeki 2 hafta içinde bu ürünlerde stok sorunu yaşayabilirsiniz.</li>
-          <li><strong>Fiyatlandırma:</strong> Bej rengi ürünlerde satış hızını artırmak için %10-15 indirim yapmanız etkili olabilir.</li>
-          <li><strong>Pazarlama:</strong> Cumartesi günü 13:00-15:00 arasında sosyal medya reklamlarını artırabilirsiniz, geri dönüş oranı daha yüksek olacaktır.</li>
-          <li><strong>İade Önleme:</strong> "Beden uyumsuzluğu" nedeniyle gelen iadeleri azaltmak için ürün sayfalarına daha detaylı beden kılavuzu ekleyebilirsiniz.</li>
-        </ol>
-      `;
-    }, 2000);
-  }
-  
-  // AI Özel Sorgu Gönderimi
-  function sendAiQuery(query) {
-    // Gerçek API'ye bağlanmak yerine simüle ediyoruz
-    setTimeout(() => {
-      const responses = {
-        "Satış verilerimde hangi ürünler en yüksek karlılık gösteriyor?": `
-          <h6 class="border-bottom pb-2 mb-3">Karlılık Analizi</h6>
-          <p>Satış verileriniz analiz edildiğinde, en yüksek karlılık gösteren ürünler şunlardır:</p>
-          <ol>
-            <li><strong>Kadın Siyah Deri Loafer Ayakkabı</strong> - %42 kar marjı</li>
-            <li><strong>Kadın Kahverengi Deri Bot</strong> - %38 kar marjı</li>
-            <li><strong>Erkek Siyah Deri Klasik Ayakkabı</strong> - %35 kar marjı</li>
-          </ol>
-          <p>Bu ürünlerin ortak özellikleri:</p>
-          <ul>
-            <li>Kaliteli deri malzeme kullanımı</li>
-            <li>Düşük iade oranı (%2'den az)</li>
-            <li>Yüksek müşteri memnuniyeti puanı (4.7/5 üzeri)</li>
-          </ul>
-          <p class="text-muted small mt-3">Not: Bu analiz son 90 günlük satış verilerine dayanmaktadır.</p>
-        `,
-        "Hangi saatlerde en çok satış yapıyoruz?": `
-          <h6 class="border-bottom pb-2 mb-3">Satış Saatleri Analizi</h6>
-          <p>Satış verilerinize göre, en çok satış yaptığınız saatler:</p>
-          <ol>
-            <li><strong>14:00 - 16:00</strong> (Günlük satışların %28'i)</li>
-            <li><strong>19:00 - 21:00</strong> (Günlük satışların %24'ü)</li>
-            <li><strong>11:00 - 13:00</strong> (Günlük satışların %18'i)</li>
-          </ol>
-          <p>Günlere göre dağılım:</p>
-          <ul>
-            <li>Cumartesi günleri satışlarınız hafta içi ortalamanızdan %35 daha yüksek</li>
-            <li>Pazar günleri ikinci en yüksek satış günü (%22 artış)</li>
-            <li>En düşük satış Çarşamba günleri gerçekleşiyor</li>
-          </ul>
-          <p class="text-success mt-2">Öneri: 14:00-16:00 ve 19:00-21:00 saatlerinde sosyal medya reklamlarınızı artırabilirsiniz.</p>
-        `
-      };
-      
-      // Cevabı göster (eğer varsa)
-      const resultDiv = document.getElementById('aiQueryResult');
-      if (responses[query]) {
-        resultDiv.innerHTML = responses[query];
-      } else {
-        resultDiv.innerHTML = `
-          <h6 class="border-bottom pb-2 mb-3">Analiz Sonucu</h6>
-          <p>Sorunuza cevap verebilmek için satış verileriniz analiz edildi.</p>
-          <p>${query.charAt(0).toUpperCase() + query.slice(1)}</p>
-          <p>Bu soruya yönelik olarak, son 90 günlük satış verilerinize dayanarak şu çıkarımları yapabiliriz:</p>
-          <ul>
-            <li>Satışlarınızın %65'i düzenli müşterilerinizden geliyor.</li>
-            <li>En çok satış yaptığınız zaman dilimleri hafta sonları 14:00-18:00 arası.</li>
-            <li>Ürün kategorileriniz arasında ayakkabı kategorisi %48 ile en yüksek ciro payına sahip.</li>
-          </ul>
-          <p class="text-info small mt-3">İpucu: Daha spesifik sorular sorarak daha detaylı analiz sonuçları alabilirsiniz.</p>
-        `;
+  // Grafik tipini değiştir
+  function updateChartType(chartType) {
+    if (salesPerformanceChart) {
+      // Line, bar veya area (dolgu alanlı çizgi) yapılandırması
+      if (chartType === 'line') {
+        salesPerformanceChart.data.datasets.forEach(dataset => {
+          dataset.fill = false;
+        });
+      } else if (chartType === 'bar') {
+        salesPerformanceChart.config.type = 'bar';
+      } else if (chartType === 'area') {
+        salesPerformanceChart.config.type = 'line';
+        salesPerformanceChart.data.datasets.forEach(dataset => {
+          dataset.fill = true;
+        });
       }
-    }, 2000);
+      
+      salesPerformanceChart.update();
+    }
   }
 
-  // Günlük Satış Grafiği
-  function createDailySalesChart(dailySales) {
-    const ctx = document.getElementById('dailySalesChart').getContext('2d');
-    if (dailySalesChart) dailySalesChart.destroy();
-
-    // X ekseni: tarih, Y ekseni: sipariş sayısı vs.
-    const dates = dailySales.map(sale => sale.date);
-    const orderCounts = dailySales.map(sale => sale.order_count);
-    const totalAmounts = dailySales.map(sale => sale.total_amount);
-
-    dailySalesChart = new Chart(ctx, {
+  // Satış Performansı Grafiği
+  function createSalesPerformanceChart(dailySales) {
+    const ctx = document.getElementById('salesPerformanceChart').getContext('2d');
+    
+    if (!dailySales || dailySales.length === 0) {
+      if (salesPerformanceChart) salesPerformanceChart.destroy();
+      ctx.font = '14px Arial';
+      ctx.fillText('Veri bulunamadı', 10, 50);
+      return;
+    }
+    
+    // Verileri ters çevirerek tarih sırasına koy
+    const reversedData = [...dailySales].reverse();
+    
+    // Son 30 günlük veriyle çalış
+    const last30days = reversedData.slice(0, 30);
+    
+    // Tarih, sipariş sayısı ve toplam tutarları ayır
+    const dates = last30days.map(day => day.date);
+    const orderCounts = last30days.map(day => day.order_count || 0);
+    const revenues = last30days.map(day => day.total_amount || 0);
+    
+    // 7 günlük hareketli ortalama hesapla
+    const movingAvg = calculateMovingAverage(revenues, 7);
+    
+    // Mevcut grafiği temizle
+    if (salesPerformanceChart) salesPerformanceChart.destroy();
+    
+    // Yeni grafiği oluştur
+    salesPerformanceChart = new Chart(ctx, {
       type: 'line',
       data: {
         labels: dates,
+        datasets: [{
+          label: 'Ciro (TL)',
+          data: revenues,
+          backgroundColor: 'rgba(78, 115, 223, 0.1)',
+          borderColor: 'rgba(78, 115, 223, 1)',
+          pointBackgroundColor: 'rgba(78, 115, 223, 1)',
+          pointBorderColor: 'rgba(78, 115, 223, 1)',
+          pointRadius: 3,
+          pointHoverRadius: 5,
+          tension: 0.3,
+          fill: true,
+          yAxisID: 'y'
+        }, {
+          label: '7-gün Ort.',
+          data: movingAvg,
+          borderColor: 'rgba(255, 99, 132, 1)',
+          borderWidth: 2,
+          borderDash: [5, 5],
+          pointRadius: 0,
+          fill: false,
+          tension: 0.3,
+          yAxisID: 'y'
+        }, {
+          label: 'Sipariş Sayısı',
+          data: orderCounts,
+          backgroundColor: 'rgba(28, 200, 138, 0.1)',
+          borderColor: 'rgba(28, 200, 138, 1)',
+          pointBackgroundColor: 'rgba(28, 200, 138, 1)',
+          pointBorderColor: 'rgba(28, 200, 138, 1)',
+          pointRadius: 3,
+          pointHoverRadius: 5,
+          tension: 0.3,
+          fill: true,
+          yAxisID: 'y1'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+          mode: 'index',
+          intersect: false
+        },
+        plugins: {
+          legend: {
+            position: 'top',
+            labels: {
+              boxWidth: 12,
+              usePointStyle: true,
+              pointStyle: 'circle'
+            }
+          },
+          tooltip: {
+            mode: 'index',
+            intersect: false,
+            callbacks: {
+              label: function(context) {
+                let label = context.dataset.label || '';
+                if (label) {
+                  label += ': ';
+                }
+                if (context.dataset.yAxisID === 'y') {
+                  label += new Intl.NumberFormat('tr-TR', { 
+                    style: 'currency', 
+                    currency: 'TRY',
+                    minimumFractionDigits: 2
+                  }).format(context.parsed.y);
+                } else {
+                  label += context.parsed.y;
+                }
+                return label;
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: {
+              display: false
+            },
+            ticks: {
+              maxRotation: 45,
+              minRotation: 45,
+              autoSkip: true,
+              maxTicksLimit: 15
+            }
+          },
+          y: {
+            position: 'left',
+            title: {
+              display: true,
+              text: 'Ciro (TL)'
+            },
+            grid: {
+              borderDash: [2, 4],
+              drawBorder: false
+            },
+            ticks: {
+              callback: function(value) {
+                return new Intl.NumberFormat('tr-TR', { 
+                  style: 'currency', 
+                  currency: 'TRY',
+                  notation: 'compact',
+                  compactDisplay: 'short'
+                }).format(value);
+              }
+            }
+          },
+          y1: {
+            position: 'right',
+            title: {
+              display: true,
+              text: 'Sipariş Sayısı'
+            },
+            grid: {
+              display: false,
+              drawBorder: false
+            }
+          }
+        }
+      }
+    });
+  }
+  
+  // En Çok Satan Ürünler Grafiği
+  function createTopProductsChart(productData) {
+    const ctx = document.getElementById('topProductsChart').getContext('2d');
+    
+    if (!productData || productData.length === 0) {
+      if (topProductsChart) topProductsChart.destroy();
+      ctx.font = '14px Arial';
+      ctx.fillText('Veri bulunamadı', 10, 50);
+      return;
+    }
+    
+    // En çok satan ilk 5 ürünü al
+    const top5Products = productData.slice(0, 5);
+    
+    // Ürün adları ve satış değerleri
+    const productLabels = top5Products.map(p => p.merchant_sku || 'Bilinmeyen');
+    const salesValues = top5Products.map(p => p.total_revenue || 0);
+    
+    // Grafik renklerini ayarla
+    const backgroundColors = [
+      'rgba(78, 115, 223, 0.8)',
+      'rgba(28, 200, 138, 0.8)',
+      'rgba(246, 194, 62, 0.8)',
+      'rgba(54, 185, 204, 0.8)',
+      'rgba(231, 74, 59, 0.8)'
+    ];
+    
+    // Mevcut grafiği temizle
+    if (topProductsChart) topProductsChart.destroy();
+    
+    // Yeni grafiği oluştur
+    topProductsChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: productLabels,
+        datasets: [{
+          label: 'Toplam Satış (TL)',
+          data: salesValues,
+          backgroundColor: backgroundColors,
+          borderColor: backgroundColors.map(color => color.replace('0.8', '1')),
+          borderWidth: 1,
+          borderRadius: 4
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: false
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                return new Intl.NumberFormat('tr-TR', { 
+                  style: 'currency', 
+                  currency: 'TRY',
+                  minimumFractionDigits: 2
+                }).format(context.parsed.y);
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: {
+              display: false
+            },
+            ticks: {
+              maxRotation: 45,
+              minRotation: 45,
+              autoSkip: true,
+              maxTicksLimit: 5
+            }
+          },
+          y: {
+            grid: {
+              borderDash: [2, 4],
+              drawBorder: false
+            },
+            ticks: {
+              callback: function(value) {
+                return new Intl.NumberFormat('tr-TR', { 
+                  style: 'currency', 
+                  currency: 'TRY',
+                  notation: 'compact',
+                  compactDisplay: 'short'
+                }).format(value);
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+  
+  // İade Nedenleri Grafiği
+  function createReturnsChart(returnsData) {
+    const ctx = document.getElementById('returnsReasonChart').getContext('2d');
+    
+    if (!returnsData || returnsData.length === 0) {
+      // Örnek veri (API'den veri gelmediğinde)
+      returnsData = [
+        { reason: 'Beden uyumsuzluğu', count: 25, unique_orders: 24, average_refund: 542.80 },
+        { reason: 'Kalite sorunu', count: 18, unique_orders: 17, average_refund: 630.50 },
+        { reason: 'Görselden farklı', count: 15, unique_orders: 14, average_refund: 485.25 },
+        { reason: 'Geç teslimat', count: 10, unique_orders: 10, average_refund: 520.75 },
+        { reason: 'Yanlış ürün', count: 8, unique_orders: 8, average_refund: 615.30 }
+      ];
+    }
+    
+    // Nedenleri ve sayıları ayır
+    const reasons = returnsData.map(r => r.reason);
+    const counts = returnsData.map(r => r.count || 0);
+    
+    // Grafik renklerini ayarla
+    const backgroundColors = [
+      'rgba(231, 74, 59, 0.8)',
+      'rgba(246, 194, 62, 0.8)',
+      'rgba(78, 115, 223, 0.8)',
+      'rgba(54, 185, 204, 0.8)',
+      'rgba(28, 200, 138, 0.8)'
+    ];
+    
+    // Mevcut grafiği temizle
+    if (returnsReasonChart) returnsReasonChart.destroy();
+    
+    // Yeni grafiği oluştur
+    returnsReasonChart = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: reasons,
+        datasets: [{
+          data: counts,
+          backgroundColor: backgroundColors,
+          borderColor: 'white',
+          borderWidth: 2,
+          hoverOffset: 10
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'right',
+            labels: {
+              padding: 20,
+              boxWidth: 12,
+              usePointStyle: true,
+              pointStyle: 'circle'
+            }
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                const value = context.raw;
+                const total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                const percentage = ((value / total) * 100).toFixed(1);
+                return `${context.label}: ${value} (%${percentage})`;
+              }
+            }
+          }
+        },
+        cutout: '65%'
+      }
+    });
+    
+    // İade Trendi Grafiği (Örnek veri ile)
+    createReturnTrendChart();
+  }
+  
+  // İade Eğilimi Grafiği
+  function createReturnTrendChart() {
+    const ctx = document.getElementById('returnsTrendChart').getContext('2d');
+    
+    // Örnek veri - son 12 ay
+    const months = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 
+                   'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
+    
+    const returnCounts = [25, 30, 28, 32, 35, 40, 38, 35, 30, 28, 25, 20];
+    const returnRates = [5.2, 6.1, 5.8, 6.5, 7.0, 8.1, 7.6, 7.0, 6.0, 5.6, 5.0, 4.0];
+    
+    // Mevcut grafiği temizle
+    if (returnsTrendChart) returnsTrendChart.destroy();
+    
+    // Yeni grafiği oluştur
+    returnsTrendChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: months,
         datasets: [
           {
-            label: 'Sipariş Sayısı',
-            data: orderCounts,
-            borderColor: 'rgba(0, 123, 255, 1)',
-            backgroundColor: 'rgba(0, 123, 255, 0.2)',
+            label: 'İade Sayısı',
+            data: returnCounts,
+            borderColor: 'rgba(231, 74, 59, 1)',
+            backgroundColor: 'rgba(231, 74, 59, 0.1)',
+            yAxisID: 'y',
             fill: true,
-            tension: 0.3,
-            yAxisID: 'y'
+            tension: 0.3
           },
           {
-            label: 'Toplam Tutar (TL)',
-            data: totalAmounts,
-            borderColor: 'rgba(255, 193, 7, 1)',
-            backgroundColor: 'rgba(255, 193, 7, 0.2)',
-            fill: true,
+            label: 'İade Oranı (%)',
+            data: returnRates,
+            borderColor: 'rgba(246, 194, 62, 1)',
+            backgroundColor: 'transparent',
+            borderWidth: 2,
+            pointStyle: 'circle',
+            fill: false,
             tension: 0.3,
             yAxisID: 'y1'
           }
@@ -1056,209 +1242,494 @@
       },
       options: {
         responsive: true,
+        maintainAspectRatio: false,
         plugins: {
-          legend: { position: 'bottom' },
-          tooltip: { mode: 'index', intersect: false },
-          // Zoom plugin
-          zoom: {
-            zoom: {
-              wheel: { enabled: true },   // fare tekerleği ile zoom
-              pinch: { enabled: true },   // dokunma ile pinch zoom
-              mode: 'xy',
-            },
-            pan: {
-              enabled: true,             // sürükle/pan
-              mode: 'xy',
+          legend: {
+            position: 'top',
+            labels: {
+              boxWidth: 12,
+              usePointStyle: true,
+              pointStyle: 'circle'
             }
+          },
+          tooltip: {
+            mode: 'index',
+            intersect: false
           }
         },
         scales: {
+          x: {
+            grid: {
+              display: false
+            }
+          },
           y: {
-            beginAtZero: true,
-            position: 'left'
+            type: 'linear',
+            display: true,
+            position: 'left',
+            title: {
+              display: true,
+              text: 'İade Sayısı'
+            },
+            grid: {
+              borderDash: [2, 4],
+              drawBorder: false
+            }
           },
           y1: {
-            beginAtZero: true,
+            type: 'linear',
+            display: true,
             position: 'right',
+            title: {
+              display: true,
+              text: 'İade Oranı (%)'
+            },
+            min: 0,
+            max: 10,
             grid: {
-              drawOnChartArea: false
+              display: false,
+              drawBorder: false
             }
           }
         }
       }
     });
   }
-
-  // İade Grafiği (Bar)
-  function createReturnsChart(returns) {
-    const ctx = document.getElementById('returnsChart').getContext('2d');
-    if (returnsChart) returnsChart.destroy();
-
-    const reasons = returns.map(r => r.reason);
-    const counts = returns.map(r => r.count);
-
-    returnsChart = new Chart(ctx, {
-      type: 'bar',
+  
+  // Müşteri Davranışları Grafikleri
+  function createCustomerBehaviorCharts() {
+    // Sipariş Saatleri Grafiği
+    createOrderHoursChart();
+    
+    // Cihaz Dağılımı Grafiği
+    createDeviceDistributionChart();
+    
+    // Ödeme Yöntemleri Grafiği
+    createPaymentMethodsChart();
+    
+    // Müşteri Tipi Grafiği
+    createCustomerTypeChart();
+  }
+  
+  // Sipariş Saatleri Grafiği
+  function createOrderHoursChart() {
+    const ctx = document.getElementById('orderHoursChart').getContext('2d');
+    
+    // Örnek veri
+    const hours = ['00:00', '02:00', '04:00', '06:00', '08:00', '10:00', '12:00', '14:00', '16:00', '18:00', '20:00', '22:00'];
+    const orderData = [5, 3, 2, 1, 8, 15, 25, 35, 30, 28, 20, 10];
+    
+    // Mevcut grafiği temizle
+    if (orderHoursChart) orderHoursChart.destroy();
+    
+    // Yeni grafiği oluştur
+    orderHoursChart = new Chart(ctx, {
+      type: 'line',
       data: {
-        labels: reasons,
+        labels: hours,
         datasets: [{
-          label: 'İade Sayısı',
-          data: counts,
-          backgroundColor: 'rgba(220, 53, 69, 0.7)',
-          borderColor: 'rgba(220, 53, 69, 1)',
-          borderWidth: 1
+          label: 'Sipariş Sayısı',
+          data: orderData,
+          borderColor: 'rgba(78, 115, 223, 1)',
+          backgroundColor: 'rgba(78, 115, 223, 0.1)',
+          tension: 0.4,
+          fill: true,
+          pointBackgroundColor: 'rgba(78, 115, 223, 1)',
+          pointBorderColor: '#fff',
+          pointBorderWidth: 2,
+          pointRadius: 4
         }]
       },
       options: {
         responsive: true,
+        maintainAspectRatio: false,
         plugins: {
-          legend: { position: 'bottom' },
-          tooltip: { mode: 'index', intersect: false },
-          zoom: {
-            zoom: {
-              wheel: { enabled: true },
-              pinch: { enabled: true },
-              mode: 'xy',
-            },
-            pan: {
-              enabled: true,
-              mode: 'xy',
-            }
+          legend: {
+            display: false
           }
         },
         scales: {
+          x: {
+            grid: {
+              display: false
+            }
+          },
           y: {
+            grid: {
+              borderDash: [2, 4]
+            },
             beginAtZero: true
           }
         }
       }
     });
   }
-
-  // Ürün Bazlı Satış Grafiği
-  function createProductSalesChart(productSalesData) {
-    const ctx = document.getElementById('productSalesChart').getContext('2d');
-    if (productSalesChart) productSalesChart.destroy();
-
-    const productIds = productSalesData.map(item => item.merchant_sku || 'Bilinmeyen');
-    const saleCounts = productSalesData.map(item => item.sale_count || 0);
-    const totalRevenues = productSalesData.map(item => item.total_revenue || 0);
-
-    productSalesChart = new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: productIds,
-        datasets: [
-          {
-            label: 'Satış Adedi',
-            data: saleCounts,
-            backgroundColor: 'rgba(54, 162, 235, 0.7)',
-            borderColor: 'rgba(54, 162, 235, 1)',
-            borderWidth: 1,
-            yAxisID: 'y'
-          },
-          {
-            label: 'Toplam Gelir (TL)',
-            data: totalRevenues,
-            backgroundColor: 'rgba(75, 192, 192, 0.7)',
-            borderColor: 'rgba(75, 192, 192, 1)',
-            borderWidth: 1,
-            yAxisID: 'y1'
-          }
-        ]
-      },
+  
+  // Cihaz Dağılımı Grafiği
+  function createDeviceDistributionChart() {
+    const ctx = document.getElementById('deviceDistributionChart').getContext('2d');
+    
+    // Örnek veri
+    const data = {
+      labels: ['Mobil', 'Masaüstü', 'Tablet'],
+      datasets: [{
+        data: [65, 25, 10],
+        backgroundColor: [
+          'rgba(28, 200, 138, 0.8)',
+          'rgba(54, 185, 204, 0.8)',
+          'rgba(246, 194, 62, 0.8)'
+        ],
+        borderColor: 'white',
+        borderWidth: 2
+      }]
+    };
+    
+    // Mevcut grafiği temizle
+    if (deviceDistributionChart) deviceDistributionChart.destroy();
+    
+    // Yeni grafiği oluştur
+    deviceDistributionChart = new Chart(ctx, {
+      type: 'pie',
+      data: data,
       options: {
         responsive: true,
+        maintainAspectRatio: false,
         plugins: {
-          legend: { position: 'bottom' },
-          tooltip: { mode: 'index', intersect: false },
-          zoom: {
-            zoom: {
-              wheel: { enabled: true },
-              pinch: { enabled: true },
-              mode: 'xy',
-            },
-            pan: {
-              enabled: true,
-              mode: 'xy',
+          legend: {
+            position: 'bottom',
+            labels: {
+              padding: 15,
+              boxWidth: 12,
+              usePointStyle: true,
+              pointStyle: 'circle'
             }
-          }
-        },
-        scales: {
-          y: {
-            beginAtZero: true,
-            position: 'left'
           },
-          y1: {
-            beginAtZero: true,
-            position: 'right',
-            grid: {
-              drawOnChartArea: false
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                const value = context.raw;
+                const total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                const percentage = ((value / total) * 100).toFixed(1);
+                return `${context.label}: %${percentage}`;
+              }
             }
           }
         }
       }
     });
   }
-
+  
+  // Ödeme Yöntemleri Grafiği
+  function createPaymentMethodsChart() {
+    const ctx = document.getElementById('paymentMethodsChart').getContext('2d');
+    
+    // Örnek veri
+    const data = {
+      labels: ['Kredi Kartı', 'Havale', 'Kapıda Ödeme', 'Diğer'],
+      datasets: [{
+        data: [70, 15, 10, 5],
+        backgroundColor: [
+          'rgba(78, 115, 223, 0.8)',
+          'rgba(28, 200, 138, 0.8)',
+          'rgba(246, 194, 62, 0.8)',
+          'rgba(54, 185, 204, 0.8)'
+        ],
+        borderColor: 'white',
+        borderWidth: 2
+      }]
+    };
+    
+    // Mevcut grafiği temizle
+    if (paymentMethodsChart) paymentMethodsChart.destroy();
+    
+    // Yeni grafiği oluştur
+    paymentMethodsChart = new Chart(ctx, {
+      type: 'doughnut',
+      data: data,
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: {
+              padding: 15,
+              boxWidth: 12,
+              usePointStyle: true,
+              pointStyle: 'circle'
+            }
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                const value = context.raw;
+                const total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                const percentage = ((value / total) * 100).toFixed(1);
+                return `${context.label}: %${percentage}`;
+              }
+            }
+          }
+        },
+        cutout: '60%'
+      }
+    });
+  }
+  
+  // Müşteri Tipi Grafiği
+  function createCustomerTypeChart() {
+    const ctx = document.getElementById('customerTypeChart').getContext('2d');
+    
+    // Örnek veri
+    const data = {
+      labels: ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran'],
+      datasets: [{
+        label: 'Yeni Müşteriler',
+        data: [45, 52, 38, 43, 55, 60],
+        backgroundColor: 'rgba(78, 115, 223, 0.8)',
+        stack: 'Stack 0'
+      }, {
+        label: 'Tekrarlayan Müşteriler',
+        data: [65, 70, 62, 78, 85, 95],
+        backgroundColor: 'rgba(28, 200, 138, 0.8)',
+        stack: 'Stack 0'
+      }]
+    };
+    
+    // Mevcut grafiği temizle
+    if (customerTypeChart) customerTypeChart.destroy();
+    
+    // Yeni grafiği oluştur
+    customerTypeChart = new Chart(ctx, {
+      type: 'bar',
+      data: data,
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'top',
+            labels: {
+              boxWidth: 12,
+              usePointStyle: true,
+              pointStyle: 'circle'
+            }
+          },
+          tooltip: {
+            mode: 'index',
+            intersect: false
+          }
+        },
+        scales: {
+          x: {
+            grid: {
+              display: false
+            }
+          },
+          y: {
+            stacked: true,
+            grid: {
+              borderDash: [2, 4]
+            }
+          }
+        }
+      }
+    });
+  }
+  
+  // Satış Tahmin Grafiği
+  function createSalesForecastChart() {
+    const ctx = document.getElementById('salesForecastChart').getContext('2d');
+    
+    // Örnek veri - Geçmiş ve gelecek 30 gün
+    const dates = [];
+    const today = new Date();
+    
+    // Son 15 gün
+    for (let i = 15; i > 0; i--) {
+      const date = new Date(today);
+      date.setDate(today.getDate() - i);
+      dates.push(date.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' }));
+    }
+    
+    // Bugün
+    dates.push(today.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' }));
+    
+    // Gelecek 15 gün
+    for (let i = 1; i <= 15; i++) {
+      const date = new Date(today);
+      date.setDate(today.getDate() + i);
+      dates.push(date.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' }));
+    }
+    
+    // Gerçek satış verileri (son 15 gün + bugün)
+    const actualSales = [];
+    for (let i = 0; i <= 15; i++) {
+      actualSales.push(Math.floor(Math.random() * 50) + 50);  // 50-100 arası rastgele değer
+    }
+    
+    // Tahmin verileri (bugün + gelecek 15 gün)
+    const predictedSales = [actualSales[15]];  // Bugünün değeri
+    for (let i = 1; i <= 15; i++) {
+      predictedSales.push(Math.floor(Math.random() * 60) + 40);  // 40-100 arası rastgele değer
+    }
+    
+    // Tahmin alt ve üst sınırları (güven aralığı)
+    const lowerBound = predictedSales.map(val => Math.max(0, val - Math.floor(Math.random() * 20)));
+    const upperBound = predictedSales.map(val => val + Math.floor(Math.random() * 20));
+    
+    // Mevcut grafiği temizle
+    if (salesForecastChart) salesForecastChart.destroy();
+    
+    // Yeni grafiği oluştur
+    salesForecastChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: dates,
+        datasets: [
+          {
+            label: 'Gerçek Satışlar',
+            data: [...actualSales, ...Array(15).fill(null)],  // Son 15 gün + bugün, geri kalanı null
+            borderColor: 'rgba(78, 115, 223, 1)',
+            backgroundColor: 'rgba(78, 115, 223, 0.2)',
+            fill: true,
+            tension: 0.3,
+            pointBackgroundColor: 'rgba(78, 115, 223, 1)',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+            pointRadius: 4
+          },
+          {
+            label: 'Tahmin',
+            data: [...Array(15).fill(null), ...predictedSales],  // İlk 15 gün null, bugün + gelecek 15 gün
+            borderColor: 'rgba(246, 194, 62, 1)',
+            backgroundColor: 'rgba(246, 194, 62, 0.2)',
+            fill: false,
+            tension: 0.3,
+            borderDash: [5, 5]
+          },
+          {
+            label: 'Üst Limit',
+            data: [...Array(15).fill(null), ...upperBound],
+            borderColor: 'rgba(246, 194, 62, 0.5)',
+            backgroundColor: 'transparent',
+            fill: '+1',  // Bir sonraki veri seti ile doldur
+            tension: 0.3,
+            borderDash: [3, 3],
+            pointRadius: 0,
+            hidden: true
+          },
+          {
+            label: 'Alt Limit',
+            data: [...Array(15).fill(null), ...lowerBound],
+            borderColor: 'rgba(246, 194, 62, 0.5)',
+            backgroundColor: 'rgba(246, 194, 62, 0.1)',
+            fill: false,
+            tension: 0.3,
+            borderDash: [3, 3],
+            pointRadius: 0,
+            hidden: true
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+          mode: 'index',
+          intersect: false
+        },
+        plugins: {
+          legend: {
+            position: 'top',
+            labels: {
+              boxWidth: 12,
+              usePointStyle: true,
+              pointStyle: 'circle'
+            }
+          },
+          tooltip: {
+            mode: 'index',
+            intersect: false
+          },
+          annotation: {
+            annotations: {
+              line1: {
+                type: 'line',
+                xMin: 15,
+                xMax: 15,
+                borderColor: 'rgba(0, 0, 0, 0.3)',
+                borderWidth: 2,
+                borderDash: [5, 5],
+                label: {
+                  content: 'Bugün',
+                  display: true,
+                  position: 'start'
+                }
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: {
+              display: false
+            },
+            ticks: {
+              autoSkip: true,
+              maxTicksLimit: 10
+            }
+          },
+          y: {
+            grid: {
+              borderDash: [2, 4]
+            },
+            beginAtZero: true
+          }
+        }
+      }
+    });
+  }
+  
   // Ürün Bazlı Satışlar Tablosu
-  function populateProductTable(productSales) {
+  function populateProductSalesTable(productSales) {
     const tbody = document.querySelector('#productSalesTable tbody');
     tbody.innerHTML = '';
-
-    if (!productSales || !Array.isArray(productSales)) {
-      console.error('Geçersiz ürün satış tablosu verisi:', productSales);
-      return;
-    }
-
-    productSales.forEach(product => {
-      const row = document.createElement('tr');
-      row.innerHTML = `
-        <td><strong>${product.merchant_sku || 'N/A'}</strong></td>
-        <td>${product.product_id}</td>
-        <td>${product.color || ''}</td>
-        <td>${product.size || ''}</td>
-        <td>${product.sale_count || 0}</td>
-        <td>${parseFloat(product.total_revenue || 0).toFixed(2)} TL</td>
-        <td>${parseFloat(product.average_price || 0).toFixed(2)} TL</td>
-      `;
-      tbody.appendChild(row);
-    });
-  }
-  
-  // Top Products Tablosunu Doldur
-  function populateTopProductsTable(productSalesChart) {
-    const tbody = document.getElementById('topProductsTable');
-    tbody.innerHTML = '';
     
-    if (!productSalesChart || productSalesChart.length === 0) {
-      console.warn('Ürün satış grafiği verisi bulunamadı');
-      return;
+    // Örnek veriler kullan (API'den veri gelmediğinde)
+    if (!productSales || productSales.length === 0) {
+      productSales = [
+        {merchant_sku: 'SKU123456', product_id: 'AY-1001', color: 'Siyah', size: '38', sale_count: 45, total_revenue: 45250.50, average_price: 1005.56},
+        {merchant_sku: 'SKU789012', product_id: 'AY-1002', color: 'Beyaz', size: '39', sale_count: 38, total_revenue: 36480.25, average_price: 960.01},
+        {merchant_sku: 'SKU345678', product_id: 'AY-1003', color: 'Kahverengi', size: '40', sale_count: 32, total_revenue: 33600.80, average_price: 1050.03},
+        {merchant_sku: 'SKU901234', product_id: 'AY-1004', color: 'Lacivert', size: '41', sale_count: 28, total_revenue: 30240.50, average_price: 1080.02},
+        {merchant_sku: 'SKU567890', product_id: 'AY-1005', color: 'Bej', size: '39', sale_count: 25, total_revenue: 23750.75, average_price: 950.03}
+      ];
     }
     
-    // İlk 5 ürünü göster
-    const topProducts = productSalesChart.slice(0, 5);
+    // İlk 20 ürünü göster
+    const limitedData = productSales.slice(0, 20);
     
-    topProducts.forEach(product => {
-      const row = document.createElement('tr');
-      // Rastgele trend yönü
-      const trendDirection = Math.random() > 0.5 ? 'up' : 'down';
-      const trendValue = (Math.random() * 10).toFixed(1);
-      const trendColor = trendDirection === 'up' ? 'success' : 'danger';
-      const trendIcon = trendDirection === 'up' ? 'arrow-up' : 'arrow-down';
+    limitedData.forEach((product, index) => {
+      // Rastgele trend bilgisi
+      const isUp = Math.random() > 0.3; // %70 yukarı, %30 aşağı
+      const trendValue = (Math.random() * 15).toFixed(1);
+      const trendClass = isUp ? 'text-success' : 'text-danger';
+      const trendIcon = isUp ? 'bi-arrow-up' : 'bi-arrow-down';
       
+      const row = document.createElement('tr');
       row.innerHTML = `
-        <td><strong>${product.merchant_sku || 'N/A'}</strong></td>
-        <td>${product.product_id}</td>
-        <td>${product.sale_count || 0}</td>
-        <td>${parseFloat(product.total_revenue || 0).toFixed(2)} TL</td>
-        <td><span class="text-${trendColor}"><i class="bi bi-${trendIcon}"></i> %${trendValue}</span></td>
+        <td><span class="badge text-dark bg-light">${product.merchant_sku || 'N/A'}</span></td>
+        <td>${product.product_id || 'Bilinmiyor'}</td>
+        <td>${product.color || ''} / ${product.size || ''}</td>
+        <td class="text-end">${product.sale_count || 0}</td>
+        <td class="text-end">${(product.total_revenue || 0).toLocaleString('tr-TR', {minimumFractionDigits: 2})} ₺</td>
+        <td class="text-end"><span class="${trendClass}"><i class="bi ${trendIcon}"></i> %${trendValue}</span></td>
       `;
       tbody.appendChild(row);
     });
   }
   
-  // İade Edilen Ürünler Tablosunu Doldur
+  // En Çok İade Edilen Ürünler Tablosu
   function populateTopReturnedProductsTable() {
     const tbody = document.getElementById('topReturnedProductsTable');
     if (!tbody) return;
@@ -1267,130 +1738,45 @@
     
     // Örnek veri
     const sampleData = [
-      { product: 'Kadın Siyah Deri Bot', color: 'Siyah', size: '38', returnCount: 12, returnRate: 8.5, reason: 'Beden Uyumsuzluğu' },
-      { product: 'Erkek Kahverengi Casual Ayakkabı', color: 'Kahverengi', size: '42', returnCount: 8, returnRate: 6.2, reason: 'Kalite Sorunu' },
-      { product: 'Kadın Beyaz Spor Ayakkabı', color: 'Beyaz', size: '39', returnCount: 7, returnRate: 5.8, reason: 'Görselden Farklı' },
-      { product: 'Erkek Lacivert Loafer', color: 'Lacivert', size: '43', returnCount: 6, returnRate: 5.1, reason: 'Konforsuz' },
-      { product: 'Kadın Bej Topuklu Ayakkabı', color: 'Bej', size: '37', returnCount: 5, returnRate: 4.3, reason: 'Beden Uyumsuzluğu' }
+      { sku: 'SKU123456', product: 'Kadın Siyah Deri Bot', color: 'Siyah', size: '38', returnCount: 12, returnRate: 8.5, reason: 'Beden Uyumsuzluğu' },
+      { sku: 'SKU789012', product: 'Erkek Kahverengi Casual Ayakkabı', color: 'Kahverengi', size: '42', returnCount: 8, returnRate: 6.2, reason: 'Kalite Sorunu' },
+      { sku: 'SKU345678', product: 'Kadın Beyaz Spor Ayakkabı', color: 'Beyaz', size: '39', returnCount: 7, returnRate: 5.8, reason: 'Görselden Farklı' },
+      { sku: 'SKU901234', product: 'Erkek Lacivert Loafer', color: 'Lacivert', size: '43', returnCount: 6, returnRate: 5.1, reason: 'Konforsuz' },
+      { sku: 'SKU567890', product: 'Kadın Bej Topuklu Ayakkabı', color: 'Bej', size: '37', returnCount: 5, returnRate: 4.3, reason: 'Beden Uyumsuzluğu' }
     ];
     
     sampleData.forEach(item => {
       const row = document.createElement('tr');
       row.innerHTML = `
+        <td><span class="badge text-dark bg-light">${item.sku}</span></td>
         <td>${item.product}</td>
-        <td>${item.color}</td>
-        <td>${item.size}</td>
-        <td>${item.returnCount}</td>
-        <td>%${item.returnRate.toFixed(1)}</td>
-        <td>${item.reason}</td>
+        <td>${item.color} / ${item.size}</td>
+        <td class="text-end">${item.returnCount}</td>
+        <td class="text-end">%${item.returnRate.toFixed(1)}</td>
+        <td><span class="badge bg-soft-danger text-danger">${item.reason}</span></td>
       `;
       tbody.appendChild(row);
     });
   }
   
-  // Kritik Stok Tablosunu Doldur
-  function populateCriticalStockTable() {
-    const tbody = document.getElementById('criticalStockTable');
-    if (!tbody) return;
+  // İade oranı hesaplama
+  function calculateReturnRate(data) {
+    // Toplam sipariş sayısı
+    const totalOrders = data.total_orders || 1; // 0'a bölünmeyi önlemek için minimum 1
     
-    tbody.innerHTML = '';
-    
-    // Örnek veri
-    const sampleData = [
-      { product: 'Kadın Siyah Deri Bot', color: 'Siyah', size: '38', stock: 3, critical: 5 },
-      { product: 'Erkek Kahverengi Casual Ayakkabı', color: 'Kahverengi', size: '42', stock: 2, critical: 5 },
-      { product: 'Kadın Beyaz Spor Ayakkabı', color: 'Beyaz', size: '39', stock: 4, critical: 5 },
-      { product: 'Erkek Lacivert Loafer', color: 'Lacivert', size: '43', stock: 1, critical: 5 },
-      { product: 'Kadın Bej Topuklu Ayakkabı', color: 'Bej', size: '37', stock: 2, critical: 5 }
-    ];
-    
-    sampleData.forEach(item => {
-      const row = document.createElement('tr');
-      row.innerHTML = `
-        <td>${item.product}</td>
-        <td>${item.color}</td>
-        <td>${item.size}</td>
-        <td><span class="badge bg-danger">${item.stock}</span></td>
-        <td>${item.critical}</td>
-      `;
-      tbody.appendChild(row);
-    });
-  }
-  
-  // Satış Trendi Grafiği
-  function createSalesTrendChart(dailySales) {
-    const ctx = document.getElementById('salesTrendChart').getContext('2d');
-    if (salesTrendChart) salesTrendChart.destroy();
-    
-    if (!dailySales || dailySales.length === 0) {
-      console.warn('Günlük satış verisi bulunamadı');
-      return;
+    // Toplam iade sayısını topla (örnek bir değer)
+    // Gerçek hesaplama: (iade_sayısı / toplam_sipariş_sayısı) * 100
+    let totalReturns = 0;
+    if (data.returns && Array.isArray(data.returns)) {
+      data.returns.forEach(returnData => {
+        totalReturns += (returnData.count || 0);
+      });
+    } else {
+      // Veri yoksa örnek bir değer kullan
+      totalReturns = totalOrders * 0.052; // %5.2 varsayılan iade oranı
     }
-
-    // Son 30 gün için veri
-    const dates = dailySales.slice(0, 30).map(sale => sale.date).reverse();
-    const revenues = dailySales.slice(0, 30).map(sale => sale.total_amount || 0).reverse();
-    const orderCounts = dailySales.slice(0, 30).map(sale => sale.order_count || 0).reverse();
     
-    // Hareketli ortalama hesapla (7 günlük)
-    const movingAvg = calculateMovingAverage(revenues, 7);
-    
-    salesTrendChart = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: dates,
-        datasets: [
-          {
-            label: 'Günlük Ciro (TL)',
-            data: revenues,
-            borderColor: 'rgba(75, 192, 192, 1)',
-            backgroundColor: 'rgba(75, 192, 192, 0.2)',
-            fill: true,
-            tension: 0.2
-          },
-          {
-            label: '7 Günlük Ortalama',
-            data: movingAvg,
-            borderColor: 'rgba(255, 99, 132, 1)',
-            borderWidth: 2,
-            borderDash: [5, 5],
-            fill: false,
-            pointRadius: 0
-          },
-          {
-            label: 'Sipariş Sayısı',
-            data: orderCounts,
-            borderColor: 'rgba(54, 162, 235, 1)',
-            backgroundColor: 'rgba(54, 162, 235, 0.2)',
-            fill: true,
-            tension: 0.2,
-            hidden: true
-          }
-        ]
-      },
-      options: {
-        responsive: true,
-        plugins: {
-          legend: { position: 'bottom' },
-          tooltip: { mode: 'index', intersect: false }
-        },
-        scales: {
-          y: {
-            beginAtZero: true,
-            title: {
-              display: true,
-              text: 'Ciro (TL)'
-            }
-          },
-          x: {
-            title: {
-              display: true,
-              text: 'Tarih'
-            }
-          }
-        }
-      }
-    });
+    return (totalReturns / totalOrders) * 100;
   }
   
   // Hareketli Ortalama Hesaplama
@@ -1414,646 +1800,214 @@
     return result;
   }
   
-  // Satış Dağılımı Grafiği (Pie Chart)
-  function createSalesDistributionChart(productSalesData) {
-    const ctx = document.getElementById('salesDistributionChart').getContext('2d');
-    if (salesDistributionChart) salesDistributionChart.destroy();
-    
-    if (!productSalesData || productSalesData.length === 0) {
-      console.warn('Ürün satış verisi bulunamadı');
-      return;
-    }
-    
-    // En çok satan 5 ürün + diğerleri
-    const topProducts = productSalesData.slice(0, 5);
-    const otherProducts = productSalesData.slice(5);
-    
-    const labels = topProducts.map(item => item.merchant_sku || 'Bilinmeyen');
-    if (otherProducts.length > 0) {
-      labels.push('Diğer');
-    }
-    
-    const totalRevenues = topProducts.map(item => item.total_revenue || 0);
-    if (otherProducts.length > 0) {
-      const otherRevenue = otherProducts.reduce((sum, item) => sum + (item.total_revenue || 0), 0);
-      totalRevenues.push(otherRevenue);
-    }
-    
-    // Rastgele renkler
-    const backgroundColors = [
-      'rgba(255, 99, 132, 0.7)',
-      'rgba(54, 162, 235, 0.7)',
-      'rgba(255, 206, 86, 0.7)',
-      'rgba(75, 192, 192, 0.7)',
-      'rgba(153, 102, 255, 0.7)',
-      'rgba(255, 159, 64, 0.7)'
-    ];
-    
-    salesDistributionChart = new Chart(ctx, {
-      type: 'pie',
-      data: {
-        labels: labels,
-        datasets: [{
-          data: totalRevenues,
-          backgroundColor: backgroundColors,
-          borderColor: backgroundColors.map(color => color.replace('0.7', '1')),
-          borderWidth: 1
-        }]
-      },
-      options: {
-        responsive: true,
-        plugins: {
-          legend: {
-            position: 'bottom',
-            labels: {
-              boxWidth: 15
-            }
-          },
-          tooltip: {
-            callbacks: {
-              label: function(context) {
-                const value = context.raw;
-                const total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
-                const percentage = ((value / total) * 100).toFixed(1);
-                return `${context.label}: ${value.toLocaleString('tr-TR')} TL (${percentage}%)`;
-              }
-            }
-          }
-        }
-      }
-    });
+  // AI Öngörülerini Yükleme
+  function loadAiInsights() {
+    // AI API'sine bağlanmak yerine simüle ediyoruz
+    setTimeout(() => {
+      document.getElementById('aiInsightContainer').innerHTML = `
+        <div class="p-3 border rounded bg-light insight-text">
+          <div class="mb-3">
+            <h6 class="fw-bold text-primary"><i class="bi bi-graph-up-arrow me-2"></i>Satış Trendi</h6>
+            <p class="mb-0">Son 30 gündeki satışlarınız bir önceki döneme göre <strong class="text-success">%12</strong> artış göstermiş. Bu artışın temel nedeni yeni eklenen ürün koleksiyonu ve sosyal medya kampanyalarınız.</p>
+          </div>
+          
+          <div class="mb-3">
+            <h6 class="fw-bold text-success"><i class="bi bi-bar-chart-line me-2"></i>Performans Özeti</h6>
+            <ul class="mb-0 ps-3">
+              <li>En çok satış <strong>Cumartesi</strong> günleri <strong>14:00-16:00</strong> arasında gerçekleşiyor.</li>
+              <li>Müşterilerinizin <strong>%65'i</strong> mobil cihazlardan alışveriş yapıyor.</li>
+              <li><strong>Siyah</strong> renk ürünlere olan talep <strong>%18</strong> artış gösteriyor.</li>
+              <li>İade oranınız sektör ortalamasının <strong class="text-success">%2.3</strong> altında.</li>
+            </ul>
+          </div>
+          
+          <div class="mb-0">
+            <h6 class="fw-bold text-warning"><i class="bi bi-lightbulb me-2"></i>Aksiyon Önerileri</h6>
+            <ol class="mb-0 ps-3">
+              <li>38-39 numaralı <strong>siyah</strong> ayakkabı stok seviyelerinizi artırmanız önerilir.</li>
+              <li>Bej rengi ürünlerde satış hızını artırmak için <strong>%10-15</strong> indirim yapmanız etkili olabilir.</li>
+              <li>Cumartesi günü 13:00-15:00 arasında sosyal medya reklamlarını artırabilirsiniz.</li>
+            </ol>
+          </div>
+          
+          <div class="text-end mt-3">
+            <small class="text-muted"><i class="bi bi-clock me-1"></i>Son güncelleme: ${new Date().toLocaleString('tr-TR')}</small>
+          </div>
+        </div>
+      `;
+    }, 1500);
   }
   
-  // Satış Saatleri Grafiği
-  function createSalesHoursChart() {
-    const ctx = document.getElementById('salesHoursChart');
-    if (!ctx) return;
-    
-    if (salesHoursChart) salesHoursChart.destroy();
-    
-    // Örnek veri
-    const hours = ['00:00', '01:00', '02:00', '03:00', '04:00', '05:00', '06:00', '07:00', '08:00', 
-                   '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', 
-                   '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'];
-    
-    const data = [5, 3, 2, 1, 0, 0, 1, 3, 10, 15, 22, 35, 45, 50, 65, 70, 55, 40, 25, 45, 60, 40, 20, 10];
-    
-    salesHoursChart = new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: hours,
-        datasets: [{
-          label: 'Sipariş Sayısı',
-          data: data,
-          backgroundColor: 'rgba(54, 162, 235, 0.7)',
-          borderColor: 'rgba(54, 162, 235, 1)',
-          borderWidth: 1
-        }]
-      },
-      options: {
-        responsive: true,
-        plugins: {
-          legend: { display: false },
-          tooltip: { mode: 'index', intersect: false }
-        },
-        scales: {
-          y: {
-            beginAtZero: true,
-            title: {
-              display: true,
-              text: 'Sipariş Sayısı'
-            }
-          },
-          x: {
-            title: {
-              display: true,
-              text: 'Saat'
-            }
-          }
-        }
+  // AI Özel Sorgu Gönderimi
+  function sendAiQuery(query) {
+    // Gerçek API'ye bağlanmak yerine simüle ediyoruz
+    setTimeout(() => {
+      const responses = {
+        "Satış verilerimde hangi ürünler en yüksek karlılık gösteriyor?": `
+          <div class="p-3 border rounded bg-light">
+            <h5 class="border-bottom pb-2 mb-3">Karlılık Analizi</h5>
+            <p>Satış verileriniz analiz edildiğinde, en yüksek karlılık gösteren ürünler şunlardır:</p>
+            <div class="table-responsive mb-3">
+              <table class="table table-sm table-bordered">
+                <thead class="table-light">
+                  <tr>
+                    <th>Ürün</th>
+                    <th>Kar Marjı</th>
+                    <th>Satış Miktarı</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>Kadın Siyah Deri Loafer Ayakkabı</strong></td>
+                    <td class="text-success">%42</td>
+                    <td>45 adet</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Kadın Kahverengi Deri Bot</strong></td>
+                    <td class="text-success">%38</td>
+                    <td>38 adet</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Erkek Siyah Deri Klasik Ayakkabı</strong></td>
+                    <td class="text-success">%35</td>
+                    <td>32 adet</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            
+            <h6 class="fw-bold">Bu ürünlerin ortak özellikleri:</h6>
+            <ul>
+              <li>Kaliteli deri malzeme kullanımı</li>
+              <li>Düşük iade oranı (%2'den az)</li>
+              <li>Yüksek müşteri memnuniyeti puanı (4.7/5 üzeri)</li>
+            </ul>
+            
+            <div class="alert alert-info mt-3 mb-0">
+              <div class="d-flex">
+                <div class="me-2">
+                  <i class="bi bi-lightbulb-fill"></i>
+                </div>
+                <div>
+                  <strong>Öneri:</strong> Bu ürünlerin stoklarının artırılması ve benzer özelliklerde yeni ürün eklenmesi karlılığınızı artırabilir.
+                </div>
+              </div>
+            </div>
+            
+            <div class="text-end mt-3">
+              <small class="text-muted">Bu analiz son 90 günlük satış verilerine dayanmaktadır.</small>
+            </div>
+          </div>
+        `,
+        "Hangi saatlerde en çok satış yapıyoruz?": `
+          <div class="p-3 border rounded bg-light">
+            <h5 class="border-bottom pb-2 mb-3">Satış Saatleri Analizi</h5>
+            <p>Satış verilerinize göre, en çok satış yaptığınız saatler:</p>
+            
+            <div class="row">
+              <div class="col-md-7">
+                <div class="table-responsive mb-3">
+                  <table class="table table-sm">
+                    <thead class="table-light">
+                      <tr>
+                        <th>Saat Aralığı</th>
+                        <th>Satış Oranı</th>
+                        <th>Ortalama Sipariş Değeri</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td><strong>14:00 - 16:00</strong></td>
+                        <td class="text-success">%28</td>
+                        <td>₺1,120</td>
+                      </tr>
+                      <tr>
+                        <td><strong>19:00 - 21:00</strong></td>
+                        <td class="text-success">%24</td>
+                        <td>₺980</td>
+                      </tr>
+                      <tr>
+                        <td><strong>11:00 - 13:00</strong></td>
+                        <td>%18</td>
+                        <td>₺850</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              
+              <div class="col-md-5">
+                <div class="p-3 border rounded bg-soft-primary">
+                  <h6 class="fw-bold text-primary">Günlere Göre Dağılım</h6>
+                  <ul class="mb-0">
+                    <li>Cumartesi: <strong>%35</strong> artış</li>
+                    <li>Pazar: <strong>%22</strong> artış</li>
+                    <li>Çarşamba: En düşük satış</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+            
+            <div class="alert alert-success mt-3">
+              <div class="d-flex">
+                <div class="me-2">
+                  <i class="bi bi-graph-up-arrow"></i>
+                </div>
+                <div>
+                  <strong>Öneri:</strong> 14:00-16:00 ve 19:00-21:00 saatlerinde sosyal medya reklamlarınızı artırabilir, ayrıca Çarşamba günleri için özel kampanyalar düzenleyerek satışlarınızı dengeleyebilirsiniz.
+                </div>
+              </div>
+            </div>
+          </div>
+        `
+      };
+      
+      // Cevabı göster (eğer varsa)
+      const resultDiv = document.getElementById('aiQueryResult');
+      if (responses[query]) {
+        resultDiv.innerHTML = responses[query];
+      } else {
+        resultDiv.innerHTML = `
+          <div class="p-3 border rounded bg-light">
+            <h5 class="border-bottom pb-2 mb-3">Analiz Sonucu</h5>
+            <p>Sorunuza cevap verebilmek için satış verileriniz analiz edildi.</p>
+            <p class="fw-bold">${query.charAt(0).toUpperCase() + query.slice(1)}</p>
+            <p>Bu soruya yönelik olarak, son 90 günlük satış verilerinize dayanarak şu çıkarımları yapabiliriz:</p>
+            <ul>
+              <li>Satışlarınızın %65'i düzenli müşterilerinizden geliyor.</li>
+              <li>En çok satış yaptığınız zaman dilimleri hafta sonları 14:00-18:00 arası.</li>
+              <li>Ürün kategorileriniz arasında ayakkabı kategorisi %48 ile en yüksek ciro payına sahip.</li>
+            </ul>
+            <div class="alert alert-info mt-3 mb-0">
+              <i class="bi bi-info-circle-fill me-2"></i>
+              <span>Daha spesifik sorular sorarak daha detaylı analiz sonuçları alabilirsiniz.</span>
+            </div>
+          </div>
+        `;
       }
-    });
+    }, 2000);
   }
   
-  // Ödeme Yöntemleri Grafiği
-  function createPaymentMethodsChart() {
-    const ctx = document.getElementById('paymentMethodsChart');
-    if (!ctx) return;
+  // Alert gösterme
+  function showAlert(message, type = 'success') {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed bottom-0 end-0 m-3`;
+    alertDiv.style.zIndex = '9999';
+    alertDiv.style.maxWidth = '350px';
+    alertDiv.innerHTML = `
+      ${message}
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    `;
+    document.body.appendChild(alertDiv);
     
-    if (paymentMethodsChart) paymentMethodsChart.destroy();
-    
-    // Örnek veri
-    const paymentMethods = ['Kredi Kartı', 'Havale/EFT', 'Kapıda Ödeme', 'Taksit', 'Cüzdan'];
-    const data = [65, 15, 10, 8, 2];
-    
-    paymentMethodsChart = new Chart(ctx, {
-      type: 'doughnut',
-      data: {
-        labels: paymentMethods,
-        datasets: [{
-          data: data,
-          backgroundColor: [
-            'rgba(255, 99, 132, 0.7)',
-            'rgba(54, 162, 235, 0.7)',
-            'rgba(255, 206, 86, 0.7)',
-            'rgba(75, 192, 192, 0.7)',
-            'rgba(153, 102, 255, 0.7)'
-          ],
-          borderColor: [
-            'rgba(255, 99, 132, 1)',
-            'rgba(54, 162, 235, 1)',
-            'rgba(255, 206, 86, 1)',
-            'rgba(75, 192, 192, 1)',
-            'rgba(153, 102, 255, 1)'
-          ],
-          borderWidth: 1
-        }]
-      },
-      options: {
-        responsive: true,
-        plugins: {
-          legend: { position: 'bottom' },
-          tooltip: {
-            callbacks: {
-              label: function(context) {
-                const value = context.raw;
-                const total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
-                const percentage = ((value / total) * 100).toFixed(1);
-                return `${context.label}: ${percentage}%`;
-              }
-            }
-          }
-        }
-      }
-    });
+    // 5 saniye sonra otomatik kapat
+    setTimeout(() => {
+      alertDiv.classList.remove('show');
+      setTimeout(() => {
+        alertDiv.remove();
+      }, 300);
+    }, 5000);
   }
-  
-  // İade Trendi Grafiği
-  function createReturnTrendChart() {
-    const ctx = document.getElementById('returnTrendChart');
-    if (!ctx) return;
-    
-    if (returnTrendChart) returnTrendChart.destroy();
-    
-    // Örnek veri - son 12 ay
-    const months = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 
-                   'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
-    
-    const returnCounts = [25, 30, 28, 32, 35, 40, 38, 35, 30, 28, 25, 20];
-    const returnRates = [5.2, 6.1, 5.8, 6.5, 7.0, 8.1, 7.6, 7.0, 6.0, 5.6, 5.0, 4.0];
-    
-    returnTrendChart = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: months,
-        datasets: [
-          {
-            label: 'İade Sayısı',
-            data: returnCounts,
-            borderColor: 'rgba(220, 53, 69, 1)',
-            backgroundColor: 'rgba(220, 53, 69, 0.2)',
-            yAxisID: 'y',
-            fill: true
-          },
-          {
-            label: 'İade Oranı (%)',
-            data: returnRates,
-            borderColor: 'rgba(255, 193, 7, 1)',
-            borderWidth: 2,
-            pointStyle: 'circle',
-            fill: false,
-            yAxisID: 'y1'
-          }
-        ]
-      },
-      options: {
-        responsive: true,
-        plugins: {
-          legend: { position: 'bottom' },
-          tooltip: { mode: 'index', intersect: false }
-        },
-        scales: {
-          y: {
-            type: 'linear',
-            display: true,
-            position: 'left',
-            title: {
-              display: true,
-              text: 'İade Sayısı'
-            }
-          },
-          y1: {
-            type: 'linear',
-            display: true,
-            position: 'right',
-            title: {
-              display: true,
-              text: 'İade Oranı (%)'
-            },
-            grid: {
-              drawOnChartArea: false
-            }
-          }
-        }
-      }
-    });
-  }
-  
-  // Kategori Satış Grafiği
-  function createCategorySalesChart() {
-    const ctx = document.getElementById('categorySalesChart');
-    if (!ctx) return;
-    
-    if (categorySalesChart) categorySalesChart.destroy();
-    
-    // Örnek veri
-    const categories = ['Kadın Ayakkabı', 'Erkek Ayakkabı', 'Çocuk Ayakkabı', 'Çanta', 'Aksesuar'];
-    const salesCounts = [1200, 950, 450, 300, 200];
-    const revenues = [1500000, 1200000, 400000, 200000, 100000];
-    
-    categorySalesChart = new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: categories,
-        datasets: [
-          {
-            label: 'Satış Adedi',
-            data: salesCounts,
-            backgroundColor: 'rgba(54, 162, 235, 0.7)',
-            borderColor: 'rgba(54, 162, 235, 1)',
-            borderWidth: 1,
-            yAxisID: 'y'
-          },
-          {
-            label: 'Gelir (TL)',
-            data: revenues,
-            backgroundColor: 'rgba(75, 192, 192, 0.7)',
-            borderColor: 'rgba(75, 192, 192, 1)',
-            borderWidth: 1,
-            yAxisID: 'y1'
-          }
-        ]
-      },
-      options: {
-        responsive: true,
-        plugins: {
-          legend: { position: 'bottom' },
-          tooltip: { mode: 'index', intersect: false }
-        },
-        scales: {
-          y: {
-            type: 'linear',
-            display: true,
-            position: 'left',
-            title: {
-              display: true,
-              text: 'Satış Adedi'
-            }
-          },
-          y1: {
-            type: 'linear',
-            display: true,
-            position: 'right',
-            title: {
-              display: true,
-              text: 'Gelir (TL)'
-            },
-            grid: {
-              drawOnChartArea: false
-            }
-          }
-        }
-      }
-    });
-  }
-  
-  // Beden/Renk Dağılımı Grafiği
-  function createSizeColorChart() {
-    const ctx = document.getElementById('sizeColorChart');
-    if (!ctx) return;
-    
-    if (sizeColorChart) sizeColorChart.destroy();
-    
-    // Örnek veri - ürün bedenlerinin ve renklerinin dağılımı (bubble chart)
-    const data = [
-      { x: 36, y: 1, r: 10 },  // Beden 36, Renk 1 (Siyah), Boyut = Satış Miktarı
-      { x: 37, y: 1, r: 15 },
-      { x: 38, y: 1, r: 25 },
-      { x: 39, y: 1, r: 20 },
-      { x: 40, y: 1, r: 15 },
-      { x: 36, y: 2, r: 8 },   // Beden 36, Renk 2 (Beyaz), Boyut = Satış Miktarı
-      { x: 37, y: 2, r: 12 },
-      { x: 38, y: 2, r: 18 },
-      { x: 39, y: 2, r: 15 },
-      { x: 40, y: 2, r: 10 },
-      { x: 36, y: 3, r: 5 },   // Beden 36, Renk 3 (Kahverengi), Boyut = Satış Miktarı
-      { x: 37, y: 3, r: 10 },
-      { x: 38, y: 3, r: 15 },
-      { x: 39, y: 3, r: 12 },
-      { x: 40, y: 3, r: 8 }
-    ];
-    
-    sizeColorChart = new Chart(ctx, {
-      type: 'bubble',
-      data: {
-        datasets: [
-          {
-            label: 'Satışlar (Beden/Renk)',
-            data: data,
-            backgroundColor: function(context) {
-              const value = context.raw.y;
-              const colors = ['rgba(0, 0, 0, 0.7)', 'rgba(255, 255, 255, 0.7)', 'rgba(165, 42, 42, 0.7)'];
-              return colors[value - 1] || 'rgba(75, 192, 192, 0.7)';
-            },
-            borderColor: function(context) {
-              const value = context.raw.y;
-              const colors = ['rgba(0, 0, 0, 1)', 'rgba(0, 0, 0, 0.5)', 'rgba(165, 42, 42, 1)'];
-              return colors[value - 1] || 'rgba(75, 192, 192, 1)';
-            },
-            borderWidth: 1
-          }
-        ]
-      },
-      options: {
-        responsive: true,
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            callbacks: {
-              label: function(context) {
-                const size = context.raw.x;
-                const colorIndex = context.raw.y;
-                const salesCount = context.raw.r;
-                const colors = ['Siyah', 'Beyaz', 'Kahverengi'];
-                return `Beden: ${size}, Renk: ${colors[colorIndex - 1]}, Satış: ${salesCount}`;
-              }
-            }
-          }
-        },
-        scales: {
-          x: {
-            min: 35,
-            max: 41,
-            title: {
-              display: true,
-              text: 'Beden Numarası'
-            },
-            ticks: {
-              stepSize: 1
-            }
-          },
-          y: {
-            min: 0,
-            max: 4,
-            title: {
-              display: true,
-              text: 'Renk'
-            },
-            ticks: {
-              stepSize: 1,
-              callback: function(value) {
-                const colors = ['', 'Siyah', 'Beyaz', 'Kahverengi'];
-                return colors[value] || '';
-              }
-            }
-          }
-        }
-      }
-    });
-  }
-  
-  // Stok Durumu Grafiği
-  function createStockStatusChart() {
-    const ctx = document.getElementById('stockStatusChart');
-    if (!ctx) return;
-    
-    if (stockStatusChart) stockStatusChart.destroy();
-    
-    // Örnek veri
-    const stockStatus = ['Stokta Var', 'Kritik Seviye', 'Stokta Yok'];
-    const stockCounts = [120, 35, 45];
-    
-    stockStatusChart = new Chart(ctx, {
-      type: 'pie',
-      data: {
-        labels: stockStatus,
-        datasets: [{
-          data: stockCounts,
-          backgroundColor: [
-            'rgba(40, 167, 69, 0.7)',  // Yeşil - Stokta Var
-            'rgba(255, 193, 7, 0.7)',  // Sarı - Kritik Seviye
-            'rgba(220, 53, 69, 0.7)'   // Kırmızı - Stokta Yok
-          ],
-          borderColor: [
-            'rgba(40, 167, 69, 1)',
-            'rgba(255, 193, 7, 1)',
-            'rgba(220, 53, 69, 1)'
-          ],
-          borderWidth: 1
-        }]
-      },
-      options: {
-        responsive: true,
-        plugins: {
-          legend: { position: 'bottom' },
-          tooltip: {
-            callbacks: {
-              label: function(context) {
-                const value = context.raw;
-                const total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
-                const percentage = ((value / total) * 100).toFixed(1);
-                return `${context.label}: ${value} ürün (${percentage}%)`;
-              }
-            }
-          }
-        }
-      }
-    });
-  }
-  
-  // Satış Tahmin Grafiği
-  function createSalesPredictionChart() {
-    const ctx = document.getElementById('salesPredictionChart');
-    if (!ctx) return;
-    
-    if (salesPredictionChart) salesPredictionChart.destroy();
-    
-    // Örnek veri - Geçmiş ve gelecek 30 gün
-    const dates = [];
-    const today = new Date();
-    
-    // Son 30 gün
-    for (let i = 30; i > 0; i--) {
-      const date = new Date(today);
-      date.setDate(today.getDate() - i);
-      dates.push(date.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' }));
-    }
-    
-    // Bugün
-    dates.push(today.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' }));
-    
-    // Gelecek 30 gün
-    for (let i = 1; i <= 30; i++) {
-      const date = new Date(today);
-      date.setDate(today.getDate() + i);
-      dates.push(date.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' }));
-    }
-    
-    // Gerçek satış verileri (son 30 gün + bugün)
-    const actualSales = [];
-    for (let i = 0; i <= 30; i++) {
-      actualSales.push(Math.floor(Math.random() * 50) + 50);  // 50-100 arası rastgele değer
-    }
-    
-    // Tahmin verileri (bugün + gelecek 30 gün)
-    const predictedSales = [actualSales[30]];  // Bugünün değeri
-    for (let i = 1; i <= 30; i++) {
-      predictedSales.push(Math.floor(Math.random() * 60) + 40);  // 40-100 arası rastgele değer
-    }
-    
-    // Tahmin alt ve üst sınırları (güven aralığı)
-    const lowerBound = predictedSales.map(val => Math.max(0, val - Math.floor(Math.random() * 20)));
-    const upperBound = predictedSales.map(val => val + Math.floor(Math.random() * 20));
-    
-    salesPredictionChart = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: dates,
-        datasets: [
-          {
-            label: 'Gerçek Satışlar',
-            data: [...actualSales, ...Array(30).fill(null)],  // Son 30 gün + bugün, geri kalanı null
-            borderColor: 'rgba(54, 162, 235, 1)',
-            backgroundColor: 'rgba(54, 162, 235, 0.2)',
-            fill: true,
-            tension: 0.3
-          },
-          {
-            label: 'Tahmin',
-            data: [...Array(30).fill(null), ...predictedSales],  // İlk 30 gün null, bugün + gelecek 30 gün
-            borderColor: 'rgba(255, 193, 7, 1)',
-            backgroundColor: 'rgba(255, 193, 7, 0.2)',
-            fill: false,
-            tension: 0.3
-          },
-          {
-            label: 'Üst Limit',
-            data: [...Array(30).fill(null), ...upperBound],
-            borderColor: 'rgba(255, 193, 7, 0.5)',
-            backgroundColor: 'transparent',
-            fill: '+1',  // Bir sonraki veri seti ile doldur
-            tension: 0.3,
-            borderDash: [5, 5],
-            pointRadius: 0
-          },
-          {
-            label: 'Alt Limit',
-            data: [...Array(30).fill(null), ...lowerBound],
-            borderColor: 'rgba(255, 193, 7, 0.5)',
-            backgroundColor: 'rgba(255, 193, 7, 0.1)',
-            fill: false,
-            tension: 0.3,
-            borderDash: [5, 5],
-            pointRadius: 0
-          }
-        ]
-      },
-      options: {
-        responsive: true,
-        plugins: {
-          legend: { position: 'bottom' },
-          tooltip: { mode: 'index', intersect: false }
-        },
-        scales: {
-          y: {
-            beginAtZero: true,
-            title: {
-              display: true,
-              text: 'Sipariş Sayısı'
-            }
-          },
-          x: {
-            title: {
-              display: true,
-              text: 'Tarih'
-            },
-            ticks: {
-              maxRotation: 45,
-              minRotation: 45,
-              autoSkip: true,
-              maxTicksLimit: 15
-            }
-          }
-        }
-      }
-    });
-  }
-  
-  // Sezonluk Trend Analizi Grafiği
-  function createSeasonalTrendChart() {
-    const ctx = document.getElementById('seasonalTrendChart');
-    if (!ctx) return;
-    
-    if (seasonalTrendChart) seasonalTrendChart.destroy();
-    
-    // Örnek veri - Son 2 yıl ve tahmin
-    const quarters = [
-      'Q1 2023', 'Q2 2023', 'Q3 2023', 'Q4 2023',
-      'Q1 2024', 'Q2 2024', 'Q3 2024', 'Q4 2024',
-      'Q1 2025', 'Q2 2025'
-    ];
-    
-    // Gerçek satışlar (2023 ve 2024)
-    const actual2023 = [250, 320, 280, 450];
-    const actual2024 = [280, 350, 300, 480];
-    
-    // 2025 Tahminleri
-    const predicted2025 = [310, 380];
-    
-    seasonalTrendChart = new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: quarters,
-        datasets: [
-          {
-            label: 'Gerçek Satışlar',
-            data: [...actual2023, ...actual2024, null, null],
-            backgroundColor: 'rgba(75, 192, 192, 0.7)',
-            borderColor: 'rgba(75, 192, 192, 1)',
-            borderWidth: 1
-          },
-          {
-            label: 'Tahmin',
-            data: [null, null, null, null, null, null, null, null, ...predicted2025],
-            backgroundColor: 'rgba(255, 193, 7, 0.7)',
-            borderColor: 'rgba(255, 193, 7, 1)',
-            borderWidth: 1
-          }
-        ]
-      },
-      options: {
-        responsive: true,
-        plugins: {
-          legend: { position: 'bottom' },
-          tooltip: { mode: 'index', intersect: false }
-        },
-        scales: {
-          y: {
-            beginAtZero: true,
-            title: {
-              display: true,
-              text: 'Ortalama Günlük Sipariş'
-            }
-          },
-          x: {
-            title: {
-              display: true,
-              text: 'Çeyrek'
-            }
-          }
-        }
-      }
-    });
-  }
+});
 </script>
 {% endblock %}
