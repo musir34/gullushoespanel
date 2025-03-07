@@ -1,3 +1,4 @@
+
 {% extends "base.html" %}
 
 {% block content %}
@@ -187,7 +188,7 @@
                 <button type="button" class="btn btn-outline-secondary quick-filter" data-filter="today">Bugün</button>
                 <button type="button" class="btn btn-outline-secondary quick-filter" data-filter="this_month">Bu Ay</button>
               </div>
-
+              
               <!-- Ek Filtreler -->
               <div class="row">
                 <div class="col-md-6">
@@ -660,7 +661,7 @@
   .info-card .icon {
     font-size: 2rem;
   }
-
+  
   .trend-indicator {
     font-size: 0.8rem;
     margin-top: 5px;
@@ -671,7 +672,7 @@
     width: 100% !important;
     max-height: 400px;
   }
-
+  
   /* KART ANİMASYONLARI */
   .card {
     transition: all 0.3s;
@@ -680,12 +681,12 @@
     transform: translateY(-5px);
     box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
   }
-
+  
   /* TABLO STİLLERİ */
   .table-hover tbody tr:hover {
     background-color: rgba(0, 123, 255, 0.1);
   }
-
+  
   /* PLACEHOLDER STİLLERİ */
   .placeholder-glow .placeholder {
     background-color: rgba(0, 0, 0, 0.1);
@@ -720,7 +721,7 @@
     document.getElementById("toggleFilters").addEventListener("click", function(e) {
       const filterOptions = document.getElementById("filterOptions");
       const icon = this.querySelector('i');
-
+      
       if (filterOptions.style.display === "none") {
         filterOptions.style.display = "block";
         icon.classList.remove("bi-chevron-down");
@@ -739,7 +740,7 @@
 
     // Sayfa yüklenince varsayılan verileri getir
     loadSalesStats();
-
+    
     // AI öngörülerini getir
     setTimeout(loadAiInsights, 1500);
 
@@ -764,7 +765,7 @@
         document.querySelectorAll('.quick-filter').forEach(btn => btn.classList.remove('active'));
         this.classList.add('active');
 
-        const filterValue = this.getAttribute('datafilter');
+        const filterValue = this.getAttribute('data-filter');
         loadSalesStats(`?quick_filter=${filterValue}`);
       });
     });
@@ -779,7 +780,7 @@
       }
       loadSalesStats(`?start_date=${startDate}&end_date=${endDate}`);
     });
-
+    
     // AI öngörülerini yenile
     document.getElementById('refreshAiInsights').addEventListener('click', function() {
       document.getElementById('aiInsightContainer').innerHTML = `
@@ -796,7 +797,7 @@
       `;
       loadAiInsights();
     });
-
+    
     // AI özel sorgu gönderimi
     document.getElementById('sendAiQuery').addEventListener('click', function() {
       const query = document.getElementById('aiQueryInput').value.trim();
@@ -804,7 +805,7 @@
         alert('Lütfen bir soru girin.');
         return;
       }
-
+      
       const resultDiv = document.getElementById('aiQueryResult');
       resultDiv.innerHTML = `
         <div class="d-flex justify-content-center">
@@ -814,36 +815,36 @@
         </div>
       `;
       resultDiv.style.display = 'block';
-
+      
       // AI API çağrısı yapılacak
       setTimeout(() => {
         sendAiQuery(query);
       }, 1000);
     });
-
+    
     // Rapor dışa aktarma işlemleri
     document.getElementById('exportPDF').addEventListener('click', function() {
       alert('PDF dışa aktarma işlemi başlatılıyor...');
       // PDF dışa aktarma kodu buraya gelecek
     });
-
+    
     document.getElementById('exportExcel').addEventListener('click', function() {
       alert('Excel dışa aktarma işlemi başlatılıyor...');
       // Excel dışa aktarma kodu buraya gelecek
     });
-
+    
     document.getElementById('printReport').addEventListener('click', function() {
       window.print();
     });
   });
-
+  
   // Tüm bölümleri gizle
   function hideAllSections() {
     document.querySelectorAll('[data-section]').forEach(section => {
       section.style.display = 'none';
     });
   }
-
+  
   // Belirli bir bölümü göster
   function showSection(sectionName) {
     if (sectionName === 'dashboard') {
@@ -871,7 +872,7 @@
         document.getElementById('totalOrders').innerText = data.total_orders ?? 0;
         document.getElementById('totalItemsSold').innerText = data.total_items_sold ?? 0;
         document.getElementById('totalRevenue').innerText = (data.total_revenue ?? 0).toLocaleString('tr-TR', { minimumFractionDigits: 2 }) + " TL";
-
+        
         // İade oranı hesapla (varsayılan olarak %5 gösteriyoruz, gerçek veri geldikçe değiştirilecek)
         const returnRate = calculateReturnRate(data);
         document.getElementById('returnRate').innerText = `%${returnRate.toFixed(1)}`;
@@ -886,7 +887,7 @@
         // Tabloyu güncelle
         populateProductTable(data.product_sales);
         populateTopProductsTable(data.product_sales_chart);
-
+        
         // Ek Grafikleri oluştur (dummy veri ile)
         createSalesHoursChart();
         createPaymentMethodsChart();
@@ -896,7 +897,7 @@
         createStockStatusChart();
         createSalesPredictionChart();
         createSeasonalTrendChart();
-
+        
         // Ek tabloları doldur
         populateCriticalStockTable();
         populateTopReturnedProductsTable();
@@ -909,20 +910,20 @@
       showError('Sunucu bağlantısında bir sorun oluştu. Lütfen internet bağlantınızı kontrol edin.');
     }
   }
-
+  
   // İade oranı hesaplama
   function calculateReturnRate(data) {
     // Gerçek hesaplama yerine şimdilik sabit bir değer döndürüyoruz
     // Gerçek hesaplama: (iade_sayısı / toplam_sipariş_sayısı) * 100
     return 5.2; 
   }
-
+  
   // Hata mesajı gösterme
   function showError(message) {
     // Bootstrap toast veya alert ile hata mesajı göster
     alert(message);
   }
-
+  
   // AI Öngörülerini Yükleme
   function loadAiInsights() {
     // Gerçek API'ye bağlanmak yerine simüle ediyoruz
@@ -937,14 +938,14 @@
           <li>İade oranınız sektör ortalamasının %2.3 altında, bu çok iyi bir performans.</li>
         </ul>
       `;
-
+      
       // AI Insights sayfasındaki diğer alanları da doldur
       document.getElementById('aiSalesAnalysis').innerHTML = `
         <p>Satış verilerinize göre, son 30 günde toplam cironuz %12 artış göstermiş durumda. Bu artışın ana kaynağı ayakkabı kategorisindeki yeni ürünler ve özellikle siyah renk ürünlerinizdeki fiyat-performans optimizasyonu.</p>
         <p>Müşterilerinizin %65'i mobil cihazlardan alışveriş yapıyor. Bu oran geçen aya göre %8 artmış durumda. Mobil uyumlu sayfa tasarımı ve ödeme süreçlerinizdeki iyileştirmeler bu artışta etkili olmuş görünüyor.</p>
         <p>Hafta sonu satışlarınız hafta içine göre %35 daha yüksek. Cumartesi günleri saat 14:00-16:00 aralığı en yoğun satış döneminiz.</p>
       `;
-
+      
       document.getElementById('aiActionSuggestions').innerHTML = `
         <ol>
           <li><strong>Stok Yönetimi:</strong> 38-39 numaralı siyah ayakkabı stok seviyelerinizi artırmanız önerilir. Mevcut trend devam ederse önümüzdeki 2 hafta içinde bu ürünlerde stok sorunu yaşayabilirsiniz.</li>
@@ -955,7 +956,7 @@
       `;
     }, 2000);
   }
-
+  
   // AI Özel Sorgu Gönderimi
   function sendAiQuery(query) {
     // Gerçek API'ye bağlanmak yerine simüle ediyoruz
@@ -994,7 +995,7 @@
           <p class="text-success mt-2">Öneri: 14:00-16:00 ve 19:00-21:00 saatlerinde sosyal medya reklamlarınızı artırabilirsiniz.</p>
         `
       };
-
+      
       // Cevabı göster (eğer varsa)
       const resultDiv = document.getElementById('aiQueryResult');
       if (responses[query]) {
@@ -1221,20 +1222,20 @@
       tbody.appendChild(row);
     });
   }
-
+  
   // Top Products Tablosunu Doldur
   function populateTopProductsTable(productSalesChart) {
     const tbody = document.getElementById('topProductsTable');
     tbody.innerHTML = '';
-
+    
     if (!productSalesChart || productSalesChart.length === 0) {
       console.warn('Ürün satış grafiği verisi bulunamadı');
       return;
     }
-
+    
     // İlk 5 ürünü göster
     const topProducts = productSalesChart.slice(0, 5);
-
+    
     topProducts.forEach(product => {
       const row = document.createElement('tr');
       // Rastgele trend yönü
@@ -1242,7 +1243,7 @@
       const trendValue = (Math.random() * 10).toFixed(1);
       const trendColor = trendDirection === 'up' ? 'success' : 'danger';
       const trendIcon = trendDirection === 'up' ? 'arrow-up' : 'arrow-down';
-
+      
       row.innerHTML = `
         <td>${product.product_id}</td>
         <td>${product.sale_count || 0}</td>
@@ -1252,14 +1253,14 @@
       tbody.appendChild(row);
     });
   }
-
+  
   // İade Edilen Ürünler Tablosunu Doldur
   function populateTopReturnedProductsTable() {
     const tbody = document.getElementById('topReturnedProductsTable');
     if (!tbody) return;
-
+    
     tbody.innerHTML = '';
-
+    
     // Örnek veri
     const sampleData = [
       { product: 'Kadın Siyah Deri Bot', color: 'Siyah', size: '38', returnCount: 12, returnRate: 8.5, reason: 'Beden Uyumsuzluğu' },
@@ -1268,7 +1269,7 @@
       { product: 'Erkek Lacivert Loafer', color: 'Lacivert', size: '43', returnCount: 6, returnRate: 5.1, reason: 'Konforsuz' },
       { product: 'Kadın Bej Topuklu Ayakkabı', color: 'Bej', size: '37', returnCount: 5, returnRate: 4.3, reason: 'Beden Uyumsuzluğu' }
     ];
-
+    
     sampleData.forEach(item => {
       const row = document.createElement('tr');
       row.innerHTML = `
@@ -1282,14 +1283,14 @@
       tbody.appendChild(row);
     });
   }
-
+  
   // Kritik Stok Tablosunu Doldur
   function populateCriticalStockTable() {
     const tbody = document.getElementById('criticalStockTable');
     if (!tbody) return;
-
+    
     tbody.innerHTML = '';
-
+    
     // Örnek veri
     const sampleData = [
       { product: 'Kadın Siyah Deri Bot', color: 'Siyah', size: '38', stock: 3, critical: 5 },
@@ -1298,7 +1299,7 @@
       { product: 'Erkek Lacivert Loafer', color: 'Lacivert', size: '43', stock: 1, critical: 5 },
       { product: 'Kadın Bej Topuklu Ayakkabı', color: 'Bej', size: '37', stock: 2, critical: 5 }
     ];
-
+    
     sampleData.forEach(item => {
       const row = document.createElement('tr');
       row.innerHTML = `
@@ -1311,12 +1312,12 @@
       tbody.appendChild(row);
     });
   }
-
+  
   // Satış Trendi Grafiği
   function createSalesTrendChart(dailySales) {
     const ctx = document.getElementById('salesTrendChart').getContext('2d');
     if (salesTrendChart) salesTrendChart.destroy();
-
+    
     if (!dailySales || dailySales.length === 0) {
       console.warn('Günlük satış verisi bulunamadı');
       return;
@@ -1326,10 +1327,10 @@
     const dates = dailySales.slice(0, 30).map(sale => sale.date).reverse();
     const revenues = dailySales.slice(0, 30).map(sale => sale.total_amount || 0).reverse();
     const orderCounts = dailySales.slice(0, 30).map(sale => sale.order_count || 0).reverse();
-
+    
     // Hareketli ortalama hesapla (7 günlük)
     const movingAvg = calculateMovingAverage(revenues, 7);
-
+    
     salesTrendChart = new Chart(ctx, {
       type: 'line',
       data: {
@@ -1387,11 +1388,11 @@
       }
     });
   }
-
+  
   // Hareketli Ortalama Hesaplama
   function calculateMovingAverage(data, window) {
     const result = [];
-
+    
     for (let i = 0; i < data.length; i++) {
       if (i < window - 1) {
         // Başlangıçta yeterli veri yoksa null
@@ -1405,35 +1406,35 @@
         result.push(sum / window);
       }
     }
-
+    
     return result;
   }
-
+  
   // Satış Dağılımı Grafiği (Pie Chart)
   function createSalesDistributionChart(productSalesData) {
     const ctx = document.getElementById('salesDistributionChart').getContext('2d');
     if (salesDistributionChart) salesDistributionChart.destroy();
-
+    
     if (!productSalesData || productSalesData.length === 0) {
       console.warn('Ürün satış verisi bulunamadı');
       return;
     }
-
+    
     // En çok satan 5 ürün + diğerleri
     const topProducts = productSalesData.slice(0, 5);
     const otherProducts = productSalesData.slice(5);
-
+    
     const labels = topProducts.map(item => item.product_id || 'Bilinmeyen');
     if (otherProducts.length > 0) {
       labels.push('Diğer');
     }
-
+    
     const totalRevenues = topProducts.map(item => item.total_revenue || 0);
     if (otherProducts.length > 0) {
       const otherRevenue = otherProducts.reduce((sum, item) => sum + (item.total_revenue || 0), 0);
       totalRevenues.push(otherRevenue);
     }
-
+    
     // Rastgele renkler
     const backgroundColors = [
       'rgba(255, 99, 132, 0.7)',
@@ -1443,7 +1444,7 @@
       'rgba(153, 102, 255, 0.7)',
       'rgba(255, 159, 64, 0.7)'
     ];
-
+    
     salesDistributionChart = new Chart(ctx, {
       type: 'pie',
       data: {
@@ -1478,21 +1479,21 @@
       }
     });
   }
-
+  
   // Satış Saatleri Grafiği
   function createSalesHoursChart() {
     const ctx = document.getElementById('salesHoursChart');
     if (!ctx) return;
-
+    
     if (salesHoursChart) salesHoursChart.destroy();
-
+    
     // Örnek veri
     const hours = ['00:00', '01:00', '02:00', '03:00', '04:00', '05:00', '06:00', '07:00', '08:00', 
                    '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', 
                    '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'];
-
+    
     const data = [5, 3, 2, 1, 0, 0, 1, 3, 10, 15, 22, 35, 45, 50, 65, 70, 55, 40, 25, 45, 60, 40, 20, 10];
-
+    
     salesHoursChart = new Chart(ctx, {
       type: 'bar',
       data: {
@@ -1529,18 +1530,18 @@
       }
     });
   }
-
+  
   // Ödeme Yöntemleri Grafiği
   function createPaymentMethodsChart() {
     const ctx = document.getElementById('paymentMethodsChart');
     if (!ctx) return;
-
+    
     if (paymentMethodsChart) paymentMethodsChart.destroy();
-
+    
     // Örnek veri
     const paymentMethods = ['Kredi Kartı', 'Havale/EFT', 'Kapıda Ödeme', 'Taksit', 'Cüzdan'];
     const data = [65, 15, 10, 8, 2];
-
+    
     paymentMethodsChart = new Chart(ctx, {
       type: 'doughnut',
       data: {
@@ -1582,21 +1583,21 @@
       }
     });
   }
-
+  
   // İade Trendi Grafiği
   function createReturnTrendChart() {
     const ctx = document.getElementById('returnTrendChart');
     if (!ctx) return;
-
+    
     if (returnTrendChart) returnTrendChart.destroy();
-
+    
     // Örnek veri - son 12 ay
     const months = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 
                    'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
-
+    
     const returnCounts = [25, 30, 28, 32, 35, 40, 38, 35, 30, 28, 25, 20];
     const returnRates = [5.2, 6.1, 5.8, 6.5, 7.0, 8.1, 7.6, 7.0, 6.0, 5.6, 5.0, 4.0];
-
+    
     returnTrendChart = new Chart(ctx, {
       type: 'line',
       data: {
@@ -1653,19 +1654,19 @@
       }
     });
   }
-
+  
   // Kategori Satış Grafiği
   function createCategorySalesChart() {
     const ctx = document.getElementById('categorySalesChart');
     if (!ctx) return;
-
+    
     if (categorySalesChart) categorySalesChart.destroy();
-
+    
     // Örnek veri
     const categories = ['Kadın Ayakkabı', 'Erkek Ayakkabı', 'Çocuk Ayakkabı', 'Çanta', 'Aksesuar'];
     const salesCounts = [1200, 950, 450, 300, 200];
     const revenues = [1500000, 1200000, 400000, 200000, 100000];
-
+    
     categorySalesChart = new Chart(ctx, {
       type: 'bar',
       data: {
@@ -1721,14 +1722,14 @@
       }
     });
   }
-
+  
   // Beden/Renk Dağılımı Grafiği
   function createSizeColorChart() {
     const ctx = document.getElementById('sizeColorChart');
     if (!ctx) return;
-
+    
     if (sizeColorChart) sizeColorChart.destroy();
-
+    
     // Örnek veri - ürün bedenlerinin ve renklerinin dağılımı (bubble chart)
     const data = [
       { x: 36, y: 1, r: 10 },  // Beden 36, Renk 1 (Siyah), Boyut = Satış Miktarı
@@ -1747,7 +1748,7 @@
       { x: 39, y: 3, r: 12 },
       { x: 40, y: 3, r: 8 }
     ];
-
+    
     sizeColorChart = new Chart(ctx, {
       type: 'bubble',
       data: {
@@ -1816,18 +1817,18 @@
       }
     });
   }
-
+  
   // Stok Durumu Grafiği
   function createStockStatusChart() {
     const ctx = document.getElementById('stockStatusChart');
     if (!ctx) return;
-
+    
     if (stockStatusChart) stockStatusChart.destroy();
-
+    
     // Örnek veri
     const stockStatus = ['Stokta Var', 'Kritik Seviye', 'Stokta Yok'];
     const stockCounts = [120, 35, 45];
-
+    
     stockStatusChart = new Chart(ctx, {
       type: 'pie',
       data: {
@@ -1865,51 +1866,51 @@
       }
     });
   }
-
+  
   // Satış Tahmin Grafiği
   function createSalesPredictionChart() {
     const ctx = document.getElementById('salesPredictionChart');
     if (!ctx) return;
-
+    
     if (salesPredictionChart) salesPredictionChart.destroy();
-
+    
     // Örnek veri - Geçmiş ve gelecek 30 gün
     const dates = [];
     const today = new Date();
-
+    
     // Son 30 gün
     for (let i = 30; i > 0; i--) {
       const date = new Date(today);
       date.setDate(today.getDate() - i);
       dates.push(date.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' }));
     }
-
+    
     // Bugün
     dates.push(today.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' }));
-
+    
     // Gelecek 30 gün
     for (let i = 1; i <= 30; i++) {
       const date = new Date(today);
       date.setDate(today.getDate() + i);
       dates.push(date.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' }));
     }
-
+    
     // Gerçek satış verileri (son 30 gün + bugün)
     const actualSales = [];
     for (let i = 0; i <= 30; i++) {
       actualSales.push(Math.floor(Math.random() * 50) + 50);  // 50-100 arası rastgele değer
     }
-
+    
     // Tahmin verileri (bugün + gelecek 30 gün)
     const predictedSales = [actualSales[30]];  // Bugünün değeri
     for (let i = 1; i <= 30; i++) {
       predictedSales.push(Math.floor(Math.random() * 60) + 40);  // 40-100 arası rastgele değer
     }
-
+    
     // Tahmin alt ve üst sınırları (güven aralığı)
     const lowerBound = predictedSales.map(val => Math.max(0, val - Math.floor(Math.random() * 20)));
     const upperBound = predictedSales.map(val => val + Math.floor(Math.random() * 20));
-
+    
     salesPredictionChart = new Chart(ctx, {
       type: 'line',
       data: {
@@ -1983,28 +1984,28 @@
       }
     });
   }
-
+  
   // Sezonluk Trend Analizi Grafiği
   function createSeasonalTrendChart() {
     const ctx = document.getElementById('seasonalTrendChart');
     if (!ctx) return;
-
+    
     if (seasonalTrendChart) seasonalTrendChart.destroy();
-
+    
     // Örnek veri - Son 2 yıl ve tahmin
     const quarters = [
       'Q1 2023', 'Q2 2023', 'Q3 2023', 'Q4 2023',
       'Q1 2024', 'Q2 2024', 'Q3 2024', 'Q4 2024',
       'Q1 2025', 'Q2 2025'
     ];
-
+    
     // Gerçek satışlar (2023 ve 2024)
     const actual2023 = [250, 320, 280, 450];
     const actual2024 = [280, 350, 300, 480];
-
+    
     // 2025 Tahminleri
     const predicted2025 = [310, 380];
-
+    
     seasonalTrendChart = new Chart(ctx, {
       type: 'bar',
       data: {
