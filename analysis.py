@@ -309,8 +309,8 @@ def get_sales_stats():
                 
                 # Alternatif sorgu - doğrudan kolonları kullan
                 product_sales_query = session.query(
+                    Order.merchant_sku.label('merchant_sku'),
                     Order.product_main_id.label('product_id'),
-                    Order.merchant_sku.label('merchant_sku'), 
                     Order.product_color.label('color'),
                     Order.product_size.label('size'),
                     func.count(Order.id).label('sale_count'),
@@ -322,8 +322,8 @@ def get_sales_stats():
                     Order.merchant_sku.isnot(None),
                     Order.status != 'Cancelled'
                 ).group_by(
-                    Order.product_main_id,
                     Order.merchant_sku,
+                    Order.product_main_id,
                     Order.product_color,
                     Order.product_size
                 ).order_by(
@@ -365,8 +365,8 @@ def get_sales_stats():
                         
                     # Yeni ürün olarak ekle
                     clean_products[key] = {
+                        'merchant_sku': merchant_sku,  # Bu alanı ilk sıraya alıyoruz
                         'product_id': getattr(sale, 'product_id', '') or getattr(sale, 'product_main_id', ''),
-                        'merchant_sku': merchant_sku,
                         'product_full': f"{merchant_sku} {sale.color or ''} {sale.size or ''}",
                         'sale_count': int(sale.sale_count or 0),
                         'total_revenue': round(float(sale.total_revenue or 0), 2)
@@ -401,8 +401,8 @@ def get_sales_stats():
                     
                     # Temizlenmiş veriyi ekle
                     clean_product_sales.append({
+                        'merchant_sku': merchant_sku, # İlk sıraya merchant_sku'yu ekle
                         'product_id': getattr(sale, 'product_id', '') or getattr(sale, 'product_main_id', ''),
-                        'merchant_sku': merchant_sku,
                         'color': sale.color,
                         'size': sale.size,
                         'sale_count': int(sale.sale_count or 0),
