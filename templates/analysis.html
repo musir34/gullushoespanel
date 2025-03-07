@@ -619,9 +619,29 @@
 </style>
 
 <!-- JAVASCRIPT -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js" integrity="sha384-+o/kAT+WQE1JSV4Bex7QAPUdxN8pYdR9gxYg3NGLRCrYQHnlKUYr2QRNpXXUtsMN" crossorigin="anonymous"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+// Chart.js yükleme kontrolü
+if (typeof Chart === 'undefined') {
+  console.error('Chart.js yüklenemedi! Alternatif CDN deneniyor...');
+  const chartScript = document.createElement('script');
+  chartScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js';
+  chartScript.integrity = 'sha512-ElRFoEQdI5Ht6kZvyzXhcg0EQxqxZrp+E1AfKQMEzEJe1JqBEgRMkxF4ngUL7Svg5GHr628Y457BPVwYpxeVQ==';
+  chartScript.crossOrigin = 'anonymous';
+  chartScript.onload = function() {
+    console.log('Chart.js alternatif CDN ile yüklendi');
+    initializeCharts();
+  };
+  chartScript.onerror = function() {
+    console.error('Chart.js alternatif CDN ile de yüklenemedi!');
+    document.getElementById('salesPerformanceChart').parentNode.innerHTML = '<div class="alert alert-danger">Grafik kütüphanesi yüklenemedi. Lütfen sayfayı yenileyin veya farklı bir tarayıcı deneyin.</div>';
+  };
+  document.head.appendChild(chartScript);
+} else {
+  document.addEventListener('DOMContentLoaded', initializeCharts);
+}
+
+function initializeCharts() {
   // Tüm chart nesnelerini tanımla
   let salesPerformanceChart, topProductsChart, returnsReasonChart, returnsTrendChart;
   let orderHoursChart, deviceDistributionChart, paymentMethodsChart, customerTypeChart;
@@ -867,15 +887,59 @@ document.addEventListener('DOMContentLoaded', function() {
 
       // Tamamen hata durumunda örnek verilerle grafikleri göster
       try {
-        createSalesPerformanceChart(generateSampleDailySalesData());
-        createTopProductsChart(generateSampleProductSalesData());
-        createReturnsChart(generateSampleReturnsData());
-        populateProductSalesTable(generateSampleProductSalesDetailData());
-        populateTopReturnedProductsTable();
-        createCustomerBehaviorCharts();
-        createSalesForecastChart();
+        // Tüm grafik fonksiyonlarının çağrımı ayrı try-catch bloklarında
+        try {
+          createSalesPerformanceChart(generateSampleDailySalesData());
+        } catch (graphError) {
+          console.error('Satış performans grafiği oluşturma hatası:', graphError);
+          document.getElementById('salesPerformanceChart').parentNode.innerHTML = 
+            '<div class="alert alert-danger">Satış grafiği oluşturulamadı: ' + graphError.message + '</div>';
+        }
+        
+        try {
+          createTopProductsChart(generateSampleProductSalesData());
+        } catch (graphError) {
+          console.error('Ürün satış grafiği oluşturma hatası:', graphError);
+          document.getElementById('topProductsChart').parentNode.innerHTML = 
+            '<div class="alert alert-danger">Ürün grafiği oluşturulamadı: ' + graphError.message + '</div>';
+        }
+        
+        try {
+          createReturnsChart(generateSampleReturnsData());
+        } catch (graphError) {
+          console.error('İade grafiği oluşturma hatası:', graphError);
+          if (document.getElementById('returnsReasonChart')) {
+            document.getElementById('returnsReasonChart').parentNode.innerHTML = 
+              '<div class="alert alert-danger">İade grafiği oluşturulamadı: ' + graphError.message + '</div>';
+          }
+        }
+        
+        try {
+          populateProductSalesTable(generateSampleProductSalesDetailData());
+        } catch (tableError) {
+          console.error('Ürün satış tablosu oluşturma hatası:', tableError);
+        }
+        
+        try {
+          populateTopReturnedProductsTable();
+        } catch (tableError) {
+          console.error('İade edilen ürünler tablosu oluşturma hatası:', tableError);
+        }
+        
+        try {
+          createCustomerBehaviorCharts();
+        } catch (graphError) {
+          console.error('Müşteri davranışları grafikleri oluşturma hatası:', graphError);
+        }
+        
+        try {
+          createSalesForecastChart();
+        } catch (graphError) {
+          console.error('Satış tahmin grafiği oluşturma hatası:', graphError);
+        }
       } catch (fallbackError) {
-        console.error('Örnek veri gösterme hatası:', fallbackError);
+        console.error('Örnek veri gösterme genel hatası:', fallbackError);
+        showAlert('Grafik verileri yüklenirken beklenmeyen bir hata oluştu. Lütfen sayfayı yenileyin.', 'danger');
       }
     }
   }
@@ -965,14 +1029,38 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Satış Performansı Grafiği
   function createSalesPerformanceChart(dailySales) {
-    const ctx = document.getElementById('salesPerformanceChart').getContext('2d');
-
-    if (!dailySales || dailySales.length === 0) {
-      if (salesPerformanceChart) salesPerformanceChart.destroy();
-      ctx.font = '14px Arial';
-      ctx.fillText('Veri bulunamadı', 10, 50);
+    const canvas = document.getElementById('salesPerformanceChart');
+    if (!canvas) {
+      console.error("salesPerformanceChart canvas elementi bulunamadı!");
       return;
     }
+    
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      console.error("Canvas 2D context oluşturulamadı!");
+      return;
+    }
+
+    try {
+      if (!dailySales || dailySales.length === 0) {
+        if (salesPerformanceChart) {
+          try {
+            salesPerformanceChart.destroy();
+          } catch (e) {
+            console.error("Grafik destroy edilirken hata:", e);
+          }
+        }
+        
+        // Canvas temizleme
+        canvas.width = canvas.width;
+        
+        // Mesaj yazma
+        ctx.font = '14px Arial';
+        ctx.fillStyle = '#6c757d';
+        ctx.textAlign = 'center';
+        ctx.fillText('Seçilen tarih aralığında veri bulunamadı', canvas.width / 2, 50);
+        return;
+      }
 
     // Verileri ters çevirerek tarih sırasına koy
     const reversedData = [...dailySales].reverse();
@@ -1122,14 +1210,38 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // En Çok Satan Ürünler Grafiği
   function createTopProductsChart(productData) {
-    const ctx = document.getElementById('topProductsChart').getContext('2d');
-
-    if (!productData || productData.length === 0) {
-      if (topProductsChart) topProductsChart.destroy();
-      ctx.font = '14px Arial';
-      ctx.fillText('Veri bulunamadı', 10, 50);
+    const canvas = document.getElementById('topProductsChart');
+    if (!canvas) {
+      console.error("topProductsChart canvas elementi bulunamadı!");
       return;
     }
+    
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      console.error("Canvas 2D context oluşturulamadı!");
+      return;
+    }
+    
+    try {
+      if (!productData || productData.length === 0) {
+        if (topProductsChart) {
+          try {
+            topProductsChart.destroy();
+          } catch (e) {
+            console.error("Grafik destroy edilirken hata:", e);
+          }
+        }
+        
+        // Canvas temizleme
+        canvas.width = canvas.width;
+        
+        // Mesaj yazma
+        ctx.font = '14px Arial';
+        ctx.fillStyle = '#6c757d';
+        ctx.textAlign = 'center';
+        ctx.fillText('Ürün satış verisi bulunamadı', canvas.width / 2, 50);
+        return;
+      }
 
     // En çok satan ilk 5 ürünü al
     const top5Products = productData.slice(0, 5);
@@ -1787,40 +1899,92 @@ document.addEventListener('DOMContentLoaded', function() {
   // Ürün Bazlı Satışlar Tablosu
   function populateProductSalesTable(productSales) {
     const tbody = document.querySelector('#productSalesTable tbody');
+    if (!tbody) {
+      console.error('Ürün tablosu tbody elementi bulunamadı!');
+      return;
+    }
+    
     tbody.innerHTML = '';
 
-    // Örnek veriler kullan (API'den veri gelmediğinde)
-    if (!productSales || productSales.length === 0) {
-      productSales = [
-        {merchant_sku: 'SKU123456', product_id: 'AY-1001', color: 'Siyah', size: '38', sale_count: 45, total_revenue: 45250.50, average_price: 1005.56},
-        {merchant_sku: 'SKU789012', product_id: 'AY-1002', color: 'Beyaz', size: '39', sale_count: 38, total_revenue: 36480.25, average_price: 960.01},
-        {merchant_sku: 'SKU345678', product_id: 'AY-1003', color: 'Kahverengi', size: '40', sale_count: 32, total_revenue: 33600.80, average_price: 1050.03},
-        {merchant_sku: 'SKU901234', product_id: 'AY-1004', color: 'Lacivert', size: '41', sale_count: 28, total_revenue: 30240.50, average_price: 1080.02},
-        {merchant_sku: 'SKU567890', product_id: 'AY-1005', color: 'Bej', size: '39', sale_count: 25, total_revenue: 23750.75, average_price: 950.03}
-      ];
-    }
+    try {
+      // Örnek veriler kullan (API'den veri gelmediğinde)
+      if (!productSales || productSales.length === 0) {
+        console.info('Ürün satış verisi bulunamadı, örnek veri gösteriliyor');
+        productSales = [
+          {merchant_sku: 'SKU123456', product_id: 'AY-1001', color: 'Siyah', size: '38', sale_count: 45, total_revenue: 45250.50, average_price: 1005.56},
+          {merchant_sku: 'SKU789012', product_id: 'AY-1002', color: 'Beyaz', size: '39', sale_count: 38, total_revenue: 36480.25, average_price: 960.01},
+          {merchant_sku: 'SKU345678', product_id: 'AY-1003', color: 'Kahverengi', size: '40', sale_count: 32, total_revenue: 33600.80, average_price: 1050.03},
+          {merchant_sku: 'SKU901234', product_id: 'AY-1004', color: 'Lacivert', size: '41', sale_count: 28, total_revenue: 30240.50, average_price: 1080.02},
+          {merchant_sku: 'SKU567890', product_id: 'AY-1005', color: 'Bej', size: '39', sale_count: 25, total_revenue: 23750.75, average_price: 950.03}
+        ];
+      } else {
+        console.log(`Ürün tablosu için ${productSales.length} satış verisi yükleniyor`);
+      }
 
-    // İlk 20 ürünü göster
-    const limitedData = productSales.slice(0, 20);
+      // İlk 20 ürünü göster
+      const limitedData = productSales.slice(0, 20);
 
-    limitedData.forEach((product, index) => {
-      // Rastgele trend bilgisi
-      const isUp = Math.random() > 0.3; // %70 yukarı, %30 aşağı
-      const trendValue = (Math.random() * 15).toFixed(1);
-      const trendClass = isUp ? 'text-success' : 'text-danger';
-      const trendIcon = isUp ? 'bi-arrow-up' : 'bi-arrow-down';
+      if (limitedData.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="6" class="text-center py-3">
+              <div class="alert alert-info mb-0">
+                <i class="bi bi-info-circle me-2"></i>
+                Seçilen tarih aralığında ürün satış verisi bulunamadı.
+              </div>
+            </td>
+          </tr>
+        `;
+        return;
+      }
 
-      const row = document.createElement('tr');
-      row.innerHTML = `
-        <td><span class="badge text-dark bg-light">${product.merchant_sku || 'N/A'}</span></td>
-        <td>${product.product_id || 'Bilinmiyor'}</td>
-        <td>${product.color || ''} / ${product.size || ''}</td>
-        <td class="text-end">${product.sale_count || 0}</td>
-        <td class="text-end">${(product.total_revenue || 0).toLocaleString('tr-TR', {minimumFractionDigits: 2})} ₺</td>
-        <td class="text-end"><span class="${trendClass}"><i class="bi ${trendIcon}"></i> %${trendValue}</span></td>
+      limitedData.forEach((product, index) => {
+        // Rastgele trend bilgisi yerine sabit değerler
+        let trendValue = 0.0;
+        let trendClass = 'text-muted';
+        let trendIcon = 'bi-dash';
+        
+        // Eğer 2 veya daha fazla ürün varsa, bir öncekiyle karşılaştır
+        if (index > 0 && limitedData[index-1].sale_count > 0) {
+          const prevSales = limitedData[index-1].sale_count;
+          const currSales = product.sale_count;
+          if (prevSales != currSales) {
+            const diff = ((currSales - prevSales) / prevSales) * 100;
+            trendValue = Math.abs(diff).toFixed(1);
+            trendClass = diff >= 0 ? 'text-success' : 'text-danger';
+            trendIcon = diff >= 0 ? 'bi-arrow-up' : 'bi-arrow-down';
+          }
+        } else {
+          // Yoksa varsayılan trend göster
+          trendValue = (Math.random() * 15).toFixed(1);
+          trendClass = Math.random() > 0.3 ? 'text-success' : 'text-danger';
+          trendIcon = trendClass === 'text-success' ? 'bi-arrow-up' : 'bi-arrow-down';
+        }
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td><span class="badge text-dark bg-light">${product.merchant_sku || 'N/A'}</span></td>
+          <td>${product.product_id || 'Bilinmiyor'}</td>
+          <td>${product.color || ''} / ${product.size || ''}</td>
+          <td class="text-end">${product.sale_count || 0}</td>
+          <td class="text-end">${(product.total_revenue || 0).toLocaleString('tr-TR', {minimumFractionDigits: 2})} ₺</td>
+          <td class="text-end"><span class="${trendClass}"><i class="bi ${trendIcon}"></i> %${trendValue}</span></td>
+        `;
+        tbody.appendChild(row);
+      });
+    } catch (error) {
+      console.error('Ürün tablosu oluşturulurken hata:', error);
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="6" class="text-center py-3">
+            <div class="alert alert-danger mb-0">
+              <i class="bi bi-exclamation-triangle me-2"></i>
+              Ürün tablosu oluşturulurken bir hata oluştu: ${error.message}
+            </div>
+          </td>
+        </tr>
       `;
-      tbody.appendChild(row);
-    });
+    }
   }
 
   // En Çok İade Edilen Ürünler Tablosu
@@ -2102,6 +2266,7 @@ document.addEventListener('DOMContentLoaded', function() {
       }, 300);
     }, 5000);
   }
+}
 });
 </script>
 {% endblock %}
