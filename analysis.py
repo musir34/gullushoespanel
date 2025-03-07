@@ -68,8 +68,7 @@ def get_product_sales(start_date: datetime, end_date: datetime):
         ).group_by(
             Order.product_main_id,
             Order.product_color,
-            Order.product_size,
-            Order.merchant_sku
+            Order.product_size
         ).order_by(
             func.sum(Order.amount).desc()
         ).limit(50).all()
@@ -194,7 +193,6 @@ def get_sales_stats():
         # Grafik için product_sales verisinin hazırlanması
         product_sales_chart = [{
             'product_id': f"{stat.product_main_id or ''} {stat.color or ''} {stat.size or ''}",
-            'merchant_sku': stat.merchant_sku or 'Bilinmeyen',
             'sale_count': int(stat.sale_count or 0),
             'total_revenue': round(float(stat.total_revenue or 0), 2)
         } for stat in product_sales]
