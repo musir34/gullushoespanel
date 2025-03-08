@@ -157,31 +157,19 @@ def get_exchange_stats(start_date: datetime, end_date: datetime):
 def get_sales_stats():
     """
     API endpoint'i:
-    Belirtilen tarih aralığında (varsayılan 90 gün, URL'den alınan 'start_date' ve 'end_date'
-    veya 'quick_filter' parametreleri ile) satış, ürün bazlı satış, iade ve değişim analizlerini
-    JSON formatında döner.
+    Belirtilen tarih aralığında satış, ürün bazlı satış analizlerini JSON formatında döner.
 
     URL Parametreleri:
-        - start_date: YYYY-MM-DD formatında başlangıç tarihi (opsiyonel)
-        - end_date: YYYY-MM-DD formatında bitiş tarihi (opsiyonel)
-        - quick_filter: 'last7', 'last30', 'today', 'this_month' (opsiyonel)
-        - days: Belirtilen gün sayısı (varsayılan 90, quick_filter ve start_date/end_date parametreleri yoksa kullanılır)
+        - start_date: YYYY-MM-DD formatında başlangıç tarihi
+        - end_date: YYYY-MM-DD formatında bitiş tarihi
+        - quick_filter: 'last7', 'last30', 'today', 'this_month'
     """
     try:
-        from sqlalchemy import create_engine
-        from sqlalchemy.orm import sessionmaker
-        from models import Base
-        from app import DATABASE_URI
-
-        # Yeni bir session oluştur
-        engine = create_engine(DATABASE_URI)
-        SessionLocal = sessionmaker(bind=engine)
-        session = SessionLocal()
-
+        from app import db
         logger.info("API isteği başladı")
         now = datetime.now()
 
-        # Tarih aralığı belirleme önceliği: quick_filter > (start_date, end_date) > days (varsayılan)
+        # Tarih aralığı belirleme
         quick_filter = request.args.get('quick_filter')
         start_date_str = request.args.get('start_date')
         end_date_str = request.args.get('end_date')
@@ -200,30 +188,25 @@ def get_sales_stats():
                 start_date = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
                 end_date = now
             else:
-                logger.info("Geçersiz quick_filter değeri, varsayılan 90 gün kullanılıyor.")
-                days = 90
-                start_date = now - timedelta(days=days)
+                start_date = now - timedelta(days=30)  # Varsayılan 30 gün
                 end_date = now
         elif start_date_str and end_date_str:
             try:
                 start_date = datetime.strptime(start_date_str, '%Y-%m-%d')
                 end_date = datetime.strptime(end_date_str, '%Y-%m-%d')
             except ValueError:
-                return jsonify({'success': False, 'error': 'Tarih formatı geçersiz. YYYY-MM-DD formatını kullanın.', 'daily_sales': [], 'product_sales': [], 'returns': [], 'exchanges': []})
+                return jsonify({'success': False, 'error': 'Tarih formatı geçersiz. YYYY-MM-DD formatını kullanın.'})
         else:
-            days = int(request.args.get('days', 90))
-            start_date = now - timedelta(days=days)
+            # Varsayılan olarak son 30 gün
+            start_date = now - timedelta(days=30)
             end_date = now
 
         logger.info(f"Tarih aralığı: {start_date} - {end_date}")
 
-        # Veri toplama sonuçları
-        daily_sales = []
-        product_sales = []
-
-        # Günlük satış verileri
-        try:
-            daily_sales_query = session.query(
+        # Performans için tek bir transaction içinde tüm sorguları çalıştır
+        with db.session.begin():
+            # Günlük satış verileri (optimizasyon: limit 90 gün ile sınırla)
+            daily_sales = db.session.query(
                 func.date(Order.order_date).label('date'),
                 func.count(Order.id).label('order_count'),
                 func.sum(Order.amount).label('total_amount'),
@@ -236,20 +219,11 @@ def get_sales_stats():
             ).group_by(
                 func.date(Order.order_date)
             ).order_by(
-                func.date(Order.order_date).desc()
-            )
+                func.date(Order.order_date).asc()
+            ).all()
 
-            daily_sales = daily_sales_query.all()
-            logger.info(f"Günlük satış verileri başarıyla çekildi: {len(daily_sales)} kayıt")
-
-        except Exception as e:
-            logger.error(f"Günlük satış verisi çekilirken hata: {e}")
-            session.rollback()
-
-        # Ürün satış verileri
-        try:
-            logger.info("Ürün satışları sorgusu başlıyor...")
-            product_sales_query = session.query(
+            # Ürün satış verileri (optimizasyon: limit ile en popüler 50 ürün)
+            product_sales = db.session.query(
                 Order.product_main_id.label('product_main_id'),
                 Order.merchant_sku.label('merchant_sku'),
                 Order.product_color.label('color'),
@@ -268,23 +242,14 @@ def get_sales_stats():
                 Order.product_size
             ).order_by(
                 func.sum(Order.amount).desc()
-            ).limit(50)
+            ).limit(50).all()
 
-            product_sales = product_sales_query.all()
-            logger.info(f"Ürün satışları verileri başarıyla çekildi: {len(product_sales)} kayıt")
+            # Toplam değerleri hesaplama
+            total_orders = sum(stat.order_count or 0 for stat in daily_sales) if daily_sales else 0
+            total_items_sold = sum(stat.total_quantity or 0 for stat in daily_sales) if daily_sales else 0 
+            total_revenue = sum(stat.total_amount or 0 for stat in daily_sales) if daily_sales else 0
 
-        except Exception as e:
-            logger.error(f"Ürün satış verisi çekilirken hata: {e}")
-            session.rollback()
-
-        # Toplam değerleri hesaplama (toplam sipariş, satılan ürün, ciro)
-        total_orders = sum(stat.order_count or 0 for stat in daily_sales) if daily_sales else 0
-        total_items_sold = sum(stat.total_quantity or 0 for stat in daily_sales) if daily_sales else 0 
-        total_revenue = sum(stat.total_amount or 0 for stat in daily_sales) if daily_sales else 0
-
-        # Grafik için product_sales verisinin hazırlanması
-        product_sales_chart = []
-        try:
+            # Grafik için product_sales verisinin hazırlanması (sadece gösterim için)
             product_sales_chart = [{
                 'product_id': f"{sale.product_main_id or ''}",
                 'merchant_sku': f"{sale.merchant_sku or ''}",
@@ -292,17 +257,13 @@ def get_sales_stats():
                 'sale_count': int(sale.sale_count or 0),
                 'total_revenue': round(float(sale.total_revenue or 0), 2)
             } for sale in product_sales] if product_sales else []
-        except Exception as e:
-            logger.error(f"Ürün satış grafik verisi oluşturulurken hata: {e}")
 
+        # Sonuç verisi oluşturma
         response = {
             'success': True,
-
-            # Toplam degerleri
             'total_orders': total_orders,
             'total_items_sold': total_items_sold,
             'total_revenue': round(float(total_revenue), 2),
-
             'daily_sales': [{
                 'date': stat.date.strftime('%Y-%m-%d') if stat.date else None,
                 'order_count': int(stat.order_count or 0),
@@ -312,7 +273,6 @@ def get_sales_stats():
                 'delivered_count': int(stat.delivered_count or 0),
                 'cancelled_count': int(stat.cancelled_count or 0)
             } for stat in daily_sales] if daily_sales else [],
-
             'product_sales': [{
                 'product_id': sale.product_main_id,
                 'merchant_sku': sale.merchant_sku,
@@ -322,15 +282,12 @@ def get_sales_stats():
                 'total_revenue': round(float(sale.total_revenue or 0), 2),
                 'average_price': round(float(sale.average_price or 0), 2)
             } for sale in product_sales] if product_sales else [],
-
             'product_sales_chart': product_sales_chart,
-
-            # Return ve Exchange verilerini boş olarak gönderelim
             'returns': [],
             'exchanges': []
         }
 
-        session.close()
+        logger.info("API isteği başarıyla tamamlandı")
         return jsonify(response)
 
     except Exception as e:
