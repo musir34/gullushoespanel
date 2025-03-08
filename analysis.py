@@ -288,7 +288,9 @@ def get_sales_stats():
             product_sales_chart = [{
                 'product_id': f"{sale.product_main_id or ''}",
                 'merchant_sku': f"{sale.merchant_sku or ''}",
-                'product_full': f"{sale.product_main_id or ''} {sale.color or ''} {sale.size or ''}",
+                'product_full': f"{sale.product_main_id or ''} - {sale.color or ''} {sale.size or ''}",
+                'color': f"{sale.color or ''}",
+                'size': f"{sale.size or ''}",
                 'sale_count': int(sale.sale_count or 0),
                 'total_revenue': round(float(sale.total_revenue or 0), 2)
             } for sale in product_sales] if product_sales else []

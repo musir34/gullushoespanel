@@ -1251,8 +1251,17 @@ function initializeCharts() {
       // En çok satan ilk 5 ürünü al
       const top5Products = productData.slice(0, 5);
 
-      // Ürün adları ve satış değerleri
-      const productLabels = top5Products.map(p => p.merchant_sku || 'Bilinmeyen');
+      // Ürün adları ve satış değerleri - Ürün kodlarını düzenliyoruz
+      const productLabels = top5Products.map(p => {
+        // Eğer sadece model kodu varsa onu kullan, yoksa ürün kodunu (merchant_sku) göster
+        const modelKodu = p.product_id || p.product_main_id || '';
+        if (modelKodu) {
+          return modelKodu;
+        } else {
+          return p.merchant_sku || 'Bilinmeyen';
+        }
+      });
+      
       const salesValues = top5Products.map(p => p.total_revenue || 0);
 
       // Grafik renklerini ayarla
@@ -1290,6 +1299,12 @@ function initializeCharts() {
             },
             tooltip: {
               callbacks: {
+                title: function(tooltipItems) {
+                  const idx = tooltipItems[0].dataIndex;
+                  const product = top5Products[idx];
+                  // Tooltip'te detaylı bilgi göster
+                  return `${product.product_main_id || ''} ${product.color || ''} ${product.size || ''}`;
+                },
                 label: function(context) {
                   return new Intl.NumberFormat('tr-TR', { 
                     style: 'currency', 
@@ -2001,10 +2016,14 @@ function initializeCharts() {
           trendIcon = trendClass === 'text-success' ? 'bi-arrow-up' : 'bi-arrow-down';
         }
 
+        // Ürün kodu/sku ve model kodunu düzenle
+        const productSku = product.merchant_sku || 'N/A';
+        const productModel = product.product_main_id || product.product_id || 'Bilinmiyor';
+
         const row = document.createElement('tr');
         row.innerHTML = `
-          <td><span class="badge text-dark bg-light">${product.merchant_sku || 'N/A'}</span></td>
-          <td>${product.product_id || 'Bilinmiyor'}</td>
+          <td><span class="badge text-dark bg-light">${productSku}</span></td>
+          <td>${productModel}</td>
           <td>${product.color || ''} / ${product.size || ''}</td>
           <td class="text-end">${product.sale_count || 0}</td>
           <td class="text-end">${(product.total_revenue || 0).toLocaleString('tr-TR', {minimumFractionDigits: 2})} ₺</td>
