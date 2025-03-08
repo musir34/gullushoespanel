@@ -308,8 +308,8 @@
                     <table class="table table-sm table-hover align-middle" id="productSalesTable">
                       <thead class="table-light">
                         <tr>
-                          <th>Ürün Kodu</th>
-                          <th>Ürün Adı</th>
+                          <th>Merchant SKU</th>
+                          <th>Model Kodu</th>
                           <th>Renk / Beden</th>
                           <th class="text-end">Satış Adedi</th>
                           <th class="text-end">Ciro (TL)</th>
@@ -1251,14 +1251,18 @@ function initializeCharts() {
       // En çok satan ilk 5 ürünü al
       const top5Products = productData.slice(0, 5);
 
-      // Ürün adları ve satış değerleri - Ürün kodlarını düzenliyoruz
+      // Ürün adları ve satış değerleri - Ürün kodlarını daha net bir şekilde düzenliyoruz
       const productLabels = top5Products.map(p => {
-        // Eğer sadece model kodu varsa onu kullan, yoksa ürün kodunu (merchant_sku) göster
+        // Öncelikle model kodunu kullan
         const modelKodu = p.product_id || p.product_main_id || '';
+        // Eğer model kodu varsa onu ve kısaltılmış merchant_sku'yu birlikte göster
         if (modelKodu) {
           return modelKodu;
+        } else if (p.merchant_sku) {
+          // Merchant SKU varsa ama model kodu yoksa sadece merchant_sku'yu göster
+          return p.merchant_sku;
         } else {
-          return p.merchant_sku || 'Bilinmeyen';
+          return 'Bilinmeyen';
         }
       });
       
@@ -2016,16 +2020,16 @@ function initializeCharts() {
           trendIcon = trendClass === 'text-success' ? 'bi-arrow-up' : 'bi-arrow-down';
         }
 
-        // Ürün kodu/sku ve model kodunu düzenle
+        // Ürün kodu/sku ve model kodunu düzenle - belirli bir forma uygun olarak göster
         const productSku = product.merchant_sku || 'N/A';
         const productModel = product.product_main_id || product.product_id || 'Bilinmiyor';
 
         const row = document.createElement('tr');
         row.innerHTML = `
           <td><span class="badge text-dark bg-light">${productSku}</span></td>
-          <td>${productModel}</td>
-          <td>${product.color || ''} / ${product.size || ''}</td>
-          <td class="text-end">${product.sale_count || 0}</td>
+          <td><strong>${productModel}</strong></td>
+          <td><span class="text-secondary">${product.color || '-'}</span> / <span class="text-primary">${product.size || '-'}</span></td>
+          <td class="text-end fw-bold">${product.sale_count || 0}</td>
           <td class="text-end">${(product.total_revenue || 0).toLocaleString('tr-TR', {minimumFractionDigits: 2})} ₺</td>
           <td class="text-end"><span class="${trendClass}"><i class="bi ${trendIcon}"></i> %${trendValue}</span></td>
         `;

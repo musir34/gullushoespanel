@@ -325,7 +325,15 @@ def get_sales_stats():
                 'average_price': round(float(sale.average_price or 0), 2)
             } for sale in product_sales] if product_sales else [],
 
-            'product_sales_chart': product_sales_chart,
+            'product_sales_chart': [{
+                'product_id': sale.product_main_id or '',
+                'merchant_sku': sale.merchant_sku or '',
+                'product_full': f"{sale.product_main_id or ''} - {sale.color or ''} {sale.size or ''}",
+                'color': sale.color or '',
+                'size': sale.size or '',
+                'sale_count': int(sale.sale_count or 0),
+                'total_revenue': round(float(sale.total_revenue or 0), 2)
+            } for sale in product_sales] if product_sales else [],
 
             # Return ve Exchange verilerini boş olarak gönderelim
             'returns': [],
