@@ -1951,11 +1951,11 @@ function initializeCharts() {
       if (!productSales || productSales.length === 0) {
         console.info('Ürün satış verisi bulunamadı, örnek veri gösteriliyor');
         productSales = [
-          {merchant_sku: 'SKU123456', product_id: 'AY-1001', color: 'Siyah', size: '38', sale_count: 45, total_revenue: 45250.50, average_price: 1005.56},
-          {merchant_sku: 'SKU789012', product_id: 'AY-1002', color: 'Beyaz', size: '39', sale_count: 38, total_revenue: 36480.25, average_price: 960.01},
-          {merchant_sku: 'SKU345678', product_id: 'AY-1003', color: 'Kahverengi', size: '40', sale_count: 32, total_revenue: 33600.80, average_price: 1050.03},
-          {merchant_sku: 'SKU901234', product_id: 'AY-1004', color: 'Lacivert', size: '41', sale_count: 28, total_revenue: 30240.50, average_price: 1080.02},
-          {merchant_sku: 'SKU567890', product_id: 'AY-1005', color: 'Bej', size: '39', sale_count: 25, total_revenue: 23750.75, average_price: 950.03}
+          {merchant_sku: 'SKU123456', product_main_id: 'AY-1001', color: 'Siyah', size: '38', sale_count: 45, total_revenue: 45250.50, average_price: 1005.56},
+          {merchant_sku: 'SKU789012', product_main_id: 'AY-1002', color: 'Beyaz', size: '39', sale_count: 38, total_revenue: 36480.25, average_price: 960.01},
+          {merchant_sku: 'SKU345678', product_main_id: 'AY-1003', color: 'Kahverengi', size: '40', sale_count: 32, total_revenue: 33600.80, average_price: 1050.03},
+          {merchant_sku: 'SKU901234', product_main_id: 'AY-1004', color: 'Lacivert', size: '41', sale_count: 28, total_revenue: 30240.50, average_price: 1080.02},
+          {merchant_sku: 'SKU567890', product_main_id: 'AY-1005', color: 'Bej', size: '39', sale_count: 25, total_revenue: 23750.75, average_price: 950.03}
         ];
       } else {
         console.log(`Ürün tablosu için ${productSales.length} satış verisi yükleniyor`);
