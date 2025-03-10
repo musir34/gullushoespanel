@@ -738,6 +738,10 @@
       const title = product.title || 'İsimsiz Ürün';
       const count = product.count || 0;
       const total_amount = product.total_amount || 0;
+      
+      // Formatlanmış toplam tutarı hazırla
+      const formattedAmount = typeof total_amount === 'number' ? 
+        total_amount.toLocaleString('tr-TR') : '0';
 
       card.innerHTML = `
         <div class="product-img-container">
@@ -748,7 +752,7 @@
           <div class="product-barcode">${product.model_id}</div>
           <div class="product-stats">
             <span>Satış: <strong>${count}</strong></span>
-            <span>Tutar: <strong>${total_amount.toLocaleString('tr-TR')} TL</strong></span>
+            <span>Tutar: <strong>${formattedAmount} TL</strong></span>
           </div>
           <label>Maliyet (USD):</label>
           <input type="number" step="0.01" class="product-cost-input" data-barcode="${product.model_id}" value="0">
@@ -894,9 +898,20 @@
           return;
         }
 
-        allProducts = result.products;
+        // Ürün verilerini doğrula ve temizle
+        allProducts = result.products.map(product => {
+          // Eksik veya hatalı verileri düzelt
+          return {
+            model_id: product.model_id || '',
+            count: typeof product.count === 'number' ? product.count : 0,
+            total_amount: typeof product.total_amount === 'number' ? product.total_amount : 0,
+            image_url: product.image_url || '/static/images/default.jpg',
+            title: product.title || 'İsimsiz Ürün',
+            order_count: typeof product.order_count === 'number' ? product.order_count : 0
+          };
+        });
+        
         displayedProducts = [...allProducts];
-
         renderProductGrid();
       } catch (err) {
         console.error("Ürün listesi yüklenirken hata:", err);
@@ -904,6 +919,7 @@
 
         document.getElementById('loadingIndicator').style.display = 'none';
         document.getElementById('noResults').style.display = 'block';
+        document.getElementById('productGrid').style.display = 'none';
       }
     }
 

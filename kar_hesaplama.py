@@ -262,7 +262,7 @@ def get_product_list():
         end_date = datetime.now()
         start_date = end_date - timedelta(days=30)
         
-        # Barkod bazlı satış sorgusu
+        # Barkod bazlı satış sorgusu - COALESCE ekleyerek NULL değerleri önlüyoruz
         sql_query = """
         WITH exploded_orders AS (
             SELECT 
@@ -283,8 +283,8 @@ def get_product_list():
         SELECT 
             eo.product_barcode,
             COUNT(DISTINCT eo.order_number) as order_count,
-            SUM(eo.quantity) as total_quantity,
-            SUM(eo.amount) as total_amount,
+            COALESCE(SUM(eo.quantity), 0) as total_quantity,
+            COALESCE(SUM(eo.amount), 0) as total_amount,
             MAX(p.images) as image_url,
             MAX(p.title) as product_title
         FROM 
@@ -302,22 +302,30 @@ def get_product_list():
             {"start_date": start_date, "end_date": end_date}
         ).all()
         
-        # Barkod verilerini oluşturma
+        # Barkod verilerini oluşturma - Veri doğrulama ve temizleme eklendi
         products_data = []
         
         for sale in barcode_sales:
-            barcode = sale.product_barcode
-            count = int(sale.total_quantity) if sale.total_quantity else 0
-            
-            product_data = {
-                'model_id': barcode,
-                'count': count,
-                'total_amount': float(sale.total_amount) if sale.total_amount else 0,
-                'image_url': sale.image_url or "",
-                'title': sale.product_title or "Ürün Adı Bulunamadı",
-                'order_count': int(sale.order_count) if sale.order_count else 0
-            }
-            products_data.append(product_data)
+            if not sale.product_barcode:
+                continue  # Barkodu olmayan ürünleri atla
+                
+            try:
+                barcode = sale.product_barcode
+                count = int(sale.total_quantity) if sale.total_quantity is not None else 0
+                total_amount = float(sale.total_amount) if sale.total_amount is not None else 0
+                
+                product_data = {
+                    'model_id': barcode,
+                    'count': count,
+                    'total_amount': total_amount,
+                    'image_url': sale.image_url or "",
+                    'title': sale.product_title or "Ürün Adı Bulunamadı",
+                    'order_count': int(sale.order_count) if sale.order_count is not None else 0
+                }
+                products_data.append(product_data)
+            except (ValueError, TypeError) as e:
+                logger.warning(f"Ürün veri dönüşüm hatası (barkod: {sale.product_barcode}): {e}")
+                # Hatalı veriyi atlayarak devam et
         
         logger.info(f"Toplam {len(products_data)} farklı ürün verisi hazırlandı.")
         return jsonify({
