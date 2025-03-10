@@ -15,7 +15,7 @@
       font-family: 'Roboto', sans-serif;
       background-color: #f5f5f5;
     }
-    /* Canvas: Arka plan; artık dinamik hava koşullarına göre değişecek */
+    /* Canvas: Arka plan */
     #weatherCanvas {
       position: fixed;
       top: 0;
@@ -51,16 +51,69 @@
       gap: 10px;
       z-index: 10;
     }
+
+    /* Ortak buton görünümü */
     .btn {
-      border-radius: 10px;
-      padding: 5px 12px;
-      font-size: 0.85rem;
+      border-radius: 20px;
+      padding: 10px 20px;
+      font-size: 0.9rem;
       transition: all 0.3s ease;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      border: none;
+      color: #fff;
     }
     .btn:hover {
-      transform: translateY(-2px);
+      transform: scale(1.05);
+      text-decoration: none;
     }
+
+    /* Bootstrap renk sınıflarını gradientlerle override edelim */
+    .btn-secondary {
+      background: linear-gradient(to right, #757F9A, #D7DDE8); /* Gri tonlu */
+      color: #fff;
+    }
+    .btn-warning {
+      background: linear-gradient(to right, #f7971e, #ffd200); /* Turuncu-sarı */
+      color: #fff;
+    }
+    .btn-primary {
+      background: linear-gradient(to right, #2193b0, #6dd5ed); /* Mavi tonlu */
+      color: #fff;
+    }
+    .btn-success {
+      background: linear-gradient(to right, #56ab2f, #a8e063); /* Yeşil tonlu */
+      color: #fff;
+    }
+    .btn-info {
+      background: linear-gradient(to right, #667db6, #0082c8, #0082c8, #667db6); /* Mavi tonlu */
+      color: #fff;
+    }
+    .btn-danger {
+      background: linear-gradient(to right, #cb2d3e, #ef473a); /* Kırmızı tonlu */
+      color: #fff;
+    }
+
+    /* Dropdown görünümü */
+    .dropdown-toggle {
+      border-radius: 20px !important; /* Arada .btn sınıfı da var, override için !important */
+    }
+    .dropdown-menu {
+      border-radius: 10px;
+      padding: 0.5rem 0;
+      background-color: #fff;
+      border: none;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .dropdown-item {
+      font-size: 0.85rem;
+      padding: 0.5rem 1rem;
+      color: #333;
+      transition: background-color 0.3s ease;
+    }
+    .dropdown-item:hover {
+      background-color: #efefef;
+    }
+
     .order-container {
       display: flex;
       flex-wrap: wrap;
@@ -181,6 +234,7 @@
       font-size: 1.3em;
       font-weight: bold;
     }
+
     @media (max-width: 768px) {
       .btn {
         font-size: 0.8rem;
@@ -210,26 +264,56 @@
 
   <!-- Sağ üst köşede butonlar -->
   <div class="btn-group-top">
-      <a href="{{ url_for('siparis_fisi_bp.siparis_fisi_sayfasi') }}" class="btn btn-primary">Ürün Tedarik Sayfası</a>
-      <a href="{{ url_for('siparisler_bp.yeni_siparis') }}" class="btn btn-success">Yeni Sipariş</a>
-      <a href="{{ url_for('approve_users') }}" class="btn btn-warning">Kullanıcı Yönetimi</a>
+      <!-- Anasayfa ve Kullanıcı Yönetimi ayrı -->
       <a href="{{ url_for('home.home') }}" class="btn btn-secondary">Anasayfa</a>
-      <a href="{{ url_for('analysis.sales_analysis') }}" class="btn btn-info">Analiz</a>
-      <a href="{{ url_for('openai_bp.ai_analiz') }}" class="btn btn-info"><i class="bi bi-robot"></i> AI Analiz</a>
-      <a href="{{ url_for('iade_listesi') }}" class="btn btn-secondary">İade Listesi</a>
-      <a href="{{ url_for('product_list') }}" class="btn btn-secondary">Ürün Listesi</a>
-      <a href="{{ url_for('order_list_all') }}" class="btn btn-secondary">Sipariş Listesi</a>
+      <a href="{{ url_for('approve_users') }}" class="btn btn-warning">Kullanıcı Yönetimi</a>
+
+      <!-- SIPARİŞ İŞLEMLERİ DROPDOWN -->
+      <div class="dropdown">
+        <button class="btn btn-primary dropdown-toggle" type="button" id="siparisMenu" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          Sipariş İşlemleri
+        </button>
+        <div class="dropdown-menu" aria-labelledby="siparisMenu">
+          <a class="dropdown-item" href="{{ url_for('siparisler_bp.yeni_siparis') }}">Yeni Sipariş</a>
+          <a class="dropdown-item" href="{{ url_for('order_list_all') }}">Sipariş Listesi</a>
+          <a class="dropdown-item" href="{{ url_for('degisim_talep') }}">Değişim Talepleri</a>
+        </div>
+      </div>
+
+      <!-- ÜRÜN İŞLEMLERİ DROPDOWN -->
+      <div class="dropdown">
+        <button class="btn btn-success dropdown-toggle" type="button" id="urunMenu" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          Ürün İşlemleri
+        </button>
+        <div class="dropdown-menu" aria-labelledby="urunMenu">
+          <a class="dropdown-item" href="{{ url_for('siparis_fisi_bp.siparis_fisi_sayfasi') }}">Ürün Tedarik Sayfası</a>
+          <a class="dropdown-item" href="{{ url_for('product_list') }}">Ürün Listesi</a>
+          <a class="dropdown-item" href="{{ url_for('iade_listesi') }}">İade Listesi</a>
+        </div>
+      </div>
+
+      <!-- ANALİZ DROPDOWN -->
+      <div class="dropdown">
+        <button class="btn btn-info dropdown-toggle" type="button" id="analizMenu" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          Analizler
+        </button>
+        <div class="dropdown-menu" aria-labelledby="analizMenu">
+          <a class="dropdown-item" href="{{ url_for('analysis.sales_analysis') }}">Satış Analizi</a>
+          <a class="dropdown-item" href="{{ url_for('openai_bp.ai_analiz') }}">AI Analiz</a>
+        </div>
+      </div>
+
+      <!-- Arşiv Butonu Tek Başına Dursun -->
       <a href="{{ url_for('display_archive') }}" class="btn btn-secondary">Arşiv</a>
-      <a href="{{ url_for('degisim_talep') }}" class="btn btn-secondary">Değişim Talepleri</a>
+
+      <!-- Çıkış -->
       <form method="POST" action="{{ url_for('logout') }}">
           <button type="submit" class="btn btn-danger">Çıkış Yap</button>
       </form>
   </div>
-      </form>
-  </div>
 
   <div class="container">
-      <!-- Confirm Packing Formunu Başlatıyoruz -->
+      <!-- Confirm Packing Form -->
       <form method="POST" action="{{ url_for('confirm_packing') }}" id="packingForm" autocomplete="off">
           <input type="hidden" name="order_number" value="{{ order_number }}">
 
@@ -360,9 +444,8 @@
   <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
   <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.bundle.min.js"></script>
 
-  <!-- Dinamik Hava Koşulları ve Zaman Dilimi: WeatherCanvas Animasyonu -->
+  <!-- Dinamik Hava Koşulları: WeatherCanvas Animasyonu -->
   <script>
-    // Canvas ayarı
     const canvas = document.getElementById('weatherCanvas');
     const ctx = canvas.getContext('2d');
 
@@ -373,38 +456,30 @@
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
 
-    // İstanbul saatine göre zamanı al: Intl API kullanarak
     function getIstanbulTime() {
-      // "Europe/Istanbul" zaman dilimindeki zamanı elde etmek için:
       return new Date(new Date().toLocaleString("en-US", { timeZone: "Europe/Istanbul" }));
     }
-
     function getIstanbulHour() {
       return getIstanbulTime().getHours();
     }
 
-    // Dinamik arka plan: Gün içinde güncel hava koşullarına göre (gündüz ise güneş+bulut, gece ise ay+yıldızlar) çizim yapalım.
     function drawBackground() {
       const hour = getIstanbulHour();
       if (hour >= 6 && hour < 18) {
-        // Gündüz: Açık mavi arka plan, güneş ve hafif bulutlar
-        ctx.fillStyle = "#87CEEB"; // açık mavi
+        ctx.fillStyle = "#87CEEB"; // gündüz
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         drawSun();
         drawClouds();
       } else {
-        // Gece: Koyu mavi/siyah arka plan, ay ve yıldızlar
-        ctx.fillStyle = "#2c3e50"; // koyu mavi
+        ctx.fillStyle = "#2c3e50"; // gece
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         drawMoon();
         drawStars();
       }
     }
 
-    // Gündüz için: Güneş çizimi
     function drawSun() {
       const hour = getIstanbulHour();
-      // Güneş konumu: sabah 6'da ufukta, öğle 12'de en yüksek, akşam 18'de ufukta
       let sunY;
       if (hour < 6) {
         sunY = canvas.height - 50;
@@ -425,7 +500,6 @@
       ctx.fill();
     }
 
-    // Gündüz için: Bulut animasyonu
     let clouds = [];
     const cloudCount = 5;
     function createCloud() {
@@ -440,6 +514,7 @@
     for (let i = 0; i < cloudCount; i++) {
       clouds.push(createCloud());
     }
+
     function drawClouds() {
       clouds.forEach(cloud => {
         ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
@@ -459,7 +534,6 @@
       });
     }
 
-    // Gece için: Ay çizimi
     function drawMoon() {
       const moonX = canvas.width * 0.8;
       const moonY = canvas.height * 0.2;
@@ -467,10 +541,8 @@
       ctx.fillStyle = "#F0E68C";
       ctx.arc(moonX, moonY, 40, 0, 2 * Math.PI);
       ctx.fill();
-      // Ay yüzeyindeki gölgeler için basit efekt eklenebilir.
     }
 
-    // Gece için: Yıldızlar çizimi
     let stars = [];
     const starCount = 100;
     function createStar() {
@@ -496,7 +568,6 @@
       });
     }
 
-    // Ana animasyon: Arka planı dinamik olarak güncelle
     function animateBackground() {
       requestAnimationFrame(animateBackground);
       drawBackground();
@@ -534,6 +605,7 @@
                   matchMessage.classList.add('alert-success', 'alert-show');
                   matchMessage.textContent = 'Barkod doğru!';
 
+                  // Sonraki inputa geç
                   const nextInput = barkodInputs[index + 1];
                   if (nextInput) {
                       setTimeout(() => nextInput.focus(), 100);
@@ -544,6 +616,7 @@
                   matchMessage.textContent = 'Barkod yanlış!';
               }
 
+              // Sağ/sol ikisi de doğru mu?
               const rightInput = document.getElementById(`barkodInput-right-${productIndex}`);
               const leftInput = document.getElementById(`barkodInput-left-${productIndex}`);
               const expectedRight = document.getElementById(`expectedBarcode-right-${productIndex}`).value.trim();
@@ -555,19 +628,23 @@
                   barkodDogruList[productIndex] = false;
               }
 
+              // Tüm barkodlar doğrulanırsa butonlar açılır
               if (barkodDogruList.every(Boolean)) {
                   onaylaBtn.classList.remove('disabled-btn');
                   yazdirBtn.classList.remove('disabled-btn');
                   onaylaBtn.disabled = false;
                   yazdirBtn.disabled = false;
 
+                  // 5 saniye sonra otomatik yazdır
                   setTimeout(() => {
-                      yazdirForm.submit();  // 5 saniye sonra yazdır
+                      yazdirForm.submit();
                   }, 5000);
 
+                  // 15 saniye sonra otomatik onayla
                   setTimeout(() => {
-                      onaylaBtn.click();  // 15 saniye sonra onayla
+                      onaylaBtn.click();
                   }, 15000);
+
               } else {
                   onaylaBtn.classList.add('disabled-btn');
                   yazdirBtn.classList.add('disabled-btn');
