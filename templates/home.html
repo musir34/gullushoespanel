@@ -306,10 +306,8 @@
       <!-- Arşiv Butonu Tek Başına Dursun -->
       <a href="{{ url_for('display_archive') }}" class="btn btn-secondary">Arşiv</a>
 
-      <!-- Çıkış -->
-      <form method="POST" action="{{ url_for('login_logout.logout') }}" id="logoutForm">
-          <button type="submit" id="logoutButton" class="btn btn-danger">Çıkış Yap</button>
-      </form>
+      <!-- Çıkış butonu: form olarak değil, düz link şeklinde yeniden yapılandırıldı -->
+      <a href="{{ url_for('login_logout.logout') }}" class="btn btn-danger" id="logoutLink">Çıkış Yap</a>
   </div>
 
   <div class="container">
@@ -578,18 +576,32 @@
   <!-- Diğer Fonksiyonlar: Barkod, Toast, Modal, Copy, Archive vs. -->
   <script>
     document.addEventListener('DOMContentLoaded', function() {
-      // Çıkış Yap Butonu İşlemleri
-      const logoutButton = document.getElementById('logoutButton');
-      const logoutForm = document.getElementById('logoutForm');
+      // Çıkış Yap Butonu İşlemleri - yeni yapılandırma
+      const logoutLink = document.getElementById('logoutLink');
       
-      if (logoutButton && logoutForm) {
-        logoutButton.addEventListener('click', function(e) {
+      if (logoutLink) {
+        logoutLink.addEventListener('click', function(e) {
           e.preventDefault(); // Varsayılan davranışı engelle
           console.log('Çıkış yapılıyor...');
-          logoutForm.submit(); // Formu manuel olarak gönder
+          // POST isteği gönder
+          fetch(this.href, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            credentials: 'same-origin'
+          })
+          .then(response => {
+            if (response.ok || response.redirected) {
+              window.location.href = '/login'; // Başarılı çıkış sonrası login sayfasına yönlendir
+            }
+          })
+          .catch(error => {
+            console.error('Çıkış yapılırken hata oluştu:', error);
+          });
         });
       } else {
-        console.error('Çıkış butonu veya formu bulunamadı!');
+        console.error('Çıkış linki bulunamadı!');
       }
 
       const barkodInputs = document.querySelectorAll('.barkod-input');
