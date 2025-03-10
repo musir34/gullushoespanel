@@ -59,7 +59,7 @@ def generate_qr():
 
     # QR kod görselinin göreli yolunu döndür
     return jsonify({'success': True, 'qr_code_path': f"/static/qr_codes/{barcode}.png"})
-    
+
 
 # Yardımcı Fonksiyonlar
 def group_products_by_model_and_color(products):
@@ -235,10 +235,10 @@ def background_download_images(image_downloads):
 
 async def save_products_to_db_async(products):
     products = [product for product in products if isinstance(product, dict)]
-    
+
     # Arşivdeki ürün barkodlarını al
     archived_barcodes = set(p.original_product_barcode for p in ProductArchive.query.all())
-    
+
     # Arşivde olan ürünleri filtrele
     products = [p for p in products if p.get('barcode') not in archived_barcodes]
 
@@ -316,7 +316,7 @@ async def save_products_to_db_async(products):
         # Thread başlat
         threading.Thread(target=background_download_images, args=(image_downloads,)).start()
 
-        
+
 
 def check_and_prepare_image_downloads(image_urls, images_folder):
     existing_files = set(os.listdir(images_folder))
@@ -451,7 +451,7 @@ def archive_product():
 
         # Model koduna ait tüm ürünleri bul
         products = Product.query.filter_by(product_main_id=product_main_id).all()
-        
+
         if not products:
             return jsonify({'success': False, 'message': 'Ürün bulunamadı'})
 
@@ -494,7 +494,7 @@ def restore_from_archive():
 
         # Arşivden ürünleri bul
         archived_products = ProductArchive.query.filter_by(product_main_id=product_main_id).all()
-        
+
         if not archived_products:
             return jsonify({'success': False, 'message': 'Arşivde ürün bulunamadı'})
 
@@ -549,7 +549,7 @@ def product_list():
         # Sayfalama için indeksler
         start_idx = (page - 1) * per_page
         end_idx = min(start_idx + per_page, total_groups)
-        
+
         # Mevcut sayfa için ürünleri al
         current_page_keys = sorted_keys[start_idx:end_idx]
         current_page_products = {key: sort_variants_by_size(grouped_products[key]) 
