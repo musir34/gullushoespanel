@@ -307,8 +307,8 @@
       <a href="{{ url_for('display_archive') }}" class="btn btn-secondary">Arşiv</a>
 
       <!-- Çıkış -->
-      <form method="POST" action="{{ url_for('login_logout.logout') }}">
-          <button type="submit" class="btn btn-danger">Çıkış Yap</button>
+      <form method="POST" action="{{ url_for('login_logout.logout') }}" id="logoutForm">
+          <button type="submit" id="logoutButton" class="btn btn-danger">Çıkış Yap</button>
       </form>
   </div>
 
@@ -578,6 +578,25 @@
   <!-- Diğer Fonksiyonlar: Barkod, Toast, Modal, Copy, Archive vs. -->
   <script>
     document.addEventListener('DOMContentLoaded', function () {
+
+  <!-- Çıkış Yap Butonu JavaScript -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const logoutButton = document.getElementById('logoutButton');
+      const logoutForm = document.getElementById('logoutForm');
+      
+      if (logoutButton && logoutForm) {
+        logoutButton.addEventListener('click', function(e) {
+          e.preventDefault(); // Varsayılan davranışı engelle
+          console.log('Çıkış yapılıyor...');
+          logoutForm.submit(); // Formu manuel olarak gönder
+        });
+      } else {
+        console.error('Çıkış butonu veya formu bulunamadı!');
+      }
+    });
+  </script>
+
       const barkodInputs = document.querySelectorAll('.barkod-input');
       const onaylaBtn = document.getElementById('onaylaBtn');
       const yazdirBtn = document.getElementById('yazdirBtn');
