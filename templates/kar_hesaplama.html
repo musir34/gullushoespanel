@@ -1,514 +1,381 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <title>Finansal Özet & Kâr Analizi</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+  <style>
+    /* CSS Reset */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
-{% extends "base.html" %}
+    body {
+      font-family: 'Poppins', sans-serif;
+      background-color: #f4f6f8;
+      color: #333;
+      line-height: 1.6;
+    }
 
-{% block content %}
-<div class="container-fluid py-4">
-  <!-- Ana Başlık Kartı -->
-  <div class="row mb-4">
-    <div class="col-12">
-      <div class="card shadow-sm border-0" style="background-color: #f1f8ff;">
-        <div class="card-body p-4">
-          <div class="d-flex justify-content-between align-items-center">
-            <div>
-              <h2 class="fw-bold mb-1 text-primary">
-                <i class="bi bi-calculator me-2"></i> Kar Analizi Hesaplama
-              </h2>
-              <p class="mb-0 text-secondary">
-                Ürünlerin maliyetlerini girerek model bazında kar marjlarını ve toplam karı hesaplayın
-              </p>
-            </div>
-            <div class="d-flex">
-              <button id="printReport" class="btn btn-sm btn-outline-primary me-2">
-                <i class="bi bi-printer-fill me-1"></i> Yazdır
-              </button>
-              <button id="exportExcel" class="btn btn-sm btn-outline-success">
-                <i class="bi bi-file-excel me-1"></i> Excel
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+    header {
+      background-color: #4a90e2;
+      color: #fff;
+      padding: 1.5rem;
+      text-align: center;
+    }
 
-  <!-- Tarih Filtreleme -->
-  <div class="row mb-4">
-    <div class="col-12">
-      <div class="card shadow-sm border-0">
-        <div class="card-header bg-white">
-          <h5 class="mb-0 text-primary">
-            <i class="bi bi-calendar-range me-2"></i> Tarih Aralığı
-          </h5>
-        </div>
-        <div class="card-body">
-          <form id="dateFilterForm" method="GET" action="{{ url_for('kar_hesaplama.kar_hesaplama') }}">
-            <div class="row align-items-end">
-              <div class="col-md-4">
-                <label for="start_date" class="form-label">Başlangıç Tarihi</label>
-                <input type="date" id="start_date" name="start_date" class="form-control" value="{{ start_date }}">
-              </div>
-              <div class="col-md-4">
-                <label for="end_date" class="form-label">Bitiş Tarihi</label>
-                <input type="date" id="end_date" name="end_date" class="form-control" value="{{ end_date }}">
-              </div>
-              <div class="col-md-4">
-                <button type="submit" class="btn btn-primary w-100">
-                  <i class="bi bi-filter me-1"></i> Filtrele
-                </button>
-              </div>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-  </div>
+    header h1 {
+      font-size: 1.8rem;
+      font-weight: 600;
+    }
 
-  <!-- Ortak Maliyet Kalemleri -->
-  <div class="row mb-4">
-    <div class="col-12">
-      <div class="card shadow-sm border-0">
-        <div class="card-header bg-white">
-          <h5 class="mb-0 text-primary">
-            <i class="bi bi-truck me-2"></i> Ortak Maliyet Kalemleri
-          </h5>
-        </div>
-        <div class="card-body">
-          <div class="row g-4">
-            <div class="col-md-3">
-              <div>
-                <label for="shipping_cost" class="form-label fw-semibold text-secondary">
-                  Kargo Ücreti (TL/ürün)
-                </label>
-                <input 
-                  type="number" 
-                  id="shipping_cost" 
-                  class="form-control" 
-                  min="0" 
-                  step="0.01" 
-                  value="30.00"
-                >
-              </div>
-            </div>
-            <div class="col-md-3">
-              <div>
-                <label for="labor_cost" class="form-label fw-semibold text-secondary">
-                  İşçilik Maliyeti (TL/ürün)
-                </label>
-                <input 
-                  type="number" 
-                  id="labor_cost" 
-                  class="form-control" 
-                  min="0" 
-                  step="0.01" 
-                  value="20.00"
-                >
-              </div>
-            </div>
-            <div class="col-md-3">
-              <div>
-                <label for="packaging_cost" class="form-label fw-semibold text-secondary">
-                  Paketleme Maliyeti (TL/ürün)
-                </label>
-                <input 
-                  type="number" 
-                  id="packaging_cost" 
-                  class="form-control" 
-                  min="0" 
-                  step="0.01" 
-                  value="10.00"
-                >
-              </div>
-            </div>
-            <div class="col-md-3">
-              <div>
-                <label for="exchange_rate" class="form-label fw-semibold text-secondary">
-                  Güncel Dolar Kuru (TL)
-                </label>
-                <div class="input-group">
-                  <input 
-                    type="number" 
-                    id="exchange_rate" 
-                    class="form-control" 
-                    min="0" 
-                    step="0.01" 
-                    value="{{ current_rate }}"
-                  >
-                  <button 
-                    class="btn btn-outline-secondary" 
-                    type="button" 
-                    id="refresh_rate"
-                  >
-                    <i class="bi bi-arrow-repeat"></i>
-                  </button>
-                </div>
-                <small class="text-muted">
-                  Son güncelleme: <span id="last_update">{{ now }}</span>
-                </small>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+    .container {
+      max-width: 1200px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+    }
 
-  <!-- Model Bazlı Maliyet Girişi ve Sonuçlar -->
-  <div class="row">
-    <!-- Model Maliyetleri Kısmı -->
-    <div class="col-lg-8">
-      <div class="card shadow-sm border-0">
-        <div 
-          class="card-header d-flex justify-content-between align-items-center" 
-          style="background-color: #e0f0ff;"
-        >
-          <h5 class="mb-0 text-primary">
-            <i class="bi bi-collection me-2"></i> Barkod Bazlı Maliyetler
-          </h5>
-          <button id="calculate_profit" class="btn btn-primary">
-            <i class="bi bi-calculator"></i> Kar Hesapla
-          </button>
-        </div>
-        <div class="card-body">
-          <div class="table-responsive">
-            <table 
-              class="table table-striped table-bordered align-middle" 
-              id="model_costs_table"
-            >
-              <thead style="background-color: #0d6efd; color: #fff;">
-                <tr>
-                  <th style="width: 80px;">Görsel</th>
-                  <th>Barkod</th>
-                  <th>Ürün Adı</th>
-                  <th class="text-end">Satış Adedi</th>
-                  <th class="text-end">Satış Geliri (TL)</th>
-                  <th class="text-end" style="min-width: 140px;">Birim Maliyet (USD)</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for model in model_data %}
-                <tr data-model-id="{{ model.model_id }}">
-                  <td>
-                    {% if model.image_url %}
-                      <img 
-                        src="{{ url_for('static', filename=model.image_url) if model.image_url.startswith('images/') else model.image_url }}"
-                        class="img-thumbnail" 
-                        style="max-height: 50px;" 
-                        alt="{{ model.model_id }}"
-                        onerror="this.src='{{ url_for('static', filename='images/default.jpg') }}'"
-                      >
-                    {% else %}
-                      <div class="bg-light text-center p-2">
-                        <i class="bi bi-image text-muted"></i>
-                      </div>
-                    {% endif %}
-                  </td>
-                  <td>{{ model.model_id }}</td>
-                  <td>{{ model.title|truncate(30) }}</td>
-                  <td class="text-end">{{ model.count }}</td>
-                  <td class="text-end">{{ "%.2f"|format(model.total_amount) }} ₺</td>
-                  <td>
-                    <input 
-                      type="number" 
-                      class="form-control form-control-sm cost-input text-end" 
-                      data-model-id="{{ model.model_id }}" 
-                      min="0" 
-                      step="0.01" 
-                      value="0"
-                    >
-                  </td>
-                </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </div>
+    .card {
+      background-color: #fff;
+      border-radius: 8px;
+      padding: 1.5rem;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      margin-bottom: 2rem;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
 
-    <!-- Kar Analizi Sonuçları Kısmı -->
-    <div class="col-lg-4">
-      <div class="card shadow-sm border-0">
-        <div class="card-header text-white" style="background-color: #198754;">
-          <h5 class="mb-0">
-            <i class="bi bi-graph-up-arrow me-2"></i> Kar Analizi Sonuçları
-          </h5>
-        </div>
-        <div class="card-body">
-          <!-- Henüz hesap yapılmadıysa gösterilecek kısım -->
-          <div id="results_placeholder">
-            <div class="text-center py-5 text-muted">
-              <i class="bi bi-calculator display-4"></i>
-              <p class="mt-3">
-                Kar analizini görmek için <strong>"Kar Hesapla"</strong> butonuna tıklayın.
-              </p>
-            </div>
-          </div>
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    }
 
-          <!-- Hesaplama sonrası gösterilecek kısım -->
-          <div id="results_container" style="display: none;">
-            <h5 class="border-bottom pb-2 mb-3 text-secondary">Özet</h5>
-            <div class="row g-3 mb-4">
-              <div class="col-6">
-                <div class="card bg-light h-100">
-                  <div class="card-body p-3">
-                    <h6 class="text-muted mb-1">Toplam Gelir</h6>
-                    <h4 class="mb-0 text-primary" id="total_revenue">0 ₺</h4>
-                  </div>
-                </div>
-              </div>
-              <div class="col-6">
-                <div class="card bg-light h-100">
-                  <div class="card-body p-3">
-                    <h6 class="text-muted mb-1">Toplam Maliyet</h6>
-                    <h4 class="mb-0 text-danger" id="total_cost">0 ₺</h4>
-                  </div>
-                </div>
-              </div>
-              <div class="col-6">
-                <div class="card bg-light h-100">
-                  <div class="card-body p-3">
-                    <h6 class="text-muted mb-1">Toplam Kar</h6>
-                    <h4 class="mb-0 text-success" id="total_profit">0 ₺</h4>
-                  </div>
-                </div>
-              </div>
-              <div class="col-6">
-                <div class="card bg-light h-100">
-                  <div class="card-body p-3">
-                    <h6 class="text-muted mb-1">Kar Marjı</h6>
-                    <h4 class="mb-0 text-success" id="profit_margin">%0</h4>
-                  </div>
-                </div>
-              </div>
-            </div>
+    .card-header {
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      border-bottom: 2px solid #e0e0e0;
+      padding-bottom: 0.5rem;
+    }
 
-            <h5 class="border-bottom pb-2 mb-3 text-secondary">Barkod Bazlı Kar Analizi</h5>
-            <div class="table-responsive">
-              <table class="table table-sm align-middle" id="results_table">
-                <thead style="background-color: #0d6efd; color: #fff;">
-                  <tr>
-                    <th>Barkod</th>
-                    <th class="text-end">Adet</th>
-                    <th class="text-end">Kar</th>
-                    <th class="text-end">Marj</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <!-- JavaScript ile doldurulacak -->
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div><!-- card-body -->
-      </div>
-    </div><!-- col-lg-4 -->
-  </div><!-- row -->
-</div><!-- container-fluid -->
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.5rem;
+      margin-top: 1rem;
+    }
 
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    // Döviz kuru yenileme
-    document.getElementById('refresh_rate').addEventListener('click', async function() {
-      try {
-        const response = await fetch('/api/guncel-kur');
-        const data = await response.json();
-        if (data.success) {
-          document.getElementById('exchange_rate').value = data.rate;
-          document.getElementById('last_update').textContent = data.timestamp;
-          showAlert('Döviz kuru başarıyla güncellendi.', 'success');
-        } else {
-          showAlert('Döviz kuru güncellenirken bir hata oluştu: ' + data.error, 'danger');
-        }
-      } catch (error) {
-        showAlert('Döviz kuru güncellenirken bir hata oluştu: ' + error.message, 'danger');
+    .summary-item {
+      background-color: #fafafa;
+      border-radius: 6px;
+      padding: 1rem;
+      text-align: center;
+      transition: background-color 0.3s ease;
+    }
+
+    .summary-item:hover {
+      background-color: #f0f0f0;
+    }
+
+    .summary-item h4 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+
+    .summary-item p {
+      font-size: 0.95rem;
+      color: #666;
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 0.75rem 1.5rem;
+      background-color: #4a90e2;
+      color: #fff;
+      text-decoration: none;
+      border-radius: 5px;
+      font-size: 1rem;
+      font-weight: 500;
+      transition: background-color 0.3s ease;
+    }
+
+    .btn:hover {
+      background-color: #357ab8;
+    }
+
+    .form-group {
+      margin-bottom: 1rem;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 1rem;
+      transition: border-color 0.3s ease;
+    }
+
+    .form-group input:focus {
+      border-color: #4a90e2;
+      outline: none;
+    }
+
+    .results-summary p {
+      font-size: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+    }
+
+    table th, table td {
+      border: 1px solid #ddd;
+      padding: 0.75rem;
+      text-align: center;
+    }
+
+    table th {
+      background-color: #f7f7f7;
+      font-weight: 600;
+    }
+
+    img.product-image {
+      max-width: 80px;
+      max-height: 80px;
+      object-fit: cover;
+    }
+
+    @media (max-width: 600px) {
+      header h1 {
+        font-size: 1.5rem;
       }
-    });
+      .btn {
+        width: 100%;
+        text-align: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Finansal Özet & Kâr Analizi</h1>
+  </header>
 
-    // Kar hesaplama
-    document.getElementById('calculate_profit').addEventListener('click', async function() {
+  <div class="container">
+    <!-- Finansal Özet Kartı -->
+    <div class="card">
+      <div class="card-header">Finansal Özet</div>
+      <p style="color: #777; margin-bottom: 1rem;">Son siparişlerinizin tarih aralığı, kur bilgisi ve rapor indirme bağlantısı</p>
+      <div class="summary-grid">
+        <div class="summary-item">
+          <h4>Tarih Aralığı</h4>
+          <p>
+            Başlangıç: <strong>{{ start_date }}</strong><br>
+            Bitiş: <strong>{{ end_date }}</strong>
+          </p>
+        </div>
+        <div class="summary-item">
+          <h4>Güncel Kur (TL/USD)</h4>
+          <p><strong>{{ current_rate }}</strong></p>
+        </div>
+        <div class="summary-item">
+          <h4>Tarih / Saat</h4>
+          <p>{{ now }}</p>
+        </div>
+        <div class="summary-item">
+          <a href="/api/download-financial-report?start_date={{ start_date }}&end_date={{ end_date }}" class="btn">Excel Rapor İndir</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Kâr Hesaplama Parametreleri Kartı -->
+    <div class="card">
+      <div class="card-header">Kâr Hesaplama Parametreleri</div>
+      <p style="color: #777; margin-bottom: 1rem;">Üretim ve lojistik maliyetlerinizi girerek kâr analizi yapabilirsiniz.</p>
+      <div class="form-group">
+        <label for="shipping_cost">Kargo Maliyeti (TL / adet):</label>
+        <input type="number" step="0.01" id="shipping_cost" value="10">
+      </div>
+      <div class="form-group">
+        <label for="labor_cost">İşçilik (TL / adet):</label>
+        <input type="number" step="0.01" id="labor_cost" value="5">
+      </div>
+      <div class="form-group">
+        <label for="packaging_cost">Paketleme (TL / adet):</label>
+        <input type="number" step="0.01" id="packaging_cost" value="3">
+      </div>
+      <div class="form-group">
+        <label for="exchange_rate">Döviz Kuru (TL / USD):</label>
+        <input type="number" step="0.01" id="exchange_rate" value="27">
+      </div>
+      <button class="btn" onclick="calculateProfit()">Hesapla</button>
+    </div>
+
+    <!-- Kâr Hesaplama Sonuçları Kartı -->
+    <div class="card">
+      <div class="card-header">Kâr Hesaplama Sonuçları</div>
+      <div id="summarySection" class="results-summary">
+        <p style="color: #777;">Henüz hesaplama yapılmadı.</p>
+      </div>
+      <div id="resultsTableContainer" style="display: none;">
+        <div style="overflow-x: auto;">
+          <table id="resultsTable">
+            <thead>
+              <tr>
+                <th>Barkod</th>
+                <th>Sipariş Adedi</th>
+                <th>Toplam Ürün Adedi</th>
+                <th>Ortalama Sipariş Adedi</th>
+                <th>Kâr (TL)</th>
+                <th>Kâr Marjı (%)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Dinamik olarak doldurulacak -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ürün Listesi Kartı -->
+    <div class="card">
+      <div class="card-header">Ürün Listesi</div>
+      <p style="color: #777; margin-bottom: 1rem;">Barkoda göre ürün görselleri ve maliyet girişi yapabilirsiniz.</p>
+      <div id="productListContainer">
+        <table id="productTable">
+          <thead>
+            <tr>
+              <th>Barkod</th>
+              <th>Ürün Görseli</th>
+              <th>Ürün Adı</th>
+              <th>Maliyet (USD)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Ürünler AJAX ile yüklenecek -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Ürün listesindeki maliyet inputlarından barcode_costs oluşturur
+    function getBarcodeCostsFromTable() {
+      const costs = {};
+      const inputs = document.querySelectorAll('.product-cost-input');
+      inputs.forEach(input => {
+        const barcode = input.getAttribute('data-barcode');
+        const value = parseFloat(input.value) || 0;
+        costs[barcode] = value;
+      });
+      return costs;
+    }
+
+    // Ürün listesini yükler: /api/product-list endpoint’inden JSON verisini alır
+    async function loadProducts() {
       try {
-        const modelCosts = {};
-        document.querySelectorAll('.cost-input').forEach(input => {
-          const modelId = input.dataset.modelId;
-          const costValue = parseFloat(input.value) || 0;
-          modelCosts[modelId] = costValue;
+        const response = await fetch('/api/product-list');
+        const result = await response.json();
+        if (!result.success) {
+          alert("Ürün listesi alınırken hata: " + result.error);
+          return;
+        }
+        const tbody = document.getElementById('productTable').querySelector('tbody');
+        tbody.innerHTML = '';
+        result.products.forEach(product => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${product.barcode}</td>
+            <td><img src="${product.image}" alt="${product.name}" class="product-image"></td>
+            <td>${product.name}</td>
+            <td><input type="number" step="0.01" class="product-cost-input" data-barcode="${product.barcode}" value="0"></td>
+          `;
+          tbody.appendChild(tr);
         });
+      } catch (err) {
+        alert("Beklenmeyen bir hata oluştu: " + err);
+      }
+    }
 
-        const shippingCost = parseFloat(document.getElementById('shipping_cost').value) || 0;
-        const laborCost = parseFloat(document.getElementById('labor_cost').value) || 0;
-        const packagingCost = parseFloat(document.getElementById('packaging_cost').value) || 0;
-        const exchangeRate = parseFloat(document.getElementById('exchange_rate').value) || 0;
+    // Kâr hesaplama fonksiyonu; ürün listesindeki maliyetler toplanarak POST isteğinde gönderilir
+    async function calculateProfit() {
+      const shippingCost = parseFloat(document.getElementById('shipping_cost').value) || 0;
+      const laborCost = parseFloat(document.getElementById('labor_cost').value) || 0;
+      const packagingCost = parseFloat(document.getElementById('packaging_cost').value) || 0;
+      const exchangeRate = parseFloat(document.getElementById('exchange_rate').value) || 0;
+      
+      const barcodeCosts = getBarcodeCostsFromTable();
 
+      const postData = {
+        shipping_cost: shippingCost,
+        labor_cost: laborCost,
+        packaging_cost: packagingCost,
+        exchange_rate: exchangeRate,
+        barcode_costs: barcodeCosts
+      };
+
+      try {
         const response = await fetch('/api/hesapla-kar', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            model_costs: modelCosts,
-            shipping_cost: shippingCost,
-            labor_cost: laborCost,
-            packaging_cost: packagingCost,
-            exchange_rate: exchangeRate
-          }),
+          body: JSON.stringify(postData)
+        });
+        const result = await response.json();
+        if (!result.success) {
+          alert("Kâr hesaplamasında hata: " + result.error);
+          return;
+        }
+
+        const summary = result.summary;
+        const summarySection = document.getElementById('summarySection');
+        summarySection.innerHTML = `
+          <strong>Toplam Satış Geliri:</strong> ${summary.total_revenue.toFixed(2)} TL<br>
+          <strong>Toplam Maliyet:</strong> ${summary.total_cost.toFixed(2)} TL<br>
+          <strong>Toplam Kâr:</strong> ${summary.total_profit.toFixed(2)} TL<br>
+          <strong>Kâr Marjı:</strong> ${summary.total_profit_margin.toFixed(2)} %
+        `;
+
+        const tbody = document.getElementById('resultsTable').querySelector('tbody');
+        tbody.innerHTML = '';
+        result.results.forEach(item => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${item.barcode}</td>
+            <td>${item.order_count}</td>
+            <td>${item.total_quantity}</td>
+            <td>${item.avg_order_quantity.toFixed(2)}</td>
+            <td>${item.profit.toFixed(2)}</td>
+            <td>${item.profit_margin.toFixed(2)}</td>
+          `;
+          tbody.appendChild(tr);
         });
 
-        const data = await response.json();
-        if (data.success) {
-          displayResults(data);
-        } else {
-          showAlert('Kar hesaplanırken bir hata oluştu: ' + data.error, 'danger');
-        }
-      } catch (error) {
-        showAlert('Kar hesaplanırken bir hata oluştu: ' + error.message, 'danger');
+        document.getElementById('resultsTableContainer').style.display = result.results.length > 0 ? 'block' : 'none';
+      } catch (err) {
+        alert("Beklenmeyen bir hata oluştu: " + err);
       }
-    });
-
-    // Yazdırma
-    document.getElementById('printReport').addEventListener('click', function() {
-      window.print();
-    });
-
-    // Excel
-    document.getElementById('exportExcel').addEventListener('click', function() {
-      const table = document.getElementById('results_table');
-      if (!table || getComputedStyle(document.getElementById('results_container')).display === 'none') {
-        showAlert('Excel\'e aktarılacak sonuç yok. Önce kar hesaplayın.', 'warning');
-        return;
-      }
-      exportTableToExcel(table, 'Model_Bazli_Kar_Analizi_' + new Date().toISOString().slice(0, 10));
-    });
-
-    function displayResults(data) {
-      document.getElementById('results_placeholder').style.display = 'none';
-      document.getElementById('results_container').style.display = 'block';
-
-      document.getElementById('total_revenue').textContent = formatCurrency(data.summary.total_revenue);
-      document.getElementById('total_cost').textContent = formatCurrency(data.summary.total_cost);
-      document.getElementById('total_profit').textContent = formatCurrency(data.summary.total_profit);
-      document.getElementById('profit_margin').textContent = '%' + data.summary.total_profit_margin.toFixed(2);
-
-      const resultsTableBody = document.getElementById('results_table').getElementsByTagName('tbody')[0];
-      resultsTableBody.innerHTML = '';
-
-      data.results.forEach(item => {
-        const row = resultsTableBody.insertRow();
-
-        // Model
-        const cellModel = row.insertCell();
-        cellModel.innerText = item.model_id;
-
-        // Adet
-        const cellCount = row.insertCell();
-        cellCount.innerText = item.count;
-        cellCount.className = 'text-end';
-
-        // Kar
-        const cellProfit = row.insertCell();
-        cellProfit.innerText = formatCurrency(item.profit);
-        cellProfit.className = 'text-end';
-        if (item.profit < 0) {
-          cellProfit.classList.add('text-danger');
-        } else {
-          cellProfit.classList.add('text-success');
-        }
-
-        // Marj
-        const cellMargin = row.insertCell();
-        cellMargin.innerText = '%' + item.profit_margin.toFixed(2);
-        cellMargin.className = 'text-end';
-        if (item.profit_margin < 0) {
-          cellMargin.classList.add('text-danger');
-        } else {
-          cellMargin.classList.add('text-success');
-        }
-      });
     }
 
-    function formatCurrency(amount) {
-      return new Intl.NumberFormat('tr-TR', {
-        style: 'currency',
-        currency: 'TRY',
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-      }).format(amount);
+    // Sayfa yüklendiğinde ürün listesini çek
+    window.onload = function() {
+      loadProducts();
     }
-
-    function exportTableToExcel(table, filename) {
-      const downloadLink = document.createElement("a");
-      const dataType = 'application/vnd.ms-excel';
-
-      let tableHTML = '<html xmlns:o="urn:schemas-microsoft-com:office:office" ';
-      tableHTML += 'xmlns:x="urn:schemas-microsoft-com:office:excel" ';
-      tableHTML += 'xmlns="http://www.w3.org/TR/REC-html40">';
-      tableHTML += '<head><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets>';
-      tableHTML += '<x:ExcelWorksheet><x:Name>Sheet1</x:Name><x:WorksheetOptions>';
-      tableHTML += '<x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet>';
-      tableHTML += '</x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head>';
-      tableHTML += '<body><table>';
-
-      const headerCells = table.tHead.rows[0].cells;
-      tableHTML += '<tr>';
-      for (const cell of headerCells) {
-        tableHTML += `<th>${cell.innerText}</th>`;
-      }
-      tableHTML += '</tr>';
-
-      for (const row of table.tBodies[0].rows) {
-        tableHTML += '<tr>';
-        for (const cell of row.cells) {
-          tableHTML += `<td>${cell.innerText}</td>`;
-        }
-        tableHTML += '</tr>';
-      }
-
-      tableHTML += '</table></body></html>';
-
-      const blob = new Blob([tableHTML], { type: dataType });
-      downloadLink.href = URL.createObjectURL(blob);
-      downloadLink.download = filename + '.xls';
-      downloadLink.click();
-    }
-
-    function showAlert(message, type = 'success') {
-      const alertDiv = document.createElement('div');
-      alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed bottom-0 end-0 m-3`;
-      alertDiv.style.zIndex = '9999';
-      alertDiv.style.maxWidth = '350px';
-      alertDiv.innerHTML = `
-        ${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-      `;
-      document.body.appendChild(alertDiv);
-
-      setTimeout(() => {
-        alertDiv.classList.remove('show');
-        setTimeout(() => {
-          alertDiv.remove();
-        }, 300);
-      }, 5000);
-    }
-  });
-</script>
-
-<style>
-  @media print {
-    .btn, button, .no-print {
-      display: none !important;
-    }
-    .card {
-      border: 1px solid #ddd !important;
-      box-shadow: none !important;
-    }
-    .card-header {
-      background-color: #f8f9fa !important;
-      color: #000 !important;
-    }
-    body {
-      font-size: 12pt;
-    }
-    .container-fluid {
-      width: 100% !important;
-      max-width: 100% !important;
-    }
-  }
-</style>
-{% endblock %}
+  </script>
+</body>
+</html>
