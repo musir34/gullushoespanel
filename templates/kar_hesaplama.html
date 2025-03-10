@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="tr">
 <head>
@@ -116,11 +115,11 @@
       background-color: #357ab8;
       transform: translateY(-2px);
     }
-    
+
     .btn-secondary {
       background-color: #6c757d;
     }
-    
+
     .btn-secondary:hover {
       background-color: #545b62;
     }
@@ -183,7 +182,7 @@
       border-radius: 4px;
       transition: transform 0.3s ease;
     }
-    
+
     img.product-image:hover {
       transform: scale(1.1);
     }
@@ -192,7 +191,7 @@
       position: relative;
       margin-bottom: 1.5rem;
     }
-    
+
     .search-container input {
       width: 100%;
       padding: 0.75rem 1rem 0.75rem 2.5rem;
@@ -201,13 +200,13 @@
       font-size: 1rem;
       transition: all 0.3s ease;
     }
-    
+
     .search-container input:focus {
       border-color: #4a90e2;
       box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.25);
       outline: none;
     }
-    
+
     .search-container i {
       position: absolute;
       left: 12px;
@@ -222,7 +221,7 @@
       gap: 1.5rem;
       margin-top: 1.5rem;
     }
-    
+
     .product-card {
       background: white;
       border-radius: 8px;
@@ -232,35 +231,35 @@
       display: flex;
       flex-direction: column;
     }
-    
+
     .product-card:hover {
       transform: translateY(-5px);
       box-shadow: 0 6px 15px rgba(0,0,0,0.15);
     }
-    
+
     .product-img-container {
       height: 150px;
       overflow: hidden;
       position: relative;
       background: #f5f5f5;
     }
-    
+
     .product-img-container img {
       width: 100%;
       height: 100%;
       object-fit: cover;
       transition: transform 0.5s ease;
     }
-    
+
     .product-card:hover .product-img-container img {
       transform: scale(1.05);
     }
-    
+
     .product-info {
       padding: 1rem;
       flex: 1;
     }
-    
+
     .product-title {
       font-weight: 600;
       font-size: 0.95rem;
@@ -272,28 +271,28 @@
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
     }
-    
+
     .product-barcode {
       font-size: 0.8rem;
       color: #666;
       margin-bottom: 0.5rem;
     }
-    
+
     .product-stats {
       display: flex;
       justify-content: space-between;
       font-size: 0.85rem;
       margin-bottom: 0.5rem;
     }
-    
+
     .product-stats span {
       color: #555;
     }
-    
+
     .product-stats strong {
       color: #333;
     }
-    
+
     .product-cost-input {
       width: 100%;
       padding: 0.5rem;
@@ -302,23 +301,23 @@
       margin-top: 0.5rem;
       transition: border-color 0.3s;
     }
-    
+
     .product-cost-input:focus {
       border-color: #4a90e2;
       outline: none;
     }
-    
+
     .pagination {
       display: flex;
       justify-content: center;
       list-style: none;
       margin: 2rem 0;
     }
-    
+
     .pagination li {
       margin: 0 0.25rem;
     }
-    
+
     .pagination a {
       display: block;
       padding: 0.5rem 0.75rem;
@@ -329,13 +328,13 @@
       transition: all 0.3s;
       border: 1px solid #ddd;
     }
-    
+
     .pagination a:hover,
     .pagination a.active {
       background: #4a90e2;
       color: #fff;
     }
-    
+
     .badge {
       display: inline-block;
       padding: 0.25rem 0.5rem;
@@ -344,22 +343,22 @@
       border-radius: 25px;
       color: white;
     }
-    
+
     .badge-primary {
       background-color: #4a90e2;
     }
-    
+
     .no-results {
       text-align: center;
       padding: 3rem;
       color: #666;
     }
-    
+
     .loading {
       text-align: center;
       padding: 2rem;
     }
-    
+
     .spinner {
       border: 4px solid rgba(0, 0, 0, 0.1);
       width: 36px;
@@ -369,12 +368,12 @@
       animation: spin 1s linear infinite;
       margin: 0 auto;
     }
-    
+
     @keyframes spin {
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
     }
-    
+
     .bulk-edit-panel {
       background: #f9f9f9;
       padding: 1rem;
@@ -382,26 +381,26 @@
       margin-bottom: 1.5rem;
       border: 1px dashed #ddd;
     }
-    
+
     .bulk-edit-title {
       font-weight: 600;
       margin-bottom: 0.75rem;
       display: flex;
       align-items: center;
     }
-    
+
     .bulk-edit-title i {
       margin-right: 0.5rem;
       color: #4a90e2;
     }
-    
+
     .bulk-edit-controls {
       display: flex;
       gap: 1rem;
       align-items: center;
       flex-wrap: wrap;
     }
-    
+
     .toast {
       position: fixed;
       bottom: 20px;
@@ -416,16 +415,16 @@
       transform: translateY(100px);
       opacity: 0;
     }
-    
+
     .toast.show {
       transform: translateY(0);
       opacity: 1;
     }
-    
+
     .toast-success {
       background: #28a745;
     }
-    
+
     .toast-error {
       background: #dc3545;
     }
@@ -434,16 +433,16 @@
       .product-grid {
         grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
       }
-      
+
       .summary-grid {
         grid-template-columns: 1fr;
       }
-      
+
       .bulk-edit-controls {
         flex-direction: column;
         align-items: stretch;
       }
-      
+
       .bulk-edit-controls > * {
         margin-bottom: 0.5rem;
       }
@@ -556,7 +555,7 @@
         </div>
       </div>
       <p style="color: #777; margin-bottom: 1rem;">Barkoda göre ürün görselleri ve maliyet girişi yapabilirsiniz.</p>
-      
+
       <!-- Toplu Düzenleme Paneli -->
       <div id="bulkEditPanel" class="bulk-edit-panel" style="display: none;">
         <div class="bulk-edit-title">
@@ -586,27 +585,27 @@
         <i class="fas fa-search"></i>
         <input type="text" id="productSearch" placeholder="Ürün adı veya barkod ile ara..." onkeyup="filterProducts()">
       </div>
-      
+
       <!-- Yükleniyor Göstergesi -->
       <div id="loadingIndicator" class="loading">
         <div class="spinner"></div>
         <p>Ürünler yükleniyor...</p>
       </div>
-      
+
       <!-- Ürün Kartları Grid Yapısı -->
       <div id="productGrid" class="product-grid" style="display: none;"></div>
-      
+
       <!-- Sonuç Bulunamadı Mesajı -->
       <div id="noResults" class="no-results" style="display: none;">
         <i class="fas fa-search" style="font-size: 2rem; color: #ddd; margin-bottom: 1rem;"></i>
         <h3>Sonuç Bulunamadı</h3>
         <p>Arama kriterlerinize uygun ürün bulunamadı.</p>
       </div>
-      
+
       <!-- Sayfalama -->
       <ul id="pagination" class="pagination"></ul>
     </div>
-    
+
     <!-- Toast bildirim -->
     <div id="toast" class="toast">
       <div id="toastMessage">İşlem başarıyla tamamlandı</div>
@@ -620,20 +619,20 @@
     let currentPage = 1;
     const productsPerPage = 20;
     let selectedProductsForBulk = new Set();
-    
+
     // Sayfa yüklendiğinde çalışacak fonksiyon
     window.onload = function() {
       loadProducts();
     };
-    
+
     // Sayfalama fonksiyonu
     function renderPagination() {
       const totalPages = Math.ceil(displayedProducts.length / productsPerPage);
       const paginationElement = document.getElementById('pagination');
       paginationElement.innerHTML = '';
-      
+
       if (totalPages <= 1) return;
-      
+
       // Önceki sayfa linki
       if (currentPage > 1) {
         const li = document.createElement('li');
@@ -648,11 +647,11 @@
         li.appendChild(a);
         paginationElement.appendChild(li);
       }
-      
+
       // Sayfa numaraları
       const startPage = Math.max(1, currentPage - 2);
       const endPage = Math.min(totalPages, startPage + 4);
-      
+
       for (let i = startPage; i <= endPage; i++) {
         const li = document.createElement('li');
         const a = document.createElement('a');
@@ -669,7 +668,7 @@
         li.appendChild(a);
         paginationElement.appendChild(li);
       }
-      
+
       // Sonraki sayfa linki
       if (currentPage < totalPages) {
         const li = document.createElement('li');
@@ -685,26 +684,32 @@
         paginationElement.appendChild(li);
       }
     }
-    
-    // Ürün kartlarını render eden fonksiyon
+
+    // Ürün listesi kartları - performans optimizasyonu
     function renderProductGrid() {
       const productGrid = document.getElementById('productGrid');
       productGrid.innerHTML = '';
-      
+
       const startIndex = (currentPage - 1) * productsPerPage;
       const endIndex = Math.min(startIndex + productsPerPage, displayedProducts.length);
-      
+
+      // Fragment kullanarak DOM manipülasyonlarını azaltıyoruz
+      const fragment = document.createDocumentFragment();
+
       for (let i = startIndex; i < endIndex; i++) {
-        const product = displayedProducts[i];
-        const card = createProductCard(product);
-        productGrid.appendChild(card);
+        if (displayedProducts[i]) {
+          const product = displayedProducts[i];
+          const card = createProductCard(product);
+          fragment.appendChild(card);
+        }
       }
-      
+
+      productGrid.appendChild(fragment);
       renderPagination();
-      
+
       // Eğer sayfa işlendiyse loading göstergesini gizle
       document.getElementById('loadingIndicator').style.display = 'none';
-      
+
       // Ürünler varsa grid'i göster, yoksa no-results mesajını göster
       if (displayedProducts.length > 0) {
         productGrid.style.display = 'grid';
@@ -714,54 +719,56 @@
         document.getElementById('noResults').style.display = 'block';
       }
     }
-    
+
     // Ürün kartı oluşturan fonksiyon
     function createProductCard(product) {
       const card = document.createElement('div');
       card.className = 'product-card';
       card.dataset.barcode = product.model_id;
-      
+
       // Eğer toplu maliyet düzenleme için seçilmişse
       if (selectedProductsForBulk.has(product.model_id)) {
         card.style.borderColor = '#4a90e2';
         card.style.borderWidth = '2px';
         card.style.borderStyle = 'solid';
       }
-      
+
       // Ürün görseli
       const imageUrl = product.image_url || '/static/images/default.jpg';
       const title = product.title || 'İsimsiz Ürün';
-      
+      const count = product.count || 0;
+      const total_amount = product.total_amount || 0;
+
       card.innerHTML = `
         <div class="product-img-container">
-          <img src="${imageUrl}" alt="${title}" class="product-image">
+          <img src="${imageUrl}" alt="${title}" class="product-image" loading="lazy">
         </div>
         <div class="product-info">
           <div class="product-title">${title}</div>
           <div class="product-barcode">${product.model_id}</div>
           <div class="product-stats">
-            <span>Satış: <strong>${product.count}</strong></span>
-            <span>Tutar: <strong>${product.total_amount.toLocaleString('tr-TR')} TL</strong></span>
+            <span>Satış: <strong>${count}</strong></span>
+            <span>Tutar: <strong>${total_amount.toLocaleString('tr-TR')} TL</strong></span>
           </div>
           <label>Maliyet (USD):</label>
           <input type="number" step="0.01" class="product-cost-input" data-barcode="${product.model_id}" value="0">
         </div>
       `;
-      
-      // Toplu seçim için kart tıklama olayı
+
+      // Toplu seçim için kart tıklama olayı - Performans için delegasyon kullanıyoruz
       card.addEventListener('click', function(e) {
         // Eğer input'a tıklanmışsa event'i bubble etme
         if (e.target.tagName === 'INPUT') return;
-        
+
         if (document.getElementById('bulkEditPanel').style.display !== 'none' && 
             document.getElementById('categoryFilter').value === 'custom') {
           toggleProductSelection(product.model_id, card);
         }
       });
-      
+
       return card;
     }
-    
+
     // Ürün seçimini togglelayan fonksiyon
     function toggleProductSelection(barcode, cardElement) {
       if (selectedProductsForBulk.has(barcode)) {
@@ -776,7 +783,7 @@
         cardElement.style.borderStyle = 'solid';
       }
     }
-    
+
     // Toplu maliyet düzenleme panelini toggle eden fonksiyon
     function toggleBulkEditPanel() {
       const panel = document.getElementById('bulkEditPanel');
@@ -788,7 +795,7 @@
         renderProductGrid(); // Seçimleri temizlemek için yeniden render
       }
     }
-    
+
     // Toplu maliyet düzenlemeyi uygulayan fonksiyon
     function applyBulkEdit() {
       const costValue = parseFloat(document.getElementById('bulkCostValue').value);
@@ -796,10 +803,10 @@
         showToast('Lütfen geçerli bir maliyet değeri girin', 'error');
         return;
       }
-      
+
       const selectionType = document.getElementById('categoryFilter').value;
       let updatedCount = 0;
-      
+
       // Seçim tipine göre ürünleri güncelle
       if (selectionType === 'all') {
         // Tüm ürünleri güncelle
@@ -812,7 +819,7 @@
         // Sadece şu anda görünen ürünleri güncelle
         const startIndex = (currentPage - 1) * productsPerPage;
         const endIndex = Math.min(startIndex + productsPerPage, displayedProducts.length);
-        
+
         for (let i = startIndex; i < endIndex; i++) {
           const barcode = displayedProducts[i].model_id;
           const input = document.querySelector(`.product-cost-input[data-barcode="${barcode}"]`);
@@ -831,34 +838,34 @@
           }
         });
       }
-      
+
       showToast(`${updatedCount} ürünün maliyeti ${costValue} USD olarak güncellendi`, 'success');
     }
-    
+
     // Toast mesajı gösteren fonksiyon
     function showToast(message, type = 'success') {
       const toast = document.getElementById('toast');
       const toastMessage = document.getElementById('toastMessage');
-      
+
       toast.className = 'toast';
       if (type === 'success') {
         toast.classList.add('toast-success');
       } else if (type === 'error') {
         toast.classList.add('toast-error');
       }
-      
+
       toastMessage.textContent = message;
       toast.classList.add('show');
-      
+
       setTimeout(() => {
         toast.classList.remove('show');
       }, 3000);
     }
-    
+
     // Ürünleri filtreleme fonksiyonu
     function filterProducts() {
       const searchValue = document.getElementById('productSearch').value.toLowerCase();
-      
+
       if (searchValue.trim() === '') {
         displayedProducts = [...allProducts];
       } else {
@@ -868,11 +875,11 @@
           return title.includes(searchValue) || barcode.includes(searchValue);
         });
       }
-      
+
       currentPage = 1;
       renderProductGrid();
     }
-    
+
     // Ürünleri API'den yükleyen fonksiyon
     async function loadProducts() {
       try {
@@ -880,21 +887,21 @@
         if (!response.ok) {
           throw new Error('Ürünler yüklenirken bir hata oluştu');
         }
-        
+
         const result = await response.json();
         if (!result.success) {
           showToast(`Ürün listesi alınırken hata: ${result.error}`, 'error');
           return;
         }
-        
+
         allProducts = result.products;
         displayedProducts = [...allProducts];
-        
+
         renderProductGrid();
       } catch (err) {
         console.error("Ürün listesi yüklenirken hata:", err);
         showToast(`Beklenmeyen bir hata oluştu: ${err.message}`, 'error');
-        
+
         document.getElementById('loadingIndicator').style.display = 'none';
         document.getElementById('noResults').style.display = 'block';
       }
@@ -925,7 +932,7 @@
         shipping_cost: shippingCost,
         labor_cost: laborCost,
         packaging_cost: packagingCost,
-        exchange_rate: exchangeRate,
+        exchangerate: exchangeRate,
         barcode_costs: barcodeCosts
       };
 
