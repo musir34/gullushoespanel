@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="tr">
 <head>
@@ -6,6 +7,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css">
   <style>
     /* CSS Reset */
     * {
@@ -26,6 +29,7 @@
       color: #fff;
       padding: 1.5rem;
       text-align: center;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
     }
 
     header h1 {
@@ -59,6 +63,9 @@
       margin-bottom: 1rem;
       border-bottom: 2px solid #e0e0e0;
       padding-bottom: 0.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
 
     .summary-grid {
@@ -100,11 +107,22 @@
       border-radius: 5px;
       font-size: 1rem;
       font-weight: 500;
-      transition: background-color 0.3s ease;
+      border: none;
+      cursor: pointer;
+      transition: background-color 0.3s ease, transform 0.2s ease;
     }
 
     .btn:hover {
       background-color: #357ab8;
+      transform: translateY(-2px);
+    }
+    
+    .btn-secondary {
+      background-color: #6c757d;
+    }
+    
+    .btn-secondary:hover {
+      background-color: #545b62;
     }
 
     .form-group {
@@ -129,6 +147,7 @@
     .form-group input:focus {
       border-color: #4a90e2;
       outline: none;
+      box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.25);
     }
 
     .results-summary p {
@@ -140,6 +159,7 @@
       width: 100%;
       border-collapse: collapse;
       margin-top: 1rem;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
     }
 
     table th, table td {
@@ -151,12 +171,282 @@
     table th {
       background-color: #f7f7f7;
       font-weight: 600;
+      position: sticky;
+      top: 0;
+      z-index: 10;
     }
 
     img.product-image {
       max-width: 80px;
       max-height: 80px;
       object-fit: cover;
+      border-radius: 4px;
+      transition: transform 0.3s ease;
+    }
+    
+    img.product-image:hover {
+      transform: scale(1.1);
+    }
+
+    .search-container {
+      position: relative;
+      margin-bottom: 1.5rem;
+    }
+    
+    .search-container input {
+      width: 100%;
+      padding: 0.75rem 1rem 0.75rem 2.5rem;
+      border: 1px solid #ccc;
+      border-radius: 25px;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+    }
+    
+    .search-container input:focus {
+      border-color: #4a90e2;
+      box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.25);
+      outline: none;
+    }
+    
+    .search-container i {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #777;
+    }
+
+    .product-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 1.5rem;
+      margin-top: 1.5rem;
+    }
+    
+    .product-card {
+      background: white;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .product-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 6px 15px rgba(0,0,0,0.15);
+    }
+    
+    .product-img-container {
+      height: 150px;
+      overflow: hidden;
+      position: relative;
+      background: #f5f5f5;
+    }
+    
+    .product-img-container img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.5s ease;
+    }
+    
+    .product-card:hover .product-img-container img {
+      transform: scale(1.05);
+    }
+    
+    .product-info {
+      padding: 1rem;
+      flex: 1;
+    }
+    
+    .product-title {
+      font-weight: 600;
+      font-size: 0.95rem;
+      margin-bottom: 0.5rem;
+      color: #333;
+      height: 40px;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
+    
+    .product-barcode {
+      font-size: 0.8rem;
+      color: #666;
+      margin-bottom: 0.5rem;
+    }
+    
+    .product-stats {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      margin-bottom: 0.5rem;
+    }
+    
+    .product-stats span {
+      color: #555;
+    }
+    
+    .product-stats strong {
+      color: #333;
+    }
+    
+    .product-cost-input {
+      width: 100%;
+      padding: 0.5rem;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      margin-top: 0.5rem;
+      transition: border-color 0.3s;
+    }
+    
+    .product-cost-input:focus {
+      border-color: #4a90e2;
+      outline: none;
+    }
+    
+    .pagination {
+      display: flex;
+      justify-content: center;
+      list-style: none;
+      margin: 2rem 0;
+    }
+    
+    .pagination li {
+      margin: 0 0.25rem;
+    }
+    
+    .pagination a {
+      display: block;
+      padding: 0.5rem 0.75rem;
+      border-radius: 4px;
+      background: #fff;
+      color: #4a90e2;
+      text-decoration: none;
+      transition: all 0.3s;
+      border: 1px solid #ddd;
+    }
+    
+    .pagination a:hover,
+    .pagination a.active {
+      background: #4a90e2;
+      color: #fff;
+    }
+    
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.5rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      border-radius: 25px;
+      color: white;
+    }
+    
+    .badge-primary {
+      background-color: #4a90e2;
+    }
+    
+    .no-results {
+      text-align: center;
+      padding: 3rem;
+      color: #666;
+    }
+    
+    .loading {
+      text-align: center;
+      padding: 2rem;
+    }
+    
+    .spinner {
+      border: 4px solid rgba(0, 0, 0, 0.1);
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border-left-color: #4a90e2;
+      animation: spin 1s linear infinite;
+      margin: 0 auto;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    .bulk-edit-panel {
+      background: #f9f9f9;
+      padding: 1rem;
+      border-radius: 8px;
+      margin-bottom: 1.5rem;
+      border: 1px dashed #ddd;
+    }
+    
+    .bulk-edit-title {
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+    }
+    
+    .bulk-edit-title i {
+      margin-right: 0.5rem;
+      color: #4a90e2;
+    }
+    
+    .bulk-edit-controls {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #333;
+      color: white;
+      padding: 1rem;
+      border-radius: 5px;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+      z-index: 1000;
+      transition: all 0.3s;
+      transform: translateY(100px);
+      opacity: 0;
+    }
+    
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+    
+    .toast-success {
+      background: #28a745;
+    }
+    
+    .toast-error {
+      background: #dc3545;
+    }
+
+    @media (max-width: 768px) {
+      .product-grid {
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      }
+      
+      .summary-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .bulk-edit-controls {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      
+      .bulk-edit-controls > * {
+        margin-bottom: 0.5rem;
+      }
     }
 
     @media (max-width: 600px) {
@@ -166,6 +456,9 @@
       .btn {
         width: 100%;
         text-align: center;
+      }
+      .product-grid {
+        grid-template-columns: 1fr;
       }
     }
   </style>
@@ -252,29 +545,361 @@
       </div>
     </div>
 
-    <!-- Ürün Listesi Kartı -->
+    <!-- Ürün Listesi Kartı - Yeni Tasarım -->
     <div class="card">
-      <div class="card-header">Ürün Listesi</div>
-      <p style="color: #777; margin-bottom: 1rem;">Barkoda göre ürün görselleri ve maliyet girişi yapabilirsiniz.</p>
-      <div id="productListContainer">
-        <table id="productTable">
-          <thead>
-            <tr>
-              <th>Barkod</th>
-              <th>Ürün Görseli</th>
-              <th>Ürün Adı</th>
-              <th>Maliyet (USD)</th>
-            </tr>
-          </thead>
-          <tbody>
-            <!-- Ürünler AJAX ile yüklenecek -->
-          </tbody>
-        </table>
+      <div class="card-header">
+        <span>Ürün Listesi</span>
+        <div>
+          <button class="btn btn-secondary" onclick="toggleBulkEditPanel()">
+            <i class="fas fa-edit"></i> Toplu Maliyet Düzenleme
+          </button>
+        </div>
       </div>
+      <p style="color: #777; margin-bottom: 1rem;">Barkoda göre ürün görselleri ve maliyet girişi yapabilirsiniz.</p>
+      
+      <!-- Toplu Düzenleme Paneli -->
+      <div id="bulkEditPanel" class="bulk-edit-panel" style="display: none;">
+        <div class="bulk-edit-title">
+          <i class="fas fa-layer-group"></i> Toplu Maliyet Düzenleyici
+        </div>
+        <div class="bulk-edit-controls">
+          <div style="flex: 1;">
+            <label for="categoryFilter">Seçim Tipi:</label>
+            <select id="categoryFilter" class="form-control">
+              <option value="all">Tüm Ürünler</option>
+              <option value="visible">Görünen Ürünler</option>
+              <option value="custom">Özel Seçim</option>
+            </select>
+          </div>
+          <div style="flex: 1;">
+            <label for="bulkCostValue">Maliyet (USD):</label>
+            <input type="number" step="0.01" id="bulkCostValue" class="form-control" placeholder="Yeni maliyet değeri">
+          </div>
+          <div>
+            <button class="btn" onclick="applyBulkEdit()" style="margin-top: 1.5rem;">Uygula</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Arama Kutusu -->
+      <div class="search-container">
+        <i class="fas fa-search"></i>
+        <input type="text" id="productSearch" placeholder="Ürün adı veya barkod ile ara..." onkeyup="filterProducts()">
+      </div>
+      
+      <!-- Yükleniyor Göstergesi -->
+      <div id="loadingIndicator" class="loading">
+        <div class="spinner"></div>
+        <p>Ürünler yükleniyor...</p>
+      </div>
+      
+      <!-- Ürün Kartları Grid Yapısı -->
+      <div id="productGrid" class="product-grid" style="display: none;"></div>
+      
+      <!-- Sonuç Bulunamadı Mesajı -->
+      <div id="noResults" class="no-results" style="display: none;">
+        <i class="fas fa-search" style="font-size: 2rem; color: #ddd; margin-bottom: 1rem;"></i>
+        <h3>Sonuç Bulunamadı</h3>
+        <p>Arama kriterlerinize uygun ürün bulunamadı.</p>
+      </div>
+      
+      <!-- Sayfalama -->
+      <ul id="pagination" class="pagination"></ul>
+    </div>
+    
+    <!-- Toast bildirim -->
+    <div id="toast" class="toast">
+      <div id="toastMessage">İşlem başarıyla tamamlandı</div>
     </div>
   </div>
 
   <script>
+    // Global değişkenler
+    let allProducts = [];
+    let displayedProducts = [];
+    let currentPage = 1;
+    const productsPerPage = 20;
+    let selectedProductsForBulk = new Set();
+    
+    // Sayfa yüklendiğinde çalışacak fonksiyon
+    window.onload = function() {
+      loadProducts();
+    };
+    
+    // Sayfalama fonksiyonu
+    function renderPagination() {
+      const totalPages = Math.ceil(displayedProducts.length / productsPerPage);
+      const paginationElement = document.getElementById('pagination');
+      paginationElement.innerHTML = '';
+      
+      if (totalPages <= 1) return;
+      
+      // Önceki sayfa linki
+      if (currentPage > 1) {
+        const li = document.createElement('li');
+        const a = document.createElement('a');
+        a.href = '#';
+        a.innerHTML = '&laquo;';
+        a.addEventListener('click', function(e) {
+          e.preventDefault();
+          currentPage--;
+          renderProductGrid();
+        });
+        li.appendChild(a);
+        paginationElement.appendChild(li);
+      }
+      
+      // Sayfa numaraları
+      const startPage = Math.max(1, currentPage - 2);
+      const endPage = Math.min(totalPages, startPage + 4);
+      
+      for (let i = startPage; i <= endPage; i++) {
+        const li = document.createElement('li');
+        const a = document.createElement('a');
+        a.href = '#';
+        a.textContent = i;
+        if (i === currentPage) {
+          a.classList.add('active');
+        }
+        a.addEventListener('click', function(e) {
+          e.preventDefault();
+          currentPage = i;
+          renderProductGrid();
+        });
+        li.appendChild(a);
+        paginationElement.appendChild(li);
+      }
+      
+      // Sonraki sayfa linki
+      if (currentPage < totalPages) {
+        const li = document.createElement('li');
+        const a = document.createElement('a');
+        a.href = '#';
+        a.innerHTML = '&raquo;';
+        a.addEventListener('click', function(e) {
+          e.preventDefault();
+          currentPage++;
+          renderProductGrid();
+        });
+        li.appendChild(a);
+        paginationElement.appendChild(li);
+      }
+    }
+    
+    // Ürün kartlarını render eden fonksiyon
+    function renderProductGrid() {
+      const productGrid = document.getElementById('productGrid');
+      productGrid.innerHTML = '';
+      
+      const startIndex = (currentPage - 1) * productsPerPage;
+      const endIndex = Math.min(startIndex + productsPerPage, displayedProducts.length);
+      
+      for (let i = startIndex; i < endIndex; i++) {
+        const product = displayedProducts[i];
+        const card = createProductCard(product);
+        productGrid.appendChild(card);
+      }
+      
+      renderPagination();
+      
+      // Eğer sayfa işlendiyse loading göstergesini gizle
+      document.getElementById('loadingIndicator').style.display = 'none';
+      
+      // Ürünler varsa grid'i göster, yoksa no-results mesajını göster
+      if (displayedProducts.length > 0) {
+        productGrid.style.display = 'grid';
+        document.getElementById('noResults').style.display = 'none';
+      } else {
+        productGrid.style.display = 'none';
+        document.getElementById('noResults').style.display = 'block';
+      }
+    }
+    
+    // Ürün kartı oluşturan fonksiyon
+    function createProductCard(product) {
+      const card = document.createElement('div');
+      card.className = 'product-card';
+      card.dataset.barcode = product.model_id;
+      
+      // Eğer toplu maliyet düzenleme için seçilmişse
+      if (selectedProductsForBulk.has(product.model_id)) {
+        card.style.borderColor = '#4a90e2';
+        card.style.borderWidth = '2px';
+        card.style.borderStyle = 'solid';
+      }
+      
+      // Ürün görseli
+      const imageUrl = product.image_url || '/static/images/default.jpg';
+      const title = product.title || 'İsimsiz Ürün';
+      
+      card.innerHTML = `
+        <div class="product-img-container">
+          <img src="${imageUrl}" alt="${title}" class="product-image">
+        </div>
+        <div class="product-info">
+          <div class="product-title">${title}</div>
+          <div class="product-barcode">${product.model_id}</div>
+          <div class="product-stats">
+            <span>Satış: <strong>${product.count}</strong></span>
+            <span>Tutar: <strong>${product.total_amount.toLocaleString('tr-TR')} TL</strong></span>
+          </div>
+          <label>Maliyet (USD):</label>
+          <input type="number" step="0.01" class="product-cost-input" data-barcode="${product.model_id}" value="0">
+        </div>
+      `;
+      
+      // Toplu seçim için kart tıklama olayı
+      card.addEventListener('click', function(e) {
+        // Eğer input'a tıklanmışsa event'i bubble etme
+        if (e.target.tagName === 'INPUT') return;
+        
+        if (document.getElementById('bulkEditPanel').style.display !== 'none' && 
+            document.getElementById('categoryFilter').value === 'custom') {
+          toggleProductSelection(product.model_id, card);
+        }
+      });
+      
+      return card;
+    }
+    
+    // Ürün seçimini togglelayan fonksiyon
+    function toggleProductSelection(barcode, cardElement) {
+      if (selectedProductsForBulk.has(barcode)) {
+        selectedProductsForBulk.delete(barcode);
+        cardElement.style.borderColor = '';
+        cardElement.style.borderWidth = '';
+        cardElement.style.borderStyle = '';
+      } else {
+        selectedProductsForBulk.add(barcode);
+        cardElement.style.borderColor = '#4a90e2';
+        cardElement.style.borderWidth = '2px';
+        cardElement.style.borderStyle = 'solid';
+      }
+    }
+    
+    // Toplu maliyet düzenleme panelini toggle eden fonksiyon
+    function toggleBulkEditPanel() {
+      const panel = document.getElementById('bulkEditPanel');
+      if (panel.style.display === 'none') {
+        panel.style.display = 'block';
+      } else {
+        panel.style.display = 'none';
+        selectedProductsForBulk.clear();
+        renderProductGrid(); // Seçimleri temizlemek için yeniden render
+      }
+    }
+    
+    // Toplu maliyet düzenlemeyi uygulayan fonksiyon
+    function applyBulkEdit() {
+      const costValue = parseFloat(document.getElementById('bulkCostValue').value);
+      if (isNaN(costValue)) {
+        showToast('Lütfen geçerli bir maliyet değeri girin', 'error');
+        return;
+      }
+      
+      const selectionType = document.getElementById('categoryFilter').value;
+      let updatedCount = 0;
+      
+      // Seçim tipine göre ürünleri güncelle
+      if (selectionType === 'all') {
+        // Tüm ürünleri güncelle
+        const inputs = document.querySelectorAll('.product-cost-input');
+        inputs.forEach(input => {
+          input.value = costValue;
+          updatedCount++;
+        });
+      } else if (selectionType === 'visible') {
+        // Sadece şu anda görünen ürünleri güncelle
+        const startIndex = (currentPage - 1) * productsPerPage;
+        const endIndex = Math.min(startIndex + productsPerPage, displayedProducts.length);
+        
+        for (let i = startIndex; i < endIndex; i++) {
+          const barcode = displayedProducts[i].model_id;
+          const input = document.querySelector(`.product-cost-input[data-barcode="${barcode}"]`);
+          if (input) {
+            input.value = costValue;
+            updatedCount++;
+          }
+        }
+      } else if (selectionType === 'custom') {
+        // Özel seçilmiş ürünleri güncelle
+        selectedProductsForBulk.forEach(barcode => {
+          const input = document.querySelector(`.product-cost-input[data-barcode="${barcode}"]`);
+          if (input) {
+            input.value = costValue;
+            updatedCount++;
+          }
+        });
+      }
+      
+      showToast(`${updatedCount} ürünün maliyeti ${costValue} USD olarak güncellendi`, 'success');
+    }
+    
+    // Toast mesajı gösteren fonksiyon
+    function showToast(message, type = 'success') {
+      const toast = document.getElementById('toast');
+      const toastMessage = document.getElementById('toastMessage');
+      
+      toast.className = 'toast';
+      if (type === 'success') {
+        toast.classList.add('toast-success');
+      } else if (type === 'error') {
+        toast.classList.add('toast-error');
+      }
+      
+      toastMessage.textContent = message;
+      toast.classList.add('show');
+      
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 3000);
+    }
+    
+    // Ürünleri filtreleme fonksiyonu
+    function filterProducts() {
+      const searchValue = document.getElementById('productSearch').value.toLowerCase();
+      
+      if (searchValue.trim() === '') {
+        displayedProducts = [...allProducts];
+      } else {
+        displayedProducts = allProducts.filter(product => {
+          const title = (product.title || '').toLowerCase();
+          const barcode = (product.model_id || '').toLowerCase();
+          return title.includes(searchValue) || barcode.includes(searchValue);
+        });
+      }
+      
+      currentPage = 1;
+      renderProductGrid();
+    }
+    
+    // Ürünleri API'den yükleyen fonksiyon
+    async function loadProducts() {
+      try {
+        const response = await fetch('/api/product-list');
+        if (!response.ok) {
+          throw new Error('Ürünler yüklenirken bir hata oluştu');
+        }
+        
+        const result = await response.json();
+        if (!result.success) {
+          showToast(`Ürün listesi alınırken hata: ${result.error}`, 'error');
+          return;
+        }
+        
+        allProducts = result.products;
+        displayedProducts = [...allProducts];
+        
+        renderProductGrid();
+      } catch (err) {
+        console.error("Ürün listesi yüklenirken hata:", err);
+        showToast(`Beklenmeyen bir hata oluştu: ${err.message}`, 'error');
+        
+        document.getElementById('loadingIndicator').style.display = 'none';
+        document.getElementById('noResults').style.display = 'block';
+      }
+    }
+
     // Ürün listesindeki maliyet inputlarından barcode_costs oluşturur
     function getBarcodeCostsFromTable() {
       const costs = {};
@@ -287,41 +912,7 @@
       return costs;
     }
 
-    // Ürün listesini yükler: /api/product-list endpoint’inden JSON verisini alır
-    async function loadProducts() {
-      try {
-        const response = await fetch('/api/product-list');
-        const result = await response.json();
-        if (!result.success) {
-          alert("Ürün listesi alınırken hata: " + result.error);
-          return;
-        }
-        const tbody = document.getElementById('productTable').querySelector('tbody');
-        tbody.innerHTML = '';
-        result.products.forEach(product => {
-          // API'den gelen doğru alanları kullanıyoruz
-          const barcode = product.barcode || '';
-          // Görsel için kontrol yapıp, yoksa varsayılan görsel kullanıyoruz
-          const imageUrl = product.images || '/static/images/default.jpg';
-          // Ürün başlığı için kontrol
-          const title = product.title || 'İsimsiz Ürün';
-
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-            <td>${barcode}</td>
-            <td><img src="${imageUrl}" alt="${title}" class="product-image"></td>
-            <td>${title}</td>
-            <td><input type="number" step="0.01" class="product-cost-input" data-barcode="${barcode}" value="0"></td>
-          `;
-          tbody.appendChild(tr);
-        });
-      } catch (err) {
-        console.error("Ürün listesi yüklenirken hata:", err);
-        alert("Beklenmeyen bir hata oluştu: " + err);
-      }
-    }
-
-    // Kâr hesaplama fonksiyonu; ürün listesindeki maliyetler toplanarak POST isteğinde gönderilir
+    // Kâr hesaplama fonksiyonu
     async function calculateProfit() {
       const shippingCost = parseFloat(document.getElementById('shipping_cost').value) || 0;
       const laborCost = parseFloat(document.getElementById('labor_cost').value) || 0;
@@ -346,7 +937,7 @@
         });
         const result = await response.json();
         if (!result.success) {
-          alert("Kâr hesaplamasında hata: " + result.error);
+          showToast(`Kâr hesaplamasında hata: ${result.error}`, 'error');
           return;
         }
 
@@ -364,10 +955,10 @@
         result.results.forEach(item => {
           const tr = document.createElement('tr');
           tr.innerHTML = `
-            <td>${item.barcode}</td>
-            <td>${item.order_count}</td>
-            <td>${item.total_quantity}</td>
-            <td>${item.avg_order_quantity.toFixed(2)}</td>
+            <td>${item.model_id}</td>
+            <td>${item.order_count || '-'}</td>
+            <td>${item.count}</td>
+            <td>${(item.count / (item.order_count || 1)).toFixed(2)}</td>
             <td>${item.profit.toFixed(2)}</td>
             <td>${item.profit_margin.toFixed(2)}</td>
           `;
@@ -375,14 +966,10 @@
         });
 
         document.getElementById('resultsTableContainer').style.display = result.results.length > 0 ? 'block' : 'none';
+        showToast('Kâr hesaplama işlemi başarıyla tamamlandı', 'success');
       } catch (err) {
-        alert("Beklenmeyen bir hata oluştu: " + err);
+        showToast(`Beklenmeyen bir hata oluştu: ${err.message}`, 'error');
       }
-    }
-
-    // Sayfa yüklendiğinde ürün listesini çek
-    window.onload = function() {
-      loadProducts();
     }
   </script>
 </body>

@@ -252,6 +252,85 @@ def get_current_exchange_rate():
             'error': str(e)
         }), 500
 
+@kar_hesaplama_bp.route('/api/product-list', methods=['GET'])
+def get_product_list():
+    """
+    Kâr hesaplamada kullanılacak ürün listesini döndürür
+    """
+    try:
+        # Tarih filtreleme için varsayılan değerler (son 30 gün)
+        end_date = datetime.now()
+        start_date = end_date - timedelta(days=30)
+        
+        # Barkod bazlı satış sorgusu
+        sql_query = """
+        WITH exploded_orders AS (
+            SELECT 
+                o.id,
+                o.order_number,
+                o.order_date,
+                o.amount,
+                o.quantity,
+                unnest(string_to_array(o.product_barcode, ', ')) as product_barcode
+            FROM 
+                orders o
+            WHERE 
+                o.status != 'Cancelled'
+                AND o.product_barcode IS NOT NULL
+                AND o.product_barcode != ''
+                AND o.order_date BETWEEN :start_date AND :end_date
+        )
+        SELECT 
+            eo.product_barcode,
+            COUNT(DISTINCT eo.order_number) as order_count,
+            SUM(eo.quantity) as total_quantity,
+            SUM(eo.amount) as total_amount,
+            MAX(p.images) as image_url,
+            MAX(p.title) as product_title
+        FROM 
+            exploded_orders eo
+        LEFT JOIN 
+            products p ON eo.product_barcode = p.barcode
+        GROUP BY 
+            eo.product_barcode
+        ORDER BY 
+            total_quantity DESC
+        """
+        
+        barcode_sales = db.session.execute(
+            text(sql_query), 
+            {"start_date": start_date, "end_date": end_date}
+        ).all()
+        
+        # Barkod verilerini oluşturma
+        products_data = []
+        
+        for sale in barcode_sales:
+            barcode = sale.product_barcode
+            count = int(sale.total_quantity) if sale.total_quantity else 0
+            
+            product_data = {
+                'model_id': barcode,
+                'count': count,
+                'total_amount': float(sale.total_amount) if sale.total_amount else 0,
+                'image_url': sale.image_url or "",
+                'title': sale.product_title or "Ürün Adı Bulunamadı",
+                'order_count': int(sale.order_count) if sale.order_count else 0
+            }
+            products_data.append(product_data)
+        
+        logger.info(f"Toplam {len(products_data)} farklı ürün verisi hazırlandı.")
+        return jsonify({
+            'success': True,
+            'products': products_data
+        })
+    except Exception as e:
+        logger.error(f"Ürün listesi alınırken hata: {e}", exc_info=True)
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 
 def get_usd_exchange_rate():
     """
