@@ -628,6 +628,38 @@ def get_product_variants():
         logger.warning("Ürün bulunamadı.")
         return jsonify({'success': False, 'message': 'Ürün bulunamadı.'})
 
+@get_products_bp.route('/api/product-list', methods=['GET'])
+def api_product_list():
+    """
+    Tüm ürünleri JSON formatında döndürür
+    """
+    try:
+        products = Product.query.all()
+        products_list = [{
+            'id': p.id,
+            'barcode': p.barcode,
+            'title': p.title,
+            'product_main_id': p.product_main_id,
+            'category_name': p.category_name,
+            'quantity': p.quantity,
+            'list_price': p.list_price,
+            'sale_price': p.sale_price,
+            'brand': p.brand,
+            'color': p.color,
+            'size': p.size,
+            'stock_code': p.stock_code,
+            'images': p.images
+        } for p in products]
+        
+        return jsonify({
+            'success': True, 
+            'products': products_list,
+            'total': len(products_list)
+        })
+    except Exception as e:
+        logger.error(f"API ürün listesi alınırken hata: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @get_products_bp.route('/update_stocks_ajax', methods=['POST'])
 async def update_stocks_ajax():
     """
