@@ -733,19 +733,29 @@
         card.style.borderStyle = 'solid';
       }
 
-      // Ürün görseli
+      // Veri doğrulama - Eksik/hatalı veriler için varsayılan değerler kullan
       const imageUrl = product.image_url || '/static/images/default.jpg';
       const title = product.title || 'İsimsiz Ürün';
-      const count = product.count || 0;
-      const total_amount = product.total_amount || 0;
+      const count = typeof product.count === 'number' ? product.count : 0;
       
-      // Formatlanmış toplam tutarı hazırla
-      const formattedAmount = typeof total_amount === 'number' ? 
-        total_amount.toLocaleString('tr-TR') : '0';
+      // total_amount değerini güvenli bir şekilde işleme
+      let formattedAmount = '0';
+      try {
+        // Önce sayısal değeri doğrula
+        const total_amount = typeof product.total_amount === 'number' ? product.total_amount : 0;
+        // Sonra formatla
+        formattedAmount = total_amount.toLocaleString('tr-TR', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        });
+      } catch (e) {
+        console.error("Toplam tutar formatlama hatası:", e);
+        formattedAmount = '0,00';
+      }
 
       card.innerHTML = `
         <div class="product-img-container">
-          <img src="${imageUrl}" alt="${title}" class="product-image" loading="lazy">
+          <img src="${imageUrl}" alt="${title}" class="product-image" loading="lazy" onerror="this.src='/static/images/default.jpg'">
         </div>
         <div class="product-info">
           <div class="product-title">${title}</div>
@@ -887,32 +897,63 @@
     // Ürünleri API'den yükleyen fonksiyon
     async function loadProducts() {
       try {
+        // Önce yükleniyor göstergesini göster, diğer içerikleri gizle
+        document.getElementById('loadingIndicator').style.display = 'block';
+        document.getElementById('noResults').style.display = 'none';
+        document.getElementById('productGrid').style.display = 'none';
+        
+        console.log("Ürün verisi yükleniyor...");
         const response = await fetch('/api/product-list');
+        
         if (!response.ok) {
-          throw new Error('Ürünler yüklenirken bir hata oluştu');
+          throw new Error(`Ürünler yüklenirken HTTP hatası: ${response.status}`);
         }
 
         const result = await response.json();
+        console.log("API yanıtı alındı:", result);
+        
         if (!result.success) {
           showToast(`Ürün listesi alınırken hata: ${result.error}`, 'error');
+          throw new Error(`API başarısız: ${result.error}`);
+        }
+
+        if (!result.products || !Array.isArray(result.products) || result.products.length === 0) {
+          console.warn("API'den boş veya geçersiz ürün listesi alındı");
+          showToast("Ürün verisi bulunamadı. Satış kaydı olmayabilir.", 'error');
+          document.getElementById('loadingIndicator').style.display = 'none';
+          document.getElementById('noResults').style.display = 'block';
           return;
         }
 
         // Ürün verilerini doğrula ve temizle
         allProducts = result.products.map(product => {
+          if (!product || typeof product !== 'object') {
+            console.warn("Geçersiz ürün verisi, atlanıyor:", product);
+            return null;
+          }
+          
           // Eksik veya hatalı verileri düzelt
           return {
-            model_id: product.model_id || '',
+            model_id: product.model_id || 'Barkod Bulunamadı',
             count: typeof product.count === 'number' ? product.count : 0,
             total_amount: typeof product.total_amount === 'number' ? product.total_amount : 0,
             image_url: product.image_url || '/static/images/default.jpg',
             title: product.title || 'İsimsiz Ürün',
             order_count: typeof product.order_count === 'number' ? product.order_count : 0
           };
-        });
+        }).filter(product => product !== null); // null değerleri filtrele
         
+        if (allProducts.length === 0) {
+          showToast("Geçerli ürün verisi bulunamadı", 'error');
+          document.getElementById('loadingIndicator').style.display = 'none';
+          document.getElementById('noResults').style.display = 'block';
+          return;
+        }
+        
+        console.log(`${allProducts.length} ürün başarıyla yüklendi`);
         displayedProducts = [...allProducts];
         renderProductGrid();
+        showToast(`${allProducts.length} ürün başarıyla yüklendi`, 'success');
       } catch (err) {
         console.error("Ürün listesi yüklenirken hata:", err);
         showToast(`Beklenmeyen bir hata oluştu: ${err.message}`, 'error');
