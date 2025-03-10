@@ -1,7 +1,7 @@
 
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from models import db, Order, Product
-from sqlalchemy import func, desc
+from sqlalchemy import func, desc, distinct, text
 import requests
 import json
 from datetime import datetime, timedelta
@@ -39,41 +39,69 @@ def kar_hesaplama():
             start_date = datetime.now() - timedelta(days=30)
             end_date = datetime.now()
         
-        # Model kodu ile Order ve Product tablolarını birleştirme sorgusu
-        # Önce barkodları eşleştirelim, sonra model koduna göre gruplayalım
-        model_sales_query = db.session.query(
-            Product.product_main_id,
-            func.sum(Order.quantity).label('count'),
-            func.sum(Order.amount).label('total_amount'),
-            func.max(Product.images).label('image_url')
-        ).join(
-            Order, 
-            Product.barcode == Order.product_barcode
-        ).filter(
-            Order.status != 'Cancelled',
-            Order.product_barcode != None,
-            Order.product_barcode != '',
-            Product.product_main_id != None,
-            Product.product_main_id != '',
-            Order.order_date >= start_date,
-            Order.order_date <= end_date
-        ).group_by(
-            Product.product_main_id
-        ).order_by(
-            desc('count')
+        # Order tablosundaki barkodları kullanarak Product tablosundaki model kodlarını birleştiren sorgu
+        # Bu şekilde aynı model koduna ait farklı barkodlu ürünleri doğru şekilde gruplayabiliriz
+        logger.info(f"Tarih aralığında sipariş verilerini çekiliyor: {start_date} - {end_date}")
+
+        # Sipariş barkodlarını explode eden ve product_main_id ile gruplayıp toplayan sorgu
+        sql_query = """
+        WITH exploded_orders AS (
+            SELECT 
+                o.id,
+                o.order_number,
+                o.order_date,
+                o.amount,
+                o.quantity,
+                unnest(string_to_array(o.product_barcode, ', ')) as product_barcode
+            FROM 
+                orders o
+            WHERE 
+                o.status != 'Cancelled'
+                AND o.product_barcode IS NOT NULL
+                AND o.product_barcode != ''
+                AND o.order_date BETWEEN :start_date AND :end_date
         )
+        SELECT 
+            p.product_main_id,
+            COUNT(DISTINCT eo.order_number) as order_count,
+            SUM(eo.quantity) as total_quantity,
+            SUM(eo.amount) as total_amount,
+            MAX(p.images) as image_url
+        FROM 
+            exploded_orders eo
+        JOIN 
+            products p ON eo.product_barcode = p.barcode
+        WHERE 
+            p.product_main_id IS NOT NULL
+            AND p.product_main_id != ''
+        GROUP BY 
+            p.product_main_id
+        ORDER BY 
+            total_quantity DESC
+        """
         
-        model_sales = model_sales_query.all()
+        model_sales = db.session.execute(
+            text(sql_query), 
+            {"start_date": start_date, "end_date": end_date}
+        ).all()
         
         # Model verilerini oluşturma
         model_data = []
+        total_count = 0
+        
         for model in model_sales:
+            model_id = model.product_main_id
+            count = int(model.total_quantity) if model.total_quantity else 0
+            total_count += count
+            
             model_data.append({
-                'model_id': model.product_main_id,
-                'count': model.count or 0,
+                'model_id': model_id,
+                'count': count,
                 'total_amount': float(model.total_amount) if model.total_amount else 0,
                 'image_url': model.image_url or "",
             })
+        
+        logger.info(f"Toplam {len(model_data)} farklı model ve {total_count} ürün bulundu.")
         
         # İşlem yoksa kullanıcıya bilgi ver
         if not model_data:
@@ -117,36 +145,60 @@ def hesapla_kar():
         end_date = datetime.now()
         start_date = end_date - timedelta(days=30)
         
+        # Sipariş verileri için SQL sorgusu
+        sql_query = """
+        WITH exploded_orders AS (
+            SELECT 
+                o.id,
+                o.order_number,
+                o.order_date,
+                o.amount,
+                o.quantity,
+                unnest(string_to_array(o.product_barcode, ', ')) as product_barcode
+            FROM 
+                orders o
+            WHERE 
+                o.status != 'Cancelled'
+                AND o.product_barcode IS NOT NULL
+                AND o.product_barcode != ''
+                AND o.order_date BETWEEN :start_date AND :end_date
+        )
+        SELECT 
+            p.product_main_id,
+            COUNT(DISTINCT eo.order_number) as order_count,
+            SUM(eo.quantity) as total_quantity,
+            SUM(eo.amount) as total_amount
+        FROM 
+            exploded_orders eo
+        JOIN 
+            products p ON eo.product_barcode = p.barcode
+        WHERE 
+            p.product_main_id IS NOT NULL
+            AND p.product_main_id != ''
+        GROUP BY 
+            p.product_main_id
+        """
+        
+        model_sales = db.session.execute(
+            text(sql_query), 
+            {"start_date": start_date, "end_date": end_date}
+        ).all()
+
         # Maliyet sonuçlarını hesapla
         results = []
         total_revenue = 0
         total_cost = 0
         
-        for model_id, cost_usd in model_costs.items():
-            # Model koduna göre satış bilgilerini almak için ürün ile sipariş tablolarını birleştir
-            sales_query = db.session.query(
-                func.sum(Order.quantity).label('count'),
-                func.sum(Order.amount).label('total_amount')
-            ).join(
-                Product, 
-                Product.barcode == Order.product_barcode
-            ).filter(
-                Order.status != 'Cancelled',
-                Product.product_main_id == model_id,
-                Order.order_date >= start_date,
-                Order.order_date <= end_date
-            )
-            
-            sales = sales_query.first()
-            
-            if not sales or not sales.count:
+        for model in model_sales:
+            model_id = model.product_main_id
+            if model_id not in model_costs:
                 continue
                 
-            count = sales.count or 0
-            revenue = float(sales.total_amount) if sales.total_amount else 0
+            count = int(model.total_quantity) if model.total_quantity else 0
+            revenue = float(model.total_amount) if model.total_amount else 0
             
             # Maliyeti TL'ye çevir
-            cost_usd = float(cost_usd)
+            cost_usd = float(model_costs.get(model_id, 0))
             cost_tl = cost_usd * exchange_rate
             
             # Toplam maliyeti hesapla (üretim maliyeti + ortak maliyetler)
@@ -157,10 +209,6 @@ def hesapla_kar():
             # Kar ve kar marjı hesaplama
             profit = revenue - total_model_cost
             profit_margin = (profit / revenue) * 100 if revenue > 0 else 0
-            
-            # Model ile ilgili görsel al
-            product = Product.query.filter_by(product_main_id=model_id).first()
-            image_url = product.images if product else ""
             
             results.append({
                 'model_id': model_id,
