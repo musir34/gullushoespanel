@@ -636,18 +636,14 @@ def api_product_list():
     try:
         products = Product.query.all()
         products_list = [{
-            'id': p.id,
             'barcode': p.barcode,
             'title': p.title,
             'product_main_id': p.product_main_id,
-            'category_name': p.category_name,
             'quantity': p.quantity,
             'list_price': p.list_price,
             'sale_price': p.sale_price,
-            'brand': p.brand,
             'color': p.color,
             'size': p.size,
-            'stock_code': p.stock_code,
             'images': p.images
         } for p in products]
         
