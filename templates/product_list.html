@@ -349,6 +349,9 @@
       opacity: 0.5;
       cursor: not-allowed;
     }
+    .text-primary {
+      color: var(--color-primary);
+    }
 
   </style>
 </head>
@@ -421,8 +424,8 @@
               <div class="product-info">
                 <div>
                   <h5>{{ product_group[0].title }}</h5>
-                  <p>Model Kodu: {{ model_id }}</p>
-                  <p>Renk: {{ color }}</p>
+                  <p><strong>Model Kodu:</strong> <span class="text-primary">{{ model_id }}</span></p>
+                  <p><strong>Renk:</strong> {{ color }}</p>
                 </div>
 
                 <!-- Aksiyon Butonları -->
@@ -496,8 +499,8 @@
               <div class="product-info">
                 <div>
                   <h5>{{ product_group[0].title }}</h5>
-                  <p>Model Kodu: {{ model_id }}</p>
-                  <p>Renk: {{ color }}</p>
+                  <p><strong>Model Kodu:</strong> <span class="text-primary">{{ model_id }}</span></p>
+                  <p><strong>Renk:</strong> {{ color }}</p>
                 </div>
 
                 <div class="actions">

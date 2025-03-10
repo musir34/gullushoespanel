@@ -11,10 +11,33 @@ import io
 product_label_bp = Blueprint('product_label', __name__)
 
 
+@product_label_bp.route('/api/product-details', methods=['GET'])
+def get_product_details():
+    barcode = request.args.get('barcode', '').strip()
+    if not barcode:
+        return jsonify({'success': False, 'message': 'Barkod gerekli'})
+    
+    product = Product.query.filter_by(barcode=barcode).first()
+    if not product:
+        return jsonify({'success': False, 'message': 'Ürün bulunamadı'})
+    
+    return jsonify({
+        'success': True,
+        'product': {
+            'product_main_id': product.product_main_id,
+            'title': product.title,
+            'color': product.color,
+            'size': product.size,
+            'barcode': product.barcode
+        }
+    })
+
 @product_label_bp.route('/product_label', methods=['GET', 'POST'])
 def generate_product_label():
     if request.method == 'POST':
         barcode_number = request.form.get('barcode')
+        model_code_input = request.form.get('model_code')
+        
         if not barcode_number:
             return "Barkod numarası gerekli.", 400
 
@@ -23,8 +46,8 @@ def generate_product_label():
         if not product:
             return "Ürün bulunamadı.", 404
 
-        # Ürün bilgileri
-        model_code = product.product_main_id or 'Model Bilinmiyor'
+        # Ürün bilgileri - form üzerinden gelen model kodu varsa onu kullan, yoksa veritabanından al
+        model_code = model_code_input if model_code_input else product.product_main_id or 'Model Bilinmiyor'
         color = product.color or 'Renk Bilinmiyor'
         size = product.size or 'Beden Bilinmiyor'
 

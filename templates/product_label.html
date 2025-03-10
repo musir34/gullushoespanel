@@ -149,7 +149,7 @@
             <span id="model-text">Model</span> - 
             <span id="color-text">Renk</span> - 
             <span id="size-text">Beden</span>
-        </div>
+            <span id="product-main-id-text"></span> </div>
     </div>
 
     <!-- Yazdırma Butonu -->
@@ -203,6 +203,18 @@
             document.getElementById('model-text').textContent = model;
             document.getElementById('color-text').textContent = color;
             document.getElementById('size-text').textContent = size;
+
+            //Fetch product_main_id
+            fetch(`/api/product-details?barcode=${barcode}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.product && data.product.product_main_id) {
+                        document.getElementById('product-main-id-text').textContent = "Model Kodu: " + data.product.product_main_id;
+                    } else {
+                        console.error("Model Kodu bulunamadı.");
+                    }
+                })
+                .catch(error => console.error('Ürün bilgileri çekilirken hata:', error));
         }
     </script>
 
