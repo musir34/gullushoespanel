@@ -21,7 +21,7 @@ kar_hesaplama_bp = Blueprint('kar_hesaplama', __name__)
 def kar_hesaplama():
     """
     Kar hesaplama sayfasını gösterir.
-    Tüm siparişlerden ürün model kodlarına göre gruplandırılmış satış verilerini getirir.
+    Tüm siparişlerden ürün barkodlarına göre gruplandırılmış satış verilerini getirir.
     """
     try:
         # Tarih filtreleme için varsayılan değerler (son 30 gün)
@@ -39,11 +39,7 @@ def kar_hesaplama():
             start_date = datetime.now() - timedelta(days=30)
             end_date = datetime.now()
         
-        # Order tablosundaki barkodları kullanarak Product tablosundaki model kodlarını birleştiren sorgu
-        # Bu şekilde aynı model koduna ait farklı barkodlu ürünleri doğru şekilde gruplayabiliriz
-        logger.info(f"Tarih aralığında sipariş verilerini çekiliyor: {start_date} - {end_date}")
-
-        # Sipariş barkodlarını explode eden ve product_main_id ile gruplayıp toplayan sorgu
+        # Barkod bazlı satış verilerini getiren SQL sorgusu
         sql_query = """
         WITH exploded_orders AS (
             SELECT 
@@ -62,46 +58,45 @@ def kar_hesaplama():
                 AND o.order_date BETWEEN :start_date AND :end_date
         )
         SELECT 
-            p.product_main_id,
+            eo.product_barcode,
             COUNT(DISTINCT eo.order_number) as order_count,
             SUM(eo.quantity) as total_quantity,
             SUM(eo.amount) as total_amount,
-            MAX(p.images) as image_url
+            MAX(p.images) as image_url,
+            MAX(p.title) as product_title
         FROM 
             exploded_orders eo
-        JOIN 
+        LEFT JOIN 
             products p ON eo.product_barcode = p.barcode
-        WHERE 
-            p.product_main_id IS NOT NULL
-            AND p.product_main_id != ''
         GROUP BY 
-            p.product_main_id
+            eo.product_barcode
         ORDER BY 
             total_quantity DESC
         """
         
-        model_sales = db.session.execute(
+        barcode_sales = db.session.execute(
             text(sql_query), 
             {"start_date": start_date, "end_date": end_date}
         ).all()
         
-        # Model verilerini oluşturma
+        # Barkod verilerini oluşturma
         model_data = []
         total_count = 0
         
-        for model in model_sales:
-            model_id = model.product_main_id
-            count = int(model.total_quantity) if model.total_quantity else 0
+        for sale in barcode_sales:
+            barcode = sale.product_barcode
+            count = int(sale.total_quantity) if sale.total_quantity else 0
             total_count += count
             
             model_data.append({
-                'model_id': model_id,
+                'model_id': barcode,  # Artık model_id alanını barkod için kullanıyoruz
                 'count': count,
-                'total_amount': float(model.total_amount) if model.total_amount else 0,
-                'image_url': model.image_url or "",
+                'total_amount': float(sale.total_amount) if sale.total_amount else 0,
+                'image_url': sale.image_url or "",
+                'title': sale.product_title or "Ürün Adı Bulunamadı"
             })
         
-        logger.info(f"Toplam {len(model_data)} farklı model ve {total_count} ürün bulundu.")
+        logger.info(f"Toplam {len(model_data)} farklı barkod ve {total_count} ürün bulundu.")
         
         # İşlem yoksa kullanıcıya bilgi ver
         if not model_data:
@@ -135,7 +130,7 @@ def hesapla_kar():
     try:
         data = request.json
         
-        model_costs = data.get('model_costs', {})  # model_id: usd_cost şeklinde
+        model_costs = data.get('model_costs', {})  # artık barkod: usd_cost şeklinde
         shipping_cost = float(data.get('shipping_cost', 0))
         labor_cost = float(data.get('labor_cost', 0))
         packaging_cost = float(data.get('packaging_cost', 0))
@@ -145,7 +140,7 @@ def hesapla_kar():
         end_date = datetime.now()
         start_date = end_date - timedelta(days=30)
         
-        # Sipariş verileri için SQL sorgusu
+        # Barkod bazlı satış sorgusu
         sql_query = """
         WITH exploded_orders AS (
             SELECT 
@@ -164,22 +159,17 @@ def hesapla_kar():
                 AND o.order_date BETWEEN :start_date AND :end_date
         )
         SELECT 
-            p.product_main_id,
+            eo.product_barcode,
             COUNT(DISTINCT eo.order_number) as order_count,
             SUM(eo.quantity) as total_quantity,
             SUM(eo.amount) as total_amount
         FROM 
             exploded_orders eo
-        JOIN 
-            products p ON eo.product_barcode = p.barcode
-        WHERE 
-            p.product_main_id IS NOT NULL
-            AND p.product_main_id != ''
         GROUP BY 
-            p.product_main_id
+            eo.product_barcode
         """
         
-        model_sales = db.session.execute(
+        barcode_sales = db.session.execute(
             text(sql_query), 
             {"start_date": start_date, "end_date": end_date}
         ).all()
@@ -189,16 +179,16 @@ def hesapla_kar():
         total_revenue = 0
         total_cost = 0
         
-        for model in model_sales:
-            model_id = model.product_main_id
-            if model_id not in model_costs:
+        for sale in barcode_sales:
+            barcode = sale.product_barcode
+            if barcode not in model_costs:
                 continue
                 
-            count = int(model.total_quantity) if model.total_quantity else 0
-            revenue = float(model.total_amount) if model.total_amount else 0
+            count = int(sale.total_quantity) if sale.total_quantity else 0
+            revenue = float(sale.total_amount) if sale.total_amount else 0
             
             # Maliyeti TL'ye çevir
-            cost_usd = float(model_costs.get(model_id, 0))
+            cost_usd = float(model_costs.get(barcode, 0))
             cost_tl = cost_usd * exchange_rate
             
             # Toplam maliyeti hesapla (üretim maliyeti + ortak maliyetler)
@@ -211,7 +201,7 @@ def hesapla_kar():
             profit_margin = (profit / revenue) * 100 if revenue > 0 else 0
             
             results.append({
-                'model_id': model_id,
+                'model_id': barcode,  # Artık model_id alanını barkod için kullanıyoruz
                 'count': count,
                 'profit': profit,
                 'profit_margin': profit_margin,

@@ -162,7 +162,7 @@
           style="background-color: #e0f0ff;"
         >
           <h5 class="mb-0 text-primary">
-            <i class="bi bi-collection me-2"></i> Model Bazlı Maliyetler
+            <i class="bi bi-collection me-2"></i> Barkod Bazlı Maliyetler
           </h5>
           <button id="calculate_profit" class="btn btn-primary">
             <i class="bi bi-calculator"></i> Kar Hesapla
@@ -177,7 +177,8 @@
               <thead style="background-color: #0d6efd; color: #fff;">
                 <tr>
                   <th style="width: 80px;">Görsel</th>
-                  <th>Model Kodu</th>
+                  <th>Barkod</th>
+                  <th>Ürün Adı</th>
                   <th class="text-end">Satış Adedi</th>
                   <th class="text-end">Satış Geliri (TL)</th>
                   <th class="text-end" style="min-width: 140px;">Birim Maliyet (USD)</th>
@@ -202,6 +203,7 @@
                     {% endif %}
                   </td>
                   <td>{{ model.model_id }}</td>
+                  <td>{{ model.title|truncate(30) }}</td>
                   <td class="text-end">{{ model.count }}</td>
                   <td class="text-end">{{ "%.2f"|format(model.total_amount) }} ₺</td>
                   <td>
@@ -280,12 +282,12 @@
               </div>
             </div>
 
-            <h5 class="border-bottom pb-2 mb-3 text-secondary">Model Bazlı Kar Analizi</h5>
+            <h5 class="border-bottom pb-2 mb-3 text-secondary">Barkod Bazlı Kar Analizi</h5>
             <div class="table-responsive">
               <table class="table table-sm align-middle" id="results_table">
                 <thead style="background-color: #0d6efd; color: #fff;">
                   <tr>
-                    <th>Model</th>
+                    <th>Barkod</th>
                     <th class="text-end">Adet</th>
                     <th class="text-end">Kar</th>
                     <th class="text-end">Marj</th>
