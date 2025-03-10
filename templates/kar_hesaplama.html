@@ -299,16 +299,24 @@
         const tbody = document.getElementById('productTable').querySelector('tbody');
         tbody.innerHTML = '';
         result.products.forEach(product => {
+          // API'den gelen doğru alanları kullanıyoruz
+          const barcode = product.barcode || '';
+          // Görsel için kontrol yapıp, yoksa varsayılan görsel kullanıyoruz
+          const imageUrl = product.images || '/static/images/default.jpg';
+          // Ürün başlığı için kontrol
+          const title = product.title || 'İsimsiz Ürün';
+
           const tr = document.createElement('tr');
           tr.innerHTML = `
-            <td>${product.barcode}</td>
-            <td><img src="${product.image}" alt="${product.name}" class="product-image"></td>
-            <td>${product.name}</td>
-            <td><input type="number" step="0.01" class="product-cost-input" data-barcode="${product.barcode}" value="0"></td>
+            <td>${barcode}</td>
+            <td><img src="${imageUrl}" alt="${title}" class="product-image"></td>
+            <td>${title}</td>
+            <td><input type="number" step="0.01" class="product-cost-input" data-barcode="${barcode}" value="0"></td>
           `;
           tbody.appendChild(tr);
         });
       } catch (err) {
+        console.error("Ürün listesi yüklenirken hata:", err);
         alert("Beklenmeyen bir hata oluştu: " + err);
       }
     }
@@ -319,7 +327,7 @@
       const laborCost = parseFloat(document.getElementById('labor_cost').value) || 0;
       const packagingCost = parseFloat(document.getElementById('packaging_cost').value) || 0;
       const exchangeRate = parseFloat(document.getElementById('exchange_rate').value) || 0;
-      
+
       const barcodeCosts = getBarcodeCostsFromTable();
 
       const postData = {
