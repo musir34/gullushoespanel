@@ -1,3 +1,4 @@
+
 {% extends "base.html" %}
 
 {% block content %}
@@ -13,7 +14,7 @@
                 <i class="bi bi-calculator me-2"></i> Kar Analizi Hesaplama
               </h2>
               <p class="mb-0 text-secondary">
-                Ürünlerin maliyetlerini girerek kar marjlarını ve toplam karı hesaplayın
+                Ürünlerin maliyetlerini girerek model bazında kar marjlarını ve toplam karı hesaplayın
               </p>
             </div>
             <div class="d-flex">
@@ -25,6 +26,38 @@
               </button>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tarih Filtreleme -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card shadow-sm border-0">
+        <div class="card-header bg-white">
+          <h5 class="mb-0 text-primary">
+            <i class="bi bi-calendar-range me-2"></i> Tarih Aralığı
+          </h5>
+        </div>
+        <div class="card-body">
+          <form id="dateFilterForm" method="GET" action="{{ url_for('kar_hesaplama.kar_hesaplama') }}">
+            <div class="row align-items-end">
+              <div class="col-md-4">
+                <label for="start_date" class="form-label">Başlangıç Tarihi</label>
+                <input type="date" id="start_date" name="start_date" class="form-control" value="{{ start_date }}">
+              </div>
+              <div class="col-md-4">
+                <label for="end_date" class="form-label">Bitiş Tarihi</label>
+                <input type="date" id="end_date" name="end_date" class="form-control" value="{{ end_date }}">
+              </div>
+              <div class="col-md-4">
+                <button type="submit" class="btn btn-primary w-100">
+                  <i class="bi bi-filter me-1"></i> Filtrele
+                </button>
+              </div>
+            </div>
+          </form>
         </div>
       </div>
     </div>
@@ -129,7 +162,7 @@
           style="background-color: #e0f0ff;"
         >
           <h5 class="mb-0 text-primary">
-            <i class="bi bi-collection me-2"></i> Model Maliyetleri
+            <i class="bi bi-collection me-2"></i> Model Bazlı Maliyetler
           </h5>
           <button id="calculate_profit" class="btn btn-primary">
             <i class="bi bi-calculator"></i> Kar Hesapla
@@ -155,12 +188,12 @@
                 <tr data-model-id="{{ model.model_id }}">
                   <td>
                     {% if model.image_url %}
-                      <!-- Eğer "image_url" bir tam path değil de "shoes/xx.jpg" gibi ise: -->
                       <img 
-                        src="{{ url_for('static', filename=model.image_url) }}"
+                        src="{{ url_for('static', filename=model.image_url) if model.image_url.startswith('images/') else model.image_url }}"
                         class="img-thumbnail" 
                         style="max-height: 50px;" 
                         alt="{{ model.model_id }}"
+                        onerror="this.src='{{ url_for('static', filename='images/default.jpg') }}'"
                       >
                     {% else %}
                       <div class="bg-light text-center p-2">
@@ -272,6 +305,23 @@
 
 <script>
   document.addEventListener('DOMContentLoaded', function() {
+    // Döviz kuru yenileme
+    document.getElementById('refresh_rate').addEventListener('click', async function() {
+      try {
+        const response = await fetch('/api/guncel-kur');
+        const data = await response.json();
+        if (data.success) {
+          document.getElementById('exchange_rate').value = data.rate;
+          document.getElementById('last_update').textContent = data.timestamp;
+          showAlert('Döviz kuru başarıyla güncellendi.', 'success');
+        } else {
+          showAlert('Döviz kuru güncellenirken bir hata oluştu: ' + data.error, 'danger');
+        }
+      } catch (error) {
+        showAlert('Döviz kuru güncellenirken bir hata oluştu: ' + error.message, 'danger');
+      }
+    });
+
     // Kar hesaplama
     document.getElementById('calculate_profit').addEventListener('click', async function() {
       try {
@@ -318,11 +368,11 @@
     // Excel
     document.getElementById('exportExcel').addEventListener('click', function() {
       const table = document.getElementById('results_table');
-      if (!table || table.style.display === 'none') {
+      if (!table || getComputedStyle(document.getElementById('results_container')).display === 'none') {
         showAlert('Excel\'e aktarılacak sonuç yok. Önce kar hesaplayın.', 'warning');
         return;
       }
-      exportTableToExcel(table, 'Kar_Analizi_' + new Date().toISOString().slice(0, 10));
+      exportTableToExcel(table, 'Model_Bazli_Kar_Analizi_' + new Date().toISOString().slice(0, 10));
     });
 
     function displayResults(data) {

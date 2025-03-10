@@ -87,6 +87,9 @@ from openai_service import openai_bp
 from siparisler import siparisler_bp
 # Webhook servisi kullanıcı isteği doğrultusunda kaldırıldı
 
+from financial_service import financial_service_bp # Added this line
+app.register_blueprint(financial_service_bp) # Added this line
+
 blueprints = [
     order_service_bp,
     update_service_bp,
