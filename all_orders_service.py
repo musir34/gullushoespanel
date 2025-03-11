@@ -1,7 +1,6 @@
 
 from flask import render_template, request, Blueprint
 from models import Order
-from cache_config import redis_client
 
 all_orders_service_bp = Blueprint('all_orders_service', __name__)
 
