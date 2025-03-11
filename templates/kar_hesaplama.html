@@ -625,27 +625,23 @@
       loadProducts();
     };
 
-    // Sayfalama fonksiyonu
+    // Sayfalama fonksiyonu - performans için optimize edilmiş
     function renderPagination() {
       const totalPages = Math.ceil(displayedProducts.length / productsPerPage);
       const paginationElement = document.getElementById('pagination');
-      paginationElement.innerHTML = '';
-
-      if (totalPages <= 1) return;
-
+      
+      // Sayfa yoksa veya tek sayfa varsa sayfalamayı gizle
+      if (totalPages <= 1) {
+        paginationElement.innerHTML = '';
+        return;
+      }
+      
+      // HTML templating ile sayfalama - daha hızlı
+      let paginationHTML = '';
+      
       // Önceki sayfa linki
       if (currentPage > 1) {
-        const li = document.createElement('li');
-        const a = document.createElement('a');
-        a.href = '#';
-        a.innerHTML = '&laquo;';
-        a.addEventListener('click', function(e) {
-          e.preventDefault();
-          currentPage--;
-          renderProductGrid();
-        });
-        li.appendChild(a);
-        paginationElement.appendChild(li);
+        paginationHTML += `<li><a href="#" data-page="${currentPage - 1}">&laquo;</a></li>`;
       }
 
       // Sayfa numaraları
@@ -653,40 +649,69 @@
       const endPage = Math.min(totalPages, startPage + 4);
 
       for (let i = startPage; i <= endPage; i++) {
-        const li = document.createElement('li');
-        const a = document.createElement('a');
-        a.href = '#';
-        a.textContent = i;
-        if (i === currentPage) {
-          a.classList.add('active');
-        }
-        a.addEventListener('click', function(e) {
-          e.preventDefault();
-          currentPage = i;
-          renderProductGrid();
-        });
-        li.appendChild(a);
-        paginationElement.appendChild(li);
+        const activeClass = i === currentPage ? 'class="active"' : '';
+        paginationHTML += `<li><a href="#" data-page="${i}" ${activeClass}>${i}</a></li>`;
       }
 
       // Sonraki sayfa linki
       if (currentPage < totalPages) {
-        const li = document.createElement('li');
-        const a = document.createElement('a');
-        a.href = '#';
-        a.innerHTML = '&raquo;';
-        a.addEventListener('click', function(e) {
-          e.preventDefault();
-          currentPage++;
-          renderProductGrid();
-        });
-        li.appendChild(a);
-        paginationElement.appendChild(li);
+        paginationHTML += `<li><a href="#" data-page="${currentPage + 1}">&raquo;</a></li>`;
       }
+      
+      paginationElement.innerHTML = paginationHTML;
+      
+      // Tek bir olay dinleyici ile tüm sayfa linklerini kontrol et (delegasyon)
+      paginationElement.addEventListener('click', function(e) {
+        e.preventDefault();
+        const target = e.target;
+        
+        if (target.tagName === 'A' && target.dataset.page) {
+          currentPage = parseInt(target.dataset.page);
+          renderProductGrid();
+          
+          // Sayfaya scroll et
+          document.getElementById('productGrid').scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+          });
+        }
+      });
     }
+    
+    // Debounce fonksiyonu - arama sırasında gereksiz işlemleri önler
+    function debounce(func, delay) {
+      let timer;
+      return function(...args) {
+        clearTimeout(timer);
+        timer = setTimeout(() => {
+          func.apply(this, args);
+        }, delay);
+      };
+    }
+    
+    // Arama fonksiyonu - debounce ile optimize edilmiş
+    const filterProducts = debounce(function() {
+      console.time('filterProducts');
+      const searchValue = document.getElementById('productSearch').value.toLowerCase();
+
+      if (searchValue.trim() === '') {
+        displayedProducts = [...allProducts];
+      } else {
+        displayedProducts = allProducts.filter(product => {
+          const title = (product.title || '').toLowerCase();
+          const barcode = (product.model_id || '').toLowerCase();
+          return title.includes(searchValue) || barcode.includes(searchValue);
+        });
+      }
+
+      currentPage = 1;
+      renderProductGrid();
+      console.timeEnd('filterProducts');
+    }, 300); // 300ms gecikme ile işlemi yap
 
     // Ürün listesi kartları - performans optimizasyonu
     function renderProductGrid() {
+      console.time('renderProductGrid');
       const productGrid = document.getElementById('productGrid');
       productGrid.innerHTML = '';
 
@@ -695,16 +720,23 @@
 
       // Fragment kullanarak DOM manipülasyonlarını azaltıyoruz
       const fragment = document.createDocumentFragment();
-
+      
+      // Toplu HTML oluşturma - innerHTML kullanma - çok daha hızlı
+      const cardsHTML = [];
+      
       for (let i = startIndex; i < endIndex; i++) {
         if (displayedProducts[i]) {
           const product = displayedProducts[i];
-          const card = createProductCard(product);
-          fragment.appendChild(card);
+          cardsHTML.push(generateProductCardHTML(product));
         }
       }
+      
+      // Tek bir innerHTML işlemi ile tüm kartları ekle
+      productGrid.innerHTML = cardsHTML.join('');
+      
+      // Olay dinleyicilerini delege etme (daha verimli)
+      productGrid.addEventListener('click', handleProductCardClick);
 
-      productGrid.appendChild(fragment);
       renderPagination();
 
       // Eğer sayfa işlendiyse loading göstergesini gizle
@@ -718,69 +750,67 @@
         productGrid.style.display = 'none';
         document.getElementById('noResults').style.display = 'block';
       }
+      console.timeEnd('renderProductGrid');
+    }
+    
+    // Olay delegasyonu ile tıklama işleyici
+    function handleProductCardClick(e) {
+      // Kart tıklaması mı kontrol et
+      const card = e.target.closest('.product-card');
+      if (!card) return;
+      
+      // Input'a tıklama değilse işlem yap
+      if (e.target.tagName !== 'INPUT' && 
+          document.getElementById('bulkEditPanel').style.display !== 'none' && 
+          document.getElementById('categoryFilter').value === 'custom') {
+        const barcode = card.dataset.barcode;
+        toggleProductSelection(barcode, card);
+      }
     }
 
-    // Ürün kartı oluşturan fonksiyon
-    function createProductCard(product) {
-      const card = document.createElement('div');
-      card.className = 'product-card';
-      card.dataset.barcode = product.model_id;
-
-      // Eğer toplu maliyet düzenleme için seçilmişse
-      if (selectedProductsForBulk.has(product.model_id)) {
-        card.style.borderColor = '#4a90e2';
-        card.style.borderWidth = '2px';
-        card.style.borderStyle = 'solid';
-      }
-
+    // Ürün kartı HTML'ini oluşturan fonksiyon - innerHTML performansı için
+    function generateProductCardHTML(product) {
       // Veri doğrulama - Eksik/hatalı veriler için varsayılan değerler kullan
       const imageUrl = product.image_url || '/static/images/default.jpg';
       const title = product.title || 'İsimsiz Ürün';
       const count = typeof product.count === 'number' ? product.count : 0;
+      const barcode = product.model_id || '';
       
       // total_amount değerini güvenli bir şekilde işleme
-      let formattedAmount = '0';
-      try {
-        // Önce sayısal değeri doğrula
-        const total_amount = typeof product.total_amount === 'number' ? product.total_amount : 0;
-        // Sonra formatla
-        formattedAmount = total_amount.toLocaleString('tr-TR', {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2
-        });
-      } catch (e) {
-        console.error("Toplam tutar formatlama hatası:", e);
-        formattedAmount = '0,00';
+      let formattedAmount = '0,00';
+      if (typeof product.total_amount === 'number') {
+        try {
+          formattedAmount = product.total_amount.toLocaleString('tr-TR', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+          });
+        } catch (e) {
+          console.error("Toplam tutar formatlama hatası:", e);
+        }
       }
 
-      card.innerHTML = `
-        <div class="product-img-container">
-          <img src="${imageUrl}" alt="${title}" class="product-image" loading="lazy" onerror="this.src='/static/images/default.jpg'">
-        </div>
-        <div class="product-info">
-          <div class="product-title">${title}</div>
-          <div class="product-barcode">${product.model_id}</div>
-          <div class="product-stats">
-            <span>Satış: <strong>${count}</strong></span>
-            <span>Tutar: <strong>${formattedAmount} TL</strong></span>
+      // Toplu seçim için border stili
+      const selectedStyle = selectedProductsForBulk.has(barcode) 
+        ? 'style="border-color: #4a90e2; border-width: 2px; border-style: solid;"' 
+        : '';
+
+      return `
+        <div class="product-card" data-barcode="${barcode}" ${selectedStyle}>
+          <div class="product-img-container">
+            <img src="${imageUrl}" alt="${title}" class="product-image" loading="lazy" onerror="this.src='/static/images/default.jpg'">
           </div>
-          <label>Maliyet (USD):</label>
-          <input type="number" step="0.01" class="product-cost-input" data-barcode="${product.model_id}" value="0">
+          <div class="product-info">
+            <div class="product-title">${title}</div>
+            <div class="product-barcode">${barcode}</div>
+            <div class="product-stats">
+              <span>Satış: <strong>${count}</strong></span>
+              <span>Tutar: <strong>${formattedAmount} TL</strong></span>
+            </div>
+            <label>Maliyet (USD):</label>
+            <input type="number" step="0.01" class="product-cost-input" data-barcode="${barcode}" value="0">
+          </div>
         </div>
       `;
-
-      // Toplu seçim için kart tıklama olayı - Performans için delegasyon kullanıyoruz
-      card.addEventListener('click', function(e) {
-        // Eğer input'a tıklanmışsa event'i bubble etme
-        if (e.target.tagName === 'INPUT') return;
-
-        if (document.getElementById('bulkEditPanel').style.display !== 'none' && 
-            document.getElementById('categoryFilter').value === 'custom') {
-          toggleProductSelection(product.model_id, card);
-        }
-      });
-
-      return card;
     }
 
     // Ürün seçimini togglelayan fonksiyon
@@ -894,16 +924,30 @@
       renderProductGrid();
     }
 
-    // Ürünleri API'den yükleyen fonksiyon
+    // Ürünleri API'den yükleyen fonksiyon - optimizasyonlu
     async function loadProducts() {
       try {
+        console.time('loadProducts');
         // Önce yükleniyor göstergesini göster, diğer içerikleri gizle
         document.getElementById('loadingIndicator').style.display = 'block';
         document.getElementById('noResults').style.display = 'none';
         document.getElementById('productGrid').style.display = 'none';
         
         console.log("Ürün verisi yükleniyor...");
-        const response = await fetch('/api/product-list');
+        
+        // AbortController ile isteği iptal edebilme yeteneği
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 saniye zaman aşımı
+        
+        const response = await fetch('/api/product-list', {
+          signal: controller.signal,
+          headers: {
+            'Cache-Control': 'no-cache', // Önbelleği devre dışı bırak
+            'Pragma': 'no-cache'
+          }
+        });
+        
+        clearTimeout(timeoutId); // İstek tamamlandı, zamanlayıcıyı temizle
         
         if (!response.ok) {
           throw new Error(`Ürünler yüklenirken HTTP hatası: ${response.status}`);
@@ -925,38 +969,25 @@
           return;
         }
 
-        // Ürün verilerini doğrula ve temizle
-        allProducts = result.products.map(product => {
-          if (!product || typeof product !== 'object') {
-            console.warn("Geçersiz ürün verisi, atlanıyor:", product);
-            return null;
-          }
-          
-          // Eksik veya hatalı verileri düzelt
-          return {
-            model_id: product.model_id || 'Barkod Bulunamadı',
-            count: typeof product.count === 'number' ? product.count : 0,
-            total_amount: typeof product.total_amount === 'number' ? product.total_amount : 0,
-            image_url: product.image_url || '/static/images/default.jpg',
-            title: product.title || 'İsimsiz Ürün',
-            order_count: typeof product.order_count === 'number' ? product.order_count : 0
-          };
-        }).filter(product => product !== null); // null değerleri filtrele
+        // Doğrudan veriyi kullan, gereksiz dönüşüm işlemlerini azalt
+        allProducts = result.products;
+        displayedProducts = [...allProducts];
         
-        if (allProducts.length === 0) {
-          showToast("Geçerli ürün verisi bulunamadı", 'error');
-          document.getElementById('loadingIndicator').style.display = 'none';
-          document.getElementById('noResults').style.display = 'block';
-          return;
-        }
+        // İlk sayfayı render et
+        currentPage = 1;
+        renderProductGrid();
         
         console.log(`${allProducts.length} ürün başarıyla yüklendi`);
-        displayedProducts = [...allProducts];
-        renderProductGrid();
         showToast(`${allProducts.length} ürün başarıyla yüklendi`, 'success');
+        console.timeEnd('loadProducts');
       } catch (err) {
         console.error("Ürün listesi yüklenirken hata:", err);
-        showToast(`Beklenmeyen bir hata oluştu: ${err.message}`, 'error');
+        
+        if (err.name === 'AbortError') {
+          showToast('Ürün listesi yüklenirken zaman aşımı oluştu. Lütfen tekrar deneyin.', 'error');
+        } else {
+          showToast(`Beklenmeyen bir hata oluştu: ${err.message}`, 'error');
+        }
 
         document.getElementById('loadingIndicator').style.display = 'none';
         document.getElementById('noResults').style.display = 'block';

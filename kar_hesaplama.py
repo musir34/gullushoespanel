@@ -256,22 +256,21 @@ def get_current_exchange_rate():
 def get_product_list():
     """
     Kâr hesaplamada kullanılacak ürün listesini döndürür
+    Performans iyileştirmeleri ile optimize edilmiş
     """
     try:
         # Tarih filtreleme için varsayılan değerler (son 30 gün)
         end_date = datetime.now()
         start_date = end_date - timedelta(days=30)
         
-        # Barkod bazlı satış sorgusu - COALESCE ekleyerek NULL değerleri önlüyoruz
-        # NULLIF kullanarak boş string'leri NULL'a çeviriyoruz
+        # İndeksli sütunlar üzerinde çalışarak ve sınırlandırılmış veri döndürerek 
+        # performansı artıran optimize edilmiş sorgu
         sql_query = """
         WITH exploded_orders AS (
             SELECT 
-                o.id,
                 o.order_number,
-                o.order_date,
-                NULLIF(o.amount, 0) as amount,
-                NULLIF(o.quantity, 0) as quantity,
+                o.amount,
+                o.quantity,
                 unnest(string_to_array(o.product_barcode, ', ')) as product_barcode
             FROM 
                 orders o
@@ -280,14 +279,15 @@ def get_product_list():
                 AND o.product_barcode IS NOT NULL
                 AND o.product_barcode != ''
                 AND o.order_date BETWEEN :start_date AND :end_date
+            LIMIT 10000  -- Aşırı büyük veri setlerini sınırla
         )
         SELECT 
-            eo.product_barcode,
+            eo.product_barcode as model_id,
             COUNT(DISTINCT eo.order_number) as order_count,
-            COALESCE(SUM(eo.quantity), 0) as total_quantity,
+            COALESCE(SUM(eo.quantity), 0) as count,
             COALESCE(SUM(eo.amount), 0) as total_amount,
             MAX(p.images) as image_url,
-            MAX(p.title) as product_title
+            MAX(p.title) as title
         FROM 
             exploded_orders eo
         LEFT JOIN 
@@ -295,65 +295,46 @@ def get_product_list():
         GROUP BY 
             eo.product_barcode
         ORDER BY 
-            total_quantity DESC
+            count DESC
+        LIMIT 500  -- En çok satılan 500 ürünle sınırla - performans için önemli
         """
         
-        barcode_sales = db.session.execute(
-            text(sql_query), 
-            {"start_date": start_date, "end_date": end_date}
-        ).all()
+        logger.info("Ürün listesi SQL sorgusu başlatılıyor...")
+        start_time = datetime.now()
         
-        # Barkod verilerini oluşturma - Daha güçlü veri doğrulama ve temizleme
+        result = db.session.execute(text(sql_query), {"start_date": start_date, "end_date": end_date})
+        
+        # Daha verimli veri dönüşümü - SQL sorgusundan gelen alanlar zaten uygun isimde
         products_data = []
+        for row in result:
+            # Verileri sözlüğe dönüştür
+            product = dict(row._mapping)
+            
+            # Null kontrolü yap
+            if product['count'] is None:
+                product['count'] = 0
+            if product['total_amount'] is None:
+                product['total_amount'] = 0
+            if product['order_count'] is None:
+                product['order_count'] = 0
+            if product['image_url'] is None:
+                product['image_url'] = "/static/images/default.jpg"
+            if product['title'] is None:
+                product['title'] = "Ürün Adı Bulunamadı"
+                
+            # Sadece sayısal değerlerin türünü dönüştür
+            product['count'] = int(product['count'])
+            product['total_amount'] = float(product['total_amount'])
+            product['order_count'] = int(product['order_count'])
+            
+            products_data.append(product)
         
-        for sale in barcode_sales:
-            if not sale.product_barcode:
-                continue  # Barkodu olmayan ürünleri atla
-                
-            try:
-                barcode = sale.product_barcode
-                
-                # Sayısal değerleri sıkı bir şekilde kontrol et
-                count = 0
-                if sale.total_quantity is not None:
-                    try:
-                        count = int(sale.total_quantity)
-                    except (ValueError, TypeError):
-                        count = 0
-                
-                total_amount = 0
-                if sale.total_amount is not None:
-                    try:
-                        total_amount = float(sale.total_amount)
-                    except (ValueError, TypeError):
-                        total_amount = 0
-                
-                order_count = 0
-                if sale.order_count is not None:
-                    try:
-                        order_count = int(sale.order_count)
-                    except (ValueError, TypeError):
-                        order_count = 0
-                
-                # Boş satışları atla
-                if count == 0 and total_amount == 0:
-                    continue
-                
-                # Eğer veritabanında NULL değerler varsa, bunları sıfır olarak ata
-                product_data = {
-                    'model_id': barcode,
-                    'count': count,
-                    'total_amount': total_amount,
-                    'image_url': sale.image_url or "",
-                    'title': sale.product_title or "Ürün Adı Bulunamadı",
-                    'order_count': order_count
-                }
-                products_data.append(product_data)
-            except (ValueError, TypeError) as e:
-                logger.warning(f"Ürün veri dönüşüm hatası (barkod: {sale.product_barcode}): {e}")
-                # Hatalı veriyi atlayarak devam et
+        # Performans ölçümü
+        end_time = datetime.now()
+        duration = (end_time - start_time).total_seconds()
+        logger.info(f"Ürün listesi sorgusu {duration:.2f} saniyede tamamlandı. {len(products_data)} ürün bulundu.")
         
-        # Veri yoksa örnek bir veri gönder (geliştirme için)
+        # Veri yoksa örnek bir veri gönder
         if not products_data:
             logger.warning("Hiç satış verisi bulunamadı - varsayılan test verisi gönderiliyor")
             products_data = [
@@ -367,7 +348,6 @@ def get_product_list():
                 }
             ]
         
-        logger.info(f"Toplam {len(products_data)} farklı ürün verisi hazırlandı.")
         return jsonify({
             'success': True,
             'products': products_data
