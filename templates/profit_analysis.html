@@ -1,0 +1,908 @@
+
+{% extends 'base.html' %}
+
+{% block title %}Kar Analizi{% endblock %}
+
+{% block styles %}
+<style>
+  .card {
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+    border: none;
+  }
+  
+  .card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+    padding: 15px 20px;
+    font-weight: 600;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+  }
+  
+  .card-body {
+    padding: 20px;
+  }
+  
+  .summary-card {
+    transition: all 0.3s ease;
+  }
+  
+  .summary-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+  }
+  
+  .summary-value {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 5px;
+  }
+  
+  .summary-label {
+    font-size: 0.9rem;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  
+  .profit-positive {
+    color: #28a745;
+  }
+  
+  .profit-negative {
+    color: #dc3545;
+  }
+  
+  .chart-container {
+    height: 300px;
+    margin-bottom: 20px;
+  }
+  
+  .table-responsive {
+    margin-top: 20px;
+  }
+  
+  .table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+  }
+  
+  .filter-container {
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 10px;
+    margin-bottom: 20px;
+  }
+  
+  .loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+  }
+  
+  .spinner-border {
+    width: 3rem;
+    height: 3rem;
+  }
+  
+  .profit-tab-content {
+    padding-top: 20px;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+  <h1 class="mb-4">Kar Analizi</h1>
+  
+  <!-- Yükleniyor göstergesi -->
+  <div id="loadingOverlay" class="loading-overlay d-none">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Yükleniyor...</span>
+    </div>
+  </div>
+  
+  <!-- Filtreler -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0">Filtreleme Seçenekleri</h5>
+        </div>
+        <div class="card-body">
+          <form id="filterForm" class="row g-3">
+            <div class="col-md-4">
+              <label for="startDate" class="form-label">Başlangıç Tarihi</label>
+              <input type="date" class="form-control" id="startDate" name="start_date">
+            </div>
+            <div class="col-md-4">
+              <label for="endDate" class="form-label">Bitiş Tarihi</label>
+              <input type="date" class="form-control" id="endDate" name="end_date">
+            </div>
+            <div class="col-md-4">
+              <label for="filterType" class="form-label">Filtreleme Türü</label>
+              <select class="form-select" id="filterType" name="filter_type">
+                <option value="all" selected>Tümü</option>
+                <option value="product">Ürün Bazlı</option>
+                <option value="model">Model Bazlı</option>
+                <option value="color">Renk Bazlı</option>
+                <option value="size">Beden Bazlı</option>
+              </select>
+            </div>
+            <div class="col-md-12 mt-3">
+              <button type="submit" class="btn btn-primary">Filtrele</button>
+              <button type="button" id="resetFilters" class="btn btn-secondary ms-2">Filtreleri Sıfırla</button>
+              <button type="button" id="exportExcel" class="btn btn-success ms-2">Excel'e Aktar</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Özet Kartları -->
+  <div class="row mb-4" id="summaryCards">
+    <div class="col-md-3">
+      <div class="card summary-card">
+        <div class="card-body text-center">
+          <div class="summary-value" id="totalRevenue">0 TL</div>
+          <div class="summary-label">Toplam Gelir</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card summary-card">
+        <div class="card-body text-center">
+          <div class="summary-value" id="totalCost">0 TL</div>
+          <div class="summary-label">Toplam Maliyet</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card summary-card">
+        <div class="card-body text-center">
+          <div class="summary-value" id="totalProfit">0 TL</div>
+          <div class="summary-label">Toplam Kar</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card summary-card">
+        <div class="card-body text-center">
+          <div class="summary-value" id="profitMargin">0%</div>
+          <div class="summary-label">Kar Marjı</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Grafik ve Tablolar -->
+  <div class="row">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header">
+          <ul class="nav nav-tabs card-header-tabs" id="profitTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link active" id="daily-tab" data-bs-toggle="tab" data-bs-target="#daily" type="button" role="tab" aria-controls="daily" aria-selected="true">Günlük Kar</button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="product-tab" data-bs-toggle="tab" data-bs-target="#product" type="button" role="tab" aria-controls="product" aria-selected="false">Ürün Bazlı</button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="model-tab" data-bs-toggle="tab" data-bs-target="#model" type="button" role="tab" aria-controls="model" aria-selected="false">Model Bazlı</button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="color-tab" data-bs-toggle="tab" data-bs-target="#color" type="button" role="tab" aria-controls="color" aria-selected="false">Renk Bazlı</button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="size-tab" data-bs-toggle="tab" data-bs-target="#size" type="button" role="tab" aria-controls="size" aria-selected="false">Beden Bazlı</button>
+            </li>
+          </ul>
+        </div>
+        <div class="card-body">
+          <div class="tab-content profit-tab-content" id="profitTabContent">
+            <!-- Günlük Kar -->
+            <div class="tab-pane fade show active" id="daily" role="tabpanel" aria-labelledby="daily-tab">
+              <div class="chart-container">
+                <canvas id="dailyProfitChart"></canvas>
+              </div>
+              <div class="table-responsive">
+                <table class="table table-striped table-hover" id="dailyProfitTable">
+                  <thead>
+                    <tr>
+                      <th>Tarih</th>
+                      <th>Sipariş Sayısı</th>
+                      <th>Toplam Satış</th>
+                      <th>Toplam Maliyet</th>
+                      <th>Toplam Kar</th>
+                      <th>Kar Marjı</th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </div>
+            
+            <!-- Ürün Bazlı -->
+            <div class="tab-pane fade" id="product" role="tabpanel" aria-labelledby="product-tab">
+              <div class="table-responsive">
+                <table class="table table-striped table-hover" id="productProfitTable">
+                  <thead>
+                    <tr>
+                      <th>Sipariş No</th>
+                      <th>Tarih</th>
+                      <th>Barkod</th>
+                      <th>Ürün Adı</th>
+                      <th>Model</th>
+                      <th>Renk</th>
+                      <th>Beden</th>
+                      <th>Adet</th>
+                      <th>Satış Fiyatı</th>
+                      <th>Maliyet</th>
+                      <th>Toplam Satış</th>
+                      <th>Toplam Maliyet</th>
+                      <th>Kar</th>
+                      <th>Kar Marjı</th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </div>
+            
+            <!-- Model Bazlı -->
+            <div class="tab-pane fade" id="model" role="tabpanel" aria-labelledby="model-tab">
+              <div class="chart-container">
+                <canvas id="modelProfitChart"></canvas>
+              </div>
+              <div class="table-responsive">
+                <table class="table table-striped table-hover" id="modelProfitTable">
+                  <thead>
+                    <tr>
+                      <th>Model Kodu</th>
+                      <th>Sipariş Sayısı</th>
+                      <th>Satılan Adet</th>
+                      <th>Toplam Satış</th>
+                      <th>Toplam Maliyet</th>
+                      <th>Toplam Kar</th>
+                      <th>Kar Marjı</th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </div>
+            
+            <!-- Renk Bazlı -->
+            <div class="tab-pane fade" id="color" role="tabpanel" aria-labelledby="color-tab">
+              <div class="chart-container">
+                <canvas id="colorProfitChart"></canvas>
+              </div>
+              <div class="table-responsive">
+                <table class="table table-striped table-hover" id="colorProfitTable">
+                  <thead>
+                    <tr>
+                      <th>Renk</th>
+                      <th>Sipariş Sayısı</th>
+                      <th>Satılan Adet</th>
+                      <th>Toplam Satış</th>
+                      <th>Toplam Maliyet</th>
+                      <th>Toplam Kar</th>
+                      <th>Kar Marjı</th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </div>
+            
+            <!-- Beden Bazlı -->
+            <div class="tab-pane fade" id="size" role="tabpanel" aria-labelledby="size-tab">
+              <div class="chart-container">
+                <canvas id="sizeProfitChart"></canvas>
+              </div>
+              <div class="table-responsive">
+                <table class="table table-striped table-hover" id="sizeProfitTable">
+                  <thead>
+                    <tr>
+                      <th>Beden</th>
+                      <th>Sipariş Sayısı</th>
+                      <th>Satılan Adet</th>
+                      <th>Toplam Satış</th>
+                      <th>Toplam Maliyet</th>
+                      <th>Toplam Kar</th>
+                      <th>Kar Marjı</th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Varsayılan olarak son 30 günü göster
+    const today = new Date();
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(today.getDate() - 30);
+    
+    document.getElementById('startDate').valueAsDate = thirtyDaysAgo;
+    document.getElementById('endDate').valueAsDate = today;
+    
+    // İlk yüklenmede verileri getir
+    fetchProfitData();
+    
+    // Form submit olayını dinle
+    document.getElementById('filterForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      fetchProfitData();
+    });
+    
+    // Filtre sıfırlama butonu
+    document.getElementById('resetFilters').addEventListener('click', function() {
+      document.getElementById('startDate').valueAsDate = thirtyDaysAgo;
+      document.getElementById('endDate').valueAsDate = today;
+      document.getElementById('filterType').value = 'all';
+      fetchProfitData();
+    });
+    
+    // Excel'e aktarma butonu
+    document.getElementById('exportExcel').addEventListener('click', function() {
+      exportToExcel();
+    });
+  });
+  
+  // Kar verilerini getiren fonksiyon
+  function fetchProfitData() {
+    const startDate = document.getElementById('startDate').value;
+    const endDate = document.getElementById('endDate').value;
+    const filterType = document.getElementById('filterType').value;
+    
+    // Yükleniyor göstergesini aç
+    document.getElementById('loadingOverlay').classList.remove('d-none');
+    
+    fetch(`/api/kar-verileri?start_date=${startDate}&end_date=${endDate}&filter_type=${filterType}`)
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          updateSummaryCards(data.summary);
+          updateDailyProfitChart(data.daily_profits);
+          updateProductProfitTable(data.product_profits);
+          updateModelProfitTable(data.model_profits);
+          updateColorProfitTable(data.color_profits);
+          updateSizeProfitTable(data.size_profits);
+          updateModelProfitChart(data.model_profits);
+          updateColorProfitChart(data.color_profits);
+          updateSizeProfitChart(data.size_profits);
+        } else {
+          alert('Veri yüklenirken bir hata oluştu: ' + data.error);
+        }
+        // Yükleniyor göstergesini kapat
+        document.getElementById('loadingOverlay').classList.add('d-none');
+      })
+      .catch(error => {
+        console.error('Hata:', error);
+        alert('Veri yüklenirken bir hata oluştu!');
+        // Yükleniyor göstergesini kapat
+        document.getElementById('loadingOverlay').classList.add('d-none');
+      });
+  }
+  
+  // Özet kartlarını güncelleme fonksiyonu
+  function updateSummaryCards(summary) {
+    document.getElementById('totalRevenue').textContent = formatCurrency(summary.total_revenue);
+    document.getElementById('totalCost').textContent = formatCurrency(summary.total_cost);
+    
+    const profitElement = document.getElementById('totalProfit');
+    profitElement.textContent = formatCurrency(summary.total_profit);
+    
+    if (summary.total_profit > 0) {
+      profitElement.classList.add('profit-positive');
+      profitElement.classList.remove('profit-negative');
+    } else {
+      profitElement.classList.remove('profit-positive');
+      profitElement.classList.add('profit-negative');
+    }
+    
+    const marginElement = document.getElementById('profitMargin');
+    marginElement.textContent = summary.overall_profit_margin.toFixed(2) + '%';
+    
+    if (summary.overall_profit_margin > 0) {
+      marginElement.classList.add('profit-positive');
+      marginElement.classList.remove('profit-negative');
+    } else {
+      marginElement.classList.remove('profit-positive');
+      marginElement.classList.add('profit-negative');
+    }
+  }
+  
+  // Günlük kar grafiğini güncelleme fonksiyonu
+  let dailyProfitChart;
+  function updateDailyProfitChart(dailyProfits) {
+    const ctx = document.getElementById('dailyProfitChart').getContext('2d');
+    
+    // Verileri hazırla
+    const dates = dailyProfits.map(item => item.date);
+    const profits = dailyProfits.map(item => item.total_profit);
+    const revenues = dailyProfits.map(item => item.total_sale);
+    const costs = dailyProfits.map(item => item.total_cost);
+    
+    // Önceki grafik varsa yok et
+    if (dailyProfitChart) {
+      dailyProfitChart.destroy();
+    }
+    
+    // Yeni grafik oluştur
+    dailyProfitChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: dates,
+        datasets: [
+          {
+            label: 'Toplam Satış',
+            data: revenues,
+            borderColor: 'rgba(54, 162, 235, 1)',
+            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+            borderWidth: 2,
+            fill: true
+          },
+          {
+            label: 'Toplam Maliyet',
+            data: costs,
+            borderColor: 'rgba(255, 99, 132, 1)',
+            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+            borderWidth: 2,
+            fill: true
+          },
+          {
+            label: 'Toplam Kar',
+            data: profits,
+            borderColor: 'rgba(75, 192, 192, 1)',
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            borderWidth: 3,
+            fill: false
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+          mode: 'index',
+          intersect: false
+        },
+        plugins: {
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                const label = context.dataset.label || '';
+                const value = context.raw || 0;
+                return label + ': ' + formatCurrency(value);
+              }
+            }
+          },
+          legend: {
+            position: 'top'
+          }
+        },
+        scales: {
+          x: {
+            grid: {
+              display: false
+            }
+          },
+          y: {
+            beginAtZero: true,
+            ticks: {
+              callback: function(value) {
+                return formatCurrency(value, true);
+              }
+            }
+          }
+        }
+      }
+    });
+    
+    // Tablo için verileri güncelle
+    const tbody = document.querySelector('#dailyProfitTable tbody');
+    tbody.innerHTML = '';
+    
+    for (const item of dailyProfits) {
+      const row = document.createElement('tr');
+      
+      row.innerHTML = `
+        <td>${item.date}</td>
+        <td>${item.order_count}</td>
+        <td>${formatCurrency(item.total_sale)}</td>
+        <td>${formatCurrency(item.total_cost)}</td>
+        <td class="${item.total_profit >= 0 ? 'profit-positive' : 'profit-negative'}">${formatCurrency(item.total_profit)}</td>
+        <td class="${item.profit_margin >= 0 ? 'profit-positive' : 'profit-negative'}">${item.profit_margin.toFixed(2)}%</td>
+      `;
+      
+      tbody.appendChild(row);
+    }
+  }
+  
+  // Ürün bazlı kar tablosunu güncelleme fonksiyonu
+  function updateProductProfitTable(productProfits) {
+    const tbody = document.querySelector('#productProfitTable tbody');
+    tbody.innerHTML = '';
+    
+    for (const item of productProfits) {
+      const row = document.createElement('tr');
+      
+      row.innerHTML = `
+        <td>${item.order_number || '-'}</td>
+        <td>${item.order_date || '-'}</td>
+        <td>${item.product_barcode || '-'}</td>
+        <td>${item.product_name || '-'}</td>
+        <td>${item.product_model || '-'}</td>
+        <td>${item.color || '-'}</td>
+        <td>${item.size || '-'}</td>
+        <td>${item.quantity}</td>
+        <td>${formatCurrency(item.sale_price)}</td>
+        <td>${formatCurrency(item.cost_price)}</td>
+        <td>${formatCurrency(item.total_sale)}</td>
+        <td>${formatCurrency(item.total_cost)}</td>
+        <td class="${item.profit >= 0 ? 'profit-positive' : 'profit-negative'}">${formatCurrency(item.profit)}</td>
+        <td class="${item.profit_margin >= 0 ? 'profit-positive' : 'profit-negative'}">${item.profit_margin.toFixed(2)}%</td>
+      `;
+      
+      tbody.appendChild(row);
+    }
+  }
+  
+  // Model bazlı kar tablosunu güncelleme fonksiyonu
+  function updateModelProfitTable(modelProfits) {
+    const tbody = document.querySelector('#modelProfitTable tbody');
+    tbody.innerHTML = '';
+    
+    for (const item of modelProfits) {
+      const row = document.createElement('tr');
+      
+      row.innerHTML = `
+        <td>${item.model_code || 'Belirtilmemiş'}</td>
+        <td>${item.count}</td>
+        <td>${item.total_quantity}</td>
+        <td>${formatCurrency(item.total_sale)}</td>
+        <td>${formatCurrency(item.total_cost)}</td>
+        <td class="${item.total_profit >= 0 ? 'profit-positive' : 'profit-negative'}">${formatCurrency(item.total_profit)}</td>
+        <td class="${item.profit_margin >= 0 ? 'profit-positive' : 'profit-negative'}">${item.profit_margin.toFixed(2)}%</td>
+      `;
+      
+      tbody.appendChild(row);
+    }
+  }
+  
+  // Renk bazlı kar tablosunu güncelleme fonksiyonu
+  function updateColorProfitTable(colorProfits) {
+    const tbody = document.querySelector('#colorProfitTable tbody');
+    tbody.innerHTML = '';
+    
+    for (const item of colorProfits) {
+      const row = document.createElement('tr');
+      
+      row.innerHTML = `
+        <td>${item.color || 'Belirtilmemiş'}</td>
+        <td>${item.count}</td>
+        <td>${item.total_quantity}</td>
+        <td>${formatCurrency(item.total_sale)}</td>
+        <td>${formatCurrency(item.total_cost)}</td>
+        <td class="${item.total_profit >= 0 ? 'profit-positive' : 'profit-negative'}">${formatCurrency(item.total_profit)}</td>
+        <td class="${item.profit_margin >= 0 ? 'profit-positive' : 'profit-negative'}">${item.profit_margin.toFixed(2)}%</td>
+      `;
+      
+      tbody.appendChild(row);
+    }
+  }
+  
+  // Beden bazlı kar tablosunu güncelleme fonksiyonu
+  function updateSizeProfitTable(sizeProfits) {
+    const tbody = document.querySelector('#sizeProfitTable tbody');
+    tbody.innerHTML = '';
+    
+    for (const item of sizeProfits) {
+      const row = document.createElement('tr');
+      
+      row.innerHTML = `
+        <td>${item.size || 'Belirtilmemiş'}</td>
+        <td>${item.count}</td>
+        <td>${item.total_quantity}</td>
+        <td>${formatCurrency(item.total_sale)}</td>
+        <td>${formatCurrency(item.total_cost)}</td>
+        <td class="${item.total_profit >= 0 ? 'profit-positive' : 'profit-negative'}">${formatCurrency(item.total_profit)}</td>
+        <td class="${item.profit_margin >= 0 ? 'profit-positive' : 'profit-negative'}">${item.profit_margin.toFixed(2)}%</td>
+      `;
+      
+      tbody.appendChild(row);
+    }
+  }
+  
+  // Model bazlı kar grafiğini güncelleme fonksiyonu
+  let modelProfitChart;
+  function updateModelProfitChart(modelProfits) {
+    const ctx = document.getElementById('modelProfitChart').getContext('2d');
+    
+    // Top 10 model
+    const topModels = modelProfits.slice(0, 10);
+    
+    // Verileri hazırla
+    const labels = topModels.map(item => item.model_code || 'Belirtilmemiş');
+    const profits = topModels.map(item => item.total_profit);
+    const revenues = topModels.map(item => item.total_sale);
+    const costs = topModels.map(item => item.total_cost);
+    
+    // Önceki grafik varsa yok et
+    if (modelProfitChart) {
+      modelProfitChart.destroy();
+    }
+    
+    // Yeni grafik oluştur
+    modelProfitChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: 'Toplam Satış',
+            data: revenues,
+            backgroundColor: 'rgba(54, 162, 235, 0.7)',
+            borderColor: 'rgba(54, 162, 235, 1)',
+            borderWidth: 1
+          },
+          {
+            label: 'Toplam Maliyet',
+            data: costs,
+            backgroundColor: 'rgba(255, 99, 132, 0.7)',
+            borderColor: 'rgba(255, 99, 132, 1)',
+            borderWidth: 1
+          },
+          {
+            label: 'Toplam Kar',
+            data: profits,
+            backgroundColor: 'rgba(75, 192, 192, 0.7)',
+            borderColor: 'rgba(75, 192, 192, 1)',
+            borderWidth: 1
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: {
+            grid: {
+              display: false
+            }
+          },
+          y: {
+            beginAtZero: true,
+            ticks: {
+              callback: function(value) {
+                return formatCurrency(value, true);
+              }
+            }
+          }
+        },
+        plugins: {
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                const label = context.dataset.label || '';
+                const value = context.raw || 0;
+                return label + ': ' + formatCurrency(value);
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+  
+  // Renk bazlı kar grafiğini güncelleme fonksiyonu
+  let colorProfitChart;
+  function updateColorProfitChart(colorProfits) {
+    const ctx = document.getElementById('colorProfitChart').getContext('2d');
+    
+    // Top 10 color
+    const topColors = colorProfits.slice(0, 10);
+    
+    // Verileri hazırla
+    const labels = topColors.map(item => item.color || 'Belirtilmemiş');
+    const profits = topColors.map(item => item.total_profit);
+    const quantities = topColors.map(item => item.total_quantity);
+    
+    // Rastgele renkler oluştur
+    const backgroundColors = topColors.map((_, i) => 
+      `hsl(${i * 36}, 70%, 60%)`
+    );
+    
+    // Önceki grafik varsa yok et
+    if (colorProfitChart) {
+      colorProfitChart.destroy();
+    }
+    
+    // Yeni grafik oluştur
+    colorProfitChart = new Chart(ctx, {
+      type: 'pie',
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: 'Toplam Kar',
+            data: profits,
+            backgroundColor: backgroundColors,
+            borderColor: 'white',
+            borderWidth: 1
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                const label = context.label || '';
+                const value = context.raw || 0;
+                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                const percentage = ((value / total) * 100).toFixed(2);
+                return label + ': ' + formatCurrency(value) + ' (' + percentage + '%)';
+              }
+            }
+          },
+          legend: {
+            position: 'right'
+          }
+        }
+      }
+    });
+  }
+  
+  // Beden bazlı kar grafiğini güncelleme fonksiyonu
+  let sizeProfitChart;
+  function updateSizeProfitChart(sizeProfits) {
+    const ctx = document.getElementById('sizeProfitChart').getContext('2d');
+    
+    // Verileri hazırla
+    const labels = sizeProfits.map(item => item.size || 'Belirtilmemiş');
+    const profits = sizeProfits.map(item => item.total_profit);
+    const quantities = sizeProfits.map(item => item.total_quantity);
+    
+    // Önceki grafik varsa yok et
+    if (sizeProfitChart) {
+      sizeProfitChart.destroy();
+    }
+    
+    // Yeni grafik oluştur
+    sizeProfitChart = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: 'Toplam Kar',
+            data: profits,
+            backgroundColor: [
+              'rgba(255, 99, 132, 0.7)',
+              'rgba(54, 162, 235, 0.7)',
+              'rgba(255, 206, 86, 0.7)',
+              'rgba(75, 192, 192, 0.7)',
+              'rgba(153, 102, 255, 0.7)',
+              'rgba(255, 159, 64, 0.7)',
+              'rgba(199, 199, 199, 0.7)'
+            ],
+            borderColor: 'white',
+            borderWidth: 1
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                const label = context.label || '';
+                const value = context.raw || 0;
+                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                const percentage = ((value / total) * 100).toFixed(2);
+                return label + ': ' + formatCurrency(value) + ' (' + percentage + '%)';
+              }
+            }
+          },
+          legend: {
+            position: 'right'
+          }
+        }
+      }
+    });
+  }
+  
+  // Excel'e aktarma fonksiyonu
+  function exportToExcel() {
+    const activeTab = document.querySelector('.tab-pane.active');
+    const activeTabId = activeTab.id;
+    
+    let tableId, fileName;
+    
+    switch (activeTabId) {
+      case 'daily':
+        tableId = 'dailyProfitTable';
+        fileName = 'gunluk_kar_analizi.xlsx';
+        break;
+      case 'product':
+        tableId = 'productProfitTable';
+        fileName = 'urun_bazli_kar_analizi.xlsx';
+        break;
+      case 'model':
+        tableId = 'modelProfitTable';
+        fileName = 'model_bazli_kar_analizi.xlsx';
+        break;
+      case 'color':
+        tableId = 'colorProfitTable';
+        fileName = 'renk_bazli_kar_analizi.xlsx';
+        break;
+      case 'size':
+        tableId = 'sizeProfitTable';
+        fileName = 'beden_bazli_kar_analizi.xlsx';
+        break;
+      default:
+        return;
+    }
+    
+    const table = document.getElementById(tableId);
+    const wb = XLSX.utils.table_to_book(table, { sheet: "Kar Analizi" });
+    XLSX.writeFile(wb, fileName);
+  }
+  
+  // Para formatı fonksiyonu
+  function formatCurrency(value, short = false) {
+    const formatter = new Intl.NumberFormat('tr-TR', {
+      style: 'currency',
+      currency: 'TRY',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+    
+    if (short && Math.abs(value) >= 1000) {
+      let suffix = '';
+      let divisor = 1;
+      
+      if (Math.abs(value) >= 1000000) {
+        suffix = 'M';
+        divisor = 1000000;
+      } else if (Math.abs(value) >= 1000) {
+        suffix = 'K';
+        divisor = 1000;
+      }
+      
+      return formatter.format(value / divisor).replace('₺', '') + suffix + ' ₺';
+    }
+    
+    return formatter.format(value);
+  }
+</script>
+{% endblock %}
