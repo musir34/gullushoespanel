@@ -1,4 +1,3 @@
-
 from flask import Blueprint, render_template, jsonify, request
 from models import db, Order, Product, ProfitData, ProductCost
 from datetime import datetime, timedelta
@@ -34,18 +33,20 @@ def get_daily_profit():
         cache_key = "profit_analysis_daily"
         cached_data = None
         try:
-            cached_data = redis_client.get(cache_key)
+            from cache_config import redis_active
+            if redis_active:
+                cached_data = redis_client.get(cache_key)
         except Exception as e:
             logger.warning(f"Redis önbellek erişim hatası: {str(e)}")
-        
+
         if cached_data:
             return jsonify(json.loads(cached_data))
-        
+
         # Tarih aralığını al (son 30 gün varsayılan)
         days = int(request.args.get('days', 30))
         end_date = datetime.now()
         start_date = end_date - timedelta(days=days)
-        
+
         # Veritabanından günlük kâr verilerini al
         daily_data = db.session.query(
             ProfitData.date, 
@@ -58,7 +59,7 @@ def get_daily_profit():
             ProfitData.data_type == 'daily',
             ProfitData.date.between(start_date.date(), end_date.date())
         ).group_by(ProfitData.date).order_by(ProfitData.date).all()
-        
+
         # Veriyi formatla
         result = []
         for row in daily_data:
@@ -72,21 +73,23 @@ def get_daily_profit():
                 'quantity': row.quantity,
                 'avg_order_value': round(float(row.revenue) / row.order_count, 2) if row.revenue and row.order_count else 0
             })
-        
+
         # Sonucu JSON olarak döndür
         response = {
             'data': result,
             'summary': calculate_summary(result)
         }
-        
+
         # Redis önbelleğe kaydet (1 saat süreyle)
         try:
-            redis_client.setex(cache_key, 3600, json.dumps(response))
+            from cache_config import redis_active
+            if redis_active:
+                redis_client.setex(cache_key, 3600, json.dumps(response))
         except Exception as e:
             logger.warning(f"Redis önbellekleme hatası: {str(e)}")
-        
+
         return jsonify(response)
-    
+
     except Exception as e:
         logger.error(f"Günlük kâr analizi hatası: {str(e)}", exc_info=True)
         return jsonify({'error': str(e)}), 500
@@ -99,16 +102,18 @@ def get_product_profit():
         cache_key = "profit_analysis_products"
         cached_data = None
         try:
-            cached_data = redis_client.get(cache_key)
+            from cache_config import redis_active
+            if redis_active:
+                cached_data = redis_client.get(cache_key)
         except Exception as e:
             logger.warning(f"Redis önbellek erişim hatası: {str(e)}")
-        
+
         if cached_data:
             return jsonify(json.loads(cached_data))
-        
+
         # Limit parametresini al (en karlı/zararlı kaç ürün gösterilecek)
         limit = int(request.args.get('limit', 10))
-        
+
         # Veritabanından ürün kâr verilerini al
         product_data = db.session.query(
             ProfitData.reference_id,
@@ -125,7 +130,7 @@ def get_product_profit():
         ).order_by(
             desc(func.sum(ProfitData.total_profit))
         ).limit(limit).all()
-        
+
         # En zararlı ürünleri al
         loss_product_data = db.session.query(
             ProfitData.reference_id,
@@ -142,7 +147,7 @@ def get_product_profit():
         ).order_by(
             func.sum(ProfitData.total_profit)
         ).limit(limit).all()
-        
+
         # Veriyi formatla
         profitable_products = []
         for row in product_data:
@@ -156,7 +161,7 @@ def get_product_profit():
                 'quantity': row.quantity,
                 'avg_price': round(float(row.revenue) / row.quantity, 2) if row.revenue and row.quantity else 0
             })
-        
+
         loss_products = []
         for row in loss_product_data:
             loss_products.append({
@@ -169,21 +174,23 @@ def get_product_profit():
                 'quantity': row.quantity,
                 'avg_price': round(float(row.revenue) / row.quantity, 2) if row.revenue and row.quantity else 0
             })
-        
+
         # Sonucu JSON olarak döndür
         response = {
             'profitable_products': profitable_products,
             'loss_products': loss_products
         }
-        
+
         # Redis önbelleğe kaydet (2 saat süreyle)
         try:
-            redis_client.setex(cache_key, 7200, json.dumps(response))
+            from cache_config import redis_active
+            if redis_active:
+                redis_client.setex(cache_key, 7200, json.dumps(response))
         except Exception as e:
             logger.warning(f"Redis önbellekleme hatası: {str(e)}")
-        
+
         return jsonify(response)
-    
+
     except Exception as e:
         logger.error(f"Ürün kâr analizi hatası: {str(e)}", exc_info=True)
         return jsonify({'error': str(e)}), 500
@@ -201,13 +208,13 @@ def calculate_summary(data):
             'total_quantity': 0,
             'avg_order_value': 0
         }
-    
+
     total_revenue = sum(item['revenue'] for item in data)
     total_cost = sum(item['cost'] for item in data)
     total_profit = sum(item['profit'] for item in data)
     total_orders = sum(item['order_count'] for item in data)
     total_quantity = sum(item['quantity'] for item in data)
-    
+
     return {
         'total_revenue': round(total_revenue, 2),
         'total_cost': round(total_cost, 2),
@@ -230,17 +237,17 @@ def calculate_daily_profit():
         yesterday = today - timedelta(days=1)
         start_date = datetime.combine(yesterday, datetime.min.time())
         end_date = datetime.combine(yesterday, datetime.max.time())
-        
+
         # Tamamlanan ve kargoya verilmiş siparişleri getir
         orders = Order.query.filter(
             Order.status.in_(['Delivered', 'Shipped']),
             Order.delivery_date.between(start_date, end_date)
         ).all()
-        
+
         if not orders:
             logger.info(f"Belirtilen tarih aralığında tamamlanan sipariş bulunamadı: {yesterday}")
             return
-        
+
         # Kâr analizini hesapla
         total_revenue = 0
         total_cost = 0
@@ -249,17 +256,17 @@ def calculate_daily_profit():
         model_data = {}    # Model bazlı analiz için
         color_data = {}    # Renk bazlı analiz için
         size_data = {}     # Beden bazlı analiz için
-        
+
         for order in orders:
             # Geliri hesapla
             revenue = order.amount if order.amount else 0
             total_revenue += revenue
             quantity = order.quantity if order.quantity else 1
             total_quantity += quantity
-            
+
             # Maliyet için ürün bilgisini bul
             product_cost = get_product_cost(order.product_barcode)
-            
+
             if product_cost:
                 cost = product_cost * quantity
                 profit = revenue - cost
@@ -267,9 +274,9 @@ def calculate_daily_profit():
                 # Maliyet bulunamadıysa varsayılan kâr marjı (örn: %30)
                 cost = revenue * 0.7
                 profit = revenue * 0.3
-            
+
             total_cost += cost
-            
+
             # Ürün bazlı analiz için veri toplama
             if order.product_barcode:
                 if order.product_barcode not in product_data:
@@ -287,7 +294,7 @@ def calculate_daily_profit():
                 product_data[order.product_barcode]['profit'] += profit
                 product_data[order.product_barcode]['quantity'] += quantity
                 product_data[order.product_barcode]['order_count'] += 1
-            
+
             # Model bazlı analiz için veri toplama
             if order.product_model_code:
                 if order.product_model_code not in model_data:
@@ -305,7 +312,7 @@ def calculate_daily_profit():
                 model_data[order.product_model_code]['profit'] += profit
                 model_data[order.product_model_code]['quantity'] += quantity
                 model_data[order.product_model_code]['order_count'] += 1
-            
+
             # Renk bazlı analiz için veri toplama
             if order.product_color:
                 if order.product_color not in color_data:
@@ -323,7 +330,7 @@ def calculate_daily_profit():
                 color_data[order.product_color]['profit'] += profit
                 color_data[order.product_color]['quantity'] += quantity
                 color_data[order.product_color]['order_count'] += 1
-            
+
             # Beden bazlı analiz için veri toplama
             if order.product_size:
                 if order.product_size not in size_data:
@@ -341,7 +348,7 @@ def calculate_daily_profit():
                 size_data[order.product_size]['profit'] += profit
                 size_data[order.product_size]['quantity'] += quantity
                 size_data[order.product_size]['order_count'] += 1
-        
+
         # Günlük toplam veriyi kaydet
         daily_data = ProfitData(
             date=yesterday,
@@ -356,7 +363,7 @@ def calculate_daily_profit():
             profit_margin=((total_revenue - total_cost) / total_revenue * 100) if total_revenue > 0 else 0
         )
         db.session.add(daily_data)
-        
+
         # Ürün bazlı verileri kaydet
         for product_id, data in product_data.items():
             product_profit_data = ProfitData(
@@ -372,7 +379,7 @@ def calculate_daily_profit():
                 profit_margin=(data['profit'] / data['revenue'] * 100) if data['revenue'] > 0 else 0
             )
             db.session.add(product_profit_data)
-        
+
         # Model bazlı verileri kaydet
         for model_id, data in model_data.items():
             model_profit_data = ProfitData(
@@ -388,7 +395,7 @@ def calculate_daily_profit():
                 profit_margin=(data['profit'] / data['revenue'] * 100) if data['revenue'] > 0 else 0
             )
             db.session.add(model_profit_data)
-        
+
         # Renk bazlı verileri kaydet
         for color_id, data in color_data.items():
             color_profit_data = ProfitData(
@@ -404,7 +411,7 @@ def calculate_daily_profit():
                 profit_margin=(data['profit'] / data['revenue'] * 100) if data['revenue'] > 0 else 0
             )
             db.session.add(color_profit_data)
-        
+
         # Beden bazlı verileri kaydet
         for size_id, data in size_data.items():
             size_profit_data = ProfitData(
@@ -420,17 +427,19 @@ def calculate_daily_profit():
                 profit_margin=(data['profit'] / data['revenue'] * 100) if data['revenue'] > 0 else 0
             )
             db.session.add(size_profit_data)
-        
+
         # Veritabanına kaydet
         db.session.commit()
         logger.info(f"Günlük kâr analizi başarıyla hesaplandı ve kaydedildi: {yesterday}, Sipariş Sayısı: {len(orders)}")
-        
+
         # Redis önbelleği temizle
         try:
-            redis_client.delete("profit_analysis_daily", "profit_analysis_products")
+            from cache_config import redis_active
+            if redis_active:
+                redis_client.delete("profit_analysis_daily", "profit_analysis_products")
         except Exception as e:
             logger.warning(f"Redis önbellek temizleme hatası: {str(e)}")
-        
+
     except Exception as e:
         db.session.rollback()
         logger.error(f"Ürün kâr hesaplama hatası: {str(e)}", exc_info=True)
@@ -443,19 +452,19 @@ def get_product_cost(barcode):
     try:
         if not barcode:
             return None
-        
+
         # ProductCost tablosunda ara
         product_cost = ProductCost.query.filter_by(barcode=barcode).first()
         if product_cost and product_cost.cost_price:
             return float(product_cost.cost_price)
-        
+
         # Eğer maliyet kaydı yoksa, ürün bilgisinden tahmin et
         product = Product.query.filter_by(barcode=barcode).first()
         if product and product.sale_price:
             # Varsayılan kar marjı (%30)
             estimated_cost = float(product.sale_price) * 0.7
             return estimated_cost
-        
+
         return None
     except Exception as e:
         logger.error(f"Ürün maliyet hesaplama hatası: {str(e)}")
@@ -474,3 +483,39 @@ def init_scheduler():
         logger.info("Kâr analizi zamanlayıcısı başlatıldı.")
     except Exception as e:
         logger.error(f"Zamanlayıcı başlatma hatası: {str(e)}")
+
+def get_product_costs_from_db():
+    """
+    Tüm ürün maliyetlerini veritabanından veya önbellekten al
+    """
+    cache_key = "product_costs"
+    cached_data = None
+
+    # Redis bağlantısını güvenli şekilde dene
+    try:
+        from cache_config import redis_active
+        if redis_active:
+            cached_data = redis_client.get(cache_key)
+            if cached_data:
+                return json.loads(cached_data)
+    except Exception as e:
+        logger.warning(f"Redis önbellek erişim hatası: {str(e)}")
+        # Redis hatasında doğrudan veritabanından devam et
+
+    # Redis'ten veri alınamadıysa veritabanından al
+    try:
+        product_costs = ProductCost.query.all()
+        cost_dict = {str(pc.barcode): float(pc.cost_price) for pc in product_costs if pc.cost_price}
+
+        # Redis'e kaydet (eğer aktifse)
+        try:
+            from cache_config import redis_active
+            if redis_active:
+                redis_client.setex(cache_key, 3600, json.dumps(cost_dict)) # 1 saatlik cache süresi
+        except Exception as e:
+            logger.warning(f"Redis önbelleğe kaydetme hatası: {str(e)}")
+
+        return cost_dict
+    except Exception as e:
+        logger.error(f"Veritabanından ürün maliyetlerini alma hatası: {str(e)}")
+        return {}
