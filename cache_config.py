@@ -1,51 +1,44 @@
 
 import redis
-import os
+import json
+from functools import wraps
+from datetime import datetime, timedelta
 
-# Redis bağlantı ayarları
-REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
+# Redis bağlantısı
+redis_client = redis.Redis(host='localhost', port=6379, db=0)
 
-# Redis istemcisini oluştur
-try:
-    redis_client = redis.from_url(REDIS_URL)
-    redis_client.ping()  # Bağlantıyı test et
-    print("Redis bağlantısı başarıyla kuruldu")
-except redis.ConnectionError:
-    print("Redis bağlantısı kurulamadı, sahte redis istemcisi kullanılıyor")
-    
-    # Redis bağlantısı yoksa sahte bir redis istemcisi oluştur
-    class FakeRedis:
-        def __init__(self):
-            self.data = {}
+def cache_result(expiration=3600):
+    """
+    Fonksiyon sonuçlarını önbelleğe alan decorator
+    """
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            # Önbellek anahtarı oluşturma
+            cache_key = f"{func.__name__}:{str(args)}:{str(kwargs)}"
             
-        def get(self, key):
-            return self.data.get(key)
+            # Önbellekte veri kontrolü
+            cached_data = redis_client.get(cache_key)
+            if cached_data:
+                return json.loads(cached_data)
             
-        def setex(self, key, time, value):
-            self.data[key] = value
-            return True
+            # Eğer önbellekte yoksa, fonksiyonu çalıştır
+            result = func(*args, **kwargs)
             
-        def delete(self, key):
-            if key in self.data:
-                del self.data[key]
-            return True
-    
-    redis_client = FakeRedis()
+            # Sonucu önbelleğe kaydet
+            redis_client.setex(
+                cache_key,
+                expiration,
+                json.dumps(result, default=str)
+            )
+            
+            return result
+        return wrapper
+    return decorator
 
-
-import os
-from redis import Redis
-
-redis_client = Redis(
-    host=os.environ.get('REDIS_HOST', 'localhost'),
-    port=int(os.environ.get('REDIS_PORT', 6379)),
-    db=0,
-    decode_responses=True
-)
-
-# Önbellek süreleri (saniye)
-CACHE_TIMES = {
-    'orders': 300,  # 5 dakika
-    'products': 600,  # 10 dakika
-    'user_data': 1800  # 30 dakika
-}
+def clear_cache_pattern(pattern):
+    """
+    Belirli bir desene uyan tüm önbellek girdilerini temizler
+    """
+    for key in redis_client.scan_iter(f"*{pattern}*"):
+        redis_client.delete(key)

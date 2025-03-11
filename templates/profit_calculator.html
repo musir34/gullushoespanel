@@ -1,0 +1,942 @@
+
+{% extends 'base.html' %}
+
+{% block title %}Ürün Kâr Hesaplayıcı{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Otomatik Kâr/Maliyet Hesaplayıcı</h4>
+                </div>
+                <div class="card-body">
+                    <ul class="nav nav-tabs" id="profitTabs" role="tablist">
+                        <li class="nav-item">
+                            <a class="nav-link active" id="single-tab" data-toggle="tab" href="#single" role="tab" aria-controls="single" aria-selected="true">Tek Ürün Hesaplayıcı</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" id="bulk-tab" data-toggle="tab" href="#bulk" role="tab" aria-controls="bulk" aria-selected="false">Toplu Kâr Analizi</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" id="optimization-tab" data-toggle="tab" href="#optimization" role="tab" aria-controls="optimization" aria-selected="false">Kâr Optimizasyonu</a>
+                        </li>
+                    </ul>
+                    
+                    <div class="tab-content mt-3" id="profitTabsContent">
+                        <!-- Tek Ürün Hesaplayıcı -->
+                        <div class="tab-pane fade show active" id="single" role="tabpanel" aria-labelledby="single-tab">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h5 class="mb-0">Ürün Bilgileri</h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <form id="profitCalculatorForm">
+                                                <div class="form-group">
+                                                    <label for="barcode">Ürün Barkodu:</label>
+                                                    <div class="input-group">
+                                                        <input type="text" class="form-control" id="barcode" placeholder="Ürün barkodu girin">
+                                                        <div class="input-group-append">
+                                                            <button class="btn btn-outline-secondary" type="button" id="getProductInfo">Bilgileri Getir</button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div class="form-group">
+                                                    <label for="costPrice">Maliyet Fiyatı (TL):</label>
+                                                    <input type="number" step="0.01" class="form-control" id="costPrice" placeholder="Maliyet fiyatını girin">
+                                                </div>
+                                                
+                                                <div class="form-group">
+                                                    <label for="salePrice">Satış Fiyatı (TL):</label>
+                                                    <input type="number" step="0.01" class="form-control" id="salePrice" placeholder="Satış fiyatını girin">
+                                                </div>
+                                                
+                                                <div class="form-group">
+                                                    <label for="commissionRate">Platform Komisyon Oranı (%):</label>
+                                                    <input type="number" step="0.1" class="form-control" id="commissionRate" value="25" placeholder="Komisyon oranını girin">
+                                                </div>
+                                                
+                                                <div class="form-group">
+                                                    <label for="quantity">Adet:</label>
+                                                    <input type="number" class="form-control" id="quantity" value="1" min="1" placeholder="Adet girin">
+                                                </div>
+                                                
+                                                <button type="button" class="btn btn-primary" id="calculateProfit">Hesapla</button>
+                                                <button type="button" class="btn btn-info" id="calculateOptimalPrice">Optimal Fiyat Hesapla</button>
+                                                <button type="reset" class="btn btn-secondary">Temizle</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h5 class="mb-0">Hesaplama Sonuçları</h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <div id="profitResult" style="display: none;">
+                                                <h5 class="text-center mb-4" id="productTitle">Ürün Analizi</h5>
+                                                
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <p><strong>Maliyet Fiyatı:</strong> <span id="resultCostPrice"></span> TL</p>
+                                                        <p><strong>Satış Fiyatı:</strong> <span id="resultSalePrice"></span> TL</p>
+                                                        <p><strong>Komisyon Tutarı:</strong> <span id="resultCommission"></span> TL</p>
+                                                        <p><strong>Birim Kâr:</strong> <span id="resultProfit"></span> TL</p>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <p><strong>Kâr Marjı:</strong> <span id="resultMargin"></span></p>
+                                                        <p><strong>Toplam Tutar:</strong> <span id="resultTotalSale"></span> TL</p>
+                                                        <p><strong>Toplam Kâr:</strong> <span id="resultTotalProfit"></span> TL</p>
+                                                        <p><strong>Kârlılık Durumu:</strong> <span id="resultStatus"></span></p>
+                                                    </div>
+                                                </div>
+                                                
+                                                <hr>
+                                                
+                                                <h6 class="mt-3">Kâr Dağılımı</h6>
+                                                <div class="progress mb-4" style="height: 25px;">
+                                                    <div class="progress-bar bg-danger" id="costBar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">Maliyet</div>
+                                                    <div class="progress-bar bg-warning" id="commissionBar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">Komisyon</div>
+                                                    <div class="progress-bar bg-success" id="profitBar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">Kâr</div>
+                                                </div>
+                                                
+                                                <div id="suggestions" class="mt-4">
+                                                    <h6>Öneriler:</h6>
+                                                    <ul id="suggestionsList"></ul>
+                                                </div>
+                                            </div>
+                                            
+                                            <div id="optimalPriceResult" style="display: none;">
+                                                <h5 class="text-center mb-4">Optimal Fiyatlandırma Önerileri</h5>
+                                                
+                                                <div id="optimalPriceDetails">
+                                                    <p><strong>Maliyet Fiyatı:</strong> <span id="optimalCostPrice"></span> TL</p>
+                                                    <p><strong>Hedef Kâr Marjı:</strong> <span id="optimalTargetMargin"></span>%</p>
+                                                    <p><strong>Komisyon Oranı:</strong> <span id="optimalCommissionRate"></span>%</p>
+                                                    <p><strong>Hesaplanan Optimal Fiyat:</strong> <span id="optimalPrice"></span> TL</p>
+                                                    <p><strong>Tahmini Kâr:</strong> <span id="optimalEstimatedProfit"></span> TL</p>
+                                                </div>
+                                                
+                                                <hr>
+                                                
+                                                <h6 class="mt-3">Farklı Kâr Marjları İçin Fiyat Seçenekleri</h6>
+                                                <div class="table-responsive">
+                                                    <table class="table table-striped table-bordered">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>Kâr Marjı (%)</th>
+                                                                <th>Satış Fiyatı (TL)</th>
+                                                                <th>Kâr (TL)</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody id="priceOptionsTable"></tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                            
+                                            <div id="noResultMessage" class="text-center p-5">
+                                                <i class="fas fa-calculator fa-3x mb-3 text-muted"></i>
+                                                <p>Hesaplama yapmak için bilgileri girip "Hesapla" butonuna tıklayın.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Toplu Kâr Analizi -->
+                        <div class="tab-pane fade" id="bulk" role="tabpanel" aria-labelledby="bulk-tab">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0">Toplu Kâr Analizi</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="form-group">
+                                        <label>Ürün Barkodları (Her satırda bir barkod):</label>
+                                        <textarea class="form-control" id="bulkBarcodes" rows="5" placeholder="Analiz edilecek ürün barkodlarını her satıra bir tane olacak şekilde girin"></textarea>
+                                    </div>
+                                    
+                                    <button type="button" class="btn btn-primary" id="analyzeBulkProducts">Toplu Analiz Et</button>
+                                    
+                                    <div id="bulkResults" class="mt-4" style="display: none;">
+                                        <h5>Analiz Sonuçları</h5>
+                                        <div class="table-responsive">
+                                            <table class="table table-striped table-bordered">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Barkod</th>
+                                                        <th>Ürün Adı</th>
+                                                        <th>Renk/Beden</th>
+                                                        <th>Maliyet</th>
+                                                        <th>Satış Fiyatı</th>
+                                                        <th>Komisyon</th>
+                                                        <th>Kâr</th>
+                                                        <th>Kâr Marjı</th>
+                                                        <th>Durum</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="bulkResultsTable"></tbody>
+                                            </table>
+                                        </div>
+                                        
+                                        <div class="mt-3">
+                                            <h6>Özet:</h6>
+                                            <p><strong>Toplam Ürün:</strong> <span id="totalProducts"></span></p>
+                                            <p><strong>Kârlı Ürünler:</strong> <span id="profitableProducts"></span></p>
+                                            <p><strong>Zararlı Ürünler:</strong> <span id="unprofitableProducts"></span></p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Kâr Optimizasyonu -->
+                        <div class="tab-pane fade" id="optimization" role="tabpanel" aria-labelledby="optimization-tab">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0">Kâr Optimizasyonu Önerileri</h5>
+                                </div>
+                                <div class="card-body">
+                                    <p>Bu analiz, satış verilerinize göre kârlılığı artırmak için öneriler sunar. Son 90 günlük satış verileri kullanılarak hesaplanır.</p>
+                                    
+                                    <button type="button" class="btn btn-primary" id="getOptimizationSuggestions">Optimizasyon Önerilerini Getir</button>
+                                    
+                                    <div id="loadingOptimization" class="text-center mt-3" style="display: none;">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="sr-only">Yükleniyor...</span>
+                                        </div>
+                                        <p>Analiz yapılıyor, lütfen bekleyin...</p>
+                                    </div>
+                                    
+                                    <div id="optimizationResults" class="mt-4" style="display: none;">
+                                        <ul class="nav nav-tabs" id="optimizationTabs" role="tablist">
+                                            <li class="nav-item">
+                                                <a class="nav-link active" id="low-margin-tab" data-toggle="tab" href="#lowMargin" role="tab">Düşük Kâr Marjlı Ürünler</a>
+                                            </li>
+                                            <li class="nav-item">
+                                                <a class="nav-link" id="high-margin-tab" data-toggle="tab" href="#highMargin" role="tab">Yüksek Kâr Marjlı Ürünler</a>
+                                            </li>
+                                            <li class="nav-item">
+                                                <a class="nav-link" id="slow-moving-tab" data-toggle="tab" href="#slowMoving" role="tab">Yavaş Hareket Eden Ürünler</a>
+                                            </li>
+                                            <li class="nav-item">
+                                                <a class="nav-link" id="fast-moving-tab" data-toggle="tab" href="#fastMoving" role="tab">Hızlı Hareket Eden Ürünler</a>
+                                            </li>
+                                            <li class="nav-item">
+                                                <a class="nav-link" id="stock-issues-tab" data-toggle="tab" href="#stockIssues" role="tab">Stok Sorunları</a>
+                                            </li>
+                                        </ul>
+                                        
+                                        <div class="tab-content mt-3" id="optimizationTabsContent">
+                                            <!-- Düşük Kâr Marjlı Ürünler -->
+                                            <div class="tab-pane fade show active" id="lowMargin" role="tabpanel">
+                                                <div class="alert alert-warning">
+                                                    <i class="fas fa-exclamation-triangle mr-2"></i> 
+                                                    Bu ürünlerin kâr marjı düşük olduğundan, fiyatlarını artırmak veya maliyeti düşürmek faydalı olacaktır.
+                                                </div>
+                                                <div class="table-responsive">
+                                                    <table class="table table-striped table-bordered">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>Barkod</th>
+                                                                <th>Ürün Adı</th>
+                                                                <th>Renk/Beden</th>
+                                                                <th>Kâr Marjı (%)</th>
+                                                                <th>Mevcut Fiyat</th>
+                                                                <th>Maliyet</th>
+                                                                <th>Önerilen Fiyat</th>
+                                                                <th>Sipariş Sayısı</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody id="lowMarginTable"></tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Yüksek Kâr Marjlı Ürünler -->
+                                            <div class="tab-pane fade" id="highMargin" role="tabpanel">
+                                                <div class="alert alert-success">
+                                                    <i class="fas fa-check-circle mr-2"></i>
+                                                    Bu ürünler çok karlı. Bu ürünlere benzer ürünlerin sayısını artırmayı düşünebilirsiniz.
+                                                </div>
+                                                <div class="table-responsive">
+                                                    <table class="table table-striped table-bordered">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>Barkod</th>
+                                                                <th>Ürün Adı</th>
+                                                                <th>Renk/Beden</th>
+                                                                <th>Kâr Marjı (%)</th>
+                                                                <th>Satış Fiyatı</th>
+                                                                <th>Maliyet</th>
+                                                                <th>Sipariş Sayısı</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody id="highMarginTable"></tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Yavaş Hareket Eden Ürünler -->
+                                            <div class="tab-pane fade" id="slowMoving" role="tabpanel">
+                                                <div class="alert alert-danger">
+                                                    <i class="fas fa-snail mr-2"></i>
+                                                    Bu ürünler uzun süredir satılmıyor. İndirim yaparak veya öne çıkararak satışlarını hızlandırabilirsiniz.
+                                                </div>
+                                                <div class="table-responsive">
+                                                    <table class="table table-striped table-bordered">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>Barkod</th>
+                                                                <th>Ürün Adı</th>
+                                                                <th>Renk/Beden</th>
+                                                                <th>Son Siparişten Bu Yana (Gün)</th>
+                                                                <th>Stok Miktarı</th>
+                                                                <th>Mevcut Fiyat</th>
+                                                                <th>Önerilen İndirimli Fiyat</th>
+                                                                <th>Önerilen Aksiyon</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody id="slowMovingTable"></tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Hızlı Hareket Eden Ürünler -->
+                                            <div class="tab-pane fade" id="fastMoving" role="tabpanel">
+                                                <div class="alert alert-info">
+                                                    <i class="fas fa-bolt mr-2"></i>
+                                                    Bu ürünler hızlı satılıyor. Stoklarınızı artırarak daha fazla satış yapabilirsiniz.
+                                                </div>
+                                                <div class="table-responsive">
+                                                    <table class="table table-striped table-bordered">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>Barkod</th>
+                                                                <th>Ürün Adı</th>
+                                                                <th>Renk/Beden</th>
+                                                                <th>Sipariş Sayısı</th>
+                                                                <th>Stok Miktarı</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody id="fastMovingTable"></tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Stok Sorunları -->
+                                            <div class="tab-pane fade" id="stockIssues" role="tabpanel">
+                                                <div class="alert alert-danger">
+                                                    <i class="fas fa-exclamation-circle mr-2"></i>
+                                                    Bu ürünlerin talebi yüksek fakat stok miktarı düşük. Acilen stok takviyesi yapmalısınız.
+                                                </div>
+                                                <div class="table-responsive">
+                                                    <table class="table table-striped table-bordered">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>Barkod</th>
+                                                                <th>Ürün Adı</th>
+                                                                <th>Renk/Beden</th>
+                                                                <th>Sipariş Sayısı</th>
+                                                                <th>Mevcut Stok</th>
+                                                                <th>Önerilen Aksiyon</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody id="stockIssuesTable"></tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Ürün bilgilerini getirme
+    document.getElementById('getProductInfo').addEventListener('click', function() {
+        const barcode = document.getElementById('barcode').value.trim();
+        if (!barcode) {
+            alert('Lütfen bir barkod numarası girin.');
+            return;
+        }
+        
+        fetch('/api/urun-kar-hesapla', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ barcode: barcode })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const product = data.product;
+                
+                // Formu doldur
+                document.getElementById('costPrice').value = product.cost_price;
+                document.getElementById('salePrice').value = product.sale_price;
+                document.getElementById('commissionRate').value = product.commission.rate;
+                
+                // Kâr hesapla
+                calculateProfit();
+            } else {
+                alert(data.error || 'Ürün bilgileri getirilirken bir hata oluştu.');
+            }
+        })
+        .catch(error => {
+            console.error('Hata:', error);
+            alert('Ürün bilgileri getirilirken bir hata oluştu.');
+        });
+    });
+    
+    // Kâr hesaplama
+    function calculateProfit() {
+        const costPrice = parseFloat(document.getElementById('costPrice').value);
+        const salePrice = parseFloat(document.getElementById('salePrice').value);
+        const commissionRate = parseFloat(document.getElementById('commissionRate').value);
+        const quantity = parseInt(document.getElementById('quantity').value);
+        
+        if (isNaN(costPrice) || isNaN(salePrice) || isNaN(commissionRate) || isNaN(quantity) || salePrice <= 0 || quantity <= 0) {
+            alert('Lütfen geçerli değerler girin.');
+            return;
+        }
+        
+        fetch('/api/tahmini-kar-hesapla', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                cost_price: costPrice,
+                sale_price: salePrice,
+                commission_rate: commissionRate,
+                quantity: quantity
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Sonuçları göster
+                showProfitResults(data.calculation);
+            } else {
+                alert(data.error || 'Kâr hesaplaması sırasında bir hata oluştu.');
+            }
+        })
+        .catch(error => {
+            console.error('Hata:', error);
+            alert('Kâr hesaplaması sırasında bir hata oluştu.');
+        });
+    }
+    
+    document.getElementById('calculateProfit').addEventListener('click', calculateProfit);
+    
+    // Optimal fiyat hesaplama
+    document.getElementById('calculateOptimalPrice').addEventListener('click', function() {
+        const costPrice = parseFloat(document.getElementById('costPrice').value);
+        const commissionRate = parseFloat(document.getElementById('commissionRate').value);
+        
+        if (isNaN(costPrice) || isNaN(commissionRate) || costPrice <= 0) {
+            alert('Lütfen geçerli bir maliyet fiyatı ve komisyon oranı girin.');
+            return;
+        }
+        
+        fetch('/api/optimal-fiyat-hesapla', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                cost_price: costPrice,
+                target_margin: 25, // Varsayılan hedef kâr marjı
+                commission_rate: commissionRate
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Optimal fiyat sonuçlarını göster
+                showOptimalPriceResults(data.optimal_price);
+            } else {
+                alert(data.error || 'Optimal fiyat hesaplaması sırasında bir hata oluştu.');
+            }
+        })
+        .catch(error => {
+            console.error('Hata:', error);
+            alert('Optimal fiyat hesaplaması sırasında bir hata oluştu.');
+        });
+    });
+    
+    // Toplu ürün analizi
+    document.getElementById('analyzeBulkProducts').addEventListener('click', function() {
+        const barcodes = document.getElementById('bulkBarcodes').value.trim().split(/\n+/);
+        
+        if (barcodes.length === 0 || (barcodes.length === 1 && barcodes[0] === '')) {
+            alert('Lütfen en az bir barkod numarası girin.');
+            return;
+        }
+        
+        fetch('/api/toplu-fiyat-analizi', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ barcodes: barcodes })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Toplu analiz sonuçlarını göster
+                showBulkResults(data.results);
+            } else {
+                alert(data.error || 'Toplu fiyat analizi sırasında bir hata oluştu.');
+            }
+        })
+        .catch(error => {
+            console.error('Hata:', error);
+            alert('Toplu fiyat analizi sırasında bir hata oluştu.');
+        });
+    });
+    
+    // Optimizasyon önerilerini getir
+    document.getElementById('getOptimizationSuggestions').addEventListener('click', function() {
+        document.getElementById('loadingOptimization').style.display = 'block';
+        document.getElementById('optimizationResults').style.display = 'none';
+        
+        fetch('/api/karlilik-optimizasyonu')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('loadingOptimization').style.display = 'none';
+            
+            if (data.success) {
+                // Optimizasyon sonuçlarını göster
+                showOptimizationResults(data.optimization_suggestions);
+            } else {
+                alert(data.error || 'Karlılık optimizasyonu sırasında bir hata oluştu.');
+            }
+        })
+        .catch(error => {
+            document.getElementById('loadingOptimization').style.display = 'none';
+            console.error('Hata:', error);
+            alert('Karlılık optimizasyonu sırasında bir hata oluştu.');
+        });
+    });
+    
+    // Fonksiyonlar
+    function showProfitResults(calculation) {
+        // Optimal fiyat sonuçlarını gizle
+        document.getElementById('optimalPriceResult').style.display = 'none';
+        document.getElementById('noResultMessage').style.display = 'none';
+        
+        // Kâr hesaplama sonuçlarını göster
+        document.getElementById('profitResult').style.display = 'block';
+        
+        // Sonuçları yerleştir
+        document.getElementById('resultCostPrice').textContent = calculation.unit_values.cost_price;
+        document.getElementById('resultSalePrice').textContent = calculation.unit_values.sale_price;
+        document.getElementById('resultCommission').textContent = calculation.unit_values.commission_amount;
+        document.getElementById('resultProfit').textContent = calculation.unit_values.profit;
+        document.getElementById('resultMargin').textContent = calculation.metrics.profit_margin + '%';
+        document.getElementById('resultTotalSale').textContent = calculation.total_values.total_sale;
+        document.getElementById('resultTotalProfit').textContent = calculation.total_values.total_profit;
+        
+        // Kârlılık durumu
+        const resultStatus = document.getElementById('resultStatus');
+        if (calculation.metrics.is_profitable) {
+            resultStatus.textContent = 'Kârlı';
+            resultStatus.className = 'text-success';
+        } else {
+            resultStatus.textContent = 'Zararlı';
+            resultStatus.className = 'text-danger';
+        }
+        
+        // Progress bar güncelleme
+        const salePrice = calculation.unit_values.sale_price;
+        const costPrice = calculation.unit_values.cost_price;
+        const commissionAmount = calculation.unit_values.commission_amount;
+        const profit = calculation.unit_values.profit;
+        
+        const costPercent = (costPrice / salePrice) * 100;
+        const commissionPercent = (commissionAmount / salePrice) * 100;
+        const profitPercent = 100 - costPercent - commissionPercent;
+        
+        document.getElementById('costBar').style.width = costPercent + '%';
+        document.getElementById('costBar').textContent = 'Maliyet: ' + costPercent.toFixed(1) + '%';
+        
+        document.getElementById('commissionBar').style.width = commissionPercent + '%';
+        document.getElementById('commissionBar').textContent = 'Komisyon: ' + commissionPercent.toFixed(1) + '%';
+        
+        document.getElementById('profitBar').style.width = profitPercent + '%';
+        document.getElementById('profitBar').textContent = 'Kâr: ' + profitPercent.toFixed(1) + '%';
+        
+        // Önerileri göster
+        const suggestionsList = document.getElementById('suggestionsList');
+        suggestionsList.innerHTML = '';
+        
+        if (calculation.suggestions && calculation.suggestions.length > 0) {
+            calculation.suggestions.forEach(suggestion => {
+                const li = document.createElement('li');
+                li.textContent = suggestion;
+                suggestionsList.appendChild(li);
+            });
+        }
+    }
+    
+    function showOptimalPriceResults(optimalPrice) {
+        // Kâr hesaplama sonuçlarını gizle
+        document.getElementById('profitResult').style.display = 'none';
+        document.getElementById('noResultMessage').style.display = 'none';
+        
+        // Optimal fiyat sonuçlarını göster
+        document.getElementById('optimalPriceResult').style.display = 'block';
+        
+        // Sonuçları yerleştir
+        document.getElementById('optimalCostPrice').textContent = optimalPrice.cost_price;
+        document.getElementById('optimalTargetMargin').textContent = optimalPrice.target_margin;
+        document.getElementById('optimalCommissionRate').textContent = optimalPrice.commission_rate;
+        document.getElementById('optimalPrice').textContent = optimalPrice.optimal_price;
+        document.getElementById('optimalEstimatedProfit').textContent = optimalPrice.estimated_profit;
+        
+        // Fiyat seçenekleri tablosu
+        const priceOptionsTable = document.getElementById('priceOptionsTable');
+        priceOptionsTable.innerHTML = '';
+        
+        optimalPrice.price_options.forEach(option => {
+            const row = document.createElement('tr');
+            
+            const marginCell = document.createElement('td');
+            marginCell.textContent = option.margin + '%';
+            
+            const priceCell = document.createElement('td');
+            priceCell.textContent = option.price + ' TL';
+            
+            const profitCell = document.createElement('td');
+            profitCell.textContent = option.profit + ' TL';
+            
+            // Satırı tabloya ekle
+            row.appendChild(marginCell);
+            row.appendChild(priceCell);
+            row.appendChild(profitCell);
+            
+            priceOptionsTable.appendChild(row);
+        });
+    }
+    
+    function showBulkResults(results) {
+        document.getElementById('bulkResults').style.display = 'block';
+        
+        const bulkResultsTable = document.getElementById('bulkResultsTable');
+        bulkResultsTable.innerHTML = '';
+        
+        let profitableCount = 0;
+        let unprofitableCount = 0;
+        
+        results.forEach(result => {
+            if (result.status === 'error') {
+                // Hata durumunu göster
+                const row = document.createElement('tr');
+                row.className = 'table-warning';
+                
+                const barcodeCell = document.createElement('td');
+                barcodeCell.textContent = result.barcode;
+                
+                const nameCell = document.createElement('td');
+                nameCell.setAttribute('colspan', '7');
+                nameCell.textContent = result.message || 'Ürün bilgisi alınamadı';
+                
+                row.appendChild(barcodeCell);
+                row.appendChild(nameCell);
+                
+                bulkResultsTable.appendChild(row);
+            } else {
+                // Başarılı analiz durumunu göster
+                const row = document.createElement('tr');
+                
+                const isProfitable = result.analysis.is_profitable;
+                if (isProfitable) {
+                    profitableCount++;
+                } else {
+                    unprofitableCount++;
+                    row.className = 'table-danger';
+                }
+                
+                const barcodeCell = document.createElement('td');
+                barcodeCell.textContent = result.barcode;
+                
+                const nameCell = document.createElement('td');
+                nameCell.textContent = result.product_name;
+                
+                const colorSizeCell = document.createElement('td');
+                colorSizeCell.textContent = result.color + ' / ' + result.size;
+                
+                const costCell = document.createElement('td');
+                costCell.textContent = result.analysis.cost_price + ' TL';
+                
+                const saleCell = document.createElement('td');
+                saleCell.textContent = result.analysis.sale_price + ' TL';
+                
+                const commissionCell = document.createElement('td');
+                commissionCell.textContent = result.analysis.commission_amount + ' TL';
+                
+                const profitCell = document.createElement('td');
+                profitCell.textContent = result.analysis.profit + ' TL';
+                if (isProfitable) {
+                    profitCell.className = 'text-success';
+                } else {
+                    profitCell.className = 'text-danger';
+                }
+                
+                const marginCell = document.createElement('td');
+                marginCell.textContent = result.analysis.profit_margin + '%';
+                
+                const statusCell = document.createElement('td');
+                if (isProfitable) {
+                    statusCell.innerHTML = '<span class="badge badge-success">Kârlı</span>';
+                } else {
+                    statusCell.innerHTML = '<span class="badge badge-danger">Zararlı</span>';
+                }
+                
+                // Satırı tabloya ekle
+                row.appendChild(barcodeCell);
+                row.appendChild(nameCell);
+                row.appendChild(colorSizeCell);
+                row.appendChild(costCell);
+                row.appendChild(saleCell);
+                row.appendChild(commissionCell);
+                row.appendChild(profitCell);
+                row.appendChild(marginCell);
+                row.appendChild(statusCell);
+                
+                bulkResultsTable.appendChild(row);
+            }
+        });
+        
+        // Özet bilgileri
+        document.getElementById('totalProducts').textContent = results.length;
+        document.getElementById('profitableProducts').textContent = profitableCount;
+        document.getElementById('unprofitableProducts').textContent = unprofitableCount;
+    }
+    
+    function showOptimizationResults(suggestions) {
+        document.getElementById('optimizationResults').style.display = 'block';
+        
+        // Düşük kâr marjlı ürünler
+        const lowMarginTable = document.getElementById('lowMarginTable');
+        lowMarginTable.innerHTML = '';
+        
+        suggestions.low_margin_products.forEach(product => {
+            const row = document.createElement('tr');
+            
+            const barcodeCell = document.createElement('td');
+            barcodeCell.textContent = product.barcode;
+            
+            const nameCell = document.createElement('td');
+            nameCell.textContent = product.product_name;
+            
+            const colorSizeCell = document.createElement('td');
+            colorSizeCell.textContent = product.color + ' / ' + product.size;
+            
+            const marginCell = document.createElement('td');
+            marginCell.textContent = product.profit_margin + '%';
+            marginCell.className = 'text-danger';
+            
+            const priceCell = document.createElement('td');
+            priceCell.textContent = product.sale_price + ' TL';
+            
+            const costCell = document.createElement('td');
+            costCell.textContent = product.cost_price + ' TL';
+            
+            const suggestedPriceCell = document.createElement('td');
+            suggestedPriceCell.textContent = product.suggested_price + ' TL';
+            suggestedPriceCell.className = 'text-success';
+            
+            const orderCountCell = document.createElement('td');
+            orderCountCell.textContent = product.order_count;
+            
+            // Satırı tabloya ekle
+            row.appendChild(barcodeCell);
+            row.appendChild(nameCell);
+            row.appendChild(colorSizeCell);
+            row.appendChild(marginCell);
+            row.appendChild(priceCell);
+            row.appendChild(costCell);
+            row.appendChild(suggestedPriceCell);
+            row.appendChild(orderCountCell);
+            
+            lowMarginTable.appendChild(row);
+        });
+        
+        // Yüksek kâr marjlı ürünler
+        const highMarginTable = document.getElementById('highMarginTable');
+        highMarginTable.innerHTML = '';
+        
+        suggestions.high_margin_products.forEach(product => {
+            const row = document.createElement('tr');
+            
+            const barcodeCell = document.createElement('td');
+            barcodeCell.textContent = product.barcode;
+            
+            const nameCell = document.createElement('td');
+            nameCell.textContent = product.product_name;
+            
+            const colorSizeCell = document.createElement('td');
+            colorSizeCell.textContent = product.color + ' / ' + product.size;
+            
+            const marginCell = document.createElement('td');
+            marginCell.textContent = product.profit_margin + '%';
+            marginCell.className = 'text-success';
+            
+            const priceCell = document.createElement('td');
+            priceCell.textContent = product.sale_price + ' TL';
+            
+            const costCell = document.createElement('td');
+            costCell.textContent = product.cost_price + ' TL';
+            
+            const orderCountCell = document.createElement('td');
+            orderCountCell.textContent = product.order_count;
+            
+            // Satırı tabloya ekle
+            row.appendChild(barcodeCell);
+            row.appendChild(nameCell);
+            row.appendChild(colorSizeCell);
+            row.appendChild(marginCell);
+            row.appendChild(priceCell);
+            row.appendChild(costCell);
+            row.appendChild(orderCountCell);
+            
+            highMarginTable.appendChild(row);
+        });
+        
+        // Yavaş hareket eden ürünler
+        const slowMovingTable = document.getElementById('slowMovingTable');
+        slowMovingTable.innerHTML = '';
+        
+        suggestions.slow_moving_products.forEach(product => {
+            const row = document.createElement('tr');
+            
+            const barcodeCell = document.createElement('td');
+            barcodeCell.textContent = product.barcode;
+            
+            const nameCell = document.createElement('td');
+            nameCell.textContent = product.product_name;
+            
+            const colorSizeCell = document.createElement('td');
+            colorSizeCell.textContent = product.color + ' / ' + product.size;
+            
+            const daysCell = document.createElement('td');
+            daysCell.textContent = product.days_since_last_order;
+            daysCell.className = 'text-danger';
+            
+            const stockCell = document.createElement('td');
+            stockCell.textContent = product.stock_quantity;
+            
+            const priceCell = document.createElement('td');
+            priceCell.textContent = product.current_price + ' TL';
+            
+            const suggestedPriceCell = document.createElement('td');
+            suggestedPriceCell.textContent = product.suggested_price + ' TL';
+            suggestedPriceCell.className = 'text-success';
+            
+            const actionCell = document.createElement('td');
+            actionCell.textContent = product.suggested_action;
+            
+            // Satırı tabloya ekle
+            row.appendChild(barcodeCell);
+            row.appendChild(nameCell);
+            row.appendChild(colorSizeCell);
+            row.appendChild(daysCell);
+            row.appendChild(stockCell);
+            row.appendChild(priceCell);
+            row.appendChild(suggestedPriceCell);
+            row.appendChild(actionCell);
+            
+            slowMovingTable.appendChild(row);
+        });
+        
+        // Hızlı hareket eden ürünler
+        const fastMovingTable = document.getElementById('fastMovingTable');
+        fastMovingTable.innerHTML = '';
+        
+        suggestions.fast_moving_products.forEach(product => {
+            const row = document.createElement('tr');
+            
+            const barcodeCell = document.createElement('td');
+            barcodeCell.textContent = product.barcode;
+            
+            const nameCell = document.createElement('td');
+            nameCell.textContent = product.product_name;
+            
+            const colorSizeCell = document.createElement('td');
+            colorSizeCell.textContent = product.color + ' / ' + product.size;
+            
+            const orderCountCell = document.createElement('td');
+            orderCountCell.textContent = product.order_count;
+            orderCountCell.className = 'text-success';
+            
+            const stockCell = document.createElement('td');
+            stockCell.textContent = product.stock_quantity;
+            
+            // Satırı tabloya ekle
+            row.appendChild(barcodeCell);
+            row.appendChild(nameCell);
+            row.appendChild(colorSizeCell);
+            row.appendChild(orderCountCell);
+            row.appendChild(stockCell);
+            
+            fastMovingTable.appendChild(row);
+        });
+        
+        // Stok sorunları
+        const stockIssuesTable = document.getElementById('stockIssuesTable');
+        stockIssuesTable.innerHTML = '';
+        
+        suggestions.stock_issues.forEach(product => {
+            const row = document.createElement('tr');
+            
+            const barcodeCell = document.createElement('td');
+            barcodeCell.textContent = product.barcode;
+            
+            const nameCell = document.createElement('td');
+            nameCell.textContent = product.product_name;
+            
+            const colorSizeCell = document.createElement('td');
+            colorSizeCell.textContent = product.color + ' / ' + product.size;
+            
+            const orderCountCell = document.createElement('td');
+            orderCountCell.textContent = product.order_count;
+            orderCountCell.className = 'text-success';
+            
+            const stockCell = document.createElement('td');
+            stockCell.textContent = product.current_stock;
+            stockCell.className = 'text-danger';
+            
+            const actionCell = document.createElement('td');
+            actionCell.textContent = product.suggested_action;
+            
+            // Satırı tabloya ekle
+            row.appendChild(barcodeCell);
+            row.appendChild(nameCell);
+            row.appendChild(colorSizeCell);
+            row.appendChild(orderCountCell);
+            row.appendChild(stockCell);
+            row.appendChild(actionCell);
+            
+            stockIssuesTable.appendChild(row);
+        });
+    }
+});
+</script>
+{% endblock %}
