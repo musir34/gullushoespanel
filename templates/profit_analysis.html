@@ -190,23 +190,34 @@
     <div class="col-12">
       <div class="card">
         <div class="card-header">
-          <ul class="nav nav-tabs card-header-tabs" id="profitTabs" role="tablist">
-            <li class="nav-item" role="presentation">
-              <button class="nav-link active" id="daily-tab" data-bs-toggle="tab" data-bs-target="#daily" type="button" role="tab" aria-controls="daily" aria-selected="true">Günlük Kar</button>
-            </li>
-            <li class="nav-item" role="presentation">
-              <button class="nav-link" id="product-tab" data-bs-toggle="tab" data-bs-target="#product" type="button" role="tab" aria-controls="product" aria-selected="false">Ürün Bazlı</button>
-            </li>
-            <li class="nav-item" role="presentation">
-              <button class="nav-link" id="model-tab" data-bs-toggle="tab" data-bs-target="#model" type="button" role="tab" aria-controls="model" aria-selected="false">Model Bazlı</button>
-            </li>
-            <li class="nav-item" role="presentation">
-              <button class="nav-link" id="color-tab" data-bs-toggle="tab" data-bs-target="#color" type="button" role="tab" aria-controls="color" aria-selected="false">Renk Bazlı</button>
-            </li>
-            <li class="nav-item" role="presentation">
-              <button class="nav-link" id="size-tab" data-bs-toggle="tab" data-bs-target="#size" type="button" role="tab" aria-controls="size" aria-selected="false">Beden Bazlı</button>
-            </li>
-          </ul>
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <ul class="nav nav-tabs card-header-tabs" id="profitTabs" role="tablist">
+              <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="daily-tab" data-bs-toggle="tab" data-bs-target="#daily" type="button" role="tab" aria-controls="daily" aria-selected="true">Günlük Kar</button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" id="product-tab" data-bs-toggle="tab" data-bs-target="#product" type="button" role="tab" aria-controls="product" aria-selected="false">Ürün Bazlı</button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" id="model-tab" data-bs-toggle="tab" data-bs-target="#model" type="button" role="tab" aria-controls="model" aria-selected="false">Model Bazlı</button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" id="color-tab" data-bs-toggle="tab" data-bs-target="#color" type="button" role="tab" aria-controls="color" aria-selected="false">Renk Bazlı</button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" id="size-tab" data-bs-toggle="tab" data-bs-target="#size" type="button" role="tab" aria-controls="size" aria-selected="false">Beden Bazlı</button>
+              </li>
+            </ul>
+            
+            <div class="btn-group">
+              <button type="button" id="updateCostsBtn" class="btn btn-outline-primary me-2">
+                <i class="fas fa-sync-alt"></i> Maliyetleri Güncelle
+              </button>
+              <button type="button" id="manualCalculationBtn" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#manualCalculationModal">
+                <i class="fas fa-calculator"></i> Manuel Hesapla
+              </button>
+            </div>
+          </div>
         </div>
         <div class="card-body">
           <div class="tab-content profit-tab-content" id="profitTabContent">
@@ -886,6 +897,196 @@
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     });
+
+<!-- Manuel Hesaplama Modal -->
+<div class="modal fade" id="manualCalculationModal" tabindex="-1" aria-labelledby="manualCalculationModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="manualCalculationModalLabel">Manuel Kar Hesaplama</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label for="daysInput" class="form-label">Kaç gün için hesaplama yapılsın?</label>
+          <input type="number" class="form-control" id="daysInput" value="30" min="1" max="365">
+          <div class="form-text">Geçmiş günler için kar hesaplaması yapar. Bu işlem, veri miktarına bağlı olarak biraz zaman alabilir.</div>
+        </div>
+        <div id="calculationStatus" class="alert alert-info d-none">
+          <div class="d-flex align-items-center">
+            <div class="spinner-border spinner-border-sm me-2" role="status">
+              <span class="visually-hidden">Hesaplanıyor...</span>
+            </div>
+            <span>Kar hesaplaması yapılıyor, lütfen bekleyin...</span>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+        <button type="button" class="btn btn-primary" id="startCalculationBtn">Hesaplamayı Başlat</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Başarı/Hata Bildirim Toast -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+  <div id="notificationToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+    <div class="toast-header">
+      <strong class="me-auto" id="toastTitle">İşlem Sonucu</strong>
+      <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+    </div>
+    <div class="toast-body" id="toastMessage">
+      İşlem tamamlandı.
+    </div>
+  </div>
+</div>
+
+<script>
+  // Manuel hesaplama ve maliyet güncelleme işlemleri için Javascript kodları
+  document.addEventListener('DOMContentLoaded', function() {
+    // Toast bildirimi için
+    const toastEl = document.getElementById('notificationToast');
+    const toast = new bootstrap.Toast(toastEl);
+    const toastTitle = document.getElementById('toastTitle');
+    const toastMessage = document.getElementById('toastMessage');
+    
+    // Maliyetleri güncelleme butonu
+    const updateCostsBtn = document.getElementById('updateCostsBtn');
+    updateCostsBtn.addEventListener('click', function() {
+      updateCostsBtn.disabled = true;
+      updateCostsBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Güncelleniyor...';
+      
+      fetch('/api/maliyet-guncelle', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+        updateCostsBtn.disabled = false;
+        updateCostsBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Maliyetleri Güncelle';
+        
+        if (data.success) {
+          toastTitle.textContent = 'Başarılı';
+          toastMessage.textContent = data.message;
+          toastEl.classList.remove('bg-danger', 'text-white');
+          toastEl.classList.add('bg-success', 'text-white');
+        } else {
+          toastTitle.textContent = 'Hata';
+          toastMessage.textContent = data.error || 'Bir hata oluştu.';
+          toastEl.classList.remove('bg-success', 'text-white');
+          toastEl.classList.add('bg-danger', 'text-white');
+        }
+        
+        toast.show();
+      })
+      .catch(error => {
+        updateCostsBtn.disabled = false;
+        updateCostsBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Maliyetleri Güncelle';
+        
+        toastTitle.textContent = 'Hata';
+        toastMessage.textContent = 'Sunucu hatası: ' + error.message;
+        toastEl.classList.remove('bg-success', 'text-white');
+        toastEl.classList.add('bg-danger', 'text-white');
+        toast.show();
+      });
+    });
+    
+    // Manuel hesaplama butonu
+    const startCalculationBtn = document.getElementById('startCalculationBtn');
+    const calculationStatus = document.getElementById('calculationStatus');
+    const daysInput = document.getElementById('daysInput');
+    
+    startCalculationBtn.addEventListener('click', function() {
+      const days = parseInt(daysInput.value);
+      
+      if (isNaN(days) || days < 1 || days > 365) {
+        alert('Lütfen 1-365 arasında bir gün sayısı girin.');
+        return;
+      }
+      
+      startCalculationBtn.disabled = true;
+      calculationStatus.classList.remove('d-none');
+      
+      fetch('/api/manuel-hesaplama', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ days })
+      })
+      .then(response => response.json())
+      .then(data => {
+        startCalculationBtn.disabled = false;
+        calculationStatus.classList.add('d-none');
+        
+        if (data.success) {
+          toastTitle.textContent = 'Başarılı';
+          toastMessage.textContent = data.message;
+          toastEl.classList.remove('bg-danger', 'text-white');
+          toastEl.classList.add('bg-success', 'text-white');
+          
+          // Modal'ı kapat
+          const modal = bootstrap.Modal.getInstance(document.getElementById('manualCalculationModal'));
+          modal.hide();
+          
+          // Verileri güncelle
+          loadProfitData();
+        } else {
+          toastTitle.textContent = 'Hata';
+          toastMessage.textContent = data.error || 'Bir hata oluştu.';
+          toastEl.classList.remove('bg-success', 'text-white');
+          toastEl.classList.add('bg-danger', 'text-white');
+        }
+        
+        toast.show();
+      })
+      .catch(error => {
+        startCalculationBtn.disabled = false;
+        calculationStatus.classList.add('d-none');
+        
+        toastTitle.textContent = 'Hata';
+        toastMessage.textContent = 'Sunucu hatası: ' + error.message;
+        toastEl.classList.remove('bg-success', 'text-white');
+        toastEl.classList.add('bg-danger', 'text-white');
+        toast.show();
+      });
+    });
+    
+    // Sayfa yüklendiğinde durumu gösterme
+    const showStatusMessage = function(message, isSuccess = true) {
+      const statusDiv = document.createElement('div');
+      statusDiv.className = isSuccess ? 'alert alert-success' : 'alert alert-danger';
+      statusDiv.textContent = message;
+      
+      // Kart gövdesinin başına ekle
+      const cardBody = document.querySelector('.card-body');
+      cardBody.insertBefore(statusDiv, cardBody.firstChild);
+      
+      // 5 saniye sonra kaldır
+      setTimeout(() => {
+        statusDiv.remove();
+      }, 5000);
+    };
+    
+    // Otomatik hesaplama durumunu kontrol et
+    fetch('/api/kar-ozet')
+      .then(response => response.json())
+      .then(data => {
+        if (data.success && Object.keys(data.summaries).length > 0) {
+          showStatusMessage('Kar analizi otomatik olarak hesaplanıyor. En son veriler gösteriliyor.');
+        } else {
+          showStatusMessage('Henüz otomatik hesaplanmış kar verisi yok. "Manuel Hesapla" butonunu kullanarak hesaplama yapabilirsiniz.', false);
+        }
+      })
+      .catch(error => {
+        console.error('Kar özeti kontrolü sırasında hata:', error);
+      });
+  });
+</script>
+
     
     if (short && Math.abs(value) >= 1000) {
       let suffix = '';
