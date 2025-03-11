@@ -1,0 +1,54 @@
+2025-03-11 00:42:44,092 - profit_analysis - ERROR - Ürün kâr hesaplama hatası: Error 99 connecting to localhost:6379. Cannot assign requested address.
+Traceback (most recent call last):
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/redis/connection.py", line 357, in connect
+    sock = self.retry.call_with_retry(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/redis/retry.py", line 62, in call_with_retry
+    return do()
+           ^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/redis/connection.py", line 358, in <lambda>
+    lambda: self._connect(), lambda error: self.disconnect(error)
+            ^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/redis/connection.py", line 730, in _connect
+    raise err
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/redis/connection.py", line 718, in _connect
+    sock.connect(socket_address)
+OSError: [Errno 99] Cannot assign requested address
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/runner/workspace/profit_analysis.py", line 516, in calculate_product_profit
+    product_costs = get_product_costs_from_db()
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/profit_analysis.py", line 297, in get_product_costs_from_db
+    cached_data = redis_client.get(cache_key)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/redis/commands/core.py", line 1822, in get
+    return self.execute_command("GET", name, keys=[name])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/redis/client.py", line 559, in execute_command
+    return self._execute_command(*args, **options)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/redis/client.py", line 565, in _execute_command
+    conn = self.connection or pool.get_connection(command_name, **options)
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/redis/connection.py", line 1422, in get_connection
+    connection.connect()
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/redis/connection.py", line 363, in connect
+    raise ConnectionError(self._error_message(e))
+redis.exceptions.ConnectionError: Error 99 connecting to localhost:6379. Cannot assign requested address.
+2025-03-11 00:51:28,322 - profit_analysis - INFO - Kar hesaplama zamanlayıcısı başlatıldı.
+2025-03-11 00:51:49,006 - profit_analysis - INFO - Kar hesaplama zamanlayıcısı başlatıldı.
+2025-03-11 00:53:37,355 - profit_analysis - INFO - Kar hesaplama zamanlayıcısı başlatıldı.
+2025-03-11 00:54:17,393 - profit_analysis - INFO - Kar hesaplama zamanlayıcısı başlatıldı.
+2025-03-11 00:58:53,719 - profit_analysis - INFO - Kar hesaplama zamanlayıcısı başlatıldı.
+2025-03-11 00:59:17,884 - profit_analysis - INFO - Kar hesaplama zamanlayıcısı başlatıldı.
+2025-03-11 00:59:43,288 - profit_analysis - INFO - Kar hesaplama zamanlayıcısı başlatıldı.
+2025-03-11 00:59:52,424 - profit_analysis - INFO - Kar hesaplama zamanlayıcısı başlatıldı.
+2025-03-11 00:59:58,116 - profit_analysis - INFO - Kar analizi tarih aralığı: 2025-02-09 - 2025-03-11
+2025-03-11 01:00:33,248 - profit_analysis - INFO - Kar hesaplama zamanlayıcısı başlatıldı.
+2025-03-11 01:34:32,088 - profit_analysis - INFO - Kar hesaplama zamanlayıcısı başlatıldı.
+2025-03-11 01:34:45,425 - profit_analysis - INFO - Kar analizi tarih aralığı: 2025-02-09 - 2025-03-11
+2025-03-11 01:34:56,378 - profit_analysis - INFO - Ürün maliyetleri güncelleniyor...
+2025-03-11 01:35:32,447 - profit_analysis - INFO - Kar analizi tarih aralığı: 2025-02-09 - 2025-03-11
