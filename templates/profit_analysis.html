@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="tr">
 <head>
@@ -54,7 +53,7 @@
 
     <div class="container">
         <h1 class="text-center mb-4">Kâr Analizi</h1>
-        
+
         <div class="card">
             <div class="card-header">
                 <h5 class="mb-0">Ürün Kâr Hesaplama</h5>
@@ -65,27 +64,27 @@
                         <label for="product-barcode">Ürün Barkodu:</label>
                         <input type="text" class="form-control" id="product-barcode" placeholder="Ürün barkodunu girin">
                     </div>
-                    
+
                     <div class="form-group">
                         <label for="cost-price">Maliyet Fiyatı (TL):</label>
                         <input type="number" class="form-control" id="cost-price" placeholder="Maliyet fiyatını girin">
                     </div>
-                    
+
                     <div class="form-group">
                         <label for="sale-price">Satış Fiyatı (TL):</label>
                         <input type="number" class="form-control" id="sale-price" placeholder="Satış fiyatını girin">
                     </div>
-                    
+
                     <div class="form-group">
                         <label for="commission-rate">Platform Komisyon Oranı (%):</label>
                         <input type="number" class="form-control" id="commission-rate" placeholder="Komisyon oranını girin" value="25">
                     </div>
-                    
+
                     <button type="button" class="btn btn-primary" onclick="calculateProfit()">Hesapla</button>
                 </form>
             </div>
         </div>
-        
+
         <div class="result-container" id="result-container" style="display: none;">
             <div class="card">
                 <div class="card-header">
@@ -120,7 +119,7 @@
                             </tr>
                         </tbody>
                     </table>
-                    
+
                     <div class="progress mt-3">
                         <div class="progress-bar bg-success" id="profit-bar" role="progressbar" style="width: 0%"></div>
                         <div class="progress-bar bg-danger" id="cost-bar" role="progressbar" style="width: 0%"></div>
@@ -139,7 +138,7 @@
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-    
+
     <script>
         function calculateProfit() {
             // Form değerlerini al
@@ -147,7 +146,7 @@
             const costPrice = parseFloat(document.getElementById('cost-price').value);
             const salePrice = parseFloat(document.getElementById('sale-price').value);
             const commissionRate = parseFloat(document.getElementById('commission-rate').value);
-            
+
             // Veritabanından fiyat almak için alternatif
             if (barcode && !isNaN(costPrice) && (isNaN(salePrice) || salePrice === 0)) {
                 // Veritabanından ürün fiyatını almak için AJAX isteği
@@ -171,13 +170,13 @@
                 alert('Lütfen geçerli değerler girin.');
             }
         }
-        
+
         function performCalculation(barcode, costPrice, salePrice, commissionRate) {
             // Hesaplamalar
             const commissionAmount = (salePrice * commissionRate) / 100;
             const profit = salePrice - costPrice - commissionAmount;
             const profitMargin = (profit / salePrice) * 100;
-            
+
             // Sonuçları göster
             document.getElementById('result-barcode').textContent = barcode || 'Belirtilmedi';
             document.getElementById('result-cost').textContent = `${costPrice.toFixed(2)} TL`;
@@ -185,20 +184,20 @@
             document.getElementById('result-commission').textContent = `${commissionAmount.toFixed(2)} TL (${commissionRate}%)`;
             document.getElementById('result-profit').textContent = `${profit.toFixed(2)} TL`;
             document.getElementById('result-margin').textContent = `${profitMargin.toFixed(2)}%`;
-            
+
             // Progress bar'ları güncelle
             const costPercent = (costPrice / salePrice) * 100;
             const commissionPercent = (commissionAmount / salePrice) * 100;
             const profitPercent = 100 - costPercent - commissionPercent;
-            
+
             document.getElementById('cost-bar').style.width = `${costPercent}%`;
             document.getElementById('commission-bar').style.width = `${commissionPercent}%`;
             document.getElementById('profit-bar').style.width = `${profitPercent}%`;
-            
+
             // Sonuç konteynerini göster
             document.getElementById('result-container').style.display = 'block';
         }
-        
+
         // Barkod alanında Enter tuşuna basılınca otomatik fiyat getir
         document.getElementById('product-barcode').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
@@ -222,7 +221,6 @@
 </body>
 </html>
 
-
 {% extends 'base.html' %}
 
 {% block title %}Kar Analizi{% endblock %}
@@ -235,7 +233,7 @@
     margin-bottom: 20px;
     border: none;
   }
-  
+
   .card-header {
     background-color: #f8f9fa;
     border-bottom: 1px solid #dee2e6;
@@ -244,62 +242,62 @@
     border-top-left-radius: 10px;
     border-top-right-radius: 10px;
   }
-  
+
   .card-body {
     padding: 20px;
   }
-  
+
   .summary-card {
     transition: all 0.3s ease;
   }
-  
+
   .summary-card:hover {
     transform: translateY(-5px);
     box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
   }
-  
+
   .summary-value {
     font-size: 1.8rem;
     font-weight: 700;
     margin-bottom: 5px;
   }
-  
+
   .summary-label {
     font-size: 0.9rem;
     color: #6c757d;
     text-transform: uppercase;
     letter-spacing: 1px;
   }
-  
+
   .profit-positive {
     color: #28a745;
   }
-  
+
   .profit-negative {
     color: #dc3545;
   }
-  
+
   .chart-container {
     height: 300px;
     margin-bottom: 20px;
   }
-  
+
   .table-responsive {
     margin-top: 20px;
   }
-  
+
   .table th {
     background-color: #f8f9fa;
     font-weight: 600;
   }
-  
+
   .filter-container {
     padding: 15px;
     background-color: #f8f9fa;
     border-radius: 10px;
     margin-bottom: 20px;
   }
-  
+
   .loading-overlay {
     position: fixed;
     top: 0;
@@ -312,12 +310,12 @@
     align-items: center;
     z-index: 9999;
   }
-  
+
   .spinner-border {
     width: 3rem;
     height: 3rem;
   }
-  
+
   .profit-tab-content {
     padding-top: 20px;
   }
@@ -327,14 +325,14 @@
 {% block content %}
 <div class="container-fluid mt-4">
   <h1 class="mb-4">Kar Analizi</h1>
-  
+
   <!-- Yükleniyor göstergesi -->
   <div id="loadingOverlay" class="loading-overlay d-none">
     <div class="spinner-border text-primary" role="status">
       <span class="visually-hidden">Yükleniyor...</span>
     </div>
   </div>
-  
+
   <!-- Filtreler -->
   <div class="row mb-4">
     <div class="col-12">
@@ -372,7 +370,7 @@
       </div>
     </div>
   </div>
-  
+
   <!-- Özet Kartları -->
   <div class="row mb-4" id="summaryCards">
     <div class="col-md-3">
@@ -408,7 +406,7 @@
       </div>
     </div>
   </div>
-  
+
   <!-- Grafik ve Tablolar -->
   <div class="row">
     <div class="col-12">
@@ -455,7 +453,7 @@
                 </table>
               </div>
             </div>
-            
+
             <!-- Ürün Bazlı -->
             <div class="tab-pane fade" id="product" role="tabpanel" aria-labelledby="product-tab">
               <div class="table-responsive">
@@ -482,7 +480,7 @@
                 </table>
               </div>
             </div>
-            
+
             <!-- Model Bazlı -->
             <div class="tab-pane fade" id="model" role="tabpanel" aria-labelledby="model-tab">
               <div class="chart-container">
@@ -505,7 +503,7 @@
                 </table>
               </div>
             </div>
-            
+
             <!-- Renk Bazlı -->
             <div class="tab-pane fade" id="color" role="tabpanel" aria-labelledby="color-tab">
               <div class="chart-container">
@@ -528,7 +526,7 @@
                 </table>
               </div>
             </div>
-            
+
             <!-- Beden Bazlı -->
             <div class="tab-pane fade" id="size" role="tabpanel" aria-labelledby="size-tab">
               <div class="chart-container">
@@ -569,19 +567,19 @@
     const today = new Date();
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(today.getDate() - 30);
-    
+
     document.getElementById('startDate').valueAsDate = thirtyDaysAgo;
     document.getElementById('endDate').valueAsDate = today;
-    
+
     // İlk yüklenmede verileri getir
     fetchProfitData();
-    
+
     // Form submit olayını dinle
     document.getElementById('filterForm').addEventListener('submit', function(e) {
       e.preventDefault();
       fetchProfitData();
     });
-    
+
     // Filtre sıfırlama butonu
     document.getElementById('resetFilters').addEventListener('click', function() {
       document.getElementById('startDate').valueAsDate = thirtyDaysAgo;
@@ -589,25 +587,34 @@
       document.getElementById('filterType').value = 'all';
       fetchProfitData();
     });
-    
+
     // Excel'e aktarma butonu
     document.getElementById('exportExcel').addEventListener('click', function() {
       exportToExcel();
     });
   });
-  
+
   // Kar verilerini getiren fonksiyon
   function fetchProfitData() {
     const startDate = document.getElementById('startDate').value;
     const endDate = document.getElementById('endDate').value;
     const filterType = document.getElementById('filterType').value;
-    
+
     // Yükleniyor göstergesini aç
     document.getElementById('loadingOverlay').classList.remove('d-none');
-    
+
+    console.log("Kar verileri yükleniyor:", startDate, endDate, filterType);
+
     fetch(`/api/kar-verileri?start_date=${startDate}&end_date=${endDate}&filter_type=${filterType}`)
-      .then(response => response.json())
+      .then(response => {
+        console.log("API yanıt durumu:", response.status);
+        if (!response.ok) {
+          throw new Error(`HTTP hata! Durum: ${response.status}`);
+        }
+        return response.json();
+      })
       .then(data => {
+        console.log("Kar verileri başarıyla alındı:", data);
         if (data.success) {
           updateSummaryCards(data.summary);
           updateDailyProfitChart(data.daily_profits);
@@ -625,21 +632,39 @@
         document.getElementById('loadingOverlay').classList.add('d-none');
       })
       .catch(error => {
-        console.error('Hata:', error);
-        alert('Veri yüklenirken bir hata oluştu!');
-        // Yükleniyor göstergesini kapat
+        console.error('Kar verileri alınırken bir hata oluştu:', error);
         document.getElementById('loadingOverlay').classList.add('d-none');
+
+        // Hata mesajını kontrol et ve kullanıcıya daha anlamlı bir mesaj göster
+        let errorMessage = 'Kar verileri yüklenirken bir hata oluştu.';
+        if (error.response) {
+          errorMessage += ` Sunucu yanıtı: ${error.response.status}`;
+        } else if (error.request) {
+          errorMessage += ' Sunucudan yanıt alınamadı.';
+        } else {
+          errorMessage += ` Hata mesajı: ${error.message}`;
+        }
+
+        alert(errorMessage);
+
+        // Loglama için konsola detaylı hata bilgisi
+        console.log('Hata detayları:', {
+          message: error.message,
+          stack: error.stack,
+          request: error.request,
+          response: error.response
+        });
       });
   }
-  
+
   // Özet kartlarını güncelleme fonksiyonu
   function updateSummaryCards(summary) {
     document.getElementById('totalRevenue').textContent = formatCurrency(summary.total_revenue);
     document.getElementById('totalCost').textContent = formatCurrency(summary.total_cost);
-    
+
     const profitElement = document.getElementById('totalProfit');
     profitElement.textContent = formatCurrency(summary.total_profit);
-    
+
     if (summary.total_profit > 0) {
       profitElement.classList.add('profit-positive');
       profitElement.classList.remove('profit-negative');
@@ -647,10 +672,10 @@
       profitElement.classList.remove('profit-positive');
       profitElement.classList.add('profit-negative');
     }
-    
+
     const marginElement = document.getElementById('profitMargin');
     marginElement.textContent = summary.overall_profit_margin.toFixed(2) + '%';
-    
+
     if (summary.overall_profit_margin > 0) {
       marginElement.classList.add('profit-positive');
       marginElement.classList.remove('profit-negative');
@@ -659,23 +684,23 @@
       marginElement.classList.add('profit-negative');
     }
   }
-  
+
   // Günlük kar grafiğini güncelleme fonksiyonu
   let dailyProfitChart;
   function updateDailyProfitChart(dailyProfits) {
     const ctx = document.getElementById('dailyProfitChart').getContext('2d');
-    
+
     // Verileri hazırla
     const dates = dailyProfits.map(item => item.date);
     const profits = dailyProfits.map(item => item.total_profit);
     const revenues = dailyProfits.map(item => item.total_sale);
     const costs = dailyProfits.map(item => item.total_cost);
-    
+
     // Önceki grafik varsa yok et
     if (dailyProfitChart) {
       dailyProfitChart.destroy();
     }
-    
+
     // Yeni grafik oluştur
     dailyProfitChart = new Chart(ctx, {
       type: 'line',
@@ -746,14 +771,14 @@
         }
       }
     });
-    
+
     // Tablo için verileri güncelle
     const tbody = document.querySelector('#dailyProfitTable tbody');
     tbody.innerHTML = '';
-    
+
     for (const item of dailyProfits) {
       const row = document.createElement('tr');
-      
+
       row.innerHTML = `
         <td>${item.date}</td>
         <td>${item.order_count}</td>
@@ -762,19 +787,19 @@
         <td class="${item.total_profit >= 0 ? 'profit-positive' : 'profit-negative'}">${formatCurrency(item.total_profit)}</td>
         <td class="${item.profit_margin >= 0 ? 'profit-positive' : 'profit-negative'}">${item.profit_margin.toFixed(2)}%</td>
       `;
-      
+
       tbody.appendChild(row);
     }
   }
-  
+
   // Ürün bazlı kar tablosunu güncelleme fonksiyonu
   function updateProductProfitTable(productProfits) {
     const tbody = document.querySelector('#productProfitTable tbody');
     tbody.innerHTML = '';
-    
+
     for (const item of productProfits) {
       const row = document.createElement('tr');
-      
+
       row.innerHTML = `
         <td>${item.order_number || '-'}</td>
         <td>${item.order_date || '-'}</td>
@@ -791,19 +816,19 @@
         <td class="${item.profit >= 0 ? 'profit-positive' : 'profit-negative'}">${formatCurrency(item.profit)}</td>
         <td class="${item.profit_margin >= 0 ? 'profit-positive' : 'profit-negative'}">${item.profit_margin.toFixed(2)}%</td>
       `;
-      
+
       tbody.appendChild(row);
     }
   }
-  
+
   // Model bazlı kar tablosunu güncelleme fonksiyonu
   function updateModelProfitTable(modelProfits) {
     const tbody = document.querySelector('#modelProfitTable tbody');
     tbody.innerHTML = '';
-    
+
     for (const item of modelProfits) {
       const row = document.createElement('tr');
-      
+
       row.innerHTML = `
         <td>${item.model_code || 'Belirtilmemiş'}</td>
         <td>${item.count}</td>
@@ -813,19 +838,19 @@
         <td class="${item.total_profit >= 0 ? 'profit-positive' : 'profit-negative'}">${formatCurrency(item.total_profit)}</td>
         <td class="${item.profit_margin >= 0 ? 'profit-positive' : 'profit-negative'}">${item.profit_margin.toFixed(2)}%</td>
       `;
-      
+
       tbody.appendChild(row);
     }
   }
-  
+
   // Renk bazlı kar tablosunu güncelleme fonksiyonu
   function updateColorProfitTable(colorProfits) {
     const tbody = document.querySelector('#colorProfitTable tbody');
     tbody.innerHTML = '';
-    
+
     for (const item of colorProfits) {
       const row = document.createElement('tr');
-      
+
       row.innerHTML = `
         <td>${item.color || 'Belirtilmemiş'}</td>
         <td>${item.count}</td>
@@ -835,19 +860,19 @@
         <td class="${item.total_profit >= 0 ? 'profit-positive' : 'profit-negative'}">${formatCurrency(item.total_profit)}</td>
         <td class="${item.profit_margin >= 0 ? 'profit-positive' : 'profit-negative'}">${item.profit_margin.toFixed(2)}%</td>
       `;
-      
+
       tbody.appendChild(row);
     }
   }
-  
+
   // Beden bazlı kar tablosunu güncelleme fonksiyonu
   function updateSizeProfitTable(sizeProfits) {
     const tbody = document.querySelector('#sizeProfitTable tbody');
     tbody.innerHTML = '';
-    
+
     for (const item of sizeProfits) {
       const row = document.createElement('tr');
-      
+
       row.innerHTML = `
         <td>${item.size || 'Belirtilmemiş'}</td>
         <td>${item.count}</td>
@@ -857,30 +882,30 @@
         <td class="${item.total_profit >= 0 ? 'profit-positive' : 'profit-negative'}">${formatCurrency(item.total_profit)}</td>
         <td class="${item.profit_margin >= 0 ? 'profit-positive' : 'profit-negative'}">${item.profit_margin.toFixed(2)}%</td>
       `;
-      
+
       tbody.appendChild(row);
     }
   }
-  
+
   // Model bazlı kar grafiğini güncelleme fonksiyonu
   let modelProfitChart;
   function updateModelProfitChart(modelProfits) {
     const ctx = document.getElementById('modelProfitChart').getContext('2d');
-    
+
     // Top 10 model
     const topModels = modelProfits.slice(0, 10);
-    
+
     // Verileri hazırla
     const labels = topModels.map(item => item.model_code || 'Belirtilmemiş');
     const profits = topModels.map(item => item.total_profit);
     const revenues = topModels.map(item => item.total_sale);
     const costs = topModels.map(item => item.total_cost);
-    
+
     // Önceki grafik varsa yok et
     if (modelProfitChart) {
       modelProfitChart.destroy();
     }
-    
+
     // Yeni grafik oluştur
     modelProfitChart = new Chart(ctx, {
       type: 'bar',
@@ -942,30 +967,30 @@
       }
     });
   }
-  
+
   // Renk bazlı kar grafiğini güncelleme fonksiyonu
   let colorProfitChart;
   function updateColorProfitChart(colorProfits) {
     const ctx = document.getElementById('colorProfitChart').getContext('2d');
-    
+
     // Top 10 color
     const topColors = colorProfits.slice(0, 10);
-    
+
     // Verileri hazırla
     const labels = topColors.map(item => item.color || 'Belirtilmemiş');
     const profits = topColors.map(item => item.total_profit);
     const quantities = topColors.map(item => item.total_quantity);
-    
+
     // Rastgele renkler oluştur
     const backgroundColors = topColors.map((_, i) => 
       `hsl(${i * 36}, 70%, 60%)`
     );
-    
+
     // Önceki grafik varsa yok et
     if (colorProfitChart) {
       colorProfitChart.destroy();
     }
-    
+
     // Yeni grafik oluştur
     colorProfitChart = new Chart(ctx, {
       type: 'pie',
@@ -1003,22 +1028,22 @@
       }
     });
   }
-  
+
   // Beden bazlı kar grafiğini güncelleme fonksiyonu
   let sizeProfitChart;
   function updateSizeProfitChart(sizeProfits) {
     const ctx = document.getElementById('sizeProfitChart').getContext('2d');
-    
+
     // Verileri hazırla
     const labels = sizeProfits.map(item => item.size || 'Belirtilmemiş');
     const profits = sizeProfits.map(item => item.total_profit);
     const quantities = sizeProfits.map(item => item.total_quantity);
-    
+
     // Önceki grafik varsa yok et
     if (sizeProfitChart) {
       sizeProfitChart.destroy();
     }
-    
+
     // Yeni grafik oluştur
     sizeProfitChart = new Chart(ctx, {
       type: 'doughnut',
@@ -1064,14 +1089,14 @@
       }
     });
   }
-  
+
   // Excel'e aktarma fonksiyonu
   function exportToExcel() {
     const activeTab = document.querySelector('.tab-pane.active');
     const activeTabId = activeTab.id;
-    
+
     let tableId, fileName;
-    
+
     switch (activeTabId) {
       case 'daily':
         tableId = 'dailyProfitTable';
@@ -1096,12 +1121,12 @@
       default:
         return;
     }
-    
+
     const table = document.getElementById(tableId);
     const wb = XLSX.utils.table_to_book(table, { sheet: "Kar Analizi" });
     XLSX.writeFile(wb, fileName);
   }
-  
+
   // Para formatı fonksiyonu
   function formatCurrency(value, short = false) {
     const formatter = new Intl.NumberFormat('tr-TR', {
@@ -1110,11 +1135,11 @@
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     });
-    
+
     if (short && Math.abs(value) >= 1000) {
       let suffix = '';
       let divisor = 1;
-      
+
       if (Math.abs(value) >= 1000000) {
         suffix = 'M';
         divisor = 1000000;
@@ -1122,10 +1147,10 @@
         suffix = 'K';
         divisor = 1000;
       }
-      
+
       return formatter.format(value / divisor).replace('₺', '') + suffix + ' ₺';
     }
-    
+
     return formatter.format(value);
   }
 </script>
