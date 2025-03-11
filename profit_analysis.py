@@ -24,6 +24,13 @@ def profit_analysis_page():
     """
     return render_template('profit_analysis.html')
 
+@profit_analysis_bp.route('/otomatik-kar-hesaplama')
+def otomatik_kar_hesaplama():
+    """
+    Otomatik Kar Hesaplama sayfasını render eder
+    """
+    return render_template('otomatik_kar_hesaplama.html')
+
 @profit_analysis_bp.route('/api/kar-verileri')
 @cache_result(expiration=1800)  # 30 dakika önbellek
 def get_profit_data():
