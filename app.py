@@ -46,7 +46,6 @@ db.init_app(app)
 # Trendyol API servisleri
 from product_service import product_service_bp
 from claims_service import claims_service_bp
-from kar_hesaplama import kar_hesaplama_bp
 # Blueprint'lerin kaydını toplu olarak en sonda yapacağız
 
 with app.app_context():
@@ -87,9 +86,6 @@ from openai_service import openai_bp
 from siparisler import siparisler_bp
 # Webhook servisi kullanıcı isteği doğrultusunda kaldırıldı
 
-from financial_service import financial_service_bp # Added this line
-app.register_blueprint(financial_service_bp) # Added this line
-
 blueprints = [
     order_service_bp,
     update_service_bp,
@@ -109,8 +105,7 @@ blueprints = [
     openai_bp,
     siparisler_bp,
     product_service_bp,  # Son iki blueprint'i listenin sonunda tutuyoruz
-    claims_service_bp,    # fakat liste kayıt sırasında kullanılacak
-    kar_hesaplama_bp
+    claims_service_bp    # fakat liste kayıt sırasında kullanılacak
 ]
 
 for bp in blueprints:
