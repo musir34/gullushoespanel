@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="tr">
 <head>
@@ -14,7 +13,23 @@
                 <img src="{{ url_for('static', filename='logo/gullu.png') }}" height="30" alt="Logo">
             </a>
             <div class="navbar-nav ml-auto">
-                <a href="{{ url_for('home.home') }}" class="btn btn-outline-primary mr-2">Anasayfa</a>
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('home.home') }}">Anasayfa</a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="profitDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            Kâr Analizi
+                        </a>
+                        <div class="dropdown-menu" aria-labelledby="profitDropdown">
+                            <a class="dropdown-item" href="/kar-analizi">Genel Kâr Analizi</a>
+                            <a class="dropdown-item" href="/urun-kar-hesaplayici">Kâr Hesaplayıcı</a>
+                            <a class="dropdown-item" href="/toplu-kar-analizi">Toplu Kâr Analizi</a>
+                            <a class="dropdown-item" href="/kar-optimizasyon">Kâr Optimizasyonu</a>
+                        </div>
+                    </li>
+                </ul>
+
             </div>
         </div>
     </nav>
