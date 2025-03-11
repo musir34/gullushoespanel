@@ -23,11 +23,12 @@ def profit_analysis_page():
     """
     return render_template('profit_analysis.html')
 
-@profit_analysis_bp.route('/api/kar-verileri')
+@profit_analysis_bp.route('/api/kar-verileri', methods=['GET'])
 def get_profit_data():
     """
     Belirtilen tarih aralığında kar analizini döner (API endpoint)
     """
+    logger.info("Kar verileri API'si çağrıldı.")
     try:
         # Tarih aralığını al
         start_date_str = request.args.get('start_date')
