@@ -84,7 +84,6 @@ from analysis import analysis_bp
 from stock_report import stock_report_bp
 from openai_service import openai_bp
 from siparisler import siparisler_bp
-from profit_analysis import profit_analysis_bp, init_scheduler
 # Webhook servisi kullanıcı isteği doğrultusunda kaldırıldı
 
 blueprints = [
@@ -105,7 +104,6 @@ blueprints = [
     stock_report_bp,
     openai_bp,
     siparisler_bp,
-    profit_analysis_bp,
     product_service_bp,  # Son iki blueprint'i listenin sonunda tutuyoruz
     claims_service_bp    # fakat liste kayıt sırasında kullanılacak
 ]
@@ -170,10 +168,6 @@ def schedule_jobs(app):
 
 # schedule_jobs fonksiyonunu app.run'dan önce çağır:
 schedule_jobs(app)
-
-# Kar analizi zamanlayıcısını başlat
-with app.app_context():
-    init_scheduler()
 
 if __name__ == '__main__':
     debug_mode = os.environ.get('FLASK_DEBUG', 'False') == 'True'
