@@ -7,6 +7,14 @@ from datetime import datetime, timedelta
 # Redis bağlantısı
 redis_client = redis.Redis(host='localhost', port=6379, db=0)
 
+# Önbellek süreleri (saniye cinsinden)
+CACHE_TIMES = {
+    'short': 300,        # 5 dakika
+    'medium': 1800,      # 30 dakika
+    'long': 3600,        # 1 saat
+    'very_long': 86400,  # 1 gün
+}
+
 def cache_result(expiration=3600):
     """
     Fonksiyon sonuçlarını önbelleğe alan decorator
