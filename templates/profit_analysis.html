@@ -1,3 +1,626 @@
+
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+  <h1 class="mb-4">Kâr Analizi Paneli</h1>
+
+  <!-- Filtre Bölümü -->
+  <div class="filter-container mb-4">
+    <div class="row">
+      <div class="col-md-4">
+        <div class="form-group">
+          <label for="timeRange">Zaman Aralığı</label>
+          <select class="form-control" id="timeRange">
+            <option value="7">Son 7 Gün</option>
+            <option value="30" selected>Son 30 Gün</option>
+            <option value="90">Son 3 Ay</option>
+            <option value="180">Son 6 Ay</option>
+            <option value="365">Son 1 Yıl</option>
+          </select>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="form-group">
+          <label for="dataType">Veri Tipi</label>
+          <select class="form-control" id="dataType">
+            <option value="daily" selected>Günlük</option>
+            <option value="weekly">Haftalık</option>
+            <option value="monthly">Aylık</option>
+          </select>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="form-group mt-4">
+          <button id="applyFilters" class="btn btn-primary">Uygula</button>
+          <button id="refreshData" class="btn btn-outline-secondary ml-2">Yenile</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Yükleniyor Göstergesi -->
+  <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+    <div class="spinner-border text-primary" role="status">
+      <span class="sr-only">Yükleniyor...</span>
+    </div>
+  </div>
+
+  <!-- Özet Kartları -->
+  <div class="row mb-4">
+    <div class="col-md-3">
+      <div class="card summary-card">
+        <div class="card-body text-center">
+          <div class="summary-value" id="totalRevenue">₺0</div>
+          <div class="summary-label">Toplam Satış</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card summary-card">
+        <div class="card-body text-center">
+          <div class="summary-value" id="totalProfit">₺0</div>
+          <div class="summary-label">Toplam Kâr</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card summary-card">
+        <div class="card-body text-center">
+          <div class="summary-value" id="profitMargin">%0</div>
+          <div class="summary-label">Kâr Marjı</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card summary-card">
+        <div class="card-body text-center">
+          <div class="summary-value" id="totalOrders">0</div>
+          <div class="summary-label">Toplam Sipariş</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sekme Yapısı -->
+  <ul class="nav nav-tabs" id="profitTabs" role="tablist">
+    <li class="nav-item">
+      <a class="nav-link active" id="overview-tab" data-toggle="tab" href="#overview" role="tab">Genel Bakış</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" id="products-tab" data-toggle="tab" href="#products" role="tab">Ürün Analizi</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" id="models-tab" data-toggle="tab" href="#models" role="tab">Model Analizi</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" id="colors-tab" data-toggle="tab" href="#colors" role="tab">Renk Analizi</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" id="sizes-tab" data-toggle="tab" href="#sizes" role="tab">Beden Analizi</a>
+    </li>
+  </ul>
+
+  <div class="tab-content" id="profitTabsContent">
+    <!-- Genel Bakış Sekmesi -->
+    <div class="tab-pane fade show active profit-tab-content" id="overview" role="tabpanel">
+      <div class="row">
+        <div class="col-md-12">
+          <div class="card">
+            <div class="card-header">
+              Satış ve Kâr Grafiği
+            </div>
+            <div class="card-body">
+              <div class="chart-container">
+                <canvas id="salesProfitChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="row mt-4">
+        <div class="col-md-6">
+          <div class="card">
+            <div class="card-header">
+              Kâr Marjı Trendi
+            </div>
+            <div class="card-body">
+              <div class="chart-container">
+                <canvas id="profitMarginChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="card">
+            <div class="card-header">
+              Ortalama Sipariş Değeri
+            </div>
+            <div class="card-body">
+              <div class="chart-container">
+                <canvas id="avgOrderValueChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ürün Analizi Sekmesi -->
+    <div class="tab-pane fade profit-tab-content" id="products" role="tabpanel">
+      <div class="row">
+        <div class="col-md-6">
+          <div class="card">
+            <div class="card-header">
+              En Kârlı Ürünler
+            </div>
+            <div class="card-body">
+              <div class="table-responsive">
+                <table class="table table-striped table-sm">
+                  <thead>
+                    <tr>
+                      <th>Ürün Kodu</th>
+                      <th>Ürün Adı</th>
+                      <th>Satış Miktarı</th>
+                      <th>Toplam Satış</th>
+                      <th>Toplam Kâr</th>
+                      <th>Kâr Marjı</th>
+                    </tr>
+                  </thead>
+                  <tbody id="profitableProductsTable">
+                    <!-- JavaScript ile doldurulacak -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="card">
+            <div class="card-header">
+              En Az Kârlı Ürünler
+            </div>
+            <div class="card-body">
+              <div class="table-responsive">
+                <table class="table table-striped table-sm">
+                  <thead>
+                    <tr>
+                      <th>Ürün Kodu</th>
+                      <th>Ürün Adı</th>
+                      <th>Satış Miktarı</th>
+                      <th>Toplam Satış</th>
+                      <th>Toplam Kâr</th>
+                      <th>Kâr Marjı</th>
+                    </tr>
+                  </thead>
+                  <tbody id="lossProductsTable">
+                    <!-- JavaScript ile doldurulacak -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Model Analizi Sekmesi -->
+    <div class="tab-pane fade profit-tab-content" id="models" role="tabpanel">
+      <div class="card">
+        <div class="card-header">
+          Model Bazlı Kâr Analizi
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-striped table-sm">
+              <thead>
+                <tr>
+                  <th>Model Kodu</th>
+                  <th>Sipariş Sayısı</th>
+                  <th>Satış Miktarı</th>
+                  <th>Toplam Satış</th>
+                  <th>Toplam Maliyet</th>
+                  <th>Toplam Kâr</th>
+                  <th>Kâr Marjı</th>
+                </tr>
+              </thead>
+              <tbody id="modelProfitTable">
+                <!-- JavaScript ile doldurulacak -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Renk Analizi Sekmesi -->
+    <div class="tab-pane fade profit-tab-content" id="colors" role="tabpanel">
+      <div class="card">
+        <div class="card-header">
+          Renk Bazlı Kâr Analizi
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-striped table-sm">
+              <thead>
+                <tr>
+                  <th>Renk</th>
+                  <th>Sipariş Sayısı</th>
+                  <th>Satış Miktarı</th>
+                  <th>Toplam Satış</th>
+                  <th>Toplam Maliyet</th>
+                  <th>Toplam Kâr</th>
+                  <th>Kâr Marjı</th>
+                </tr>
+              </thead>
+              <tbody id="colorProfitTable">
+                <!-- JavaScript ile doldurulacak -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Beden Analizi Sekmesi -->
+    <div class="tab-pane fade profit-tab-content" id="sizes" role="tabpanel">
+      <div class="card">
+        <div class="card-header">
+          Beden Bazlı Kâr Analizi
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-striped table-sm">
+              <thead>
+                <tr>
+                  <th>Beden</th>
+                  <th>Sipariş Sayısı</th>
+                  <th>Satış Miktarı</th>
+                  <th>Toplam Satış</th>
+                  <th>Toplam Maliyet</th>
+                  <th>Toplam Kâr</th>
+                  <th>Kâr Marjı</th>
+                </tr>
+              </thead>
+              <tbody id="sizeProfitTable">
+                <!-- JavaScript ile doldurulacak -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.4/dist/Chart.min.js"></script>
+<script>
+  // Sayfa yüklendikten sonra verileri yükle
+  document.addEventListener('DOMContentLoaded', function() {
+    loadProfitData(30); // Varsayılan olarak 30 günlük veri
+    loadProductProfitData(); // Ürün bazlı kâr verileri
+
+    // Filtre uygulama butonu
+    document.getElementById('applyFilters').addEventListener('click', function() {
+      const days = document.getElementById('timeRange').value;
+      loadProfitData(days);
+    });
+
+    // Yenile butonu
+    document.getElementById('refreshData').addEventListener('click', function() {
+      const days = document.getElementById('timeRange').value;
+      loadProfitData(days);
+      loadProductProfitData();
+    });
+  });
+
+  // Para birimini formatlama
+  function formatCurrency(value) {
+    return '₺' + parseFloat(value).toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+  }
+
+  // Yüzde formatı
+  function formatPercentage(value) {
+    return parseFloat(value).toFixed(2) + '%';
+  }
+
+  // Günlük kâr verisini yükleme
+  function loadProfitData(days) {
+    // Yükleniyor göstergesini göster
+    document.getElementById('loadingOverlay').style.display = 'flex';
+
+    // API'den veri al
+    fetch(`/api/profit/daily?days=${days}`)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`HTTP hata! Durum: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then(data => {
+        // Yükleniyor göstergesini gizle
+        document.getElementById('loadingOverlay').style.display = 'none';
+
+        // Özet verileri güncelle
+        updateSummary(data.summary);
+
+        // Grafikleri güncelle
+        updateCharts(data.data);
+      })
+      .catch(error => {
+        // Yükleniyor göstergesini gizle
+        document.getElementById('loadingOverlay').style.display = 'none';
+
+        // Hata göster
+        console.error("Kar verileri yüklenirken hata:", error);
+        alert("Kâr verileri yüklenirken bir hata oluştu. Lütfen daha sonra tekrar deneyin.");
+      });
+  }
+
+  // Ürün kâr verisini yükleme
+  function loadProductProfitData() {
+    fetch('/api/profit/products?limit=10')
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`HTTP hata! Durum: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then(data => {
+        updateProductTables(data.profitable_products, data.loss_products);
+      })
+      .catch(error => {
+        console.error("Ürün kar verileri yüklenirken hata:", error);
+      });
+  }
+
+  // Özet bilgileri güncelleme
+  function updateSummary(summary) {
+    document.getElementById('totalRevenue').textContent = formatCurrency(summary.total_revenue);
+    document.getElementById('totalProfit').textContent = formatCurrency(summary.total_profit);
+    document.getElementById('profitMargin').textContent = formatPercentage(summary.avg_profit_margin);
+    document.getElementById('totalOrders').textContent = summary.total_orders.toLocaleString();
+  }
+
+  // Grafikleri güncelleme
+  function updateCharts(data) {
+    // Tarih ve değer dizileri hazırla
+    const dates = data.map(item => item.date);
+    const revenues = data.map(item => item.revenue);
+    const profits = data.map(item => item.profit);
+    const margins = data.map(item => item.profit_margin);
+    const avgOrderValues = data.map(item => item.avg_order_value);
+
+    // Satış ve Kâr Grafiği
+    updateSalesProfitChart(dates, revenues, profits);
+    
+    // Kâr Marjı Grafiği
+    updateProfitMarginChart(dates, margins);
+    
+    // Ortalama Sipariş Değeri Grafiği
+    updateAvgOrderValueChart(dates, avgOrderValues);
+  }
+
+  // Satış ve Kâr Grafiğini Güncelleme
+  function updateSalesProfitChart(dates, revenues, profits) {
+    const ctx = document.getElementById('salesProfitChart').getContext('2d');
+    
+    // Varsa mevcut grafiği temizle
+    if (window.salesProfitChart) {
+      window.salesProfitChart.destroy();
+    }
+    
+    window.salesProfitChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: dates,
+        datasets: [
+          {
+            label: 'Toplam Satış',
+            data: revenues,
+            backgroundColor: 'rgba(54, 162, 235, 0.5)',
+            borderColor: 'rgba(54, 162, 235, 1)',
+            borderWidth: 1
+          },
+          {
+            label: 'Toplam Kâr',
+            data: profits,
+            backgroundColor: 'rgba(75, 192, 192, 0.5)',
+            borderColor: 'rgba(75, 192, 192, 1)',
+            borderWidth: 1
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          xAxes: [{
+            ticks: {
+              maxRotation: 45,
+              minRotation: 45
+            }
+          }],
+          yAxes: [{
+            ticks: {
+              beginAtZero: true,
+              callback: function(value) {
+                return '₺' + value.toLocaleString();
+              }
+            }
+          }]
+        },
+        tooltips: {
+          callbacks: {
+            label: function(tooltipItem, data) {
+              return data.datasets[tooltipItem.datasetIndex].label + ': ₺' + 
+                     tooltipItem.yLabel.toLocaleString();
+            }
+          }
+        }
+      }
+    });
+  }
+
+  // Kâr Marjı Grafiğini Güncelleme
+  function updateProfitMarginChart(dates, margins) {
+    const ctx = document.getElementById('profitMarginChart').getContext('2d');
+    
+    // Varsa mevcut grafiği temizle
+    if (window.profitMarginChart) {
+      window.profitMarginChart.destroy();
+    }
+    
+    window.profitMarginChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: dates,
+        datasets: [
+          {
+            label: 'Kâr Marjı (%)',
+            data: margins,
+            backgroundColor: 'rgba(255, 159, 64, 0.5)',
+            borderColor: 'rgba(255, 159, 64, 1)',
+            borderWidth: 2,
+            fill: false,
+            tension: 0.1
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          xAxes: [{
+            ticks: {
+              maxRotation: 45,
+              minRotation: 45
+            }
+          }],
+          yAxes: [{
+            ticks: {
+              beginAtZero: true,
+              callback: function(value) {
+                return value + '%';
+              }
+            }
+          }]
+        },
+        tooltips: {
+          callbacks: {
+            label: function(tooltipItem, data) {
+              return data.datasets[tooltipItem.datasetIndex].label + ': ' + 
+                     tooltipItem.yLabel.toFixed(2) + '%';
+            }
+          }
+        }
+      }
+    });
+  }
+
+  // Ortalama Sipariş Değeri Grafiğini Güncelleme
+  function updateAvgOrderValueChart(dates, values) {
+    const ctx = document.getElementById('avgOrderValueChart').getContext('2d');
+    
+    // Varsa mevcut grafiği temizle
+    if (window.avgOrderValueChart) {
+      window.avgOrderValueChart.destroy();
+    }
+    
+    window.avgOrderValueChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: dates,
+        datasets: [
+          {
+            label: 'Ortalama Sipariş Değeri',
+            data: values,
+            backgroundColor: 'rgba(153, 102, 255, 0.5)',
+            borderColor: 'rgba(153, 102, 255, 1)',
+            borderWidth: 2,
+            fill: false,
+            tension: 0.1
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          xAxes: [{
+            ticks: {
+              maxRotation: 45,
+              minRotation: 45
+            }
+          }],
+          yAxes: [{
+            ticks: {
+              beginAtZero: true,
+              callback: function(value) {
+                return '₺' + value.toLocaleString();
+              }
+            }
+          }]
+        },
+        tooltips: {
+          callbacks: {
+            label: function(tooltipItem, data) {
+              return data.datasets[tooltipItem.datasetIndex].label + ': ₺' + 
+                     tooltipItem.yLabel.toLocaleString();
+            }
+          }
+        }
+      }
+    });
+  }
+
+  // Ürün tablolarını güncelleme
+  function updateProductTables(profitableProducts, lossProducts) {
+    // En kârlı ürünler tablosu
+    const profitableTable = document.getElementById('profitableProductsTable');
+    profitableTable.innerHTML = '';
+
+    profitableProducts.forEach(product => {
+      const row = document.createElement('tr');
+      
+      row.innerHTML = `
+        <td>${product.barcode}</td>
+        <td>${product.name}</td>
+        <td>${product.quantity}</td>
+        <td>${formatCurrency(product.revenue)}</td>
+        <td class="${product.profit >= 0 ? 'profit-positive' : 'profit-negative'}">${formatCurrency(product.profit)}</td>
+        <td class="${product.profit_margin >= 0 ? 'profit-positive' : 'profit-negative'}">${formatPercentage(product.profit_margin)}</td>
+      `;
+      
+      profitableTable.appendChild(row);
+    });
+
+    // En az kârlı ürünler tablosu
+    const lossTable = document.getElementById('lossProductsTable');
+    lossTable.innerHTML = '';
+
+    lossProducts.forEach(product => {
+      const row = document.createElement('tr');
+      
+      row.innerHTML = `
+        <td>${product.barcode}</td>
+        <td>${product.name}</td>
+        <td>${product.quantity}</td>
+        <td>${formatCurrency(product.revenue)}</td>
+        <td class="${product.profit >= 0 ? 'profit-positive' : 'profit-negative'}">${formatCurrency(product.profit)}</td>
+        <td class="${product.profit_margin >= 0 ? 'profit-positive' : 'profit-negative'}">${formatPercentage(product.profit_margin)}</td>
+      `;
+      
+      lossTable.appendChild(row);
+    });
+  }
+</script>
+{% endblock %}
+
 {% extends "base.html" %}
 
 {% block title %}Kar Analizi{% endblock %}

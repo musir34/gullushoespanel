@@ -1,3 +1,4 @@
+
 import os
 import logging
 import redis
@@ -8,6 +9,7 @@ try:
     # Bağlantıyı test et
     redis_client.ping()
     redis_active = True
+    logging.info("Redis bağlantısı başarıyla kuruldu.")
 except Exception as e:
     logging.warning(f"Redis bağlantısı kurulamadı, önbellek devre dışı: {str(e)}")
     # Dummy Redis client
