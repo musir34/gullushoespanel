@@ -702,3 +702,62 @@ def search_products():
 @get_products_bp.route('/product_label')
 def product_label():
     return render_template('product_label.html')
+import requests
+from datetime import datetime
+
+# Harem Exchange'den döviz kuru çekme fonksiyonu
+def get_usd_exchange_rate():
+    try:
+        response = requests.get("https://api.haremexchange.com/daily-rates")
+        if response.status_code == 200:
+            data = response.json()
+            # USD/TRY kurunu al
+            for rate in data.get('rates', []):
+                if rate.get('code') == 'USD':
+                    return float(rate.get('buying', 0))
+        return 0  # Varsayılan değer
+    except Exception as e:
+        logger.error(f"Döviz kuru çekilirken hata: {e}")
+        return 0
+
+# Ürün maliyetini güncelleme endpoint'i
+@get_products_bp.route('/update_product_cost', methods=['POST'])
+def update_product_cost():
+    try:
+        barcode = request.form.get('barcode')
+        cost_usd = float(request.form.get('cost_usd', 0))
+        
+        if not barcode:
+            return jsonify({'success': False, 'message': 'Barkod gerekli'})
+            
+        # Güncel döviz kurunu al
+        exchange_rate = get_usd_exchange_rate()
+        if exchange_rate <= 0:
+            return jsonify({'success': False, 'message': 'Döviz kuru alınamadı'})
+            
+        # TL cinsinden maliyeti hesapla
+        cost_try = cost_usd * exchange_rate
+        
+        # Ürünü güncelle
+        product = Product.query.filter_by(barcode=barcode).first()
+        if not product:
+            return jsonify({'success': False, 'message': 'Ürün bulunamadı'})
+            
+        product.cost_usd = cost_usd
+        product.cost_try = cost_try
+        product.exchange_rate = exchange_rate
+        product.cost_updated_at = datetime.now()
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True, 
+            'message': 'Ürün maliyeti güncellendi',
+            'cost_try': cost_try,
+            'exchange_rate': exchange_rate
+        })
+            
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Maliyet güncellenirken hata: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500

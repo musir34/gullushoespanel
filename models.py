@@ -197,10 +197,16 @@ class Product(db.Model):
     sale_price = db.Column(db.Float)
     list_price = db.Column(db.Float)
     currency_type = db.Column(db.String)
+    # Maliyet alanları
+    cost_usd = db.Column(db.Float, default=0)  # USD cinsinden maliyet
+    cost_try = db.Column(db.Float, default=0)  # TRY cinsinden maliyet 
+    exchange_rate = db.Column(db.Float, default=0)  # Kullanılan döviz kuru
+    cost_updated_at = db.Column(db.DateTime)  # Maliyet güncelleme tarihi
 
     def __init__(self, barcode, original_product_barcode, title, product_main_id, 
                  quantity, images, variants, size, color, archived, locked, on_sale,
-                 reject_reason, sale_price, list_price, currency_type):
+                 reject_reason, sale_price, list_price, currency_type, cost_usd=0, cost_try=0, 
+                 exchange_rate=0, cost_updated_at=None):
         self.barcode = barcode
         self.original_product_barcode = original_product_barcode
         self.title = title
@@ -217,6 +223,10 @@ class Product(db.Model):
         self.sale_price = sale_price
         self.list_price = list_price
         self.currency_type = currency_type
+        self.cost_usd = cost_usd
+        self.cost_try = cost_try
+        self.exchange_rate = exchange_rate
+        self.cost_updated_at = cost_updated_at
 
 # Arşiv Modeli
 class Archive(db.Model):

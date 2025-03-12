@@ -52,6 +52,12 @@ with app.app_context():
     # Eksik sütunu ekle
     from sqlalchemy import text
     db.session.execute(text('ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_date TIMESTAMP'))
+    
+    # Products tablosuna maliyet kolonlarını ekle
+    db.session.execute(text('ALTER TABLE products ADD COLUMN IF NOT EXISTS cost_usd FLOAT DEFAULT 0'))
+    db.session.execute(text('ALTER TABLE products ADD COLUMN IF NOT EXISTS cost_try FLOAT DEFAULT 0'))
+    db.session.execute(text('ALTER TABLE products ADD COLUMN IF NOT EXISTS exchange_rate FLOAT DEFAULT 0'))
+    db.session.execute(text('ALTER TABLE products ADD COLUMN IF NOT EXISTS cost_updated_at TIMESTAMP'))
 
     # Yeni tabloları oluştur
     from models import YeniSiparis, SiparisUrun
