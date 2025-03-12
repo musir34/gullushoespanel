@@ -49,10 +49,9 @@ from claims_service import claims_service_bp
 # Blueprint'lerin kaydını toplu olarak en sonda yapacağız
 
 with app.app_context():
-    # Eksik sütunları ekle
+    # Eksik sütunu ekle
     from sqlalchemy import text
     db.session.execute(text('ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_date TIMESTAMP'))
-    db.session.execute(text('ALTER TABLE products ADD COLUMN IF NOT EXISTS cost_date TIMESTAMP'))
 
     # Yeni tabloları oluştur
     from models import YeniSiparis, SiparisUrun
