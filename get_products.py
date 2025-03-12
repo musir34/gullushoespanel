@@ -535,33 +535,40 @@ def product_list():
     """
     try:
         page = request.args.get('page', 1, type=int)
-        per_page = 100  # Daha fazla ürün gösterelim
+        per_page = 12
 
-        # Tüm ürünleri çek
+        # Tüm ürünleri çek ve grupla
         base_query = Product.query
+        products = base_query.all()
+        grouped_products = group_products_by_model_and_color(products)
+
+        # Model ve renge göre sırala
+        sorted_keys = sorted(grouped_products.keys(), key=lambda x: (x[0].lower(), x[1].lower()))
+        total_groups = len(sorted_keys)
+
+        # Sayfalama için indeksler
+        start_idx = (page - 1) * per_page
+        end_idx = min(start_idx + per_page, total_groups)
         
-        # Toplam ürün sayısını al
-        total_count = base_query.count()
-        
-        # Sayfalı ürünleri çek
-        products = base_query.offset((page - 1) * per_page).limit(per_page).all()
-        
+        # Mevcut sayfa için ürünleri al
+        current_page_keys = sorted_keys[start_idx:end_idx]
+        current_page_products = {key: sort_variants_by_size(grouped_products[key]) 
+                               for key in current_page_keys}
+
         # Toplam sayfa sayısı
-        total_pages = (total_count + per_page - 1) // per_page
-        
+        total_pages = (total_groups + per_page - 1) // per_page
+
         # Pagination nesnesini oluştur
         pagination = {
             'page': page,
             'per_page': per_page,
-            'total': total_count,
+            'total': total_groups,
             'pages': total_pages,
             'has_prev': page > 1,
-            'has_next': page < total_pages
+            'has_next': page < total_pages,
+            'iter_pages': lambda left_edge=2, right_edge=2, left_current=2, right_current=2: 
+                range(1, total_pages + 1)
         }
-
-        if not products:
-            logger.warning(f"Sayfa {page} için ürün bulunamadı")
-            flash("Bu sayfada gösterilecek ürün bulunamadı.", "warning")
 
     except Exception as e:
         logger.error(f"Ürünler veritabanından çekilirken bir hata oluştu: {e}")
@@ -570,9 +577,10 @@ def product_list():
 
     return render_template(
         'product_list.html',
-        products=products,
+        grouped_products=current_page_products,
         pagination=pagination,
-        total_pages=total_pages
+        total_pages=total_pages,
+        search_mode=False
     )
 
 @get_products_bp.route('/get_product_variants', methods=['GET'])
@@ -694,62 +702,3 @@ def search_products():
 @get_products_bp.route('/product_label')
 def product_label():
     return render_template('product_label.html')
-import requests
-from datetime import datetime
-
-# Harem Exchange'den döviz kuru çekme fonksiyonu
-def get_usd_exchange_rate():
-    try:
-        response = requests.get("https://api.haremexchange.com/daily-rates")
-        if response.status_code == 200:
-            data = response.json()
-            # USD/TRY kurunu al
-            for rate in data.get('rates', []):
-                if rate.get('code') == 'USD':
-                    return float(rate.get('buying', 0))
-        return 0  # Varsayılan değer
-    except Exception as e:
-        logger.error(f"Döviz kuru çekilirken hata: {e}")
-        return 0
-
-# Ürün maliyetini güncelleme endpoint'i
-@get_products_bp.route('/update_product_cost', methods=['POST'])
-def update_product_cost():
-    try:
-        barcode = request.form.get('barcode')
-        cost_usd = float(request.form.get('cost_usd', 0))
-        
-        if not barcode:
-            return jsonify({'success': False, 'message': 'Barkod gerekli'})
-            
-        # Güncel döviz kurunu al
-        exchange_rate = get_usd_exchange_rate()
-        if exchange_rate <= 0:
-            return jsonify({'success': False, 'message': 'Döviz kuru alınamadı'})
-            
-        # TL cinsinden maliyeti hesapla
-        cost_try = cost_usd * exchange_rate
-        
-        # Ürünü güncelle
-        product = Product.query.filter_by(barcode=barcode).first()
-        if not product:
-            return jsonify({'success': False, 'message': 'Ürün bulunamadı'})
-            
-        product.cost_usd = cost_usd
-        product.cost_try = cost_try
-        product.exchange_rate = exchange_rate
-        product.cost_updated_at = datetime.now()
-        
-        db.session.commit()
-        
-        return jsonify({
-            'success': True, 
-            'message': 'Ürün maliyeti güncellendi',
-            'cost_try': cost_try,
-            'exchange_rate': exchange_rate
-        })
-            
-    except Exception as e:
-        db.session.rollback()
-        logger.error(f"Maliyet güncellenirken hata: {e}")
-        return jsonify({'success': False, 'error': str(e)}), 500
