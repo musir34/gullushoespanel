@@ -1,7 +1,8 @@
 
 from flask import Blueprint, jsonify, render_template
-from models import db, Order
+from models import db, Order, Product
 from sqlalchemy import func
+from datetime import datetime
 
 kar_maliyet_bp = Blueprint('kar_maliyet', __name__)
 
@@ -19,16 +20,19 @@ def hesapla_kar(order):
     urun_barkodlari = order.product_barcode.split(', ') if order.product_barcode else []
     
     if urun_barkodlari:
-        # Birincil barkodu kullan
-        birincil_barkod = urun_barkodlari[0]
-        # Product tablosundaki ürünü sorgula
-        urun = db.session.query(Product).filter_by(barcode=birincil_barkod).first()
-        
-        if urun and urun.cost_usd:
-            # Güncel dolar kurunu çekmek için bir fonksiyon eklenmeli
-            # Şimdilik sabit bir kur kullanıyoruz (gerçek uygulamada API'den çekilmeli)
-            dolar_kuru = 30.0  # Örnek kur (TL/USD)
-            urun_maliyeti = urun.cost_usd * dolar_kuru
+        try:
+            # Birincil barkodu kullan
+            birincil_barkod = urun_barkodlari[0]
+            # Product tablosundaki ürünü sorgula
+            urun = Product.query.filter_by(barcode=birincil_barkod).first()
+            
+            if urun and urun.cost_usd:
+                # Güncel dolar kurunu çekmek için bir fonksiyon eklenmeli
+                # Şimdilik sabit bir kur kullanıyoruz (gerçek uygulamada API'den çekilmeli)
+                dolar_kuru = 30.0  # Örnek kur (TL/USD)
+                urun_maliyeti = urun.cost_usd * dolar_kuru
+        except Exception as e:
+            print(f"Ürün maliyet hesaplama hatası: {e}")
     
     komisyon_orani = 0.15  # Trendyol komisyonu (%15 varsayılan)
     komisyon_tutari = satis_fiyati * komisyon_orani
@@ -86,25 +90,28 @@ def kar_analiz_sayfasi():
     analiz_sonucu = []
     
     for siparis in siparisler:
-        net_kar, urun_maliyeti = hesapla_kar(siparis)
-        
-        # Ürün barkodundan Product tablosunda maliyet bilgisi var mı kontrol et
-        urun_barkodlari = siparis.product_barcode.split(', ') if siparis.product_barcode else []
-        dolar_maliyeti = None
-        
-        if urun_barkodlari:
-            birincil_barkod = urun_barkodlari[0]
-            urun = db.session.query(Product).filter_by(barcode=birincil_barkod).first()
-            if urun:
-                dolar_maliyeti = urun.cost_usd
-        
-        analiz_sonucu.append({
-            "siparis_no": siparis.order_number,
-            "satis_fiyati": siparis.amount,
-            "urun_maliyeti": urun_maliyeti,
-            "dolar_maliyeti": dolar_maliyeti,
-            "net_kar": net_kar
-        })
+        try:
+            net_kar, urun_maliyeti = hesapla_kar(siparis)
+            
+            # Ürün barkodundan Product tablosunda maliyet bilgisi var mı kontrol et
+            urun_barkodlari = siparis.product_barcode.split(', ') if siparis.product_barcode else []
+            dolar_maliyeti = None
+            
+            if urun_barkodlari:
+                birincil_barkod = urun_barkodlari[0]
+                urun = Product.query.filter_by(barcode=birincil_barkod).first()
+                if urun:
+                    dolar_maliyeti = urun.cost_usd
+            
+            analiz_sonucu.append({
+                "siparis_no": siparis.order_number,
+                "satis_fiyati": siparis.amount,
+                "urun_maliyeti": urun_maliyeti,
+                "dolar_maliyeti": dolar_maliyeti,
+                "net_kar": net_kar
+            })
+        except Exception as e:
+            print(f"Sipariş analiz hatası ({siparis.order_number}): {e}")
 
     toplam_kar = sum(item["net_kar"] for item in analiz_sonucu)
     toplam_satis = sum(item["satis_fiyati"] or 0 for item in analiz_sonucu)
