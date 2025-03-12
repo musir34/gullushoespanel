@@ -1,7 +1,7 @@
+
 from flask import Blueprint, jsonify, render_template
 from models import db, Order
 from sqlalchemy import func
-from kar_maliyet import hesapla_kar
 
 kar_maliyet_bp = Blueprint('kar_maliyet', __name__)
 
