@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kâr Maliyet Analizi</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin: 20px; }
+        table { width: 80%; margin: auto; border-collapse: collapse; }
+        th, td { border: 1px solid #ddd; padding: 10px; }
+        th { background-color: #f4f4f4; }
+        .container { width: 90%; margin: auto; }
+    </style>
+</head>
+<body>
+
+    <h2>Trendyol Kâr-Maliyet Analizi</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Sipariş No</th>
+                <th>Satış Fiyatı (₺)</th>
+                <th>Ürün Maliyeti (₺)</th>
+                <th>Net Kâr (₺)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for siparis in siparisler %}
+            <tr>
+                <td>{{ siparis.siparis_no }}</td>
+                <td>{{ siparis.satis_fiyati }}</td>
+                <td>{{ siparis.urun_maliyeti }}</td>
+                <td>{{ siparis.net_kar }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h3>Toplam Net Kâr: {{ toplam_kar }} ₺</h3>
+
+</body>
+</html>

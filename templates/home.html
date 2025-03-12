@@ -267,6 +267,8 @@
       <!-- Anasayfa ve Kullanıcı Yönetimi ayrı -->
       <a href="{{ url_for('home.home') }}" class="btn btn-secondary">Anasayfa</a>
       <a href="{{ url_for('approve_users') }}" class="btn btn-warning">Kullanıcı Yönetimi</a>
+      <a href="{{ url_for('display_archive') }}" class="btn btn-secondary">Arşiv</a>
+
 
       <!-- SIPARİŞ İŞLEMLERİ DROPDOWN -->
       <div class="dropdown">
@@ -292,19 +294,20 @@
         </div>
       </div>
 
-      <!-- ANALİZ DROPDOWN -->
-      <div class="dropdown">
+    <!-- ANALİZ DROPDOWN -->
+    <div class="dropdown">
         <button class="btn btn-info dropdown-toggle" type="button" id="analizMenu" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-          Analizler
+            Analizler
         </button>
         <div class="dropdown-menu" aria-labelledby="analizMenu">
-          <a class="dropdown-item" href="{{ url_for('analysis.sales_analysis') }}">Satış Analizi</a>
-          <a class="dropdown-item" href="{{ url_for('openai_bp.ai_analiz') }}">AI Analiz</a>
+            <a class="dropdown-item" href="{{ url_for('analysis.sales_analysis') }}">Satış Analizi</a>
+            <a class="dropdown-item" href="{{ url_for('openai_bp.ai_analiz') }}">AI Analiz</a>
+            <a class="dropdown-item" href="{{ url_for('kar_maliyet.kar_analiz_sayfasi') }}">Kâr-Maliyet Analizi</a>
         </div>
-      </div>
+    </div>
+
 
       <!-- Arşiv Butonu Tek Başına Dursun -->
-      <a href="{{ url_for('display_archive') }}" class="btn btn-secondary">Arşiv</a>
   </div>
 
   <div class="container">
