@@ -17,6 +17,7 @@ from login_logout import roles_required
 import qrcode
 from io import BytesIO
 from flask import send_file
+from datetime import datetime
 
 get_products_bp = Blueprint('get_products', __name__)
 
@@ -59,7 +60,7 @@ def generate_qr():
 
     # QR kod görselinin göreli yolunu döndür
     return jsonify({'success': True, 'qr_code_path': f"/static/qr_codes/{barcode}.png"})
-    
+
 
 # Yardımcı Fonksiyonlar
 def group_products_by_model_and_color(products):
@@ -235,10 +236,10 @@ def background_download_images(image_downloads):
 
 async def save_products_to_db_async(products):
     products = [product for product in products if isinstance(product, dict)]
-    
+
     # Arşivdeki ürün barkodlarını al
     archived_barcodes = set(p.original_product_barcode for p in ProductArchive.query.all())
-    
+
     # Arşivde olan ürünleri filtrele
     products = [p for p in products if p.get('barcode') not in archived_barcodes]
 
@@ -316,7 +317,7 @@ async def save_products_to_db_async(products):
         # Thread başlat
         threading.Thread(target=background_download_images, args=(image_downloads,)).start()
 
-        
+
 
 def check_and_prepare_image_downloads(image_urls, images_folder):
     existing_files = set(os.listdir(images_folder))
@@ -451,7 +452,7 @@ def archive_product():
 
         # Model koduna ait tüm ürünleri bul
         products = Product.query.filter_by(product_main_id=product_main_id).all()
-        
+
         if not products:
             return jsonify({'success': False, 'message': 'Ürün bulunamadı'})
 
@@ -494,7 +495,7 @@ def restore_from_archive():
 
         # Arşivden ürünleri bul
         archived_products = ProductArchive.query.filter_by(product_main_id=product_main_id).all()
-        
+
         if not archived_products:
             return jsonify({'success': False, 'message': 'Arşivde ürün bulunamadı'})
 
@@ -549,7 +550,7 @@ def product_list():
         # Sayfalama için indeksler
         start_idx = (page - 1) * per_page
         end_idx = min(start_idx + per_page, total_groups)
-        
+
         # Mevcut sayfa için ürünleri al
         current_page_keys = sorted_keys[start_idx:end_idx]
         current_page_products = {key: sort_variants_by_size(grouped_products[key]) 
@@ -711,13 +712,13 @@ def get_product_cost():
     model_id = request.args.get('model_id', '').strip()
     if not model_id:
         return jsonify({'success': False, 'message': 'Model ID gerekli'})
-    
+
     # Bu model koduna ait ilk ürünü getir (varyantlar aynı maliyette)
     product = Product.query.filter_by(product_main_id=model_id).first()
-    
+
     if not product:
         return jsonify({'success': False, 'message': 'Ürün bulunamadı'})
-    
+
     return jsonify({
         'success': True, 
         'cost_usd': product.cost_usd or 0,
@@ -731,30 +732,242 @@ def update_product_cost():
     """
     model_id = request.form.get('model_id', '').strip()
     cost_usd = request.form.get('cost_usd')
-    
+
     if not model_id:
         return jsonify({'success': False, 'message': 'Model ID gerekli'})
-    
+
     try:
         cost_usd = float(cost_usd)
     except (ValueError, TypeError):
         return jsonify({'success': False, 'message': 'Geçerli bir maliyet değeri giriniz'})
-    
+
     try:
         # Bu model koduna ait tüm varyantları güncelle
         products = Product.query.filter_by(product_main_id=model_id).all()
-        
+
         if not products:
             return jsonify({'success': False, 'message': 'Ürün bulunamadı'})
-        
+
         for product in products:
             product.cost_usd = cost_usd
             product.cost_date = datetime.now()
             db.session.add(product)
-        
+
         db.session.commit()
         return jsonify({'success': True, 'message': 'Ürün maliyetleri güncellendi'})
-    
+
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Maliyet güncelleme hatası: {e}")
+        return jsonify({'success': False, 'message': f'Bir hata oluştu: {str(e)}'})
+
+@get_products_bp.route('/update-stock-levels', methods=['POST'])
+async def update_stock_levels():
+    """
+    Çok sayıda ürünün stok miktarını API ile günceller
+    """
+    data = request.json
+    if not data or 'products' not in data:
+        return jsonify({'success': False, 'message': 'Geçersiz veri formatı'})
+
+    products = data['products']
+    quantity = data.get('quantity', 0)
+
+    items_to_update = []
+
+    for product_id in products:
+        product = Product.query.filter_by(product_main_id=product_id).all()
+        if not product:
+            continue
+
+        # Bu model koduna ait tüm varyantların stoklarını güncelle
+        for variant in product:
+            items_to_update.append({
+                'barcode': variant.barcode,
+                'quantity': quantity
+            })
+
+    if not items_to_update:
+        return jsonify({'success': False, 'message': 'Güncellenecek ürün bulunamadı'})
+
+    result = await update_stock_levels_with_items_async(items_to_update)
+
+    if result:
+        logger.info("Stoklar başarıyla güncellendi.")
+        return jsonify({'success': True})
+    else:
+        logger.error("Stok güncelleme başarısız oldu.")
+        return jsonify({'success': False, 'message': 'Stok güncelleme başarısız oldu.'})
+
+@get_products_bp.route('/update-price-stock', methods=['POST'])
+async def update_price_stock():
+    """
+    Tek bir ürünün fiyat ve stok bilgilerini günceller
+    """
+    try:
+        data = request.json
+        if not data or 'items' not in data:
+            return jsonify({'success': False, 'error': 'Geçersiz veri formatı'}), 400
+
+        items = data['items']
+        if not items:
+            return jsonify({'success': False, 'error': 'Güncellenecek ürün bulunamadı'}), 400
+
+        auth_str = f"{API_KEY}:{API_SECRET}"
+        b64_auth_str = base64.b64encode(auth_str.encode()).decode('utf-8')
+        url = f"{BASE_URL}suppliers/{SUPPLIER_ID}/products/price-and-inventory"
+        headers = {
+            "Authorization": f"Basic {b64_auth_str}",
+            "Content-Type": "application/json"
+        }
+
+        # API formatına uygun veri dönüşümü
+        api_items = []
+        for item in items:
+            api_item = {
+                "barcode": item.get('barcode')
+            }
+
+            # Sadece null olmayan değerleri ekle
+            if item.get('quantity') is not None:
+                api_item["quantity"] = item.get('quantity')
+            if item.get('salePrice') is not None:
+                api_item["salePrice"] = item.get('salePrice')
+            if item.get('listPrice') is not None:
+                api_item["listPrice"] = item.get('listPrice', item.get('salePrice'))
+
+            api_items.append(api_item)
+
+        payload = {"items": api_items}
+
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url, headers=headers, json=payload) as response:
+                response_data = await response.json()
+
+                if response.status != 200:
+                    logger.error(f"API Error: {response.status} - {response_data}")
+                    return jsonify({'success': False, 'error': f"API hatası: {response_data}"}), 500
+
+                # Veritabanında da aynı güncellemeleri yapalım
+                for item in items:
+                    barcode = item.get('barcode')
+                    product = Product.query.filter_by(barcode=barcode).first()
+                    if product:
+                        if item.get('quantity') is not None:
+                            product.quantity = item.get('quantity')
+                        if item.get('salePrice') is not None:
+                            product.sale_price = item.get('salePrice')
+                        if item.get('listPrice') is not None:
+                            product.list_price = item.get('listPrice', item.get('salePrice'))
+                        product.cost_date = datetime.now()
+                        db.session.add(product)
+
+                db.session.commit()
+
+                return jsonify({
+                    'success': True, 
+                    'message': 'Ürün fiyat ve stok bilgileri güncellendi',
+                    'api_response': response_data
+                })
+
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Hata: update_price_stock - {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@get_products_bp.route('/search', methods=['GET'])
+def search_products():
+    """
+    Ürün arama fonksiyonu. Model kodu veya barkod ile arama yapar.
+    """
+    query = request.args.get('query', '').strip()
+    if not query:
+        return redirect(url_for('get_products.product_list'))
+
+    # Hem model kodu hem de barkod ile arama yap
+    products = Product.query.filter(
+        db.or_(
+            Product.product_main_id == query,
+            Product.barcode == query,
+            Product.original_product_barcode == query
+        )
+    ).all()
+    if not products:
+        flash("Arama kriterlerine uygun ürün bulunamadı.", "warning")
+        return redirect(url_for('get_products.product_list'))
+
+    grouped_products = group_products_by_model_and_color(products)
+
+    # Varyantları bedenlere göre sıralayalım
+    for key in grouped_products:
+        grouped_products[key] = sort_variants_by_size(grouped_products[key])
+
+    return render_template(
+        'product_list.html',
+        grouped_products=grouped_products,
+        search_mode=True
+    )
+
+
+
+
+# Ürün Etiketi Rotası
+@get_products_bp.route('/product_label')
+def product_label():
+    return render_template('product_label.html')
+
+@get_products_bp.route('/api/product-cost', methods=['GET'])
+def get_product_cost():
+    """
+    Ürünün maliyet bilgisini döndürür
+    """
+    model_id = request.args.get('model_id', '').strip()
+    if not model_id:
+        return jsonify({'success': False, 'message': 'Model ID gerekli'})
+
+    # Bu model koduna ait ilk ürünü getir (varyantlar aynı maliyette)
+    product = Product.query.filter_by(product_main_id=model_id).first()
+
+    if not product:
+        return jsonify({'success': False, 'message': 'Ürün bulunamadı'})
+
+    return jsonify({
+        'success': True, 
+        'cost_usd': product.cost_usd or 0,
+        'cost_date': product.cost_date.strftime('%Y-%m-%d %H:%M') if product.cost_date else None
+    })
+
+@get_products_bp.route('/api/update-product-cost', methods=['POST'])
+def update_product_cost():
+    """
+    Ürün maliyetini günceller (tüm varyantlar için)
+    """
+    model_id = request.form.get('model_id', '').strip()
+    cost_usd = request.form.get('cost_usd')
+
+    if not model_id:
+        return jsonify({'success': False, 'message': 'Model ID gerekli'})
+
+    try:
+        cost_usd = float(cost_usd)
+    except (ValueError, TypeError):
+        return jsonify({'success': False, 'message': 'Geçerli bir maliyet değeri giriniz'})
+
+    try:
+        # Bu model koduna ait tüm varyantları güncelle
+        products = Product.query.filter_by(product_main_id=model_id).all()
+
+        if not products:
+            return jsonify({'success': False, 'message': 'Ürün bulunamadı'})
+
+        for product in products:
+            product.cost_usd = cost_usd
+            product.cost_date = datetime.now()
+            db.session.add(product)
+
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'Ürün maliyetleri güncellendi'})
+
     except Exception as e:
         db.session.rollback()
         logger.error(f"Maliyet güncelleme hatası: {e}")
