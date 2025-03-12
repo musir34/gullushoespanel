@@ -41,23 +41,26 @@ logger.addHandler(handler)
 
 async def fetch_usd_rate():
     try:
-        # Harem Döviz sayfasına istek atıyoruz:
-        url = "https://kur.haremaltin.com/today.json"
+        # Merkez Bankası veya açık API servislerine bağlanma
+        url = "https://api.exchangerate-api.com/v4/latest/USD"
         async with aiohttp.ClientSession() as session:
             async with session.get(url, timeout=10) as response:
                 if response.status == 200:
                     data = await response.json()
-                    # Örnek JSON içinde "USD" alanı olduğunu varsayıyoruz.
-                    # "selling" vb. alt alanlar olabilir. Aşağıya uyarlayın.
-                    usd_data = data.get('USD', {})
-                    # Örneğin: usd_data['sell'] -> anlık kur
-                    return float(usd_data.get('sell', 0))
+                    # Bu API'de TRY değeri rates altında yer alır
+                    try:
+                        # USD/TRY kuru (1 USD kaç TL)
+                        return float(data.get('rates', {}).get('TRY', 0))
+                    except (ValueError, TypeError) as e:
+                        logger.error(f"Kur değeri dönüştürme hatası: {e}")
+                        return 34.0  # Varsayılan değer
                 else:
-                    logger.error(f"Harem Döviz API hatası: {response.status} {await response.text()}")
-                    return None
+                    logger.error(f"Döviz API hatası: {response.status} {await response.text()}")
+                    return 34.0  # Hata durumunda varsayılan değer
     except Exception as e:
         logger.error(f"fetch_usd_rate hata: {e}")
-        return None
+        # Yedek değer döndür
+        return 34.0
 
 
 def update_all_cost_try(usd_rate):
