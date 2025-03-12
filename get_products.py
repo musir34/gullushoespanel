@@ -875,47 +875,6 @@ async def update_price_stock():
         logger.error(f"Hata: update_price_stock - {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
-@get_products_bp.route('/search', methods=['GET'])
-def search_products():
-    """
-    Ürün arama fonksiyonu. Model kodu veya barkod ile arama yapar.
-    """
-    query = request.args.get('query', '').strip()
-    if not query:
-        return redirect(url_for('get_products.product_list'))
-
-    # Hem model kodu hem de barkod ile arama yap
-    products = Product.query.filter(
-        db.or_(
-            Product.product_main_id == query,
-            Product.barcode == query,
-            Product.original_product_barcode == query
-        )
-    ).all()
-    if not products:
-        flash("Arama kriterlerine uygun ürün bulunamadı.", "warning")
-        return redirect(url_for('get_products.product_list'))
-
-    grouped_products = group_products_by_model_and_color(products)
-
-    # Varyantları bedenlere göre sıralayalım
-    for key in grouped_products:
-        grouped_products[key] = sort_variants_by_size(grouped_products[key])
-
-    return render_template(
-        'product_list.html',
-        grouped_products=grouped_products,
-        search_mode=True
-    )
-
-
-
-
-# Ürün Etiketi Rotası
-@get_products_bp.route('/product_label')
-def product_label():
-    return render_template('product_label.html')
-
 @get_products_bp.route('/api/product-cost', methods=['GET'])
 def get_product_cost():
     """
