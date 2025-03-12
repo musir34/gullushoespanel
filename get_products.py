@@ -535,40 +535,33 @@ def product_list():
     """
     try:
         page = request.args.get('page', 1, type=int)
-        per_page = 12
+        per_page = 100  # Daha fazla ürün gösterelim
 
-        # Tüm ürünleri çek ve grupla
+        # Tüm ürünleri çek
         base_query = Product.query
-        products = base_query.all()
-        grouped_products = group_products_by_model_and_color(products)
-
-        # Model ve renge göre sırala
-        sorted_keys = sorted(grouped_products.keys(), key=lambda x: (x[0].lower(), x[1].lower()))
-        total_groups = len(sorted_keys)
-
-        # Sayfalama için indeksler
-        start_idx = (page - 1) * per_page
-        end_idx = min(start_idx + per_page, total_groups)
         
-        # Mevcut sayfa için ürünleri al
-        current_page_keys = sorted_keys[start_idx:end_idx]
-        current_page_products = {key: sort_variants_by_size(grouped_products[key]) 
-                               for key in current_page_keys}
-
+        # Toplam ürün sayısını al
+        total_count = base_query.count()
+        
+        # Sayfalı ürünleri çek
+        products = base_query.offset((page - 1) * per_page).limit(per_page).all()
+        
         # Toplam sayfa sayısı
-        total_pages = (total_groups + per_page - 1) // per_page
-
+        total_pages = (total_count + per_page - 1) // per_page
+        
         # Pagination nesnesini oluştur
         pagination = {
             'page': page,
             'per_page': per_page,
-            'total': total_groups,
+            'total': total_count,
             'pages': total_pages,
             'has_prev': page > 1,
-            'has_next': page < total_pages,
-            'iter_pages': lambda left_edge=2, right_edge=2, left_current=2, right_current=2: 
-                range(1, total_pages + 1)
+            'has_next': page < total_pages
         }
+
+        if not products:
+            logger.warning(f"Sayfa {page} için ürün bulunamadı")
+            flash("Bu sayfada gösterilecek ürün bulunamadı.", "warning")
 
     except Exception as e:
         logger.error(f"Ürünler veritabanından çekilirken bir hata oluştu: {e}")
@@ -577,10 +570,9 @@ def product_list():
 
     return render_template(
         'product_list.html',
-        grouped_products=current_page_products,
+        products=products,
         pagination=pagination,
-        total_pages=total_pages,
-        search_mode=False
+        total_pages=total_pages
     )
 
 @get_products_bp.route('/get_product_variants', methods=['GET'])
