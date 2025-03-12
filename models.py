@@ -155,7 +155,6 @@ class Order(db.Model):
     archive_reason = db.Column(db.String)
     quantity = db.Column(db.Integer)
     delivery_date = db.Column(db.DateTime)
-    commission_rate = db.Column(db.Float, default=0.0)  # Komisyon oranı (%)
 
 class ProductArchive(db.Model):
     __tablename__ = 'product_archive'
@@ -201,11 +200,10 @@ class Product(db.Model):
     cost_usd = db.Column(db.Float, default=0.0)  # Maliyet (USD cinsinden)
     cost_date = db.Column(db.DateTime)  # Maliyet girişi tarihi
     cost_try = db.Column(db.Float, default=0) #tl karşılığı
-    commission_rate = db.Column(db.Float, default=0.0)  # Komisyon oranı (%)
 
     def __init__(self, barcode, original_product_barcode, title, product_main_id, 
                  quantity, images, variants, size, color, archived, locked, on_sale,
-                 reject_reason, sale_price, list_price, currency_type, cost_usd=0.0, cost_try=0.0, cost_date=None, commission_rate=0.0):
+                 reject_reason, sale_price, list_price, currency_type, cost_usd=0.0, cost_try=0.0, cost_date=None):
         self.barcode = barcode
         self.original_product_barcode = original_product_barcode
         self.title = title
@@ -224,8 +222,7 @@ class Product(db.Model):
         self.currency_type = currency_type
         self.cost_usd = cost_usd
         self.cost_date = cost_date
-        self.cost_try = cost_try
-        self.commission_rate = commission_rate
+        self.cost_usd = cost_try
 
 # Arşiv Modeli
 class Archive(db.Model):
