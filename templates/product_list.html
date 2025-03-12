@@ -384,6 +384,9 @@
                   <h5>{{ product_group[0].title }}</h5>
                   <p>Model Kodu: {{ model_id }}</p>
                   <p>Renk: {{ color }}</p>
+                  {% if product_group[0].commission_rate %}
+                  <p>Komisyon Oranı: %{{ product_group[0].commission_rate|round(2) }}</p>
+                  {% endif %}
                 </div>
                 <div class="actions">
                   <button class="btn btn-info btn-sm toggle-variants">
@@ -460,6 +463,9 @@
                   <h5>{{ product_group[0].title }}</h5>
                   <p>Model Kodu: {{ model_id }}</p>
                   <p>Renk: {{ color }}</p>
+                  {% if product_group[0].commission_rate %}
+                  <p>Komisyon Oranı: %{{ product_group[0].commission_rate|round(2) }}</p>
+                  {% endif %}
                 </div>
                 <div class="actions">
                   <button class="btn btn-info btn-sm toggle-variants">

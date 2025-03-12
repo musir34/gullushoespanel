@@ -280,6 +280,14 @@ async def save_products_to_db_async(products):
             color = next((attr.get('attributeValue', 'N/A') for attr in product_data.get('attributes', []) if attr.get('attributeName') == 'Renk'), 'N/A')
             reject_reason = product_data.get('rejectReasonDetails', [])
             reject_reason_str = '; '.join([r.get('reason', 'N/A') for r in reject_reason])
+            
+            # Komisyon oranını al
+            commission_rate = 0.0
+            try:
+                commission_rate = float(product_data.get('commissionRate', 0.0))
+            except (ValueError, TypeError):
+                logger.warning(f"Komisyon oranı geçersiz: {product_data.get('commissionRate')}")
+            
             product = {
                 "barcode": original_barcode,
                 "original_product_barcode": original_barcode,
@@ -297,6 +305,7 @@ async def save_products_to_db_async(products):
                 "sale_price": float(product_data.get('salePrice', 0)),
                 "list_price": float(product_data.get('listPrice', 0)),
                 "currency_type": product_data.get('currencyType', 'TRY'),
+                "commission_rate": commission_rate,  # Komisyon oranı eklendi
             }
             product_objects.append(product)
         except Exception as e:
@@ -331,6 +340,7 @@ def upsert_products(products):
             'images': insert_stmt.excluded.images,
             'size': insert_stmt.excluded.size,
             'color': insert_stmt.excluded.color,
+            'commission_rate': insert_stmt.excluded.commission_rate,  # Komisyon oranı güncelleme eklendi
         }
     )
     db.session.execute(upsert_stmt)

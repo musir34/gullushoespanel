@@ -121,12 +121,12 @@ def process_all_orders(all_orders_data):
         # Mevcut siparişleri al - veritabanı sorgusu sayısını azaltmak için tek sorguda al
         existing_orders = Order.query.all()
         existing_orders_dict = {order.order_number: order for order in existing_orders}
-        
+
         # Arşivdeki siparişleri kontrol et
         from models import Archive
         archived_orders = Archive.query.all()
         archived_orders_set = {order.order_number for order in archived_orders}
-        
+
         logger.info(f"API'den {len(all_orders_data)} sipariş alındı, veritabanında {len(existing_orders)} sipariş var, arşivde {len(archived_orders)} sipariş var.")
 
         # İşlenen sipariş numaralarını takip etmek için küme kullan
@@ -134,12 +134,12 @@ def process_all_orders(all_orders_data):
 
         for order_data in all_orders_data:
             order_number = str(order_data.get('orderNumber') or order_data.get('id'))
-            
+
             # Her sipariş numarasını yalnızca bir kez işle
             if order_number in processed_order_numbers:
                 logger.info(f"Sipariş {order_number} bu oturumda zaten işlendi, atlanıyor.")
                 continue
-                
+
             processed_order_numbers.add(order_number)
             api_order_numbers.add(order_number)
             order_status = order_data.get('status')
@@ -225,7 +225,10 @@ def update_existing_order(existing_order, order_data, status):
         line_ids = existing_order.line_id.split(', ') if existing_order.line_id else []
 
         # Toplam adet toplanacak
-        total_qty = 0
+        total_qty = 0  # Toplam adet için
+        # Komisyon oranları toplamı ve sayısı (ağırlıklı ortalama için)
+        total_commission_rate = 0
+        commission_count = 0
 
         for line in new_lines:
             q = line.get('quantity', 1)
@@ -239,6 +242,16 @@ def update_existing_order(existing_order, order_data, status):
             barcode = replace_turkish_characters(line.get('barcode', ''))
             original_barcode = line.get('barcode', '')
             line_id = str(line.get('id', ''))
+
+            # Komisyon oranını kontrol et
+            commission_rate = line.get('commissionRate', 0)
+            if commission_rate:
+                try:
+                    commission_rate = float(commission_rate)
+                    total_commission_rate += commission_rate
+                    commission_count += 1
+                except (ValueError, TypeError):
+                    pass
 
             if merchant_sku:
                 merchant_skus.append(merchant_sku)
@@ -255,6 +268,11 @@ def update_existing_order(existing_order, order_data, status):
         existing_order.product_barcode = ', '.join(product_barcodes)
         existing_order.original_product_barcode = ', '.join(original_product_barcodes)
         existing_order.line_id = ', '.join(line_ids)
+
+        # Komisyon oranı ortalamasını hesapla
+        if commission_count > 0:
+            avg_commission_rate = total_commission_rate / commission_count
+            existing_order.commission_rate = avg_commission_rate
 
         # Yeni eklenen kod: Sipariş detaylarını güncelle
         order_details = create_order_details(new_lines)
