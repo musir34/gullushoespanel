@@ -438,6 +438,12 @@
                     <i class="fas fa-edit"></i> Stokları Güncelle
                   </button>
                   <button
+                    class="btn btn-primary btn-sm update-cost"
+                    data-model="{{ model_id }}"
+                  >
+                    <i class="fas fa-dollar-sign"></i> Maliyet Güncelle
+                  </button>
+                  <button
                     class="btn btn-danger btn-sm archive-product"
                     data-model="{{ model_id }}"
                   >
@@ -510,6 +516,12 @@
                     data-color="{{ color }}"
                   >
                     <i class="fas fa-edit"></i> Stokları Güncelle
+                  </button>
+                  <button
+                    class="btn btn-primary btn-sm update-cost"
+                    data-model="{{ model_id }}"
+                  >
+                    <i class="fas fa-dollar-sign"></i> Maliyet Güncelle
                   </button>
                   <button
                     class="btn btn-danger btn-sm archive-product"
@@ -610,20 +622,106 @@
     <textarea id="temp-copier" style="position:absolute; top:-9999px;"></textarea>
   </div>
 
-  <!-- JQuery -->
-  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-  <script>
-    $(function() {
-      // Varyantları göster/gizle
-      $('#productContainer').on('click', '.toggle-variants', function() {
-        const $variantList = $(this).closest('.product-info').find('.variant-list');
-        $variantList.slideToggle();
+  <!-- Maliyet Güncelleme Modal -->
+<div class="modal fade" id="costModal" tabindex="-1" aria-labelledby="costModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="costModalLabel">Ürün Maliyeti Güncelle</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="updateCostForm">
+          <input type="hidden" id="costModelId" name="model_id" value="">
+          <div class="mb-3">
+            <label for="costUSD" class="form-label">Maliyet (USD)</label>
+            <input type="number" step="0.01" class="form-control" id="costUSD" name="cost_usd" placeholder="0.00" required>
+            <small class="form-text text-muted">Bu model için birim maliyet tutarını dolar cinsinden giriniz.</small>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+        <button type="button" class="btn btn-primary" id="saveCostBtn">Kaydet</button>
+      </div>
+    </div>
+  </div>
+</div>
 
-        if ($(this).html().includes('Gizle')) {
-          $(this).html('<i class="fas fa-chevron-down"></i> Tüm Varyantları Göster');
+  <!-- JQuery -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+  <script>
+    $(document).ready(function () {
+      // Varyant gösterme/gizleme
+      $('.toggle-variants').click(function () {
+        $(this).closest('.product-card').find('.variants-container').slideToggle();
+
+        // Icon ve metin değiştirme
+        const icon = $(this).find('i');
+        const button = $(this);
+
+        if (icon.hasClass('fa-chevron-down')) {
+          icon.removeClass('fa-chevron-down').addClass('fa-chevron-up');
+          button.html('<i class="fas fa-chevron-up"></i> Varyantları Gizle');
         } else {
-          $(this).html('<i class="fas fa-chevron-up"></i> Varyantları Gizle');
+          icon.removeClass('fa-chevron-up').addClass('fa-chevron-down');
+          button.html('<i class="fas fa-chevron-down"></i> Tüm Varyantları Göster');
         }
+      });
+
+      // Maliyet güncelleme modalını açma
+      $('.update-cost').click(function() {
+        const modelId = $(this).data('model');
+        $('#costModelId').val(modelId);
+
+        // Mevcut maliyet bilgisini getir
+        $.ajax({
+          url: '/api/product-cost',
+          method: 'GET',
+          data: { model_id: modelId },
+          success: function(response) {
+            if (response.success) {
+              $('#costUSD').val(response.cost_usd);
+            }
+          }
+        });
+
+        $('#costModal').modal('show');
+      });
+
+      // Maliyet güncelleme işlemi
+      $('#saveCostBtn').click(function() {
+        const modelId = $('#costModelId').val();
+        const costUSD = $('#costUSD').val();
+
+        if (!costUSD) {
+          alert('Lütfen maliyet tutarını giriniz.');
+          return;
+        }
+
+        $.ajax({
+          url: '/api/update-product-cost',
+          method: 'POST',
+          data: {
+            model_id: modelId,
+            cost_usd: costUSD
+          },
+          success: function(response) {
+            if (response.success) {
+              $('#costModal').modal('hide');
+              alert('Ürün maliyeti başarıyla güncellendi.');
+              // Sayfayı yenile
+              location.reload();
+            } else {
+              alert('Güncelleme sırasında bir hata oluştu: ' + response.message);
+            }
+          },
+          error: function() {
+            alert('İşlem sırasında bir hata oluştu.');
+          }
+        });
       });
 
       // Arşivle

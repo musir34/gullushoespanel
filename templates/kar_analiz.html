@@ -10,6 +10,8 @@
         th, td { border: 1px solid #ddd; padding: 10px; }
         th { background-color: #f4f4f4; }
         .container { width: 90%; margin: auto; }
+        .text-danger { color: red; }
+        .text-success { color: green; }
     </style>
 </head>
 <body>
@@ -20,24 +22,43 @@
         <thead>
             <tr>
                 <th>Sipariş No</th>
-                <th>Satış Fiyatı (₺)</th>
-                <th>Ürün Maliyeti (₺)</th>
-                <th>Net Kâr (₺)</th>
+                <th>Satış Fiyatı (TL)</th>
+                <th>Ürün Maliyeti (TL)</th>
+                <th>USD Maliyeti ($)</th>
+                <th>Net Kâr (TL)</th>
+                <th>Kâr Marjı (%)</th>
             </tr>
         </thead>
         <tbody>
             {% for siparis in siparisler %}
             <tr>
-                <td>{{ siparis.siparis_no }}</td>
-                <td>{{ siparis.satis_fiyati }}</td>
-                <td>{{ siparis.urun_maliyeti }}</td>
-                <td>{{ siparis.net_kar }}</td>
+              <td>{{ siparis.siparis_no }}</td>
+              <td>{{ "%.2f"|format(siparis.satis_fiyati or 0) }}</td>
+              <td>{{ "%.2f"|format(siparis.urun_maliyeti or 0) }}</td>
+              <td>{{ "%.2f"|format(siparis.dolar_maliyeti or 0) }}</td>
+              <td class="{% if siparis.net_kar < 0 %}text-danger{% else %}text-success{% endif %}">
+                {{ "%.2f"|format(siparis.net_kar) }}
+              </td>
+              <td>
+                {% if siparis.satis_fiyati > 0 %}
+                  {{ "%.2f"|format((siparis.net_kar / siparis.satis_fiyati * 100) if siparis.satis_fiyati else 0) }}%
+                {% else %}
+                  0.00%
+                {% endif %}
+              </td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
 
-    <h3>Toplam Net Kâr: {{ toplam_kar }} ₺</h3>
+    <div class="mt-4">
+            <h4>Özet Bilgiler:</h4>
+            <ul>
+              <li>Toplam Satış: <strong>{{ "%.2f"|format(toplam_satis) }} TL</strong></li>
+              <li>Toplam Net Kâr: <span class="{% if toplam_kar < 0 %}text-danger{% else %}text-success{% endif %}"><strong>{{ "%.2f"|format(toplam_kar) }} TL</strong></span></li>
+              <li>Genel Kâr Marjı: <strong>{{ "%.2f"|format(kar_marji) }}%</strong></li>
+            </ul>
+          </div>
 
 </body>
 </html>

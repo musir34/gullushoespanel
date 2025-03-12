@@ -702,3 +702,60 @@ def search_products():
 @get_products_bp.route('/product_label')
 def product_label():
     return render_template('product_label.html')
+
+@get_products_bp.route('/api/product-cost', methods=['GET'])
+def get_product_cost():
+    """
+    Ürünün maliyet bilgisini döndürür
+    """
+    model_id = request.args.get('model_id', '').strip()
+    if not model_id:
+        return jsonify({'success': False, 'message': 'Model ID gerekli'})
+    
+    # Bu model koduna ait ilk ürünü getir (varyantlar aynı maliyette)
+    product = Product.query.filter_by(product_main_id=model_id).first()
+    
+    if not product:
+        return jsonify({'success': False, 'message': 'Ürün bulunamadı'})
+    
+    return jsonify({
+        'success': True, 
+        'cost_usd': product.cost_usd or 0,
+        'cost_date': product.cost_date.strftime('%Y-%m-%d %H:%M') if product.cost_date else None
+    })
+
+@get_products_bp.route('/api/update-product-cost', methods=['POST'])
+def update_product_cost():
+    """
+    Ürün maliyetini günceller (tüm varyantlar için)
+    """
+    model_id = request.form.get('model_id', '').strip()
+    cost_usd = request.form.get('cost_usd')
+    
+    if not model_id:
+        return jsonify({'success': False, 'message': 'Model ID gerekli'})
+    
+    try:
+        cost_usd = float(cost_usd)
+    except (ValueError, TypeError):
+        return jsonify({'success': False, 'message': 'Geçerli bir maliyet değeri giriniz'})
+    
+    try:
+        # Bu model koduna ait tüm varyantları güncelle
+        products = Product.query.filter_by(product_main_id=model_id).all()
+        
+        if not products:
+            return jsonify({'success': False, 'message': 'Ürün bulunamadı'})
+        
+        for product in products:
+            product.cost_usd = cost_usd
+            product.cost_date = datetime.now()
+            db.session.add(product)
+        
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'Ürün maliyetleri güncellendi'})
+    
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Maliyet güncelleme hatası: {e}")
+        return jsonify({'success': False, 'message': f'Bir hata oluştu: {str(e)}'})
