@@ -572,20 +572,22 @@ def search_products():
     query = request.args.get('query', '').strip()
     if not query:
         return redirect(url_for('get_products.product_list'))
+
+    # Barkod veya model kodu ile arama yap
     products = Product.query.filter(
         db.or_(
-            Product.product_main_id == query,
-            Product.barcode == query,
-            Product.original_product_barcode == query
+            Product.barcode.ilike(f'%{query}%'),
+            Product.product_main_id.ilike(f'%{query}%'),
+            Product.original_product_barcode.ilike(f'%{query}%')
         )
     ).all()
-    if not products:
-        flash("Arama kriterlerine uygun ürün bulunamadı.", "warning")
-        return redirect(url_for('get_products.product_list'))
+
+    # Ürünleri grupla ve template'e gönder
     grouped_products = group_products_by_model_and_color(products)
-    for key in grouped_products:
-        grouped_products[key] = sort_variants_by_size(grouped_products[key])
-    return render_template('product_list.html', grouped_products=grouped_products, search_mode=True)
+    return render_template('product_list.html', 
+                         grouped_products=grouped_products, 
+                         pagination=None,
+                         search_mode=True)
 
 
 @get_products_bp.route('/product_label')
