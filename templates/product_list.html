@@ -581,6 +581,53 @@
   <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
   <script>
     $(document).ready(function () {
+      // Model Bazlı Maliyet Güncelleme
+      $('#productContainer').on('click', '.update-model-cost', function() {
+        const modelId = $(this).data('model');
+        if (!modelId) {
+          alert('Model ID bulunamadı!');
+          return;
+        }
+
+        $.ajax({
+          url: '/api/product-cost',
+          method: 'GET',
+          data: { model_id: modelId },
+          success: function(res) {
+            if (res.success) {
+              const currentCost = res.cost_usd || 0;
+              const newCost = prompt('Bu model için yeni USD maliyeti giriniz:', currentCost);
+              
+              if (newCost !== null) {
+                $.ajax({
+                  url: '/api/update-product-cost',
+                  method: 'POST',
+                  data: {
+                    model_id: modelId,
+                    cost_usd: newCost
+                  },
+                  success: function(updateRes) {
+                    if (updateRes.success) {
+                      alert('Maliyet başarıyla güncellendi!');
+                      location.reload();
+                    } else {
+                      alert(updateRes.message || 'Güncelleme sırasında bir hata oluştu.');
+                    }
+                  },
+                  error: function() {
+                    alert('Sunucu ile iletişim kurulamadı!');
+                  }
+                });
+              }
+            } else {
+              alert('Mevcut maliyet bilgisi alınamadı!');
+            }
+          },
+          error: function() {
+            alert('Sunucu ile iletişim kurulamadı!');
+          }
+        });
+      });
       // Varyantları Göster/Gizle
       $('.toggle-variants').click(function () {
         const variantList = $(this).closest('.product-card').find('.variant-list');
