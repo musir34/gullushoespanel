@@ -573,12 +573,12 @@ def search_products():
     if not query:
         return redirect(url_for('get_products.product_list'))
 
-    # Barkod veya model kodu ile arama yap
+    # Barkod veya model kodu ile tam eşleşme araması yap
     products = Product.query.filter(
         db.or_(
-            Product.barcode.ilike(f'%{query}%'),
-            Product.product_main_id.ilike(f'%{query}%'),
-            Product.original_product_barcode.ilike(f'%{query}%')
+            Product.barcode == query,
+            Product.product_main_id == query,
+            Product.original_product_barcode == query
         )
     ).all()
 
