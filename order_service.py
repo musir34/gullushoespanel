@@ -113,25 +113,10 @@ async def fetch_orders_page(session, url, headers, params, semaphore):
             return []
 
 
-def calculate_commission(order_data):
-    """Sipariş komisyon bilgilerini hesaplar"""
-    commission_info = []
-    for line in order_data.get('lines', []):
-        komisyon = {
-            'product_barcode': line.get('barcode', ''),
-            'komisyon_orani': float(line.get('commission', 0)),
-            'komisyon_tutari': float(line.get('totalDiscount', 0)),
-            'platform_komisyonu': float(line.get('platformCommission', 0)),
-            'kargo_komisyonu': float(line.get('cargoPrice', 0))
-        }
-        commission_info.append(komisyon)
-    return commission_info
-
 def process_all_orders(all_orders_data):
     try:
         api_order_numbers = set()
         new_orders = []
-        new_commissions = []
 
         # Mevcut siparişleri al - veritabanı sorgusu sayısını azaltmak için tek sorguda al
         existing_orders = Order.query.all()
@@ -176,15 +161,6 @@ def process_all_orders(all_orders_data):
                 combined_order = combine_line_items(order_data, order_status)
                 new_order = Order(**combined_order)
                 new_orders.append(new_order)
-                
-                # Komisyon bilgilerini hesapla ve kaydet
-                commission_info = calculate_commission(order_data)
-                for comm in commission_info:
-                    commission = SiparisKomisyon(
-                        order_number=combined_order['order_number'],
-                        **comm
-                    )
-                    new_commissions.append(commission)
 
         # Her 100 yeni sipariş için bir kez commit yap - bellek kullanımını azalt
         if new_orders:
