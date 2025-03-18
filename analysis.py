@@ -25,17 +25,7 @@ def sales_analysis():
         logger.error(f"Analiz sayfası render hatası: {str(e)}")
         return render_template('error.html', error=str(e))
 
-@analysis_bp.route('/kar-analiz')
-def kar_analiz():
-    """
-    Kar analiz sayfasını render eder.
-    """
-    try:
-        from kar_maliyet import kar_analiz_sayfasi
-        return kar_analiz_sayfasi()
-    except Exception as e:
-        logger.error(f"Kar analiz sayfası render hatası: {str(e)}")
-        return render_template('error.html', error=str(e))
+
 
 
 def get_daily_sales(start_date: datetime, end_date: datetime):
