@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="tr">
 <head>
@@ -25,7 +24,7 @@
                 font-size: 14px;
             }
         }
-        
+
         /* Tablet için özel düzenlemeler */
         @media (min-width: 768px) and (max-width: 991px) {
             .navbar-brand img {
@@ -35,7 +34,7 @@
                 margin-bottom: 15px;
             }
         }
-        
+
         /* Mobil için özel düzenlemeler */
         @media (max-width: 767px) {
             .navbar-brand img {
@@ -67,16 +66,16 @@
         input, select, textarea {
             font-size: 16px !important; /* iOS zoom sorununu önler */
         }
-        
+
         .table-responsive {
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
         }
-        
+
         .modal-dialog {
             margin: 10px;
         }
-        
+
         @media (max-width: 576px) {
             .modal-dialog {
                 margin: 0;
@@ -98,6 +97,9 @@
             </a>
             <div class="navbar-nav ml-auto">
                 <a href="{{ url_for('home.home') }}" class="btn btn-outline-primary mr-2">Anasayfa</a>
+                <a class="nav-link" href="{{ url_for('analysis.kar_analiz') }}">
+                    <i class="fas fa-chart-line"></i> Kar Analiz
+                </a>
             </div>
         </div>
     </nav>

@@ -18,9 +18,23 @@ if not logger.handlers:
 def sales_analysis():
     """
     Satış analiz sayfasını render eder.
-    (Örneğin analysis.html veya benzer bir şablon döndürebilirsiniz.)
     """
-    return render_template('analysis.html')
+    try:
+        return render_template('analysis.html')
+    except Exception as e:
+        logger.error(f"Analiz sayfası render hatası: {str(e)}")
+        return render_template('error.html', error=str(e))
+
+@analysis_bp.route('/kar-analiz')
+def kar_analiz():
+    """
+    Kar analiz sayfasını render eder.
+    """
+    try:
+        return render_template('kar_analiz.html')
+    except Exception as e:
+        logger.error(f"Kar analiz sayfası render hatası: {str(e)}")
+        return render_template('error.html', error=str(e))
 
 
 def get_daily_sales(start_date: datetime, end_date: datetime):
