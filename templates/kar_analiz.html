@@ -1,64 +1,83 @@
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kâr Maliyet Analizi</title>
-    <style>
-        body { font-family: Arial, sans-serif; text-align: center; margin: 20px; }
-        table { width: 80%; margin: auto; border-collapse: collapse; }
-        th, td { border: 1px solid #ddd; padding: 10px; }
-        th { background-color: #f4f4f4; }
-        .container { width: 90%; margin: auto; }
-        .text-danger { color: red; }
-        .text-success { color: green; }
-    </style>
-</head>
-<body>
 
-    <h2>Trendyol Kâr-Maliyet Analizi</h2>
+{% extends "base.html" %}
 
-    <table>
-        <thead>
-            <tr>
-                <th>Sipariş No</th>
-                <th>Satış Fiyatı (TL)</th>
-                <th>Ürün Maliyeti (TL)</th>
-                <th>USD Maliyeti ($)</th>
-                <th>Net Kâr (TL)</th>
-                <th>Kâr Marjı (%)</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for siparis in siparisler %}
-            <tr>
-              <td>{{ siparis.siparis_no }}</td>
-              <td>{{ "%.2f"|format(siparis.satis_fiyati or 0) }}</td>
-              <td>{{ "%.2f"|format(siparis.urun_maliyeti or 0) }}</td>
-              <td>{{ "%.2f"|format(siparis.dolar_maliyeti or 0) }}</td>
-              <td class="{% if siparis.net_kar < 0 %}text-danger{% else %}text-success{% endif %}">
-                {{ "%.2f"|format(siparis.net_kar) }}
-              </td>
-              <td>
-                {% if siparis.satis_fiyati > 0 %}
-                  {{ "%.2f"|format((siparis.net_kar / siparis.satis_fiyati * 100) if siparis.satis_fiyati else 0) }}%
-                {% else %}
-                  0.00%
-                {% endif %}
-              </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">Kâr Analizi</h4>
+        </div>
+        <div class="card-body">
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="card bg-success text-white">
+                        <div class="card-body">
+                            <h5>Toplam Satış</h5>
+                            <h3>{{ "{:,.2f}".format(toplam_satis) }} TL</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-info text-white">
+                        <div class="card-body">
+                            <h5>Toplam Kâr</h5>
+                            <h3>{{ "{:,.2f}".format(toplam_kar) }} TL</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-warning text-dark">
+                        <div class="card-body">
+                            <h5>Ortalama Kâr Marjı</h5>
+                            <h3>{{ "{:.1f}".format(kar_marji) }}%</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-    <div class="mt-4">
-            <h4>Özet Bilgiler:</h4>
-            <ul>
-              <li>Toplam Satış: <strong>{{ "%.2f"|format(toplam_satis) }} TL</strong></li>
-              <li>Toplam Net Kâr: <span class="{% if toplam_kar < 0 %}text-danger{% else %}text-success{% endif %}"><strong>{{ "%.2f"|format(toplam_kar) }} TL</strong></span></li>
-              <li>Genel Kâr Marjı: <strong>{{ "%.2f"|format(kar_marji) }}%</strong></li>
-            </ul>
-          </div>
+            <div class="text-end mb-3">
+                <a href="{{ url_for('kar_maliyet.kar_analiz_excel') }}" class="btn btn-success">
+                    <i class="fas fa-file-excel"></i> Excel'e Aktar
+                </a>
+            </div>
 
-</body>
-</html>
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>Sipariş No</th>
+                            <th>Satış Fiyatı</th>
+                            <th>Ürün Maliyeti</th>
+                            <th>Dolar Maliyeti</th>
+                            <th>Net Kâr</th>
+                            <th>Kâr Marjı</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for siparis in siparisler %}
+                        <tr>
+                            <td>{{ siparis.siparis_no }}</td>
+                            <td>{{ "{:,.2f}".format(siparis.satis_fiyati) }} TL</td>
+                            <td>{{ "{:,.2f}".format(siparis.urun_maliyeti) }} TL</td>
+                            <td>
+                                {% if siparis.dolar_maliyeti %}
+                                    ${{ "{:,.2f}".format(siparis.dolar_maliyeti) }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td class="{{ 'text-success' if siparis.net_kar > 0 else 'text-danger' }}">
+                                {{ "{:,.2f}".format(siparis.net_kar) }} TL
+                            </td>
+                            <td class="{{ 'text-success' if siparis.kar_marji > 0 else 'text-danger' }}">
+                                {{ "{:.1f}".format(siparis.kar_marji) }}%
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
