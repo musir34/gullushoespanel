@@ -108,6 +108,34 @@ class User(db.Model):
     totp_secret = db.Column(db.String(16))  # 16 karakterlik base32 string
     totp_confirmed = db.Column(db.Boolean, default=False)
 
+# Sipariş İstatistikleri Tablosu
+class SiparisIstatistikleri(db.Model):
+    __tablename__ = 'siparis_istatistikleri'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    baslangic_tarihi = db.Column(db.DateTime, nullable=False)
+    bitis_tarihi = db.Column(db.DateTime, nullable=False)
+    periyot_tipi = db.Column(db.String(10), nullable=False)  # 'haftalik' veya 'aylik'
+    toplam_siparis = db.Column(db.Integer, default=0)
+    toplam_ciro = db.Column(db.Float, default=0)
+    toplam_maliyet = db.Column(db.Float, default=0)
+    toplam_kar = db.Column(db.Float, default=0)
+    kar_orani = db.Column(db.Float, default=0)
+    olusturma_tarihi = db.Column(db.DateTime, default=datetime.utcnow)
+
+# Sipariş Komisyon Tablosu
+class SiparisKomisyon(db.Model):
+    __tablename__ = 'siparis_komisyon'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    order_number = db.Column(db.String, db.ForeignKey('orders.order_number'))
+    product_barcode = db.Column(db.String)
+    komisyon_orani = db.Column(db.Float)
+    komisyon_tutari = db.Column(db.Float)
+    platform_komisyonu = db.Column(db.Float)
+    kargo_komisyonu = db.Column(db.Float)
+    olusturma_tarihi = db.Column(db.DateTime, default=datetime.utcnow)
+
 # Sipariş Modeli
 class Order(db.Model):
     __tablename__ = 'orders'
