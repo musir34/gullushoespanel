@@ -31,7 +31,8 @@ def kar_analiz():
     Kar analiz sayfasını render eder.
     """
     try:
-        return render_template('kar_analiz.html')
+        from kar_maliyet import kar_analiz_sayfasi
+        return kar_analiz_sayfasi()
     except Exception as e:
         logger.error(f"Kar analiz sayfası render hatası: {str(e)}")
         return render_template('error.html', error=str(e))
