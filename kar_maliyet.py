@@ -1,116 +1,150 @@
-
 from flask import Blueprint, jsonify, render_template, send_file
-from models import db, Order
-from sqlalchemy import func
-import pandas as pd
 import logging
+import pandas as pd
+from models import db, Order, Product  # Modellerin hepsini tek seferde içe aktarıyoruz
 
-# Blueprint tanımı
+# Blueprint ve logger yapılandırması
 kar_maliyet_bp = Blueprint('kar_maliyet', __name__)
 
-# Logger ayarları
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-handler = logging.StreamHandler()
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-handler.setFormatter(formatter)
-logger.addHandler(handler)
+if not logger.handlers:
+    logger.setLevel(logging.INFO)
+    handler = logging.StreamHandler()
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+
+# Sabit değerler (gerekirse config üzerinden de alınabilir)
+COMMISSION_RATE = 0.15     # Komisyon oranı
+SHIPPING_COST = 30.0       # Kargo ücreti (TL)
+PACKAGING_COST = 10.0      # Paketleme maliyeti (TL)
+VAT_RATE = 0.18            # KDV oranı
+
+def calculate_product_cost(order):
+    """
+    Sipariş için ürün maliyetini hesaplar.
+    Eğer siparişte ürün barkodu varsa ve Product tablosunda ilgili kayıt bulunuyorsa,
+    ürünün cost_try değerini döner; aksi halde order.vat_base_amount kullanılır.
+    """
+    try:
+        base_cost = float(order.vat_base_amount or 0)
+        if order.product_barcode:
+            barcodes = order.product_barcode.split(', ')
+            if barcodes:
+                primary_barcode = barcodes[0]
+                product = Product.query.filter_by(barcode=primary_barcode).first()
+                if product and getattr(product, 'cost_try', None):
+                    return float(product.cost_try)
+        return base_cost
+    except Exception as e:
+        logger.error(f"Ürün maliyeti hesaplanırken hata (Sipariş {order.order_number}): {str(e)}")
+        return 0.0
 
 def hesapla_kar(order):
+    """
+    Verilen sipariş için net kâr ve kâr marjını hesaplar.
+    Dönüş: (net_profit, product_cost, profit_margin)
+    """
     try:
-        satis_fiyati = float(order.amount or 0)
-        urun_maliyeti = float(order.vat_base_amount or 0)
-        
-        from models import Product
-        
-        urun_barkodlari = order.product_barcode.split(', ') if order.product_barcode else []
-        
-        if urun_barkodlari:
-            birincil_barkod = urun_barkodlari[0]
-            urun = Product.query.filter_by(barcode=birincil_barkod).first()
-            
-            if urun and urun.cost_try:
-                urun_maliyeti = urun.cost_try
-        
-        komisyon_orani = 0.15
-        komisyon_tutari = satis_fiyati * komisyon_orani
-        kargo_ucreti = 30
-        paketleme_maliyeti = 10
-        kdv_orani = 0.18
-        kdv = satis_fiyati * kdv_orani
-        
-        net_kar = satis_fiyati - (urun_maliyeti + komisyon_tutari + kargo_ucreti + paketleme_maliyeti + kdv)
-        kar_marji = (net_kar / satis_fiyati * 100) if satis_fiyati > 0 else 0
-        
-        return net_kar, urun_maliyeti, kar_marji
+        sale_price = float(order.amount or 0)
+        product_cost = calculate_product_cost(order)
+
+        commission = sale_price * COMMISSION_RATE
+        vat = sale_price * VAT_RATE
+
+        net_profit = sale_price - (product_cost + commission + SHIPPING_COST + PACKAGING_COST + vat)
+        profit_margin = (net_profit / sale_price * 100) if sale_price > 0 else 0.0
+
+        return net_profit, product_cost, profit_margin
     except Exception as e:
-        logger.error(f"Kar hesaplama hatası: {str(e)}")
-        return 0, 0, 0
+        logger.error(f"Kâr hesaplamada hata (Sipariş {order.order_number}): {str(e)}")
+        return 0.0, 0.0, 0.0
+
+@kar_maliyet_bp.route('/kar_analiz', methods=['GET'])
+def kar_analiz():
+    """
+    JSON formatında tüm siparişlerin toplam kârını ve sipariş sayısını döner.
+    """
+    try:
+        orders = Order.query.all()
+        total_profit = sum(hesapla_kar(order)[0] for order in orders)
+        return jsonify({
+            "toplam_kar": total_profit,
+            "siparis_sayisi": len(orders)
+        })
+    except Exception as e:
+        logger.error(f"JSON kâr analizinde hata: {str(e)}")
+        return jsonify({"error": str(e)}), 500
 
 @kar_maliyet_bp.route('/kar_analiz_sayfasi')
 def kar_analiz_sayfasi():
+    """
+    HTML şablonuyla kâr analiz sayfasını render eder.
+    Sipariş detaylarını, net kâr, ürün maliyeti ve varsa dolar cinsinden maliyet bilgisini içerir.
+    """
     try:
-        siparisler = Order.query.all()
-        analiz_sonucu = []
-        toplam_kar = 0
-        toplam_satis = 0
-        
-        from models import Product
+        orders = Order.query.all()
+        analysis_results = []
+        total_profit = 0.0
+        total_sales = 0.0
 
-        for siparis in siparisler:
-            net_kar, urun_maliyeti, kar_marji = hesapla_kar(siparis)
-            
-            if siparis.product_barcode:
-                birincil_barkod = siparis.product_barcode.split(', ')[0]
-                urun = Product.query.filter_by(barcode=birincil_barkod).first()
-                dolar_maliyeti = urun.cost_usd if urun else None
+        for order in orders:
+            net_profit, product_cost, profit_margin = hesapla_kar(order)
+            total_profit += net_profit
+            total_sales += float(order.amount or 0)
+
+            # Dolar cinsinden maliyet bilgisi (varsa)
+            if order.product_barcode:
+                primary_barcode = order.product_barcode.split(', ')[0]
+                product = Product.query.filter_by(barcode=primary_barcode).first()
+                usd_cost = float(product.cost_usd) if product and getattr(product, 'cost_usd', None) else None
             else:
-                dolar_maliyeti = None
+                usd_cost = None
 
-            toplam_kar += net_kar
-            toplam_satis += float(siparis.amount or 0)
-
-            analiz_sonucu.append({
-                "siparis_no": siparis.order_number,
-                "satis_fiyati": float(siparis.amount or 0),
-                "urun_maliyeti": urun_maliyeti,
-                "dolar_maliyeti": dolar_maliyeti,
-                "net_kar": net_kar,
-                "kar_marji": kar_marji
+            analysis_results.append({
+                "siparis_no": order.order_number,
+                "satis_fiyati": float(order.amount or 0),
+                "urun_maliyeti": product_cost,
+                "dolar_maliyeti": usd_cost,
+                "net_kar": net_profit,
+                "kar_marji": profit_margin
             })
 
-        kar_marji = (toplam_kar / toplam_satis * 100) if toplam_satis > 0 else 0
+        overall_profit_margin = (total_profit / total_sales * 100) if total_sales > 0 else 0.0
 
         return render_template('kar_analiz.html',
-                             siparisler=analiz_sonucu,
-                             toplam_kar=toplam_kar,
-                             toplam_satis=toplam_satis,
-                             kar_marji=kar_marji)
+                               siparisler=analysis_results,
+                               toplam_kar=total_profit,
+                               toplam_satis=total_sales,
+                               kar_marji=overall_profit_margin)
     except Exception as e:
-        logger.error(f"Kar analiz sayfası hatası: {str(e)}")
+        logger.error(f"Kâr analiz sayfası oluşturulurken hata: {str(e)}")
         return render_template('error.html', error=str(e))
 
 @kar_maliyet_bp.route('/kar_analiz_excel')
 def kar_analiz_excel():
+    """
+    Kâr analiz sonuçlarını Excel dosyası olarak oluşturur ve indirme olarak sunar.
+    """
     try:
-        siparisler = Order.query.all()
+        orders = Order.query.all()
         data = []
-        
-        for siparis in siparisler:
-            net_kar, urun_maliyeti, kar_marji = hesapla_kar(siparis)
+
+        for order in orders:
+            net_profit, product_cost, profit_margin = hesapla_kar(order)
             data.append({
-                "Sipariş No": siparis.order_number,
-                "Satış Fiyatı": siparis.amount,
-                "Ürün Maliyeti": urun_maliyeti,
-                "Net Kâr": net_kar,
-                "Kâr Marjı (%)": kar_marji
+                "Sipariş No": order.order_number,
+                "Satış Fiyatı": order.amount,
+                "Ürün Maliyeti": product_cost,
+                "Net Kâr": net_profit,
+                "Kâr Marjı (%)": profit_margin
             })
 
         df = pd.DataFrame(data)
         excel_path = "/tmp/kar_analiz.xlsx"
         df.to_excel(excel_path, index=False)
-        
+
         return send_file(excel_path, as_attachment=True, download_name="kar_analiz.xlsx")
     except Exception as e:
-        logger.error(f"Excel oluşturma hatası: {str(e)}")
+        logger.error(f"Excel dosyası oluşturulurken hata: {str(e)}")
         return jsonify({"error": str(e)}), 500
