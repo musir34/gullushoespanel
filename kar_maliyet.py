@@ -1,6 +1,6 @@
 
 from flask import Blueprint, jsonify, render_template, send_file
-from models import db, Order, Product
+from models import db, Order
 from sqlalchemy import func
 import pandas as pd
 import logging
@@ -20,6 +20,8 @@ def hesapla_kar(order):
     try:
         satis_fiyati = float(order.amount or 0)
         urun_maliyeti = float(order.vat_base_amount or 0)
+        
+        from models import Product
         
         urun_barkodlari = order.product_barcode.split(', ') if order.product_barcode else []
         
@@ -52,6 +54,8 @@ def kar_analiz_sayfasi():
         analiz_sonucu = []
         toplam_kar = 0
         toplam_satis = 0
+        
+        from models import Product
 
         for siparis in siparisler:
             net_kar, urun_maliyeti, kar_marji = hesapla_kar(siparis)
