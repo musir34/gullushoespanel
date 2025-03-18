@@ -98,12 +98,14 @@ def kar_analiz_sayfasi():
             if urun:
                 dolar_maliyeti = urun.cost_usd
         
+        kar_marji = (net_kar / siparis.amount * 100) if siparis.amount and siparis.amount > 0 else 0
         analiz_sonucu.append({
             "siparis_no": siparis.order_number,
             "satis_fiyati": siparis.amount,
             "urun_maliyeti": urun_maliyeti,
             "dolar_maliyeti": dolar_maliyeti,
-            "net_kar": net_kar
+            "net_kar": net_kar,
+            "kar_marji": kar_marji
         })
 
     toplam_kar = sum(item["net_kar"] for item in analiz_sonucu)
