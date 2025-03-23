@@ -13,15 +13,28 @@ def log_user_action(action, details=None, force_log=False):
         user_id = session.get('user_id')
         user_role = session.get('role', 'anonymous')
         
-        # Log detaylarını genişlet
+        # İşlem tipini ve sayfayı ayır
+        action_parts = action.split(': ', 1)
+        action_type = action_parts[0] if len(action_parts) > 1 else action
+        action_page = action_parts[1] if len(action_parts) > 1 else ''
+        
+        # Log detaylarını daha okunaklı formatta düzenle
         extended_details = {
-            'action_details': details,
-            'user_role': user_role,
-            'user_agent': request.user_agent.string,
-            'method': request.method,
-            'args': dict(request.args),
-            'referrer': request.referrer
+            'İşlem Tipi': action_type,
+            'Sayfa': action_page,
+            'Kullanıcı Rolü': user_role,
+            'HTTP Metodu': request.method,
+            'Parametreler': dict(request.args) if request.args else None,
+            'Tarayıcı': request.user_agent.browser,
+            'Platform': request.user_agent.platform,
+            'Referrer': request.referrer.split('/')[-1] if request.referrer else None
         }
+        
+        if details:
+            if isinstance(details, dict):
+                extended_details.update({k.replace('_', ' ').title(): v for k, v in details.items()})
+            else:
+                extended_details['Ek Detaylar'] = details
         
         new_log = UserLog(
             user_id=user_id,

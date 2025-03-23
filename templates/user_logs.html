@@ -59,7 +59,25 @@
                     <td>{{ log.action }}</td>
                     <td>
                         {% if log.details %}
-                        <pre class="mb-0"><code>{{ log.details }}</code></pre>
+                        {% set details = log.details|from_json %}
+                        <div class="log-details">
+                            {% for key, value in details.items() %}
+                            {% if value and value != 'null' and value != {} %}
+                            <div class="detail-item">
+                                <strong>{{ key }}:</strong>
+                                {% if value is mapping %}
+                                <ul class="list-unstyled ms-3">
+                                    {% for k, v in value.items() %}
+                                    <li><em>{{ k }}:</em> {{ v }}</li>
+                                    {% endfor %}
+                                </ul>
+                                {% else %}
+                                {{ value }}
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                            {% endfor %}
+                        </div>
                         {% endif %}
                     </td>
                     <td>{{ log.ip_address }}</td>
