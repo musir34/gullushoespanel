@@ -18,16 +18,44 @@ def log_user_action(action, details=None, force_log=False):
         action_type = action_parts[0] if len(action_parts) > 1 else action
         action_page = action_parts[1] if len(action_parts) > 1 else ''
         
-        # Log detaylarını daha okunaklı formatta düzenle
+        # Sayfa adını Türkçeleştir
+        page_name_map = {
+            'home': 'Ana Sayfa',
+            'order_list': 'Sipariş Listesi',
+            'analysis': 'Analiz Sayfası',
+            'stock_report': 'Stok Raporu',
+            'user_logs': 'Kullanıcı Logları',
+            'product_list': 'Ürün Listesi',
+            'archive': 'Arşiv',
+            'login': 'Giriş',
+            'register': 'Kayıt',
+        }
+
+        # İşlem tipini Türkçeleştir
+        action_type_map = {
+            'PAGE_VIEW': 'Sayfa Görüntüleme',
+            'LOGIN': 'Giriş',
+            'LOGOUT': 'Çıkış',
+            'CREATE': 'Oluşturma',
+            'UPDATE': 'Güncelleme',
+            'DELETE': 'Silme',
+            'ARCHIVE': 'Arşivleme',
+            'PRINT': 'Yazdırma',
+        }
+
+        # Sayfa adını ve işlem tipini çevir
+        translated_page = page_name_map.get(action_page, action_page)
+        translated_action = action_type_map.get(action_type, action_type)
+
+        # Log detaylarını Türkçe ve okunaklı formatta düzenle
         extended_details = {
-            'İşlem Tipi': action_type,
-            'Sayfa': action_page,
-            'Kullanıcı Rolü': user_role,
-            'HTTP Metodu': request.method,
-            'Parametreler': dict(request.args) if request.args else None,
-            'Tarayıcı': request.user_agent.browser,
-            'Platform': request.user_agent.platform,
-            'Referrer': request.referrer.split('/')[-1] if request.referrer else None
+            'İşlem': translated_action,
+            'Sayfa': translated_page,
+            'Kullanıcı Yetkisi': 'Yönetici' if user_role == 'admin' else 'Personel' if user_role == 'worker' else 'Yönetici Yardımcısı' if user_role == 'manager' else 'Ziyaretçi',
+            'İşlem Yöntemi': 'Görüntüleme' if request.method == 'GET' else 'Güncelleme' if request.method == 'POST' else request.method,
+            'Filtreler': dict(request.args) if request.args else None,
+            'Tarayıcı Bilgisi': f"{request.user_agent.browser} / {request.user_agent.platform}",
+            'Önceki Sayfa': page_name_map.get(request.referrer.split('/')[-1], request.referrer.split('/')[-1]) if request.referrer else None
         }
         
         if details:
