@@ -7,13 +7,26 @@ import json
 
 user_logs_bp = Blueprint('user_logs', __name__)
 
-def log_user_action(action, details=None):
+def log_user_action(action, details=None, force_log=False):
     """Kullanıcı aksiyonlarını loglamak için yardımcı fonksiyon"""
-    if 'user_id' in session:
+    if 'user_id' in session or force_log:
+        user_id = session.get('user_id')
+        user_role = session.get('role', 'anonymous')
+        
+        # Log detaylarını genişlet
+        extended_details = {
+            'action_details': details,
+            'user_role': user_role,
+            'user_agent': request.user_agent.string,
+            'method': request.method,
+            'args': dict(request.args),
+            'referrer': request.referrer
+        }
+        
         new_log = UserLog(
-            user_id=session['user_id'],
+            user_id=user_id,
             action=action,
-            details=json.dumps(details) if details else None,
+            details=json.dumps(extended_details),
             ip_address=request.remote_addr,
             page_url=request.url
         )

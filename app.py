@@ -118,6 +118,20 @@ for bp in blueprints:
 
 
 @app.before_request
+def log_request():
+    # Her isteği logla
+    if not request.path.startswith('/static/'):
+        from user_logs import log_user_action
+        log_user_action(
+            action=f"PAGE_VIEW: {request.endpoint}",
+            details={
+                'path': request.path,
+                'endpoint': request.endpoint
+            },
+            force_log=True
+        )
+
+@app.before_request
 def check_authentication():
     # İzin verilen rotalar
     allowed_routes = [
