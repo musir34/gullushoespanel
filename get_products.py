@@ -692,7 +692,8 @@ def update_product_cost():
     cost_usd_str = request.form.get('cost_usd')
     if not model_id:
         return jsonify({'success': False, 'message': 'Model ID gerekli'})
-    trycost_usd = float(cost_usd_str)
+    try:
+        cost_usd = float(cost_usd_str)
     except (ValueError, TypeError):
         return jsonify({'success': False, 'message': 'Geçerli bir maliyet değeri giriniz'})
     loop = asyncio.new_event_loop()
