@@ -1,9 +1,9 @@
-{% extends "base.html" %}
 
+{% extends "base.html" %}
 {% block content %}
 <div class="container mt-4">
-    <h2>Kullanıcı İşlem Kayıtları</h2>
-
+    <h2>Kullanıcı Logları</h2>
+    
     <!-- Filtreler -->
     <div class="card mb-4">
         <div class="card-body">
@@ -21,20 +21,64 @@
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">İşlem Tipi</label>
-                    <input type="text" name="action" class="form-control" value="{{ request.args.get('action', '') }}">
+                    <select name="action" class="form-select">
+                        <option value="">Tümü</option>
+                        <option value="PAGE_VIEW" {% if request.args.get('action') == 'PAGE_VIEW' %}selected{% endif %}>Sayfa Görüntüleme</option>
+                        <option value="LOGIN" {% if request.args.get('action') == 'LOGIN' %}selected{% endif %}>Giriş</option>
+                        <option value="LOGOUT" {% if request.args.get('action') == 'LOGOUT' %}selected{% endif %}>Çıkış</option>
+                    </select>
                 </div>
-                <div class="col-md-2">
+                <div class="col-md-3">
                     <label class="form-label">Başlangıç Tarihi</label>
                     <input type="date" name="start_date" class="form-control" value="{{ request.args.get('start_date', '') }}">
                 </div>
-                <div class="col-md-2">
+                <div class="col-md-3">
                     <label class="form-label">Bitiş Tarihi</label>
                     <input type="date" name="end_date" class="form-control" value="{{ request.args.get('end_date', '') }}">
                 </div>
-                <div class="col-md-2 d-flex align-items-end">
+                <div class="col-12">
                     <button type="submit" class="btn btn-primary">Filtrele</button>
+                    <a href="{{ url_for('user_logs.export_logs') }}" class="btn btn-success">
+                        <i class="bi bi-file-excel"></i> Excel'e Aktar
+                    </a>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- İstatistikler -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Toplam Log</h5>
+                    <h3 class="card-text">{{ logs.total }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Aktif Kullanıcılar</h5>
+                    <h3 class="card-text">{{ active_users }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Bugünkü İşlemler</h5>
+                    <h3 class="card-text">{{ today_logs }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Hata Oranı</h5>
+                    <h3 class="card-text">{{ "%.1f"|format(error_rate) }}%</h3>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -48,6 +92,9 @@
                     <th>İşlem</th>
                     <th>Detaylar</th>
                     <th>IP Adresi</th>
+                    <th>Tarayıcı</th>
+                    <th>Platform</th>
+                    <th>Durum</th>
                 </tr>
             </thead>
             <tbody>
@@ -55,24 +102,38 @@
                 <tr>
                     <td>{{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
                     <td>{{ log.user.username }}</td>
-                    <td class="fw-bold text-primary">{{ log.action.replace('PAGE_VIEW:', '').replace('.', ' > ') }}</td>
+                    <td>{{ log.action }}</td>
                     <td>
-                        {% if log.details %}
-                        {% set details = log.details|from_json %}
-                        <div class="log-details">
-                            {% for key, value in details.items() %}
-                            {% if value and value != 'null' and value != {} %}
-                            <div class="mb-1">
-                                <span class="fw-bold text-muted">{{ key }}:</span>
-                                <span class="text-dark">{{ value }}</span>
-                            </div>
-                            {% endif %}
-                            {% endfor %}
-                        </div>
-                        {% endif %}
+                        <button type="button" class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#detailsModal{{ log.id }}">
+                            Detaylar
+                        </button>
                     </td>
                     <td>{{ log.ip_address }}</td>
+                    <td>{{ log.browser }}</td>
+                    <td>{{ log.platform }}</td>
+                    <td>
+                        {% if log.success %}
+                        <span class="badge bg-success">Başarılı</span>
+                        {% else %}
+                        <span class="badge bg-danger">Hata</span>
+                        {% endif %}
+                    </td>
                 </tr>
+                
+                <!-- Detay Modal -->
+                <div class="modal fade" id="detailsModal{{ log.id }}" tabindex="-1">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Log Detayları</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <pre>{{ log.details|from_json|tojson(indent=2) }}</pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 {% endfor %}
             </tbody>
         </table>
@@ -80,10 +141,10 @@
 
     <!-- Sayfalama -->
     <nav>
-        <ul class="pagination">
-            {% for page in range(1, logs.pages + 1) %}
-            <li class="page-item {% if page == logs.page %}active{% endif %}">
-                <a class="page-link" href="{{ url_for('user_logs.view_logs', page=page) }}">{{ page }}</a>
+        <ul class="pagination justify-content-center">
+            {% for page in logs.iter_pages() %}
+            <li class="page-item {{ 'active' if page == logs.page else '' }}">
+                <a class="page-link" href="{{ url_for('user_logs.view_logs', page=page, **request.args) }}">{{ page }}</a>
             </li>
             {% endfor %}
         </ul>
