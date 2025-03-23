@@ -1,3 +1,4 @@
+
 from flask import Blueprint, render_template, request, session, redirect, url_for
 from models import db, UserLog, User
 from login_logout import roles_required
@@ -11,12 +12,12 @@ def log_user_action(action, details=None, force_log=False):
     if 'user_id' in session or force_log:
         user_id = session.get('user_id')
         user_role = session.get('role', 'anonymous')
-
+        
         # İşlem tipini ve sayfayı ayır
         action_parts = action.split(': ', 1)
         action_type = action_parts[0] if len(action_parts) > 1 else action
         action_page = action_parts[1] if len(action_parts) > 1 else ''
-
+        
         # Sayfa adını Türkçeleştir
         page_name_map = {
             'home': 'Ana Sayfa',
@@ -49,7 +50,7 @@ def log_user_action(action, details=None, force_log=False):
         # Log detaylarını Türkçe ve okunaklı formatta düzenle
         browser = request.user_agent.browser if request.user_agent.browser else "Bilinmiyor"
         platform = request.user_agent.platform if request.user_agent.platform else "Bilinmiyor"
-
+        
         extended_details = {
             'Yapılan İşlem': translated_action,
             'Ziyaret Edilen Sayfa': page_name_map.get(translated_page, 'Ana Sayfa'),
@@ -59,24 +60,19 @@ def log_user_action(action, details=None, force_log=False):
             'İşletim Sistemi': platform,
             'Gelinen Sayfa': page_name_map.get(request.referrer.split('/')[-1], 'Doğrudan Giriş') if request.referrer else 'Doğrudan Giriş'
         }
-
+        
         if details:
             if isinstance(details, dict):
                 extended_details.update({k.replace('_', ' ').title(): v for k, v in details.items()})
             else:
                 extended_details['Ek Detaylar'] = details
-
+        
         new_log = UserLog(
             user_id=user_id,
             action=action,
             details=json.dumps(extended_details),
             ip_address=request.remote_addr,
-            page_url=request.url,
-            browser=browser,
-            platform=platform,
-            session_id=session.get('session_id'), #Assuming session_id is available in session
-            session_duration=session.get('session_duration', 0), #Assuming session_duration is available in session. 0 as default
-            referrer=request.referrer
+            page_url=request.url
         )
         db.session.add(new_log)
         db.session.commit()
@@ -86,16 +82,16 @@ def log_user_action(action, details=None, force_log=False):
 def view_logs():
     page = request.args.get('page', 1, type=int)
     per_page = 50
-
+    
     # Filtreleme parametreleri
     user_id = request.args.get('user_id', type=int)
     action = request.args.get('action')
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
-
+    
     # Sorgu oluşturma
     query = UserLog.query.join(User)
-
+    
     if user_id:
         query = query.filter(UserLog.user_id == user_id)
     if action:
@@ -104,9 +100,9 @@ def view_logs():
         query = query.filter(UserLog.timestamp >= datetime.strptime(start_date, '%Y-%m-%d'))
     if end_date:
         query = query.filter(UserLog.timestamp <= datetime.strptime(end_date, '%Y-%m-%d') + timedelta(days=1))
-
+    
     # Sayfalama
     logs = query.order_by(UserLog.timestamp.desc()).paginate(page=page, per_page=per_page)
     users = User.query.all()
-
+    
     return render_template('user_logs.html', logs=logs, users=users)
