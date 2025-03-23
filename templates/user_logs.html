@@ -56,13 +56,22 @@
                 <tr>
                     <td>{{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
                     <td>{{ log.user.username }}</td>
-                    <td>{{ log.action }}</td>
+                    <td class="fw-bold text-primary">{{ log.action.replace('PAGE_VIEW:', '').replace('.', ' > ') }}</td>
                     <td>
                         {% if log.details %}
                         {% set details = log.details|from_json %}
                         <div class="log-details">
                             {% for key, value in details.items() %}
                             {% if value and value != 'null' and value != {} %}
+                            <div class="mb-1">
+                                <span class="fw-bold text-muted">{{ key }}:</span>
+                                <span class="text-dark">{{ value }}</span>
+                            </div>
+                            {% endif %}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </td>' and value != {} %}
                             <div class="detail-item">
                                 <strong>{{ key }}:</strong>
                                 {% if value is mapping %}

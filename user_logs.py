@@ -48,14 +48,17 @@ def log_user_action(action, details=None, force_log=False):
         translated_action = action_type_map.get(action_type, action_type)
 
         # Log detaylarını Türkçe ve okunaklı formatta düzenle
+        browser = request.user_agent.browser if request.user_agent.browser else "Bilinmiyor"
+        platform = request.user_agent.platform if request.user_agent.platform else "Bilinmiyor"
+        
         extended_details = {
-            'İşlem': translated_action,
-            'Sayfa': translated_page,
-            'Kullanıcı Yetkisi': 'Yönetici' if user_role == 'admin' else 'Personel' if user_role == 'worker' else 'Yönetici Yardımcısı' if user_role == 'manager' else 'Ziyaretçi',
-            'İşlem Yöntemi': 'Görüntüleme' if request.method == 'GET' else 'Güncelleme' if request.method == 'POST' else request.method,
-            'Filtreler': dict(request.args) if request.args else None,
-            'Tarayıcı Bilgisi': f"{request.user_agent.browser} / {request.user_agent.platform}",
-            'Önceki Sayfa': page_name_map.get(request.referrer.split('/')[-1], request.referrer.split('/')[-1]) if request.referrer else None
+            'Yapılan İşlem': translated_action,
+            'Ziyaret Edilen Sayfa': page_name_map.get(translated_page, 'Ana Sayfa'),
+            'Kullanıcı Rolü': 'Yönetici' if user_role == 'admin' else 'Personel' if user_role == 'worker' else 'Yönetici Yardımcısı' if user_role == 'manager' else 'Ziyaretçi',
+            'İşlem Türü': 'Sayfa Görüntüleme' if request.method == 'GET' else 'Veri Güncelleme' if request.method == 'POST' else 'Özel İşlem',
+            'Tarayıcı': browser,
+            'İşletim Sistemi': platform,
+            'Gelinen Sayfa': page_name_map.get(request.referrer.split('/')[-1], 'Doğrudan Giriş') if request.referrer else 'Doğrudan Giriş'
         }
         
         if details:
