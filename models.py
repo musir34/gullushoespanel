@@ -107,6 +107,8 @@ class User(db.Model):
     status = db.Column(db.String(50), default='pending')
     totp_secret = db.Column(db.String(16))  # 16 karakterlik base32 string
     totp_confirmed = db.Column(db.Boolean, default=False)
+    last_login = db.Column(db.DateTime)
+    created_at = db.Column(db.DateTime, default=db.func.now())
 
 # Sipariş Modeli
 class Order(db.Model):
