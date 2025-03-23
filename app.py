@@ -16,6 +16,15 @@ logger = logging.getLogger(__name__)
 # Ana uygulama oluşturma
 app = Flask(__name__)
 
+# JSON filtresi ekle
+import json
+@app.template_filter('from_json')
+def from_json(value):
+    try:
+        return json.loads(value) if value else {}
+    except:
+        return {}
+
 # Asenkron işlemleri destekle
 from flask_cors import CORS
 CORS(app)
