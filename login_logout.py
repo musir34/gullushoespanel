@@ -12,20 +12,16 @@ from models import db, User
 login_logout_bp = Blueprint('login_logout', __name__)
 
 def login_user(user):
-    print(f"Giriş yapan kullanıcı: {user.username}, rolü: {user.role}")
+    print(f"Giriş yapan kullanıcı: {user.username}, rolü: {user.role}")  # Kullanıcı bilgilerini logla
     session['user_id'] = user.id
     session['username'] = user.username
     session['role'] = user.role
     session['first_name'] = user.first_name
     session['last_name'] = user.last_name
     session['authenticated'] = True
+    # Oturum süresini uzatmak için permanent oturumu kullanıyoruz
     session.permanent = True
-    
-    # Son giriş zamanını güncelle
-    user.last_login = datetime.now()
-    db.session.commit()
-    
-    print(f"Oturumda atanan rol: {session['role']}")
+    print(f"Oturumda atanan rol: {session['role']}")  # Oturumdaki rolü logla
 
 
 
@@ -296,13 +292,4 @@ def logout():
 @login_logout_bp.route('/home')
 @login_required
 def home():
-
-
-@login_logout_bp.route('/user-tracking')
-@roles_required('admin', 'manager')  # Sadece admin ve yöneticiler erişebilir
-def user_tracking():
-    users = User.query.all()
-    return render_template('user_tracking.html', users=users)
-
-
     return render_template('home.html')
