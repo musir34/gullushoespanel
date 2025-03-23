@@ -84,7 +84,8 @@ from analysis import analysis_bp
 from stock_report import stock_report_bp
 from openai_service import openai_bp
 from siparisler import siparisler_bp
-from kar_maliyet import kar_maliyet_bp # Added import for kar_maliyet blueprint
+from kar_maliyet import kar_maliyet_bp
+from user_logs import user_logs_bp, log_user_action
 
 # Webhook servisi kullanıcı isteği doğrultusunda kaldırıldı
 
@@ -108,7 +109,8 @@ blueprints = [
     siparisler_bp,
     product_service_bp,  # Son iki blueprint'i listenin sonunda tutuyoruz
     claims_service_bp,
-    kar_maliyet_bp    # fakat liste kayıt sırasında kullanılacak
+    kar_maliyet_bp,
+    user_logs_bp
 ]
 
 for bp in blueprints:

@@ -344,3 +344,14 @@ class Return(db.Model):
 
     def __repr__(self):
         return f"<Return {self.claim_id}>"
+class UserLog(db.Model):
+    __tablename__ = 'user_logs'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    action = db.Column(db.String(255), nullable=False)
+    details = db.Column(db.Text)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    ip_address = db.Column(db.String(45))
+    page_url = db.Column(db.String(255))
+    
+    user = db.relationship('User', backref=db.backref('logs', lazy=True))

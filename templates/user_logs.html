@@ -1,0 +1,83 @@
+
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Kullanıcı İşlem Kayıtları</h2>
+    
+    <!-- Filtreler -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Kullanıcı</label>
+                    <select name="user_id" class="form-select">
+                        <option value="">Tümü</option>
+                        {% for user in users %}
+                        <option value="{{ user.id }}" {% if request.args.get('user_id')|int == user.id %}selected{% endif %}>
+                            {{ user.username }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">İşlem Tipi</label>
+                    <input type="text" name="action" class="form-control" value="{{ request.args.get('action', '') }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Başlangıç Tarihi</label>
+                    <input type="date" name="start_date" class="form-control" value="{{ request.args.get('start_date', '') }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Bitiş Tarihi</label>
+                    <input type="date" name="end_date" class="form-control" value="{{ request.args.get('end_date', '') }}">
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary">Filtrele</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Log Tablosu -->
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Tarih</th>
+                    <th>Kullanıcı</th>
+                    <th>İşlem</th>
+                    <th>Detaylar</th>
+                    <th>IP Adresi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs.items %}
+                <tr>
+                    <td>{{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                    <td>{{ log.user.username }}</td>
+                    <td>{{ log.action }}</td>
+                    <td>
+                        {% if log.details %}
+                        <pre class="mb-0"><code>{{ log.details }}</code></pre>
+                        {% endif %}
+                    </td>
+                    <td>{{ log.ip_address }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Sayfalama -->
+    <nav>
+        <ul class="pagination">
+            {% for page in range(1, logs.pages + 1) %}
+            <li class="page-item {% if page == logs.page %}active{% endif %}">
+                <a class="page-link" href="{{ url_for('user_logs.view_logs', page=page) }}">{{ page }}</a>
+            </li>
+            {% endfor %}
+        </ul>
+    </nav>
+</div>
+{% endblock %}

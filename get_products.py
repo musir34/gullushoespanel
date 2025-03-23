@@ -482,6 +482,10 @@ def restore_from_archive():
 
 @get_products_bp.route('/product_list')
 def product_list():
+    log_user_action('product_list_view', {
+        'filters': dict(request.args),
+        'page': request.args.get('page', 1)
+    })
     try:
         page = request.args.get('page', 1, type=int)
         per_page = 12
@@ -688,8 +692,7 @@ def update_product_cost():
     cost_usd_str = request.form.get('cost_usd')
     if not model_id:
         return jsonify({'success': False, 'message': 'Model ID gerekli'})
-    try:
-        cost_usd = float(cost_usd_str)
+    trycost_usd = float(cost_usd_str)
     except (ValueError, TypeError):
         return jsonify({'success': False, 'message': 'Geçerli bir maliyet değeri giriniz'})
     loop = asyncio.new_event_loop()
@@ -713,3 +716,8 @@ def update_product_cost():
         db.session.rollback()
         logger.error(f"Maliyet güncelleme hatası: {e}")
         return jsonify({'success': False, 'message': f'Bir hata oluştu: {str(e)}'})
+
+def log_user_action(action_type, details):
+    # Bu fonksiyonu geliştirerek veritabanına log kaydı ekleyebilirsiniz.
+    # Şimdilik sadece log dosyasına yazdıralım.
+    logger.info(f"Kullanıcı işlemi: {action_type}, Detaylar: {details}")
