@@ -1,10 +1,9 @@
-
 {% extends "base.html" %}
 
 {% block content %}
 <div class="container mt-4">
     <h2>Kullanıcı İşlem Kayıtları</h2>
-    
+
     <!-- Filtreler -->
     <div class="card mb-4">
         <div class="card-body">
@@ -66,23 +65,6 @@
                             <div class="mb-1">
                                 <span class="fw-bold text-muted">{{ key }}:</span>
                                 <span class="text-dark">{{ value }}</span>
-                            </div>
-                            {% endif %}
-                            {% endfor %}
-                        </div>
-                        {% endif %}
-                    </td>' and value != {} %}
-                            <div class="detail-item">
-                                <strong>{{ key }}:</strong>
-                                {% if value is mapping %}
-                                <ul class="list-unstyled ms-3">
-                                    {% for k, v in value.items() %}
-                                    <li><em>{{ k }}:</em> {{ v }}</li>
-                                    {% endfor %}
-                                </ul>
-                                {% else %}
-                                {{ value }}
-                                {% endif %}
                             </div>
                             {% endif %}
                             {% endfor %}
