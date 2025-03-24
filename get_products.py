@@ -217,10 +217,15 @@ async def fetch_products_page(session, url, headers, params):
 async def download_images_async(image_urls):
     async with aiohttp.ClientSession() as session:
         tasks = []
-        semaphore = asyncio.Semaphore(100)
-        for image_url, image_path in image_urls:
-            tasks.append(download_image(session, image_url, image_path, semaphore))
-        await asyncio.gather(*tasks)
+        semaphore = asyncio.Semaphore(10)  # Eşzamanlı indirme sayısını azalt
+        chunk_size = 20  # Her seferde işlenecek resim sayısı
+        
+        for i in range(0, len(image_urls), chunk_size):
+            chunk = image_urls[i:i + chunk_size]
+            for image_url, image_path in chunk:
+                tasks.append(download_image(session, image_url, image_path, semaphore))
+            await asyncio.gather(*tasks)
+            tasks = []
 
 
 async def download_image(session, image_url, image_path, semaphore):
@@ -348,27 +353,37 @@ def check_and_prepare_image_downloads(image_urls, images_folder):
 
 def upsert_products(products):
     try:
-        for product_data in products:
-            # Barkod kontrolü
-            if not product_data.get('barcode'):
-                logger.warning("Barkod eksik, ürün atlanıyor")
-                continue
-
-            # Mevcut ürünü kontrol et
-            existing_product = Product.query.filter_by(barcode=product_data['barcode']).first()
+        # Toplu sorgu için barkodları al
+        barcodes = [p.get('barcode') for p in products if p.get('barcode')]
+        existing_products = {p.barcode: p for p in Product.query.filter(Product.barcode.in_(barcodes)).all()}
+        
+        batch_size = 100
+        to_add = []
+        
+        for i in range(0, len(products), batch_size):
+            batch = products[i:i + batch_size]
+            for product_data in batch:
+                barcode = product_data.get('barcode')
+                if not barcode:
+                    continue
+                    
+                if barcode in existing_products:
+                    # Mevcut ürünü güncelle
+                    product = existing_products[barcode]
+                    for key, value in product_data.items():
+                        if hasattr(product, key):
+                            setattr(product, key, value)
+                    db.session.add(product)
+                else:
+                    # Yeni ürün oluştur
+                    to_add.append(Product(**product_data))
             
-            if existing_product:
-                # Mevcut ürünü güncelle
-                for key, value in product_data.items():
-                    if hasattr(existing_product, key):
-                        setattr(existing_product, key, value)
-                db.session.add(existing_product)
-            else:
-                # Yeni ürün oluştur
-                new_product = Product(**product_data)
-                db.session.add(new_product)
-
-        db.session.commit()
+            if to_add:
+                db.session.bulk_save_objects(to_add)
+                to_add = []
+                
+            db.session.commit()
+            
         logger.info(f"{len(products)} ürün başarıyla işlendi")
     except Exception as e:
         db.session.rollback()
