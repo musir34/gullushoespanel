@@ -225,20 +225,31 @@ async def download_images_async(image_urls):
 
 async def download_image(session, image_url, image_path, semaphore):
     async with semaphore:
-        if os.path.exists(image_path):
-            logger.info(f"Resim zaten mevcut, atlanıyor: {image_path}")
-            return
         try:
-            async with session.get(image_url, timeout=10) as response:
+            if not image_url or not image_url.startswith('http'):
+                logger.error(f"Geçersiz resim URL'si: {image_url}")
+                return False
+
+            os.makedirs(os.path.dirname(image_path), exist_ok=True)
+            
+            async with session.get(image_url, timeout=30) as response:
                 if response.status != 200:
                     logger.error(f"Resim indirme hatası: {response.status} - {image_url}")
-                    return
+                    return False
+                    
                 content = await response.read()
+                if len(content) < 100:  # Minimum dosya boyutu kontrolü
+                    logger.error(f"Çok küçük resim dosyası: {image_url}")
+                    return False
+                    
                 with open(image_path, 'wb') as img_file:
                     img_file.write(content)
-                logger.info(f"Resim kaydedildi: {image_path}")
+                logger.info(f"Resim başarıyla kaydedildi: {image_path}")
+                return True
+                
         except Exception as e:
-            logger.error(f"Resim indirme sırasında hata oluştu ({image_url}): {e}")
+            logger.error(f"Resim indirme hatası ({image_url}): {str(e)}")
+            return False
 
 
 def background_download_images(image_downloads):
@@ -264,18 +275,33 @@ async def save_products_to_db_async(products):
             if not original_barcode:
                 logger.warning(f"Barkod eksik, ürün atlanıyor: {product_data}")
                 continue
-            image_urls = [img.get('url', '') for img in product_data.get('images', []) if isinstance(img, dict)]
-            image_url = image_urls[0] if image_urls else ''
-            if image_url:
-                parsed_url = urlparse(image_url)
-                image_extension = os.path.splitext(parsed_url.path)[1]
-                if not image_extension:
-                    image_extension = '.jpg'
-                image_extension = image_extension.lower()
-                image_filename = f"{original_barcode}{image_extension}"
-                image_path = os.path.join(images_folder, image_filename)
-                image_downloads.append((image_url, image_path))
-                product_data['images'] = f"/static/images/{image_filename}"
+            try:
+                images = product_data.get('images', [])
+                image_urls = []
+                
+                if isinstance(images, list):
+                    image_urls = [img.get('url', '') for img in images if isinstance(img, dict) and img.get('url')]
+                elif isinstance(images, str) and images.startswith('http'):
+                    image_urls = [images]
+                
+                image_url = image_urls[0] if image_urls else ''
+                
+                if image_url:
+                    parsed_url = urlparse(image_url)
+                    image_extension = os.path.splitext(parsed_url.path)[1].lower()
+                    if not image_extension or len(image_extension) > 5:
+                        image_extension = '.jpg'
+                        
+                    image_filename = f"{original_barcode}{image_extension}"
+                    image_path = os.path.join(images_folder, image_filename)
+                    image_downloads.append((image_url, image_path))
+                    product_data['images'] = f"/static/images/{image_filename}"
+                else:
+                    logger.warning(f"Ürün için görsel bulunamadı: {original_barcode}")
+                    product_data['images'] = "/static/images/default.jpg"
+            except Exception as e:
+                logger.error(f"Görsel işleme hatası: {str(e)}")
+                product_data['images'] = "/static/images/default.jpg"
             size = next((attr.get('attributeValue', 'N/A') for attr in product_data.get('attributes', []) if attr.get('attributeName') == 'Beden'), 'N/A')
             color = next((attr.get('attributeValue', 'N/A') for attr in product_data.get('attributes', []) if attr.get('attributeName') == 'Renk'), 'N/A')
             reject_reason = product_data.get('rejectReasonDetails', [])
