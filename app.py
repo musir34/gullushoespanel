@@ -89,8 +89,10 @@ from kar_maliyet import kar_maliyet_bp
 from user_logs import user_logs_bp, log_user_action
 
 with app.app_context():
-    # Eksik sütunu ekle
+    # Eksik sütunları ekle
     db.session.execute(text('ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_date TIMESTAMP'))
+    db.session.execute(text('ALTER TABLE orders ADD COLUMN IF NOT EXISTS commission_amount FLOAT DEFAULT 0.0'))
+    db.session.execute(text('ALTER TABLE orders ADD COLUMN IF NOT EXISTS commission_rate FLOAT DEFAULT 0.0'))
 
     # Yeni tabloları oluştur
     from models import YeniSiparis, SiparisUrun

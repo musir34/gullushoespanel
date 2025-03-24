@@ -155,6 +155,8 @@ class Order(db.Model):
     archive_reason = db.Column(db.String)
     quantity = db.Column(db.Integer)
     delivery_date = db.Column(db.DateTime)
+    commission_amount = db.Column(db.Float, default=0.0)  # Trendyol'un kestiği komisyon tutarı
+    commission_rate = db.Column(db.Float, default=0.0)  # Komisyon oranı
 
 class ProductArchive(db.Model):
     __tablename__ = 'product_archive'
