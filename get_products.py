@@ -12,7 +12,7 @@ from urllib.parse import urlparse
 from dotenv import load_dotenv
 from io import BytesIO
 
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, send_from_directory, send_file
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, send_from_directory, send_file, current_app
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy import func
@@ -107,7 +107,7 @@ def generate_qr():
     qr = qrcode.QRCode(version=1, error_correction=qrcode.constants.ERROR_CORRECT_L, box_size=10, border=4)
     qr.add_data(barcode)
     qr.make(fit=True)
-    qr_dir = os.path.join('static', 'qr_codes')
+    qr_dir = os.path.join(current_app.root_path, 'static', 'qr_codes')
     os.makedirs(qr_dir, exist_ok=True)
     qr_path = os.path.join(qr_dir, f"{barcode}.png")
     qr.make_image(fill_color="black", back_color="white").save(qr_path)
@@ -133,7 +133,7 @@ def render_product_list(products, pagination=None):
     grouped_products = group_products_by_model_and_color(products)
     for key in grouped_products:
         grouped_products[key] = sort_variants_by_size(grouped_products[key])
-    return render_template('product_list.html', grouped_products=group_products, pagination=pagination, search_mode=False)
+    return render_template('product_list.html', grouped_products=grouped_products, pagination=pagination, search_mode=False)
 
 
 @get_products_bp.route('/update_products', methods=['POST'])
@@ -217,44 +217,28 @@ async def fetch_products_page(session, url, headers, params):
 async def download_images_async(image_urls):
     async with aiohttp.ClientSession() as session:
         tasks = []
-        semaphore = asyncio.Semaphore(10)  # Eşzamanlı indirme sayısını azalt
-        chunk_size = 20  # Her seferde işlenecek resim sayısı
-        
-        for i in range(0, len(image_urls), chunk_size):
-            chunk = image_urls[i:i + chunk_size]
-            for image_url, image_path in chunk:
-                tasks.append(download_image(session, image_url, image_path, semaphore))
-            await asyncio.gather(*tasks)
-            tasks = []
+        semaphore = asyncio.Semaphore(100)
+        for image_url, image_path in image_urls:
+            tasks.append(download_image(session, image_url, image_path, semaphore))
+        await asyncio.gather(*tasks)
 
 
 async def download_image(session, image_url, image_path, semaphore):
     async with semaphore:
+        if os.path.exists(image_path):
+            logger.info(f"Resim zaten mevcut, atlanıyor: {image_path}")
+            return
         try:
-            if not image_url or not image_url.startswith('http'):
-                logger.error(f"Geçersiz resim URL'si: {image_url}")
-                return False
-
-            os.makedirs(os.path.dirname(image_path), exist_ok=True)
-            
-            async with session.get(image_url, timeout=30) as response:
+            async with session.get(image_url, timeout=10) as response:
                 if response.status != 200:
                     logger.error(f"Resim indirme hatası: {response.status} - {image_url}")
-                    return False
-                    
+                    return
                 content = await response.read()
-                if len(content) < 100:  # Minimum dosya boyutu kontrolü
-                    logger.error(f"Çok küçük resim dosyası: {image_url}")
-                    return False
-                    
                 with open(image_path, 'wb') as img_file:
                     img_file.write(content)
-                logger.info(f"Resim başarıyla kaydedildi: {image_path}")
-                return True
-                
+                logger.info(f"Resim kaydedildi: {image_path}")
         except Exception as e:
-            logger.error(f"Resim indirme hatası ({image_url}): {str(e)}")
-            return False
+            logger.error(f"Resim indirme sırasında hata oluştu ({image_url}): {e}")
 
 
 def background_download_images(image_downloads):
@@ -269,7 +253,7 @@ async def save_products_to_db_async(products):
         logger.warning("Kaydedilecek ürün yok.")
         flash("Kaydedilecek ürün bulunamadı.", "warning")
         return
-    images_folder = os.path.join('static', 'images')
+    images_folder = os.path.join(current_app.root_path, 'static', 'images')
     os.makedirs(images_folder, exist_ok=True)
     image_downloads = []
     product_objects = []
@@ -280,33 +264,18 @@ async def save_products_to_db_async(products):
             if not original_barcode:
                 logger.warning(f"Barkod eksik, ürün atlanıyor: {product_data}")
                 continue
-            try:
-                images = product_data.get('images', [])
-                image_urls = []
-                
-                if isinstance(images, list):
-                    image_urls = [img.get('url', '') for img in images if isinstance(img, dict) and img.get('url')]
-                elif isinstance(images, str) and images.startswith('http'):
-                    image_urls = [images]
-                
-                image_url = image_urls[0] if image_urls else ''
-                
-                if image_url:
-                    parsed_url = urlparse(image_url)
-                    image_extension = os.path.splitext(parsed_url.path)[1].lower()
-                    if not image_extension or len(image_extension) > 5:
-                        image_extension = '.jpg'
-                        
-                    image_filename = f"{original_barcode}{image_extension}"
-                    image_path = os.path.join(images_folder, image_filename)
-                    image_downloads.append((image_url, image_path))
-                    product_data['images'] = f"/static/images/{image_filename}"
-                else:
-                    logger.warning(f"Ürün için görsel bulunamadı: {original_barcode}")
-                    product_data['images'] = "/static/images/default.jpg"
-            except Exception as e:
-                logger.error(f"Görsel işleme hatası: {str(e)}")
-                product_data['images'] = "/static/images/default.jpg"
+            image_urls = [img.get('url', '') for img in product_data.get('images', []) if isinstance(img, dict)]
+            image_url = image_urls[0] if image_urls else ''
+            if image_url:
+                parsed_url = urlparse(image_url)
+                image_extension = os.path.splitext(parsed_url.path)[1]
+                if not image_extension:
+                    image_extension = '.jpg'
+                image_extension = image_extension.lower()
+                image_filename = f"{original_barcode}{image_extension}"
+                image_path = os.path.join(images_folder, image_filename)
+                image_downloads.append((image_url, image_path))
+                product_data['images'] = f"/static/images/{image_filename}"
             size = next((attr.get('attributeValue', 'N/A') for attr in product_data.get('attributes', []) if attr.get('attributeName') == 'Beden'), 'N/A')
             color = next((attr.get('attributeValue', 'N/A') for attr in product_data.get('attributes', []) if attr.get('attributeName') == 'Renk'), 'N/A')
             reject_reason = product_data.get('rejectReasonDetails', [])
@@ -352,43 +321,20 @@ def check_and_prepare_image_downloads(image_urls, images_folder):
 
 
 def upsert_products(products):
-    try:
-        # Toplu sorgu için barkodları al
-        barcodes = [p.get('barcode') for p in products if p.get('barcode')]
-        existing_products = {p.barcode: p for p in Product.query.filter(Product.barcode.in_(barcodes)).all()}
-        
-        batch_size = 100
-        to_add = []
-        
-        for i in range(0, len(products), batch_size):
-            batch = products[i:i + batch_size]
-            for product_data in batch:
-                barcode = product_data.get('barcode')
-                if not barcode:
-                    continue
-                    
-                if barcode in existing_products:
-                    # Mevcut ürünü güncelle
-                    product = existing_products[barcode]
-                    for key, value in product_data.items():
-                        if hasattr(product, key):
-                            setattr(product, key, value)
-                    db.session.add(product)
-                else:
-                    # Yeni ürün oluştur
-                    to_add.append(Product(**product_data))
-            
-            if to_add:
-                db.session.bulk_save_objects(to_add)
-                to_add = []
-                
-            db.session.commit()
-            
-        logger.info(f"{len(products)} ürün başarıyla işlendi")
-    except Exception as e:
-        db.session.rollback()
-        logger.error(f"Ürün kaydetme hatası: {str(e)}")
-        raise
+    insert_stmt = insert(Product).values(products)
+    upsert_stmt = insert_stmt.on_conflict_do_update(
+        index_elements=['barcode'],
+        set_={
+            'quantity': insert_stmt.excluded.quantity,
+            'sale_price': insert_stmt.excluded.sale_price,
+            'list_price': insert_stmt.excluded.list_price,
+            'images': insert_stmt.excluded.images,
+            'size': insert_stmt.excluded.size,
+            'color': insert_stmt.excluded.color,
+        }
+    )
+    db.session.execute(upsert_stmt)
+    db.session.commit()
 
 
 async def update_stock_levels_with_items_async(items):
@@ -536,10 +482,6 @@ def restore_from_archive():
 
 @get_products_bp.route('/product_list')
 def product_list():
-    log_user_action('product_list_view', {
-        'filters': dict(request.args),
-        'page': request.args.get('page', 1)
-    })
     try:
         page = request.args.get('page', 1, type=int)
         per_page = 12
@@ -771,8 +713,3 @@ def update_product_cost():
         db.session.rollback()
         logger.error(f"Maliyet güncelleme hatası: {e}")
         return jsonify({'success': False, 'message': f'Bir hata oluştu: {str(e)}'})
-
-def log_user_action(action_type, details):
-    # Bu fonksiyonu geliştirerek veritabanına log kaydı ekleyebilirsiniz.
-    # Şimdilik sadece log dosyasına yazdıralım.
-    logger.info(f"Kullanıcı işlemi: {action_type}, Detaylar: {details}")
