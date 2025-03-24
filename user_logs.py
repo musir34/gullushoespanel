@@ -89,6 +89,7 @@ def log_user_action(action: str, details: dict = None, force_log: bool = False, 
         else:
             islem_turu = 'Özel İşlem'
 
+        # Temel detaylar
         extended_details = {
             'Yapılan İşlem': translated_action,
             'Ziyaret Edilen Sayfa': translated_page,
@@ -103,11 +104,53 @@ def log_user_action(action: str, details: dict = None, force_log: bool = False, 
             'İşletim Sistemi': get_platform_info(),
             'Gelinen Sayfa': extract_page_from_referrer(request.referrer)
         }
+        
+        # Tarayıcı ve cihaz detayları
+        user_agent = request.user_agent
+        extended_details.update({
+            'Tarayıcı Versiyonu': user_agent.version,
+            'Tarayıcı Dili': request.accept_languages.best if hasattr(request, 'accept_languages') else 'Bilinmiyor',
+            'Cihaz Türü': 'Mobil' if user_agent.platform in ['android', 'iphone', 'ipad'] else 'Masaüstü'
+        })
+        
+        # İstek detayları
+        request_details = {
+            'HTTP Metodu': request.method,
+            'İstek Parametreleri': dict(request.args),
+            'İstek Başlıkları': {k: v for k, v in request.headers.items() if k.lower() not in ['cookie', 'authorization']},
+            'İstek Yolu': request.path,
+            'İstek Zamanı': datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+        }
+        
+        # Form verilerini ekle (hassas verileri filtreleyerek)
+        if request.form:
+            filtered_form = {}
+            for key, value in request.form.items():
+                # Hassas verileri filtrele
+                if any(sensitive in key.lower() for sensitive in ['password', 'token', 'secret', 'key', 'sifre']):
+                    filtered_form[key] = '***FILTERED***'
+                else:
+                    filtered_form[key] = value
+            request_details['Form Verileri'] = filtered_form
+        
+        extended_details['İstek Detayları'] = request_details
+        
+        # Oturum bilgileri (hassas bilgileri filtreleyerek)
+        if session:
+            filtered_session = {}
+            for key, value in session.items():
+                if any(sensitive in key.lower() for sensitive in ['password', 'token', 'secret', 'key', 'sifre']):
+                    filtered_session[key] = '***FILTERED***'
+                else:
+                    filtered_session[key] = value
+            extended_details['Oturum Bilgileri'] = filtered_session
 
+        # Kullanıcının gönderdiği ek detayları ekle
         if details:
             if isinstance(details, dict):
                 # Ek detayların anahtarlarını düzenleyerek ekle
-                extended_details.update({k.replace('_', ' ').title(): v for k, v in details.items()})
+                formatted_details = {k.replace('_', ' ').title(): v for k, v in details.items()}
+                extended_details['İşlem Detayları'] = formatted_details
             else:
                 extended_details['Ek Detaylar'] = details
 
@@ -121,6 +164,12 @@ def log_user_action(action: str, details: dict = None, force_log: bool = False, 
             )
             db.session.add(new_log)
             db.session.commit()
+            
+            # Belirli kritik işlemleri ayrıca log dosyasına da kaydedelim
+            if action_type_raw in ['CREATE', 'UPDATE', 'DELETE', 'LOGIN', 'LOGOUT']:
+                log_message = f"KULLANICI İŞLEMİ: {current_user.username if current_user.is_authenticated else 'Anonim'} - {action} - IP: {request.remote_addr}"
+                logging.getLogger('app').info(log_message)
+                
         except Exception as e:
             db.session.rollback()
             logging.error(f"Log kaydedilemedi: {e}")
@@ -130,40 +179,98 @@ def log_user_action(action: str, details: dict = None, force_log: bool = False, 
 def view_logs():
     """
     Kullanıcı loglarını görüntüleyen view.
-    Filtreleme parametreleri: kullanıcı ID, aksiyon, tarih aralığı.
+    Gelişmiş filtreleme özellikleri ile.
     """
+    # Sayfalama ve gösterim ayarları
     page = request.args.get('page', 1, type=int)
-    per_page = 50
+    per_page = request.args.get('per_page', 50, type=int)
 
     # Filtreleme parametrelerini çek
     user_id = request.args.get('user_id', type=int)
     action_filter = request.args.get('action')
+    action_type = request.args.get('action_type')
+    ip_address = request.args.get('ip_address')
     start_date_str = request.args.get('start_date')
     end_date_str = request.args.get('end_date')
 
+    # Sorgu oluşturma
     query = UserLog.query.join(User)
 
+    # Filtreleri uygula
+    filters_applied = False
+    
     if user_id:
         query = query.filter(UserLog.user_id == user_id)
+        filters_applied = True
+        
     if action_filter:
         query = query.filter(UserLog.action.ilike(f'%{action_filter}%'))
+        filters_applied = True
+        
+    if action_type:
+        query = query.filter(UserLog.action.like(f'{action_type}%'))
+        filters_applied = True
+        
+    if ip_address:
+        query = query.filter(UserLog.ip_address.ilike(f'%{ip_address}%'))
+        filters_applied = True
 
     # Tarih filtresi için güvenli dönüşüm
     try:
         if start_date_str:
             start_date = datetime.strptime(start_date_str, '%Y-%m-%d')
             query = query.filter(UserLog.timestamp >= start_date)
+            filters_applied = True
     except ValueError as ve:
         logging.error(f"Başlangıç tarih formatı hatası: {ve}")
+        flash(f"Başlangıç tarihi formatı hatalı: {ve}", "warning")
 
     try:
         if end_date_str:
             end_date = datetime.strptime(end_date_str, '%Y-%m-%d') + timedelta(days=1)
             query = query.filter(UserLog.timestamp <= end_date)
+            filters_applied = True
     except ValueError as ve:
         logging.error(f"Bitiş tarih formatı hatası: {ve}")
+        flash(f"Bitiş tarihi formatı hatalı: {ve}", "warning")
 
+    # Log kullanıcının bu sayfayı ziyaret etmesini
+    if current_user.is_authenticated:
+        log_details = {
+            'filters': {
+                'user_id': user_id,
+                'action': action_filter,
+                'action_type': action_type,
+                'ip_address': ip_address,
+                'start_date': start_date_str,
+                'end_date': end_date_str
+            },
+            'filters_applied': filters_applied
+        }
+        log_user_action(
+            action=f"PAGE_VIEW: user_logs.view_logs",
+            details=log_details
+        )
+
+    # Logları sırala ve paginate et
     logs = query.order_by(UserLog.timestamp.desc()).paginate(page=page, per_page=per_page)
-    users = User.query.all()
+    
+    # Tüm kullanıcıları getir (filtre seçenekleri için)
+    users = User.query.order_by(User.username).all()
 
-    return render_template('user_logs.html', logs=logs, users=users)
+    # İstatistikler için ek veriler
+    stats = {
+        'toplam_log': UserLog.query.count(),
+        'bugunku_log': UserLog.query.filter(
+            UserLog.timestamp >= datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+        ).count(),
+        'filtreli_log': logs.total if filters_applied else None
+    }
+
+    return render_template(
+        'user_logs.html',
+        logs=logs,
+        users=users,
+        stats=stats,
+        filter_active=filters_applied
+    )
