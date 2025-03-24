@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, request, session, redirect, url_for
-# Flask-Login import kaldırıldı ve sadece gerektiğinde kontrol edilecek
+from flask_login import current_user
 from models import db, UserLog, User
 from login_logout import roles_required
 from datetime import datetime, timedelta
@@ -122,8 +122,7 @@ def log_user_action(action: str, details: dict = None, force_log: bool = False, 
             db.session.add(new_log)
             db.session.commit()
         except Exception as e:
-            db.session.rollback
-            logging.error(f"Log kaydedilirken hata oluştu: {e}")()
+            db.session.rollback()
             logging.error(f"Log kaydedilemedi: {e}")
 
 @user_logs_bp.route('/user-logs')
@@ -168,103 +167,3 @@ def view_logs():
     users = User.query.all()
 
     return render_template('user_logs.html', logs=logs, users=users)
-from flask import Blueprint, render_template, request, session, redirect, url_for
-# Flask-Login import kaldırıldı ve sadece gerektiğinde kontrol edilecek
-from models import db, UserLog, User
-from login_logout import roles_required
-from datetime import datetime, timedelta
-import json
-import urllib.parse
-import logging
-
-# Modül seviyesinde tanımlanan sabitler
-PAGE_NAME_MAP = {
-    'home': 'Ana Sayfa',
-    'order_list': 'Sipariş Listesi',
-    'analysis': 'Analiz Sayfası',
-    'stock_report': 'Stok Raporu',
-    'user_logs': 'Kullanıcı Logları',
-    'product_list': 'Ürün Listesi',
-    'archive': 'Arşiv',
-    'login': 'Giriş',
-    'register': 'Kayıt',
-}
-
-ACTION_TYPE_MAP = {
-    'PAGE_VIEW': 'Sayfa Görüntüleme',
-    'LOGIN': 'Giriş',
-    'LOGOUT': 'Çıkış',
-    'CREATE': 'Oluşturma',
-    'UPDATE': 'Güncelleme',
-    'DELETE': 'Silme',
-    'ARCHIVE': 'Arşivleme',
-    'PRINT': 'Yazdırma',
-}
-
-# Blueprint tanımlaması
-user_logs_bp = Blueprint('user_logs', __name__)
-
-def translate_page_name(page: str) -> str:
-    """Sayfa adını Türkçeleştirir."""
-    return PAGE_NAME_MAP.get(page, page or 'Ana Sayfa')
-
-def translate_action_type(action: str) -> str:
-    """İşlem tipini Türkçeleştirir."""
-    return ACTION_TYPE_MAP.get(action, action)
-
-def get_browser_info() -> str:
-    """Kullanıcının tarayıcı bilgisini döner."""
-    return request.user_agent.browser or "Bilinmiyor"
-
-def get_platform_info() -> str:
-    """Kullanıcının işletim sistemi bilgisini döner."""
-    return request.user_agent.platform or "Bilinmiyor"
-
-def extract_page_from_referrer(referrer):
-    """Referer URL'sinden sayfa adını çıkarır."""
-    if not referrer:
-        return "Doğrudan"
-    try:
-        url_parts = urllib.parse.urlparse(referrer)
-        path = url_parts.path.strip('/')
-        if not path:
-            return "Ana Sayfa"
-        return path
-    except:
-        return "Bilinmiyor"
-
-def log_user_action(action="Bilinmeyen İşlem", details=None, force_log=False):
-    """Kullanıcı işlemlerini loglar."""
-    try:
-        user_id = session.get('user_id')
-        
-        # Flask-Login olmadığı için oturum kontrolü session üzerinden yapılıyor
-        if not user_id and not force_log:
-            return
-            
-        if user_id:
-            user_role = session.get('role', 'ziyaretçi')
-        else:
-            user_id = 0  # Anonim kullanıcı
-            user_role = 'ziyaretçi'
-        
-        # İşlem tipini ve sayfa adını çıkar
-        action_parts = action.split(':', 1)
-        action_type = action_parts[0] if len(action_parts) > 1 else action
-        
-        # Sayfa adını al (eğer detail içinde varsa)
-        page = None
-        if details and isinstance(details, dict):
-            page = details.get('path', '').strip('/') or details.get('endpoint')
-        
-        # Türkçe karşılıklarını al
-        translated_action = translate_action_type(action_type)
-        translated_page = translate_page_name(page)
-        
-        # İşlem türünü belirle
-        if action_type.startswith('PAGE_VIEW'):
-            islem_turu = 'Sayfa Görüntüleme'
-        elif action_type in ['CREATE', 'ADD']:
-            islem_turu = 'Veri Ekleme'
-        elif action_type in ['UPDATE', 'EDIT']:
-            islem_turu = 'Veri Güncelleme'

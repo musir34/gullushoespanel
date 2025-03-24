@@ -29,18 +29,6 @@ def from_json(value):
 from flask_cors import CORS
 CORS(app)
 
-# Flask-Login başlatma
-from flask_login import LoginManager
-login_manager = LoginManager()
-login_manager.init_app(app)
-login_manager.login_view = 'login_logout.login'
-
-# Kullanıcı yükleme fonksiyonu
-@login_manager.user_loader
-def load_user(user_id):
-    from models import User
-    return User.query.get(int(user_id))
-
 from siparisler import siparisler_bp
 app.secret_key = os.environ.get('SECRET_KEY', 'varsayılan_anahtar')
 
@@ -142,19 +130,15 @@ for bp in blueprints:
 def log_request():
     # Her isteği logla
     if not request.path.startswith('/static/'):
-        try:
-            from user_logs import log_user_action
-            log_user_action(
-                action=f"PAGE_VIEW: {request.endpoint}",
-                details={
-                    'path': request.path,
-                    'endpoint': request.endpoint
-                },
-                force_log=True
-            )
-        except Exception as e:
-            logger.error(f"Log kaydedilirken hata oluştu: {e}")
-            # Log kaydı başarısız olsa bile uygulama çalışmaya devam etmeli
+        from user_logs import log_user_action
+        log_user_action(
+            action=f"PAGE_VIEW: {request.endpoint}",
+            details={
+                'path': request.path,
+                'endpoint': request.endpoint
+            },
+            force_log=True
+        )
 
 @app.before_request
 def check_authentication():

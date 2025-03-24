@@ -107,19 +107,6 @@ class User(db.Model):
     status = db.Column(db.String(50), default='pending')
     totp_secret = db.Column(db.String(16))  # 16 karakterlik base32 string
     totp_confirmed = db.Column(db.Boolean, default=False)
-    
-    # Flask-Login entegrasyonu için gerekli metotlar
-    def is_authenticated(self):
-        return True
-        
-    def is_active(self):
-        return self.status == 'active'
-        
-    def is_anonymous(self):
-        return False
-        
-    def get_id(self):
-        return str(self.id)
 
 # Sipariş Modeli
 class Order(db.Model):
