@@ -1,36 +1,46 @@
 import os
-from flask import Flask, request, url_for, redirect, flash, session
-from cache_config import redis_client, CACHE_TIMES
-from werkzeug.routing import BuildError
-from flask_sqlalchemy import SQLAlchemy
-from models import db, Base
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+import json
+import logging
 from datetime import timedelta
 
+from flask import Flask, request, url_for, redirect, flash, session, current_app
+from flask_sqlalchemy import SQLAlchemy
+from flask_cors import CORS
+from werkzeug.routing import BuildError
+from sqlalchemy import create_engine, text
+from sqlalchemy.orm import sessionmaker
+
+# Flask-Login yapılandırması için
+from flask_login import LoginManager, current_user
+from models import db, Base, User  # User modelinizin doğru tanımlandığından emin olun
+
 # Logging ayarları
-import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Ana uygulama oluşturma
 app = Flask(__name__)
+app.secret_key = os.environ.get('SECRET_KEY', 'varsayılan_anahtar')
+
+# Flask-Login yapılandırması
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = "login_logout.login"  # Giriş yapmamış kullanıcıların yönlendirileceği endpoint
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
 
 # JSON filtresi ekle
-import json
 @app.template_filter('from_json')
 def from_json(value):
     try:
         return json.loads(value) if value else {}
-    except:
+    except Exception:
         return {}
 
 # Asenkron işlemleri destekle
-from flask_cors import CORS
 CORS(app)
-
-from siparisler import siparisler_bp
-app.secret_key = os.environ.get('SECRET_KEY', 'varsayılan_anahtar')
 
 # Veritabanı ayarları
 DATABASE_URI = os.environ.get('DATABASE_URL', 'postgresql+psycopg2://username:password@host:port/database_name')
@@ -53,29 +63,12 @@ app.config['Session'] = Session
 db.init_app(app)
 
 # Trendyol API servisleri
+from cache_config import redis_client, CACHE_TIMES
+from siparisler import siparisler_bp
+
+# Blueprint'lerin kaydını toplu olarak en sonda yapacağız
 from product_service import product_service_bp
 from claims_service import claims_service_bp
-# Blueprint'lerin kaydını toplu olarak en sonda yapacağız
-
-with app.app_context():
-    # Eksik sütunu ekle
-    from sqlalchemy import text
-    db.session.execute(text('ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_date TIMESTAMP'))
-
-    # Yeni tabloları oluştur
-    from models import YeniSiparis, SiparisUrun
-    db.create_all()
-
-    # ProductArchive tablosunu oluştur
-    from models import ProductArchive
-    from sqlalchemy import inspect
-    inspector = inspect(db.engine)
-    if not inspector.has_table('product_archive'):
-        ProductArchive.__table__.create(db.engine)
-
-    db.session.commit()
-
-# Blueprint modüllerini import et
 from order_service import order_service_bp
 from update_service import update_service_bp
 from archive import archive_bp
@@ -92,12 +85,27 @@ from siparis_fisi import siparis_fisi_bp
 from analysis import analysis_bp
 from stock_report import stock_report_bp
 from openai_service import openai_bp
-from siparisler import siparisler_bp
 from kar_maliyet import kar_maliyet_bp
 from user_logs import user_logs_bp, log_user_action
 
-# Webhook servisi kullanıcı isteği doğrultusunda kaldırıldı
+with app.app_context():
+    # Eksik sütunu ekle
+    db.session.execute(text('ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_date TIMESTAMP'))
 
+    # Yeni tabloları oluştur
+    from models import YeniSiparis, SiparisUrun
+    db.create_all()
+
+    # ProductArchive tablosunu oluştur
+    from models import ProductArchive
+    from sqlalchemy import inspect
+    inspector = inspect(db.engine)
+    if not inspector.has_table('product_archive'):
+        ProductArchive.__table__.create(db.engine)
+
+    db.session.commit()
+
+# Blueprint'leri toplu olarak kaydetme
 blueprints = [
     order_service_bp,
     update_service_bp,
@@ -125,11 +133,11 @@ blueprints = [
 for bp in blueprints:
     app.register_blueprint(bp)
 
-
 @app.before_request
 def log_request():
-    # Her isteği logla
+    # Her isteği logla; statik dosyalar hariç
     if not request.path.startswith('/static/'):
+        # log_user_action fonksiyonu Flask-Login ve session kontrolü yapıyor
         from user_logs import log_user_action
         log_user_action(
             action=f"PAGE_VIEW: {request.endpoint}",
@@ -154,7 +162,7 @@ def check_authentication():
     # Oturum süresini ayarla - 1 ay (30 gün)
     app.permanent_session_lifetime = timedelta(days=30)
 
-    # Eğer izin verilen rotalara istek yapılmışsa ve kullanıcı henüz giriş yapmamışsa
+    # Eğer izin verilen rotalara istek yapılmışsa ve kullanıcı henüz giriş yapmamışsa yönlendir
     if request.endpoint not in allowed_routes:
         if 'username' not in session:
             flash('Lütfen giriş yapınız.', 'danger')
@@ -179,7 +187,7 @@ def custom_url_for(endpoint, **values):
 app.jinja_env.globals['url_for'] = custom_url_for
 
 #####################################
-# BURADA APScheduler İLE İŞLERİ PLANLIYORUZ
+# APScheduler ile işlerin planlanması
 #####################################
 from apscheduler.schedulers.background import BackgroundScheduler
 
