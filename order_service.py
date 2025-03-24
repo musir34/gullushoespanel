@@ -248,23 +248,6 @@ def update_existing_order(existing_order, order_data, status):
                 original_product_barcodes.append(original_barcode)
             if line_id:
                 line_ids.append(line_id)
-        
-        # Komisyon bilgisini al (Trendyol API'den gelirse)
-        commission_amount = 0.0
-        commission_rate = 0.0
-        if 'commission' in order_data:
-            commission_amount = float(order_data.get('commission', {}).get('amount', 0.0))
-            commission_rate = float(order_data.get('commission', {}).get('rate', 0.0))
-        
-        # Eğer komisyon alanları doğrudan sipariş verisinde değilse, 
-        # line içinde her bir ürün için komisyon da olabilir
-        if commission_amount == 0 and new_lines:
-            for line in new_lines:
-                if 'commission' in line:
-                    # Her line için komisyonları topla
-                    commission_amount += float(line.get('commission', {}).get('amount', 0.0))
-                    # Oran için son lineın oranını al (genelde aynı olacaktır)
-                    commission_rate = float(line.get('commission', {}).get('rate', 0.0))
 
         # Veritabanındaki sütunları güncelle
         existing_order.status = status
@@ -279,10 +262,6 @@ def update_existing_order(existing_order, order_data, status):
 
         # Toplam adet bilgisini de tabloya kaydet
         existing_order.quantity = total_qty
-        
-        # Komisyon bilgilerini güncelle
-        existing_order.commission_amount = commission_amount 
-        existing_order.commission_rate = commission_rate
 
         logger.info(f"Güncellenen sipariş: {existing_order.order_number}")
     except Exception as e:
@@ -391,23 +370,6 @@ def combine_line_items(order_data, status):
 
     # Sipariş detaylarını oluştur
     order_details = create_order_details(order_data['lines'])
-    
-    # Komisyon bilgisini al (Trendyol API'den gelirse)
-    commission_amount = 0.0
-    commission_rate = 0.0
-    if 'commission' in order_data:
-        commission_amount = float(order_data.get('commission', {}).get('amount', 0.0))
-        commission_rate = float(order_data.get('commission', {}).get('rate', 0.0))
-    
-    # Eğer komisyon alanları doğrudan sipariş verisinde değilse, 
-    # line içinde her bir ürün için komisyon da olabilir
-    if commission_amount == 0 and order_data['lines']:
-        for line in order_data['lines']:
-            if 'commission' in line:
-                # Her line için komisyonları topla
-                commission_amount += float(line.get('commission', {}).get('amount', 0.0))
-                # Oran için son lineın oranını al (genelde aynı olacaktır)
-                commission_rate = float(line.get('commission', {}).get('rate', 0.0))
 
     combined_order = {
         'order_number': str(order_data.get('orderNumber', order_data['id'])),
@@ -445,11 +407,8 @@ def combine_line_items(order_data, status):
         'details': json.dumps(order_details, ensure_ascii=False),
         'archive_date': None,
         'archive_reason': '',
-        # Varolan alanlar
-        'quantity': total_qty,
-        # Yeni eklenen komisyon alanları
-        'commission_amount': commission_amount,
-        'commission_rate': commission_rate
+        # Yeni eklenen kolon verisi:
+        'quantity': total_qty
     }
     return combined_order
 
