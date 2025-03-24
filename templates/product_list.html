@@ -938,8 +938,9 @@
                 alert(response.message || 'Silme işlemi sırasında bir hata oluştu.');
               }
             },
-            error: function() {
-              alert('İşlem sırasında bir hata oluştu.');
+            error: function(xhr, status, error) {
+              console.error("Hata detayı:", xhr.responseText);
+              alert('İşlem sırasında bir hata oluştu: ' + error);
             }
           });
         }

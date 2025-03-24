@@ -647,6 +647,60 @@ def search_products():
                          search_mode=True)
 
 
+
+@get_products_bp.route('/api/delete-product', methods=['POST'])
+def delete_product_api():
+    """
+    API endpoint for deleting all variants of a product by model ID and color
+    """
+    try:
+        model_id = request.form.get('model_id')
+        color = request.form.get('color')
+
+        if not model_id or not color:
+            return jsonify({'success': False, 'message': 'Model ID ve renk gereklidir'})
+
+        # Bu modele ve renge ait tüm ürünleri bul
+        products = Product.query.filter_by(product_main_id=model_id, color=color).all()
+
+        if not products:
+            return jsonify({'success': False, 'message': 'Silinecek ürün bulunamadı'})
+
+        # İşlem logunu hazırla
+        log_details = {
+            'model_id': model_id,
+            'color': color,
+            'deleted_count': len(products),
+            'barcodes': [p.barcode for p in products]
+        }
+
+        # Ürünleri sil
+        for product in products:
+            db.session.delete(product)
+
+        db.session.commit()
+
+        # Kullanıcı işlemini logla
+        try:
+            from user_logs import log_user_action
+            log_user_action(
+                action=f"DELETE_PRODUCTS: {model_id} - {color}",
+                details=log_details
+            )
+        except Exception as e:
+            logger.error(f"Kullanıcı log hatası: {e}")
+
+        return jsonify({
+            'success': True, 
+            'message': f'Toplam {len(products)} ürün başarıyla silindi',
+            'deleted_count': len(products)
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Ürün silme hatası: {e}")
+        return jsonify({'success': False, 'message': f'Hata oluştu: {str(e)}'})
+
 @get_products_bp.route('/product_label')
 def product_label():
     return render_template('product_label.html')
