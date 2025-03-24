@@ -974,7 +974,7 @@
           $.ajax({
             url: '/api/bulk-delete-products', // Yeni API endpoint'i
             method: 'POST',
-            data: JSON.stringify(selectedProducts),
+            data: JSON.stringify({products: selectedProducts}),
             contentType: 'application/json',
             success: function(response) {
               if (response.success) {
