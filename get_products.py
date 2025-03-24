@@ -347,20 +347,33 @@ def check_and_prepare_image_downloads(image_urls, images_folder):
 
 
 def upsert_products(products):
-    insert_stmt = insert(Product).values(products)
-    upsert_stmt = insert_stmt.on_conflict_do_update(
-        index_elements=['barcode'],
-        set_={
-            'quantity': insert_stmt.excluded.quantity,
-            'sale_price': insert_stmt.excluded.sale_price,
-            'list_price': insert_stmt.excluded.list_price,
-            'images': insert_stmt.excluded.images,
-            'size': insert_stmt.excluded.size,
-            'color': insert_stmt.excluded.color,
-        }
-    )
-    db.session.execute(upsert_stmt)
-    db.session.commit()
+    try:
+        for product_data in products:
+            # Barkod kontrolü
+            if not product_data.get('barcode'):
+                logger.warning("Barkod eksik, ürün atlanıyor")
+                continue
+
+            # Mevcut ürünü kontrol et
+            existing_product = Product.query.filter_by(barcode=product_data['barcode']).first()
+            
+            if existing_product:
+                # Mevcut ürünü güncelle
+                for key, value in product_data.items():
+                    if hasattr(existing_product, key):
+                        setattr(existing_product, key, value)
+                db.session.add(existing_product)
+            else:
+                # Yeni ürün oluştur
+                new_product = Product(**product_data)
+                db.session.add(new_product)
+
+        db.session.commit()
+        logger.info(f"{len(products)} ürün başarıyla işlendi")
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Ürün kaydetme hatası: {str(e)}")
+        raise
 
 
 async def update_stock_levels_with_items_async(items):
