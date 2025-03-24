@@ -700,6 +700,78 @@ def delete_product_api():
         db.session.rollback()
         logger.error(f"Ürün silme hatası: {e}")
         return jsonify({'success': False, 'message': f'Hata oluştu: {str(e)}'})
+        
+@get_products_bp.route('/api/bulk-delete-products', methods=['POST'])
+def bulk_delete_products_api():
+    """
+    API endpoint for deleting multiple products at once
+    """
+    try:
+        data = request.get_json()
+        if not data or 'products' not in data or not isinstance(data['products'], list):
+            return jsonify({'success': False, 'message': 'Geçersiz veri formatı'})
+        
+        products_to_delete = data['products']
+        if not products_to_delete:
+            return jsonify({'success': False, 'message': 'Silinecek ürün belirtilmedi'})
+        
+        total_deleted = 0
+        deleted_products_log = []
+        
+        # Her bir ürün/renk kombinasyonu için silme işlemi yap
+        for product_info in products_to_delete:
+            model_id = product_info.get('model_id')
+            color = product_info.get('color')
+            
+            if not model_id or not color:
+                continue
+            
+            # Bu modele ve renge ait tüm ürünleri bul
+            products = Product.query.filter_by(product_main_id=model_id, color=color).all()
+            
+            if not products:
+                continue
+            
+            # İşlem loguna ekle
+            deleted_products_log.append({
+                'model_id': model_id,
+                'color': color,
+                'count': len(products),
+                'barcodes': [p.barcode for p in products]
+            })
+            
+            # Ürünleri sil
+            for product in products:
+                db.session.delete(product)
+            
+            total_deleted += len(products)
+        
+        # Tüm değişiklikleri kaydet
+        db.session.commit()
+        
+        # Kullanıcı işlemini logla
+        try:
+            from user_logs import log_user_action
+            log_user_action(
+                action=f"BULK_DELETE_PRODUCTS: {total_deleted} ürün",
+                details={
+                    'deleted_products': deleted_products_log,
+                    'total_count': total_deleted
+                }
+            )
+        except Exception as e:
+            logger.error(f"Kullanıcı log hatası: {e}")
+        
+        return jsonify({
+            'success': True,
+            'message': f'Toplam {total_deleted} ürün başarıyla silindi',
+            'deleted_count': total_deleted
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Toplu ürün silme hatası: {e}")
+        return jsonify({'success': False, 'message': f'Hata oluştu: {str(e)}'})
 
 @get_products_bp.route('/product_label')
 def product_label():

@@ -323,6 +323,9 @@
       opacity: 0.5;
       cursor: not-allowed;
     }
+    .product-select {
+      margin: var(--spacing-sm);
+    }
   </style>
 </head>
 <body>
@@ -362,6 +365,9 @@
         {% if search_mode %}
           {% for (model_id, color), product_group in grouped_products.items() %}
             <div class="product-card">
+              <div class="product-select">
+                <input type="checkbox" class="product-checkbox" data-model="{{ model_id }}" data-color="{{ color }}">
+              </div>
               <div class="product-image">
                 {% if product_group[0].images %}
                   <img
@@ -448,6 +454,9 @@
         {% else %}
           {% for (model_id, color), product_group in grouped_products.items() %}
             <div class="product-card">
+              <div class="product-select">
+                <input type="checkbox" class="product-checkbox" data-model="{{ model_id }}" data-color="{{ color }}">
+              </div>
               <div class="product-image">
                 {% if product_group[0].images %}
                   <img
@@ -582,6 +591,7 @@
         <p class="text-center">Sayfalama bilgisi bulunamadı.</p>
       {% endif %}
     </div>
+    <button id="bulkDelete" class="btn btn-danger">Toplu Sil</button>
     <textarea id="temp-copier" style="position:absolute; top:-9999px;"></textarea>
   </div>
 
@@ -880,7 +890,7 @@
               }
             },
             error: function() {
-              alert('İşlem sırasında bir hata oluştu.');
+              alert`İşlem sırasında bir hata oluştu.');
             }
           });
         }
@@ -933,6 +943,42 @@
             success: function(response) {
               if (response.success) {
                 alert('Ürün başarıyla silindi!');
+                location.reload();
+              } else {
+                alert(response.message || 'Silme işlemi sırasında bir hata oluştu.');
+              }
+            },
+            error: function(xhr, status, error) {
+              console.error("Hata detayı:", xhr.responseText);
+              alert('İşlem sırasında bir hata oluştu: ' + error);
+            }
+          });
+        }
+      });
+
+      // Toplu Silme İşlemi
+      $('#bulkDelete').click(function() {
+        const selectedProducts = [];
+        $('.product-checkbox:checked').each(function() {
+          const modelId = $(this).data('model');
+          const color = $(this).data('color');
+          selectedProducts.push({ model_id: modelId, color: color });
+        });
+
+        if (selectedProducts.length === 0) {
+          alert('Lütfen silinecek ürünleri seçin.');
+          return;
+        }
+
+        if (confirm('Seçilen ürünleri ve tüm varyantlarını silmek istediğinize emin misiniz? Bu işlem geri alınamaz.')) {
+          $.ajax({
+            url: '/api/bulk-delete-products', // Yeni API endpoint'i
+            method: 'POST',
+            data: JSON.stringify(selectedProducts),
+            contentType: 'application/json',
+            success: function(response) {
+              if (response.success) {
+                alert('Ürünler başarıyla silindi!');
                 location.reload();
               } else {
                 alert(response.message || 'Silme işlemi sırasında bir hata oluştu.');
