@@ -408,6 +408,13 @@
                   >
                     <i class="fas fa-archive"></i> Arşivle
                   </button>
+                  <button
+                    class="btn btn-danger btn-sm delete-product"
+                    data-model="{{ model_id }}"
+                    data-color="{{ color }}"
+                  >
+                    <i class="fas fa-trash"></i> Sil
+                  </button>
                 </div>
                 <div class="stock-update-form mt-3"></div>
                 <div class="cost-update-form mt-3"></div>
@@ -486,6 +493,13 @@
                     data-model="{{ model_id }}"
                   >
                     <i class="fas fa-archive"></i> Arşivle
+                  </button>
+                  <button
+                    class="btn btn-danger btn-sm delete-product"
+                    data-model="{{ model_id }}"
+                    data-color="{{ color }}"
+                  >
+                    <i class="fas fa-trash"></i> Sil
                   </button>
                 </div>
                 <div class="stock-update-form mt-3"></div>
@@ -593,7 +607,7 @@
             if (res.success) {
               const currentCost = res.cost_usd || 0;
               const newCost = prompt('Bu model için yeni USD maliyeti giriniz:', currentCost);
-              
+
               if (newCost !== null) {
                 $.ajax({
                   url: '/api/update-product-cost',
@@ -903,6 +917,33 @@
         $confirmation.addClass('show');
         setTimeout(() => $confirmation.removeClass('show'), 2000);
       }
+      // Ürün Silme İşlemi
+      $('#productContainer').on('click', '.delete-product', function() {
+        const modelId = $(this).data('model');
+        const color = $(this).data('color');
+        if (!modelId || !color) {
+          alert('Model kodu veya renk bilgisi bulunamadı!');
+          return;
+        }
+        if (confirm('Bu ürünü ve tüm varyantlarını silmek istediğinize emin misiniz? Bu işlem geri alınamaz.')) {
+          $.ajax({
+            url: '/api/delete-product', // API endpoint'i
+            method: 'POST',
+            data: { model_id: modelId, color: color },
+            success: function(response) {
+              if (response.success) {
+                alert('Ürün başarıyla silindi!');
+                location.reload();
+              } else {
+                alert(response.message || 'Silme işlemi sırasında bir hata oluştu.');
+              }
+            },
+            error: function() {
+              alert('İşlem sırasında bir hata oluştu.');
+            }
+          });
+        }
+      });
     });
   </script>
 </body>

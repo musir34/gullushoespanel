@@ -567,18 +567,75 @@ async def update_stocks_ajax():
         return jsonify({'success': False, 'message': 'Stok güncelleme başarısız oldu.'})
 
 
-@get_products_bp.route('/search', methods=['GET'])
+@get_products_bp.route('/delete_product_variants', methods=['POST'])
+def delete_product_variants():
+    """
+    Bir modele ve renge ait tüm varyantları sil
+    """
+    try:
+        model_id = request.form.get('model_id')
+        color = request.form.get('color')
+
+        if not model_id or not color:
+            return jsonify({'success': False, 'message': 'Model ID ve renk gereklidir'})
+
+        # Bu modele ve renge ait tüm ürünleri bul
+        products = Product.query.filter_by(product_main_id=model_id, color=color).all()
+
+        if not products:
+            return jsonify({'success': False, 'message': 'Silinecek ürün bulunamadı'})
+
+        # İşlem logunu hazırla
+        log_details = {
+            'model_id': model_id,
+            'color': color,
+            'deleted_count': len(products),
+            'barcodes': [p.barcode for p in products]
+        }
+
+        # Ürünleri sil
+        for product in products:
+            db.session.delete(product)
+
+        db.session.commit()
+
+        # Kullanıcı işlemini logla
+        try:
+            from user_logs import log_user_action
+            log_user_action(
+                action=f"DELETE_PRODUCTS: {model_id} - {color}",
+                details=log_details
+            )
+        except Exception as e:
+            logger.error(f"Kullanıcı log hatası: {e}")
+
+        return jsonify({
+            'success': True, 
+            'message': f'Toplam {len(products)} ürün başarıyla silindi',
+            'deleted_count': len(products)
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Ürün silme hatası: {e}")
+        return jsonify({'success': False, 'message': f'Hata oluştu: {str(e)}'})
+
+@get_products_bp.route('/search_products', methods=['GET'])
 def search_products():
-    query = request.args.get('query', '').strip()
-    if not query:
+    """
+    Barkod veya model numarasına göre ürün ara
+    """
+    query = request.args.get('query', '')
+    if not query or len(query.strip()) < 2:
+        flash('Lütfen en az 2 karakter içeren bir arama sorgusu girin', 'warning')
         return redirect(url_for('get_products.product_list'))
 
-    # Barkod veya model kodu ile tam eşleşme araması yap
+    # Ürünleri veritabanından çek
     products = Product.query.filter(
         db.or_(
-            Product.barcode == query,
-            Product.product_main_id == query,
-            Product.original_product_barcode == query
+            Product.barcode.ilike(f'%{query}%'),
+            Product.product_main_id.ilike(f'%{query}%'),
+            Product.title.ilike(f'%{query}%')
         )
     ).all()
 
@@ -651,7 +708,7 @@ def update_product_costs():
             errors.append(f"Barkod bulunamadı: {barcode}")
             continue
         product.cost_usd = new_cost
-        product.cost_try = new_cost * usd_rate
+        product.cost_try= new_cost * usd_rate
         product.cost_date = datetime.now()
         db.session.add(product)
         updated_count += 1
