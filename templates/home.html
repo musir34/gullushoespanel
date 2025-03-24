@@ -264,15 +264,24 @@
 
   <!-- Sağ üst köşede butonlar -->
   <div class="btn-group-top">
-      <!-- Anasayfa ve Kullanıcı Yönetimi ayrı -->
+      <!-- Anasayfa ve Arşiv ayrı -->
       <a href="{{ url_for('home.home') }}" class="btn btn-secondary">Anasayfa</a>
-      <a href="{{ url_for('approve_users') }}" class="btn btn-warning">Kullanıcı Yönetimi</a>
       <a href="{{ url_for('display_archive') }}" class="btn btn-secondary">Arşiv</a>
-      {% if session['role'] in ['admin', 'manager'] %}
-      <a href="{{ url_for('user_logs.view_logs') }}" class="btn btn-warning">
-        <i class="fas fa-history"></i> Kullanıcı Hareketleri
-      </a>
-      {% endif %}
+      
+      <!-- KULLANICI İŞLEMLERİ DROPDOWN -->
+      <div class="dropdown">
+        <button class="btn btn-warning dropdown-toggle" type="button" id="kullaniciMenu" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          Kullanıcı İşlemleri
+        </button>
+        <div class="dropdown-menu" aria-labelledby="kullaniciMenu">
+          <a class="dropdown-item" href="{{ url_for('approve_users') }}">Kullanıcı Yönetimi</a>
+          {% if session['role'] in ['admin', 'manager'] %}
+          <a class="dropdown-item" href="{{ url_for('user_logs.view_logs') }}">
+            <i class="fas fa-history"></i> Kullanıcı Hareketleri
+          </a>
+          {% endif %}
+        </div>
+      </div>
 
 
       <!-- SIPARİŞ İŞLEMLERİ DROPDOWN -->
