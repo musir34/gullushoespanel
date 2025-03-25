@@ -554,17 +554,39 @@ async def update_stocks_ajax():
     form_data = request.form
     if not form_data:
         return jsonify({'success': False, 'message': 'Güncellenecek ürün bulunamadı.'})
+    
     items_to_update = []
     for barcode, quantity in form_data.items():
         try:
-            items_to_update.append({'barcode': barcode, 'quantity': int(quantity)})
+            quantity = int(quantity)
+            items_to_update.append({'barcode': barcode, 'quantity': quantity})
+            
+            # Veritabanında ürünü güncelle
+            product = Product.query.filter_by(barcode=barcode).first()
+            if product:
+                product.quantity = quantity
+                db.session.add(product)
+            
         except ValueError:
             return jsonify({'success': False, 'message': f"Barkod {barcode} için geçersiz miktar girdiniz."})
-    result = await update_stock_levels_with_items_async(items_to_update)
-    if result:
-        return jsonify({'success': True})
-    else:
-        return jsonify({'success': False, 'message': 'Stok güncelleme başarısız oldu.'})
+    
+    try:
+        # Veritabanı değişikliklerini kaydet
+        db.session.commit()
+        
+        # API'yi güncelle
+        result = await update_stock_levels_with_items_async(items_to_update)
+        if result:
+            return jsonify({'success': True})
+        else:
+            # API güncellemesi başarısız olursa veritabanı değişikliklerini geri al
+            db.session.rollback()
+            return jsonify({'success': False, 'message': 'API güncelleme başarısız oldu.'})
+            
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Stok güncelleme hatası: {e}")
+        return jsonify({'success': False, 'message': 'Veritabanı güncellemesi başarısız oldu.'})
 
 
 @get_products_bp.route('/delete_product_variants', methods=['POST'])
