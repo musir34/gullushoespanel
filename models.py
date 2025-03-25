@@ -8,6 +8,15 @@ import uuid
 db = SQLAlchemy()
 Base = declarative_base()
 
+class ExcelUpload(db.Model):
+    __tablename__ = 'excel_uploads'
+    id = db.Column(db.Integer, primary_key=True)
+    filename = db.Column(db.String(255), nullable=False)
+    upload_time = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def __repr__(self):
+        return f"<ExcelUpload filename={self.filename}, upload_time={self.upload_time}>"
+
 # Sipariş Fişi
 class SiparisFisi(db.Model):
     __tablename__ = 'siparis_fisi'
@@ -108,7 +117,8 @@ class User(db.Model):
     totp_secret = db.Column(db.String(16))  # 16 karakterlik base32 string
     totp_confirmed = db.Column(db.Boolean, default=False)
 
-# Sipariş Modeli
+# models.py (veya sizin kullandığınız modele ekleyin)
+
 class Order(db.Model):
     __tablename__ = 'orders'
     __table_args__ = (
@@ -155,6 +165,10 @@ class Order(db.Model):
     archive_reason = db.Column(db.String)
     quantity = db.Column(db.Integer)
     delivery_date = db.Column(db.DateTime)
+    commission = db.Column(db.Float, default=0.0)
+    discount = db.Column(db.Float, default=0.0)
+
+
 
 class ProductArchive(db.Model):
     __tablename__ = 'product_archive'

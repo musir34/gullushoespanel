@@ -87,6 +87,9 @@ from stock_report import stock_report_bp
 from openai_service import openai_bp
 from kar_maliyet import kar_maliyet_bp
 from user_logs import user_logs_bp, log_user_action
+from commission_update_routes import commission_update_bp
+from kar_zarar import kar_zarar_bp
+
 
 with app.app_context():
     # Eksik sütunu ekle
@@ -127,7 +130,9 @@ blueprints = [
     product_service_bp,  # Son iki blueprint'i listenin sonunda tutuyoruz
     claims_service_bp,
     kar_maliyet_bp,
-    user_logs_bp
+    user_logs_bp,
+    commission_update_bp,
+    kar_zarar_bp
 ]
 
 for bp in blueprints:

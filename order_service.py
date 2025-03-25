@@ -42,6 +42,10 @@ def fetch_trendyol_orders_route():
 
 
 async def fetch_trendyol_orders_async():
+    """
+    Trendyol API'den siparişleri çekerek veritabanına işler.
+    Komisyon bilgisi 'commissionFee' alanından alınır.
+    """
     try:
         auth_str = f"{API_KEY}:{API_SECRET}"
         b64_auth_str = base64.b64encode(auth_str.encode()).decode('utf-8')
@@ -114,6 +118,11 @@ async def fetch_orders_page(session, url, headers, params, semaphore):
 
 
 def process_all_orders(all_orders_data):
+    """
+    Gelen Trendyol sipariş verilerini (all_orders_data) işleyerek
+    Order tablosuna ekler veya günceller.
+    Komisyon bilgisi (commissionFee) de bu aşamada kaydedilir.
+    """
     try:
         api_order_numbers = set()
         new_orders = []
@@ -121,25 +130,25 @@ def process_all_orders(all_orders_data):
         # Mevcut siparişleri al - veritabanı sorgusu sayısını azaltmak için tek sorguda al
         existing_orders = Order.query.all()
         existing_orders_dict = {order.order_number: order for order in existing_orders}
-        
+
         # Arşivdeki siparişleri kontrol et
         from models import Archive
         archived_orders = Archive.query.all()
         archived_orders_set = {order.order_number for order in archived_orders}
-        
+
         logger.info(f"API'den {len(all_orders_data)} sipariş alındı, veritabanında {len(existing_orders)} sipariş var, arşivde {len(archived_orders)} sipariş var.")
 
-        # İşlenen sipariş numaralarını takip etmek için küme kullan
+        # İşlenen sipariş numaralarını takip etmek için küme
         processed_order_numbers = set()
 
         for order_data in all_orders_data:
             order_number = str(order_data.get('orderNumber') or order_data.get('id'))
-            
+
             # Her sipariş numarasını yalnızca bir kez işle
             if order_number in processed_order_numbers:
                 logger.info(f"Sipariş {order_number} bu oturumda zaten işlendi, atlanıyor.")
                 continue
-                
+
             processed_order_numbers.add(order_number)
             api_order_numbers.add(order_number)
             order_status = order_data.get('status')
@@ -157,12 +166,12 @@ def process_all_orders(all_orders_data):
                 # Siparişi güncelle
                 update_existing_order(existing_order, order_data, order_status)
             else:
-                # Sipariş arşivde değilse ve mevcut siparişlerde yoksa yeni sipariş olarak ekle
+                # Yeni sipariş ekle
                 combined_order = combine_line_items(order_data, order_status)
                 new_order = Order(**combined_order)
                 new_orders.append(new_order)
 
-        # Her 100 yeni sipariş için bir kez commit yap - bellek kullanımını azalt
+        # Her 100 yeni sipariş için bir kez commit
         if new_orders:
             chunk_size = 100
             for i in range(0, len(new_orders), chunk_size):
@@ -189,7 +198,7 @@ def process_all_orders(all_orders_data):
             orders_to_delete_numbers = orders_to_delete_numbers - delivered_order_numbers
 
             if orders_to_delete_numbers:
-                # Kalan siparişleri sil - büyük listelerde hata olmaması için parçalara böl
+                # Kalan siparişleri sil
                 chunk_size = 500
                 orders_to_delete_list = list(orders_to_delete_numbers)
                 for i in range(0, len(orders_to_delete_list), chunk_size):
@@ -213,7 +222,7 @@ def process_all_orders(all_orders_data):
 def update_existing_order(existing_order, order_data, status):
     """
     Varolan sipariş kaydı üzerinde güncelleme yaparken
-    hem details'e hem de quantity kolonuna toplam adet bilgisini kaydediyoruz.
+    satırlardaki komisyonları da günceller.
     """
     try:
         new_lines = order_data['lines']
@@ -224,8 +233,8 @@ def update_existing_order(existing_order, order_data, status):
         original_product_barcodes = existing_order.original_product_barcode.split(', ') if existing_order.original_product_barcode else []
         line_ids = existing_order.line_id.split(', ') if existing_order.line_id else []
 
-        # Toplam adet toplanacak
         total_qty = 0
+        commission_sum = 0.0  # <-- YENİ KOD: Komisyonları toplayacağız
 
         for line in new_lines:
             q = line.get('quantity', 1)
@@ -239,6 +248,15 @@ def update_existing_order(existing_order, order_data, status):
             barcode = replace_turkish_characters(line.get('barcode', ''))
             original_barcode = line.get('barcode', '')
             line_id = str(line.get('id', ''))
+
+            # Komisyon bilgisini satırdan al
+            # Trendyol API'sinde genelde 'commissionFee' adını kullanıyor.
+            commission_fee = line.get('commissionFee', 0.0)  # <-- YENİ KOD
+            try:
+                commission_fee = float(commission_fee)
+            except:
+                commission_fee = 0.0
+            commission_sum += commission_fee
 
             if merchant_sku:
                 merchant_skus.append(merchant_sku)
@@ -260,8 +278,11 @@ def update_existing_order(existing_order, order_data, status):
         order_details = create_order_details(new_lines)
         existing_order.details = json.dumps(order_details, ensure_ascii=False)
 
-        # Toplam adet bilgisini de tabloya kaydet
+        # Toplam adet bilgisini tabloya kaydet
         existing_order.quantity = total_qty
+
+        # Komisyon bilgisini tabloya kaydet  <-- YENİ KOD
+        existing_order.commission = commission_sum
 
         logger.info(f"Güncellenen sipariş: {existing_order.order_number}")
     except Exception as e:
@@ -270,6 +291,10 @@ def update_existing_order(existing_order, order_data, status):
 
 
 def create_order_details(order_lines):
+    """
+    Satır bazında detayları JSON olarak oluşturur.
+    İsterseniz her satırın komisyonunu da tutabilirsiniz.
+    """
     details_dict = {}
     total_quantity = 0
 
@@ -283,6 +308,9 @@ def create_order_details(order_lines):
             product_code = str(line.get('productCode', ''))
             quantity = int(line.get('quantity', 1))
             amount = float(line.get('amount', 0))
+
+            # Komisyonu satırda da saklamak isterseniz:
+            commission_fee = float(line.get('commissionFee', 0.0))  # <-- YENİ KOD
 
             # Önce 'lineId' varsa onu al, yoksa 'id' alanına bak
             line_id = str(line.get('lineId', line.get('id', '')))
@@ -303,15 +331,17 @@ def create_order_details(order_lines):
                     'product_main_id': str(line.get('productId', '')),
                     'quantity': quantity,
                     'total_price': amount * quantity,
-                    'image_url': '',
-                    'line_id': line_id
+                    'line_id': line_id,
+                    # Komisyonu satır bazında da saklıyoruz  <-- YENİ KOD
+                    'commissionFee': commission_fee,
+                    'image_url': ''
                 }
             else:
                 # Aynı barkod + renk + bedende miktarı topla
                 details_dict[key]['quantity'] += quantity
                 details_dict[key]['total_price'] += amount * quantity
-
-                # line_id birden çok ise birleştirmek isterseniz:
+                details_dict[key]['commissionFee'] += commission_fee
+                # line_id vs. birleştirmek isterseniz:
                 # details_dict[key]['line_id'] += f",{line_id}"
 
         except Exception as e:
@@ -325,12 +355,10 @@ def create_order_details(order_lines):
     return list(details_dict.values())
 
 
-
-
 def replace_turkish_characters(text):
     """
-    Gelen barkod veya metinlerdeki Türkçe karakterleri başka karakterlerle değiştiren fonksiyon.
-    Sen kendi ihtiyacına göre düzenleyebilirsin.
+    Gelen barkod veya metinlerdeki Türkçe karakterleri başka karakterlerle
+    değiştiren fonksiyon. Sen kendi ihtiyacına göre düzenleyebilirsin.
     """
     if isinstance(text, str):
         replacements = str.maketrans({
@@ -350,9 +378,14 @@ def replace_turkish_characters(text):
 
 
 def combine_line_items(order_data, status):
-    # Miktar bilgisini koruyarak barkodları işle
+    """
+    Yeni sipariş oluştururken satırlardaki komisyonu toplayıp
+    'commission' sütununa yazmak için kullanılır.
+    """
     barcodes_with_quantity = []
-    total_qty = 0  # Toplam adet için
+    total_qty = 0
+    commission_sum = 0.0  # <-- YENİ KOD
+
     for line in order_data['lines']:
         barcode = line.get('barcode', '')
         quantity = line.get('quantity', 1)
@@ -362,13 +395,22 @@ def combine_line_items(order_data, status):
             quantity = 1
         total_qty += quantity
 
-        # Her miktar için barkodu tekrarla
+        # Komisyon
+        commission_fee = line.get('commissionFee', 0.0)  # <-- YENİ KOD
+        try:
+            commission_fee = float(commission_fee)
+        except:
+            commission_fee = 0.0
+
+        commission_sum += commission_fee  # <-- YENİ KOD
+
+        # Barkod listesi
         barcodes_with_quantity.extend([barcode] * quantity)
 
     original_barcodes = barcodes_with_quantity
     converted_barcodes = [replace_turkish_characters(bc) for bc in original_barcodes]
 
-    # Sipariş detaylarını oluştur
+    # Sipariş detaylarını oluştur (her satırın komisyonu da JSON'a yazılıyor)
     order_details = create_order_details(order_data['lines'])
 
     combined_order = {
@@ -407,8 +449,10 @@ def combine_line_items(order_data, status):
         'details': json.dumps(order_details, ensure_ascii=False),
         'archive_date': None,
         'archive_reason': '',
-        # Yeni eklenen kolon verisi:
-        'quantity': total_qty
+        'quantity': total_qty,
+
+        # Yeni eklenen kolonlar:
+        'commission': commission_sum  # <-- YENİ KOD: Toplam komisyon
     }
     return combined_order
 
