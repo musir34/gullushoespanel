@@ -92,7 +92,7 @@ async def fetch_trendyol_products_async():
 
 async def fetch_products_page(session, url, headers, params, semaphore):
     """
-    Belirli bir sayfadaki ürünleri çeker
+    Belirli bir sayfadaki ürünleri çeker ve veritabanında günceller
     """
     async with semaphore:
         try:
@@ -100,9 +100,33 @@ async def fetch_products_page(session, url, headers, params, semaphore):
                 if response.status != 200:
                     logger.error(f"API isteği başarısız oldu: {response.status} - {await response.text()}")
                     return []
+                    
                 data = await response.json()
                 products_data = data.get('content', [])
+                
+                # Her ürün için veritabanını güncelle
+                for product in products_data:
+                    barcode = product.get('barcode')
+                    if barcode:
+                        try:
+                            db_product = Product.query.filter_by(barcode=barcode).first()
+                            if db_product:
+                                db_product.quantity = product.get('quantity', 0)
+                                db_product.last_update_date = datetime.now()
+                                db.session.add(db_product)
+                        except Exception as e:
+                            logger.error(f"Ürün güncelleme hatası (barcode: {barcode}): {e}")
+                            continue
+                
+                try:
+                    db.session.commit()
+                    logger.info(f"{len(products_data)} ürünün stok bilgisi güncellendi")
+                except Exception as e:
+                    db.session.rollback()
+                    logger.error(f"Veritabanı commit hatası: {e}")
+                
                 return products_data
+                
         except Exception as e:
             logger.error(f"Hata: fetch_products_page - {e}")
             return []
