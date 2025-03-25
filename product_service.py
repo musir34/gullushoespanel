@@ -22,20 +22,14 @@ product_service_bp = Blueprint('product_service', __name__)
 @product_service_bp.route('/fetch-trendyol-products', methods=['POST'])
 def fetch_trendyol_products_route():
     try:
-        logger.info("Ürün güncelleme işlemi başlatıldı...")
         # Asenkron fonksiyonu çağır
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        loop.run_until_complete(fetch_trendyol_products_async())
-        loop.close()
-        
+        asyncio.run(fetch_trendyol_products_async())
         flash('Ürün kataloğu başarıyla güncellendi!', 'success')
-        logger.info("Ürün güncelleme işlemi tamamlandı")
     except Exception as e:
         logger.error(f"Hata: fetch_trendyol_products_route - {e}")
         flash('Ürün kataloğu güncellenirken bir hata oluştu.', 'danger')
 
-    return redirect(url_for('get_products.product_list'))
+    return redirect(url_for('get_products.get_products_list'))
 
 
 async def fetch_trendyol_products_async():
