@@ -12,7 +12,7 @@ from urllib.parse import urlparse
 from dotenv import load_dotenv
 from io import BytesIO
 
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, send_from_directory, send_file, current_app
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, send_from_directory, send_file
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy import func
@@ -107,7 +107,7 @@ def generate_qr():
     qr = qrcode.QRCode(version=1, error_correction=qrcode.constants.ERROR_CORRECT_L, box_size=10, border=4)
     qr.add_data(barcode)
     qr.make(fit=True)
-    qr_dir = os.path.join(current_app.root_path, 'static', 'qr_codes')
+    qr_dir = os.path.join('static', 'qr_codes')
     os.makedirs(qr_dir, exist_ok=True)
     qr_path = os.path.join(qr_dir, f"{barcode}.png")
     qr.make_image(fill_color="black", back_color="white").save(qr_path)
@@ -133,7 +133,7 @@ def render_product_list(products, pagination=None):
     grouped_products = group_products_by_model_and_color(products)
     for key in grouped_products:
         grouped_products[key] = sort_variants_by_size(grouped_products[key])
-    return render_template('product_list.html', grouped_products=grouped_products, pagination=pagination, search_mode=False)
+    return render_template('product_list.html', grouped_products=group_products, pagination=pagination, search_mode=False)
 
 
 @get_products_bp.route('/update_products', methods=['POST'])
@@ -253,7 +253,7 @@ async def save_products_to_db_async(products):
         logger.warning("Kaydedilecek ürün yok.")
         flash("Kaydedilecek ürün bulunamadı.", "warning")
         return
-    images_folder = os.path.join(current_app.root_path, 'static', 'images')
+    images_folder = os.path.join('static', 'images')
     os.makedirs(images_folder, exist_ok=True)
     image_downloads = []
     product_objects = []
@@ -554,110 +554,31 @@ async def update_stocks_ajax():
     form_data = request.form
     if not form_data:
         return jsonify({'success': False, 'message': 'Güncellenecek ürün bulunamadı.'})
-    
     items_to_update = []
     for barcode, quantity in form_data.items():
         try:
-            quantity = int(quantity)
-            items_to_update.append({'barcode': barcode, 'quantity': quantity})
-            
-            # Veritabanında ürünü güncelle
-            product = Product.query.filter_by(barcode=barcode).first()
-            if product:
-                product.quantity = quantity
-                db.session.add(product)
-            
+            items_to_update.append({'barcode': barcode, 'quantity': int(quantity)})
         except ValueError:
             return jsonify({'success': False, 'message': f"Barkod {barcode} için geçersiz miktar girdiniz."})
-    
-    try:
-        # Veritabanı değişikliklerini kaydet
-        db.session.commit()
-        
-        # API'yi güncelle
-        result = await update_stock_levels_with_items_async(items_to_update)
-        if result:
-            return jsonify({'success': True})
-        else:
-            # API güncellemesi başarısız olursa veritabanı değişikliklerini geri al
-            db.session.rollback()
-            return jsonify({'success': False, 'message': 'API güncelleme başarısız oldu.'})
-            
-    except Exception as e:
-        db.session.rollback()
-        logger.error(f"Stok güncelleme hatası: {e}")
-        return jsonify({'success': False, 'message': 'Veritabanı güncellemesi başarısız oldu.'})
+    result = await update_stock_levels_with_items_async(items_to_update)
+    if result:
+        return jsonify({'success': True})
+    else:
+        return jsonify({'success': False, 'message': 'Stok güncelleme başarısız oldu.'})
 
 
-@get_products_bp.route('/delete_product_variants', methods=['POST'])
-def delete_product_variants():
-    """
-    Bir modele ve renge ait tüm varyantları sil
-    """
-    try:
-        model_id = request.form.get('model_id')
-        color = request.form.get('color')
-
-        if not model_id or not color:
-            return jsonify({'success': False, 'message': 'Model ID ve renk gereklidir'})
-
-        # Bu modele ve renge ait tüm ürünleri bul
-        products = Product.query.filter_by(product_main_id=model_id, color=color).all()
-
-        if not products:
-            return jsonify({'success': False, 'message': 'Silinecek ürün bulunamadı'})
-
-        # İşlem logunu hazırla
-        log_details = {
-            'model_id': model_id,
-            'color': color,
-            'deleted_count': len(products),
-            'barcodes': [p.barcode for p in products]
-        }
-
-        # Ürünleri sil
-        for product in products:
-            db.session.delete(product)
-
-        db.session.commit()
-
-        # Kullanıcı işlemini logla
-        try:
-            from user_logs import log_user_action
-            log_user_action(
-                action=f"DELETE_PRODUCTS: {model_id} - {color}",
-                details=log_details
-            )
-        except Exception as e:
-            logger.error(f"Kullanıcı log hatası: {e}")
-
-        return jsonify({
-            'success': True, 
-            'message': f'Toplam {len(products)} ürün başarıyla silindi',
-            'deleted_count': len(products)
-        })
-
-    except Exception as e:
-        db.session.rollback()
-        logger.error(f"Ürün silme hatası: {e}")
-        return jsonify({'success': False, 'message': f'Hata oluştu: {str(e)}'})
-
-@get_products_bp.route('/search_products', methods=['GET'])
+@get_products_bp.route('/search', methods=['GET'])
 def search_products():
-    """
-    Barkod veya model numarasına göre ürün ara
-    """
-    query = request.args.get('query', '')
-    if not query or len(query.strip()) < 2:
-        flash('Lütfen en az 2 karakter içeren bir arama sorgusu girin', 'warning')
+    query = request.args.get('query', '').strip()
+    if not query:
         return redirect(url_for('get_products.product_list'))
 
-    # Ürünleri veritabanından çek
+    # Barkod veya model kodu ile tam eşleşme araması yap
     products = Product.query.filter(
         db.or_(
-            Product.barcode.ilike(f'%{query}%'),
-            Product.product_main_id.ilike(f'%{query}%'),
-            Product.title.ilike(f'%{query}%')
+            Product.barcode == query,
+            Product.product_main_id == query,
+            Product.original_product_barcode == query
         )
     ).all()
 
@@ -668,60 +589,6 @@ def search_products():
                          pagination=None,
                          search_mode=True)
 
-
-
-@get_products_bp.route('/api/delete-product', methods=['POST'])
-def delete_product_api():
-    """
-    API endpoint for deleting all variants of a product by model ID and color
-    """
-    try:
-        model_id = request.form.get('model_id')
-        color = request.form.get('color')
-
-        if not model_id or not color:
-            return jsonify({'success': False, 'message': 'Model ID ve renk gereklidir'})
-
-        # Bu modele ve renge ait tüm ürünleri bul
-        products = Product.query.filter_by(product_main_id=model_id, color=color).all()
-
-        if not products:
-            return jsonify({'success': False, 'message': 'Silinecek ürün bulunamadı'})
-
-        # İşlem logunu hazırla
-        log_details = {
-            'model_id': model_id,
-            'color': color,
-            'deleted_count': len(products),
-            'barcodes': [p.barcode for p in products]
-        }
-
-        # Ürünleri sil
-        for product in products:
-            db.session.delete(product)
-
-        db.session.commit()
-
-        # Kullanıcı işlemini logla
-        try:
-            from user_logs import log_user_action
-            log_user_action(
-                action=f"DELETE_PRODUCTS: {model_id} - {color}",
-                details=log_details
-            )
-        except Exception as e:
-            logger.error(f"Kullanıcı log hatası: {e}")
-
-        return jsonify({
-            'success': True, 
-            'message': f'Toplam {len(products)} ürün başarıyla silindi',
-            'deleted_count': len(products)
-        })
-
-    except Exception as e:
-        db.session.rollback()
-        logger.error(f"Ürün silme hatası: {e}")
-        return jsonify({'success': False, 'message': f'Hata oluştu: {str(e)}'})
 
 @get_products_bp.route('/product_label')
 def product_label():
@@ -784,7 +651,7 @@ def update_product_costs():
             errors.append(f"Barkod bulunamadı: {barcode}")
             continue
         product.cost_usd = new_cost
-        product.cost_try= new_cost * usd_rate
+        product.cost_try = new_cost * usd_rate
         product.cost_date = datetime.now()
         db.session.add(product)
         updated_count += 1
@@ -846,74 +713,3 @@ def update_product_cost():
         db.session.rollback()
         logger.error(f"Maliyet güncelleme hatası: {e}")
         return jsonify({'success': False, 'message': f'Bir hata oluştu: {str(e)}'})
-@get_products_bp.route('/api/bulk-delete-products', methods=['POST'])
-def bulk_delete_products():
-    """
-    Birden fazla ürünü toplu halde silmek için API endpoint'i
-    """
-    try:
-        data = request.get_json()
-        if not data or 'products' not in data:
-            return jsonify({'success': False, 'message': 'Geçersiz veri formatı'}), 400
-            
-        products_to_delete = data['products']
-        if not products_to_delete:
-            return jsonify({'success': False, 'message': 'Silinecek ürün bulunamadı'}), 400
-            
-        deleted_count = 0
-        deleted_items = []
-        
-        for product_info in products_to_delete:
-            model_id = product_info.get('model_id')
-            color = product_info.get('color')
-            
-            if not model_id or not color:
-                continue
-                
-            # Bu modele ve renge ait tüm ürünleri bul
-            products = Product.query.filter_by(product_main_id=model_id, color=color).all()
-            
-            if not products:
-                continue
-                
-            # Ürünleri sil
-            for product in products:
-                deleted_items.append({
-                    'barcode': product.barcode,
-                    'title': product.title,
-                    'size': product.size
-                })
-                db.session.delete(product)
-                deleted_count += 1
-        
-        if deleted_count > 0:
-            # İşlem logunu hazırla
-            log_details = {
-                'total_deleted': deleted_count,
-                'deleted_items': deleted_items
-            }
-            
-            db.session.commit()
-            
-            # Kullanıcı işlemini logla
-            try:
-                from user_logs import log_user_action
-                log_user_action(
-                    action=f"BULK_DELETE_PRODUCTS: {deleted_count} ürün silindi",
-                    details=log_details
-                )
-            except Exception as e:
-                logger.error(f"Kullanıcı log hatası: {e}")
-            
-            return jsonify({
-                'success': True,
-                'message': f'Toplam {deleted_count} ürün başarıyla silindi',
-                'deleted_count': deleted_count
-            })
-        else:
-            return jsonify({'success': False, 'message': 'Hiçbir ürün silinemedi'})
-            
-    except Exception as e:
-        db.session.rollback()
-        logger.error(f"Toplu ürün silme hatası: {e}")
-        return jsonify({'success': False, 'message': f'Hata oluştu: {str(e)}'})

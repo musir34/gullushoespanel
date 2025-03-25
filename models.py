@@ -211,13 +211,33 @@ class Product(db.Model):
     sale_price = db.Column(db.Float)
     list_price = db.Column(db.Float)
     currency_type = db.Column(db.String)
-    cost_usd = db.Column(db.Float, default=0.0)  # Maliyet (USD cinsinden)
-    cost_date = db.Column(db.DateTime)  # Maliyet girişi tarihi
-    cost_try = db.Column(db.Float, default=0) #tl karşılığı
+    cost_usd = db.Column(db.Float, default=0.0)   # Maliyet (USD cinsinden)
+    cost_date = db.Column(db.DateTime)           # Maliyet girişi tarihi
+    cost_try = db.Column(db.Float, default=0.0)  # TL karşılığı
 
-    def __init__(self, barcode, original_product_barcode, title, product_main_id, 
-                 quantity, images, variants, size, color, archived, locked, on_sale,
-                 reject_reason, sale_price, list_price, currency_type, cost_usd=0.0, cost_try=0.0, cost_date=None):
+    def __init__(
+        self,
+        barcode,
+        original_product_barcode,
+        title,
+        product_main_id,
+        quantity,
+        images,
+        variants,
+        size,
+        color,
+        archived,
+        locked,
+        on_sale,
+        reject_reason,
+        sale_price,
+        list_price,
+        currency_type,
+        cost_usd=0.0,
+        cost_try=0.0,
+        cost_date=None,
+        hidden=False
+    ):
         self.barcode = barcode
         self.original_product_barcode = original_product_barcode
         self.title = title
@@ -234,9 +254,11 @@ class Product(db.Model):
         self.sale_price = sale_price
         self.list_price = list_price
         self.currency_type = currency_type
-        self.cost_usd = cost_usd
+        self.cost_usd = cost_usd        # <-- cost_usd cost_usd olarak set ediliyor.
+        self.cost_try = cost_try        # <-- cost_try cost_try olarak set ediliyor.
         self.cost_date = cost_date
-        self.cost_usd = cost_try
+        self.hidden = hidden
+
 
 # Arşiv Modeli
 class Archive(db.Model):
