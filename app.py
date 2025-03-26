@@ -15,26 +15,17 @@ from flask_login import LoginManager, current_user
 from models import db, Base, User  # User modelinizin doğru tanımlandığından emin olun
 
 # Logging ayarları
-from logger_config import app_logger as logger
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Ana uygulama oluşturma
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'varsayılan_anahtar')
 
-# Flask-Login yapılandırması için
-from flask_login import LoginManager, UserMixin, current_user
-
 # Flask-Login yapılandırması
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = "login_logout.login"  # Giriş yapmamış kullanıcıların yönlendirileceği endpoint
-
-# User modelini mixin ile genişletelim
-from sqlalchemy import event
-User.is_authenticated = True
-User.is_active = True
-User.is_anonymous = False
-User.get_id = lambda self: str(self.id)
 
 @login_manager.user_loader
 def load_user(user_id):
