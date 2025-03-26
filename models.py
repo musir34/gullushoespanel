@@ -254,7 +254,7 @@ class Product(db.Model):
         self.currency_type = currency_type
         self.cost_usd = cost_usd
         self.cost_date = cost_date
-        self.cost_try = cost_try  # <- Doğrusu budur!
+        self.cost_try = cost_try
 
 
 # Arşiv Modeli
