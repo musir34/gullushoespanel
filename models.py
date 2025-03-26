@@ -8,6 +8,23 @@ import uuid
 db = SQLAlchemy()
 Base = declarative_base()
 
+class Shipment(db.Model):
+    __tablename__ = 'shipments'
+    id = db.Column(db.Integer, primary_key=True)
+    order_id = db.Column(db.Integer, db.ForeignKey('orders.id'))
+    shipping_cost = db.Column(db.Float, nullable=False)
+    shipping_provider = db.Column(db.String(100))
+    date_shipped = db.Column(db.DateTime, default=datetime.utcnow)
+
+class Expense(db.Model):
+    __tablename__ = 'expenses'
+    id = db.Column(db.Integer, primary_key=True)
+    expense_type = db.Column(db.String(100))
+    description = db.Column(db.String(255))
+    amount = db.Column(db.Float, nullable=False)
+    date_created = db.Column(db.DateTime, default=datetime.utcnow)
+
+
 class ExcelUpload(db.Model):
     __tablename__ = 'excel_uploads'
     id = db.Column(db.Integer, primary_key=True)
@@ -191,6 +208,7 @@ class ProductArchive(db.Model):
     currency_type = db.Column(db.String)
     archive_date = db.Column(db.DateTime, default=datetime.utcnow)
 
+
 class Product(db.Model):
     __tablename__ = 'products'
 
@@ -211,33 +229,13 @@ class Product(db.Model):
     sale_price = db.Column(db.Float)
     list_price = db.Column(db.Float)
     currency_type = db.Column(db.String)
-    cost_usd = db.Column(db.Float, default=0.0)   # Maliyet (USD cinsinden)
-    cost_date = db.Column(db.DateTime)           # Maliyet girişi tarihi
-    cost_try = db.Column(db.Float, default=0.0)  # TL karşılığı
+    cost_usd = db.Column(db.Float, default=0.0)  # Maliyet (USD cinsinden)
+    cost_date = db.Column(db.DateTime)  # Maliyet girişi tarihi
+    cost_try = db.Column(db.Float, default=0) #tl karşılığı
 
-    def __init__(
-        self,
-        barcode,
-        original_product_barcode,
-        title,
-        product_main_id,
-        quantity,
-        images,
-        variants,
-        size,
-        color,
-        archived,
-        locked,
-        on_sale,
-        reject_reason,
-        sale_price,
-        list_price,
-        currency_type,
-        cost_usd=0.0,
-        cost_try=0.0,
-        cost_date=None,
-        hidden=False
-    ):
+    def __init__(self, barcode, original_product_barcode, title, product_main_id, 
+                 quantity, images, variants, size, color, archived, locked, on_sale,
+                 reject_reason, sale_price, list_price, currency_type, cost_usd=0.0, cost_try=0.0, cost_date=None):
         self.barcode = barcode
         self.original_product_barcode = original_product_barcode
         self.title = title
@@ -254,10 +252,9 @@ class Product(db.Model):
         self.sale_price = sale_price
         self.list_price = list_price
         self.currency_type = currency_type
-        self.cost_usd = cost_usd        # <-- cost_usd cost_usd olarak set ediliyor.
-        self.cost_try = cost_try        # <-- cost_try cost_try olarak set ediliyor.
+        self.cost_usd = cost_usd
         self.cost_date = cost_date
-        self.hidden = hidden
+        self.cost_try = cost_try  # <- Doğrusu budur!
 
 
 # Arşiv Modeli

@@ -323,6 +323,38 @@
       opacity: 0.5;
       cursor: not-allowed;
     }
+    .multi-delete-mode .product-card {
+      position: relative;
+      border: 2px dashed transparent;
+      transition: all 0.3s;
+    }
+    .multi-delete-mode .product-card:hover {
+      border-color: #ff3f6c;
+      cursor: pointer;
+    }
+    .multi-delete-mode .product-card.selected {
+      border-color: #ff3f6c;
+      background-color: rgba(255, 63, 108, 0.1);
+    }
+    .multi-delete-mode .product-card.selected::before {
+      content: "✓";
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 25px;
+      height: 25px;
+      background-color: #ff3f6c;
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      z-index: 10;
+    }
+    .ml-2 {
+      margin-left: 0.5rem;
+    }
   </style>
 </head>
 <body>
@@ -339,11 +371,28 @@
           <i class="fas fa-sync-alt"></i> Ürünleri Güncelle
         </button>
       </form>
+
+      <!-- Yeni Stok Güncelleme Butonu -->
+      <form action="{{ url_for('get_products.update_stocks_route') }}" method="post" style="display:inline-block;">
+        <button type="submit" class="btn btn-warning mt-3 mb-4 ml-2">
+          <i class="fas fa-boxes"></i> Stokları Hızlı Güncelle
+        </button>
+      </form>
+    </div>
     </div>
     <div class="text-center">
       <a href="/product_label" class="btn btn-primary mb-4">
         <i class="fas fa-barcode"></i> Barkod Sayfasına Git
       </a>
+      <button id="startMultiDelete" class="btn btn-danger mb-4 ml-2">
+        <i class="fas fa-trash"></i> Toplu Silme Modu
+      </button>
+      <button id="executeMultiDelete" class="btn btn-warning mb-4 ml-2" style="display:none;">
+        <i class="fas fa-check"></i> Seçili Ürünleri Sil (<span id="selectedCount">0</span>)
+      </button>
+      <button id="cancelMultiDelete" class="btn btn-secondary mb-4 ml-2" style="display:none;">
+        <i class="fas fa-times"></i> İptal
+      </button>
     </div>
     <form action="{{ url_for('get_products.search_products') }}" method="GET" class="search-form">
       <input
@@ -407,6 +456,13 @@
                     data-model="{{ model_id }}"
                   >
                     <i class="fas fa-archive"></i> Arşivle
+                  </button>
+                  <button
+                    class="btn btn-danger btn-sm delete-product"
+                    data-model="{{ model_id }}"
+                    data-color="{{ color }}"
+                  >
+                    <i class="fas fa-trash"></i> Sil
                   </button>
                 </div>
                 <div class="stock-update-form mt-3"></div>
@@ -486,6 +542,13 @@
                     data-model="{{ model_id }}"
                   >
                     <i class="fas fa-archive"></i> Arşivle
+                  </button>
+                  <button
+                    class="btn btn-danger btn-sm delete-product"
+                    data-model="{{ model_id }}"
+                    data-color="{{ color }}"
+                  >
+                    <i class="fas fa-trash"></i> Sil
                   </button>
                 </div>
                 <div class="stock-update-form mt-3"></div>
@@ -577,6 +640,116 @@
   <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
   <script>
     $(document).ready(function () {
+      // Toplu Silme Modu Değişkenleri
+      let isMultiDeleteMode = false;
+      let selectedProducts = [];
+      
+      // Toplu Silme Modunu Başlat
+      $('#startMultiDelete').click(function() {
+        isMultiDeleteMode = true;
+        selectedProducts = [];
+        updateSelectedCount();
+        
+        // UI'ı güncelle
+        $('#productContainer').addClass('multi-delete-mode');
+        $('#startMultiDelete').hide();
+        $('#executeMultiDelete, #cancelMultiDelete').show();
+        
+        // Normal butonları devre dışı bırak
+        $('.product-card .actions button').prop('disabled', true);
+      });
+      
+      // Toplu Silme İptal
+      $('#cancelMultiDelete').click(function() {
+        exitMultiDeleteMode();
+      });
+      
+      // Toplu Silme Modundan Çık
+      function exitMultiDeleteMode() {
+        isMultiDeleteMode = false;
+        selectedProducts = [];
+        
+        // UI'ı güncelle
+        $('#productContainer').removeClass('multi-delete-mode');
+        $('.product-card').removeClass('selected');
+        $('#executeMultiDelete, #cancelMultiDelete').hide();
+        $('#startMultiDelete').show();
+        
+        // Normal butonları etkinleştir
+        $('.product-card .actions button').prop('disabled', false);
+      }
+      
+      // Seçili Ürün Sayısını Güncelle
+      function updateSelectedCount() {
+        $('#selectedCount').text(selectedProducts.length);
+      }
+      
+      // Ürün Kartı Tıklama (Seçme/Seçimi Kaldırma)
+      $('#productContainer').on('click', '.product-card', function(e) {
+        if (!isMultiDeleteMode) return;
+        
+        // Yalnızca kart tıklaması işlensin, düğmeler ve formlar göz ardı edilsin
+        if ($(e.target).closest('.actions').length || 
+            $(e.target).closest('.stock-update-form').length || 
+            $(e.target).closest('.cost-update-form').length || 
+            $(e.target).closest('.variant-list').length) {
+          return;
+        }
+        
+        const $card = $(this);
+        const modelId = $card.find('[data-model]').data('model');
+        const color = $card.find('[data-color]').data('color');
+        
+        if (!modelId || !color) return;
+        
+        const productKey = `${modelId}-${color}`;
+        const productIndex = selectedProducts.findIndex(p => p.key === productKey);
+        
+        if (productIndex === -1) {
+          // Ürünü ekle
+          selectedProducts.push({
+            key: productKey,
+            model_id: modelId,
+            color: color
+          });
+          $card.addClass('selected');
+        } else {
+          // Ürünü çıkar
+          selectedProducts.splice(productIndex, 1);
+          $card.removeClass('selected');
+        }
+        
+        updateSelectedCount();
+      });
+      
+      // Toplu Silme İşlemini Gerçekleştir
+      $('#executeMultiDelete').click(function() {
+        if (selectedProducts.length === 0) {
+          alert('Lütfen silmek için en az bir ürün seçin.');
+          return;
+        }
+        
+        if (confirm(`${selectedProducts.length} ürünü silmek istediğinize emin misiniz? Bu işlem geri alınamaz.`)) {
+          $.ajax({
+            url: '/api/bulk-delete-products',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ products: selectedProducts }),
+            success: function(response) {
+              if (response.success) {
+                alert(`${response.deleted_count} ürün başarıyla silindi!`);
+                location.reload();
+              } else {
+                alert('Silme işlemi sırasında bir hata oluştu: ' + (response.message || ''));
+              }
+            },
+            error: function(xhr) {
+              console.error("Hata detayı:", xhr.responseText);
+              alert('Silme işlemi sırasında bir hata oluştu.');
+            }
+          });
+        }
+      });
       // Model Bazlı Maliyet Güncelleme
       $('#productContainer').on('click', '.update-model-cost', function() {
         const modelId = $(this).data('model');
@@ -593,7 +766,7 @@
             if (res.success) {
               const currentCost = res.cost_usd || 0;
               const newCost = prompt('Bu model için yeni USD maliyeti giriniz:', currentCost);
-              
+
               if (newCost !== null) {
                 $.ajax({
                   url: '/api/update-product-cost',
@@ -903,6 +1076,34 @@
         $confirmation.addClass('show');
         setTimeout(() => $confirmation.removeClass('show'), 2000);
       }
+      // Ürün Silme İşlemi
+      $('#productContainer').on('click', '.delete-product', function() {
+        const modelId = $(this).data('model');
+        const color = $(this).data('color');
+        if (!modelId || !color) {
+          alert('Model kodu veya renk bilgisi bulunamadı!');
+          return;
+        }
+        if (confirm('Bu ürünü ve tüm varyantlarını silmek istediğinize emin misiniz? Bu işlem geri alınamaz.')) {
+          $.ajax({
+            url: '/api/delete-product', // API endpoint'i
+            method: 'POST',
+            data: { model_id: modelId, color: color },
+            success: function(response) {
+              if (response.success) {
+                alert('Ürün başarıyla silindi!');
+                location.reload();
+              } else {
+                alert(response.message || 'Silme işlemi sırasında bir hata oluştu.');
+              }
+            },
+            error: function(xhr, status, error) {
+              console.error("Hata detayı:", xhr.responseText);
+              alert('İşlem sırasında bir hata oluştu: ' + error);
+            }
+          });
+        }
+      });
     });
   </script>
 </body>

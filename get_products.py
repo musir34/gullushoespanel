@@ -12,7 +12,7 @@ from urllib.parse import urlparse
 from dotenv import load_dotenv
 from io import BytesIO
 
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, send_from_directory, send_file
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, send_from_directory, send_file, current_app
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy import func
@@ -107,7 +107,7 @@ def generate_qr():
     qr = qrcode.QRCode(version=1, error_correction=qrcode.constants.ERROR_CORRECT_L, box_size=10, border=4)
     qr.add_data(barcode)
     qr.make(fit=True)
-    qr_dir = os.path.join('static', 'qr_codes')
+    qr_dir = os.path.join(current_app.root_path, 'static', 'qr_codes')
     os.makedirs(qr_dir, exist_ok=True)
     qr_path = os.path.join(qr_dir, f"{barcode}.png")
     qr.make_image(fill_color="black", back_color="white").save(qr_path)
@@ -133,7 +133,7 @@ def render_product_list(products, pagination=None):
     grouped_products = group_products_by_model_and_color(products)
     for key in grouped_products:
         grouped_products[key] = sort_variants_by_size(grouped_products[key])
-    return render_template('product_list.html', grouped_products=group_products, pagination=pagination, search_mode=False)
+    return render_template('product_list.html', grouped_products=grouped_products, pagination=pagination, search_mode=False)
 
 
 @get_products_bp.route('/update_products', methods=['POST'])
@@ -141,10 +141,13 @@ async def update_products_route():
     try:
         logger.debug("update_products_route fonksiyonu çağrıldı.")
         products = await fetch_all_products_async()
+
         if not isinstance(products, list):
             logger.error(f"Beklenmeyen veri türü: {type(products)} - İçerik: {products}")
             raise ValueError("Beklenen liste değil.")
+
         logger.debug(f"Çekilen ürün sayısı: {len(products)}")
+
         if products:
             logger.debug("Ürünler veritabanına kaydediliyor...")
             await save_products_to_db_async(products)
@@ -153,10 +156,131 @@ async def update_products_route():
         else:
             logger.warning("Ürünler bulunamadı veya güncelleme sırasında bir hata oluştu.")
             flash('Ürünler bulunamadı veya güncelleme sırasında bir hata oluştu.', 'danger')
+
     except Exception as e:
         logger.error(f"update_products_route hata: {e}")
         flash('Ürünler güncellenirken bir hata oluştu.', 'danger')
+
     return redirect(url_for('get_products.product_list'))
+
+
+@get_products_bp.route('/update_stocks_route', methods=['POST'])
+async def update_stocks_route():
+    try:
+        trendyol_products = await fetch_all_products_async()
+
+        if not trendyol_products:
+            flash('Trendyol\'dan ürünler çekilemedi.', 'danger')
+            return redirect(url_for('get_products.product_list'))
+
+        barcode_quantity_map = {
+            p['barcode']: p['quantity'] for p in trendyol_products if 'barcode' in p and 'quantity' in p
+        }
+
+        local_products = Product.query.filter(Product.barcode.in_(barcode_quantity_map.keys())).all()
+
+        for product in local_products:
+            if product.barcode in barcode_quantity_map:
+                product.quantity = barcode_quantity_map[product.barcode]
+                db.session.add(product)
+
+        db.session.commit()
+        flash('Stoklar başarıyla Trendyol\'dan çekilip güncellendi.', 'success')
+        logger.info('Stoklar Trendyol\'dan başarıyla güncellendi.')
+
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"update_stocks_route hata: {e}")
+        flash('Stok güncelleme sırasında hata oluştu.', 'danger')
+
+    return redirect(url_for('get_products.product_list'))
+
+
+
+
+
+
+
+
+
+async def save_products_to_db_async(products):
+    products = [p for p in products if isinstance(p, dict)]
+    archived_barcodes = set(x.original_product_barcode for x in ProductArchive.query.all())
+
+    images_folder = os.path.join(current_app.root_path, 'static', 'images')
+    os.makedirs(images_folder, exist_ok=True)
+
+    image_downloads = []
+    product_objects = []
+    seen_barcodes = set()
+
+    for product_data in products:
+        original_barcode = product_data.get('barcode', '').strip()
+
+        if not original_barcode or original_barcode in seen_barcodes or original_barcode in archived_barcodes:
+            continue
+
+        seen_barcodes.add(original_barcode)
+
+        image_urls = [img.get('url', '') for img in product_data.get('images', []) if isinstance(img, dict)]
+        image_url = image_urls[0] if image_urls else ''
+        if image_url:
+            parsed_url = urlparse(image_url)
+            image_extension = os.path.splitext(parsed_url.path)[1] or '.jpg'
+            image_filename = f"{original_barcode}{image_extension.lower()}"
+            image_path = os.path.join(images_folder, image_filename)
+            image_downloads.append((image_url, image_path))
+            images_path_db = f"/static/images/{image_filename}"
+        else:
+            images_path_db = ''
+
+        size = next((attr.get('attributeValue', 'N/A') for attr in product_data.get('attributes', []) if attr.get('attributeName') == 'Beden'), 'N/A')
+        color = next((attr.get('attributeValue', 'N/A') for attr in product_data.get('attributes', []) if attr.get('attributeName') == 'Renk'), 'N/A')
+
+        reject_reason_str = '; '.join([r.get('reason', 'N/A') for r in product_data.get('rejectReasonDetails', [])])
+
+        product_objects.append({
+            "barcode": original_barcode,
+            "original_product_barcode": original_barcode,
+            "title": product_data.get('title', 'N/A'),
+            "product_main_id": product_data.get('productMainId', 'N/A'),
+            "quantity": int(product_data.get('quantity', 0)),
+            "images": images_path_db,
+            "variants": json.dumps(product_data.get('variants', [])),
+            "size": size,
+            "color": color,
+            "archived": product_data.get('archived', False),
+            "locked": product_data.get('locked', False),
+            "on_sale": product_data.get('onSale', False),
+            "reject_reason": reject_reason_str,
+            "sale_price": float(product_data.get('salePrice', 0)),
+            "list_price": float(product_data.get('listPrice', 0)),
+            "currency_type": product_data.get('currencyType', 'TRY'),
+        })
+
+    batch_size = 500
+    for i in range(0, len(product_objects), batch_size):
+        batch = product_objects[i:i + batch_size]
+        insert_stmt = insert(Product).values(batch)
+        upsert_stmt = insert_stmt.on_conflict_do_update(
+            index_elements=['barcode'],
+            set_={
+                'quantity': insert_stmt.excluded.quantity,
+                'sale_price': insert_stmt.excluded.sale_price,
+                'list_price': insert_stmt.excluded.list_price,
+                'images': insert_stmt.excluded.images,
+                'size': insert_stmt.excluded.size,
+                'color': insert_stmt.excluded.color,
+            }
+        )
+        db.session.execute(upsert_stmt)
+    db.session.commit()
+
+    flash("Ürünler başarıyla veritabanına kaydedildi.", "success")
+
+    image_downloads = check_and_prepare_image_downloads(image_downloads, images_folder)
+    if image_downloads:
+        threading.Thread(target=background_download_images, args=(image_downloads,)).start()
 
 
 async def fetch_all_products_async():
@@ -245,69 +369,7 @@ def background_download_images(image_downloads):
     asyncio.run(download_images_async(image_downloads))
 
 
-async def save_products_to_db_async(products):
-    products = [p for p in products if isinstance(p, dict)]
-    archived_barcodes = set(x.original_product_barcode for x in ProductArchive.query.all())
-    products = [p for p in products if p.get('barcode') not in archived_barcodes]
-    if not products:
-        logger.warning("Kaydedilecek ürün yok.")
-        flash("Kaydedilecek ürün bulunamadı.", "warning")
-        return
-    images_folder = os.path.join('static', 'images')
-    os.makedirs(images_folder, exist_ok=True)
-    image_downloads = []
-    product_objects = []
-    for index, product_data in enumerate(products):
-        try:
-            quantity = int(product_data.get('quantity', 0))
-            original_barcode = product_data.get('barcode', 'N/A')
-            if not original_barcode:
-                logger.warning(f"Barkod eksik, ürün atlanıyor: {product_data}")
-                continue
-            image_urls = [img.get('url', '') for img in product_data.get('images', []) if isinstance(img, dict)]
-            image_url = image_urls[0] if image_urls else ''
-            if image_url:
-                parsed_url = urlparse(image_url)
-                image_extension = os.path.splitext(parsed_url.path)[1]
-                if not image_extension:
-                    image_extension = '.jpg'
-                image_extension = image_extension.lower()
-                image_filename = f"{original_barcode}{image_extension}"
-                image_path = os.path.join(images_folder, image_filename)
-                image_downloads.append((image_url, image_path))
-                product_data['images'] = f"/static/images/{image_filename}"
-            size = next((attr.get('attributeValue', 'N/A') for attr in product_data.get('attributes', []) if attr.get('attributeName') == 'Beden'), 'N/A')
-            color = next((attr.get('attributeValue', 'N/A') for attr in product_data.get('attributes', []) if attr.get('attributeName') == 'Renk'), 'N/A')
-            reject_reason = product_data.get('rejectReasonDetails', [])
-            reject_reason_str = '; '.join([r.get('reason', 'N/A') for r in reject_reason])
-            product = {
-                "barcode": original_barcode,
-                "original_product_barcode": original_barcode,
-                "title": product_data.get('title', 'N/A'),
-                "product_main_id": product_data.get('productMainId', 'N/A'),
-                "quantity": quantity,
-                "images": product_data.get('images', ''),
-                "variants": json.dumps(product_data.get('variants', [])),
-                "size": size,
-                "color": color,
-                "archived": product_data.get('archived', False),
-                "locked": product_data.get('locked', False),
-                "on_sale": product_data.get('onSale', False),
-                "reject_reason": reject_reason_str,
-                "sale_price": float(product_data.get('salePrice', 0)),
-                "list_price": float(product_data.get('listPrice', 0)),
-                "currency_type": product_data.get('currencyType', 'TRY'),
-            }
-            product_objects.append(product)
-        except Exception as e:
-            logger.error(f"Ürün işlenirken hata (index {index}): {e}")
-            continue
-    upsert_products(product_objects)
-    flash("Ürünler başarıyla veritabanına kaydedildi.", "success")
-    image_downloads = check_and_prepare_image_downloads(image_downloads, images_folder)
-    if image_downloads:
-        logger.info("Resim indirme işlemleri arka planda başlatılıyor...")
-        threading.Thread(target=background_download_images, args=(image_downloads,)).start()
+
 
 
 def check_and_prepare_image_downloads(image_urls, images_folder):
@@ -567,18 +629,75 @@ async def update_stocks_ajax():
         return jsonify({'success': False, 'message': 'Stok güncelleme başarısız oldu.'})
 
 
-@get_products_bp.route('/search', methods=['GET'])
+@get_products_bp.route('/delete_product_variants', methods=['POST'])
+def delete_product_variants():
+    """
+    Bir modele ve renge ait tüm varyantları sil
+    """
+    try:
+        model_id = request.form.get('model_id')
+        color = request.form.get('color')
+
+        if not model_id or not color:
+            return jsonify({'success': False, 'message': 'Model ID ve renk gereklidir'})
+
+        # Bu modele ve renge ait tüm ürünleri bul
+        products = Product.query.filter_by(product_main_id=model_id, color=color).all()
+
+        if not products:
+            return jsonify({'success': False, 'message': 'Silinecek ürün bulunamadı'})
+
+        # İşlem logunu hazırla
+        log_details = {
+            'model_id': model_id,
+            'color': color,
+            'deleted_count': len(products),
+            'barcodes': [p.barcode for p in products]
+        }
+
+        # Ürünleri sil
+        for product in products:
+            db.session.delete(product)
+
+        db.session.commit()
+
+        # Kullanıcı işlemini logla
+        try:
+            from user_logs import log_user_action
+            log_user_action(
+                action=f"DELETE_PRODUCTS: {model_id} - {color}",
+                details=log_details
+            )
+        except Exception as e:
+            logger.error(f"Kullanıcı log hatası: {e}")
+
+        return jsonify({
+            'success': True, 
+            'message': f'Toplam {len(products)} ürün başarıyla silindi',
+            'deleted_count': len(products)
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Ürün silme hatası: {e}")
+        return jsonify({'success': False, 'message': f'Hata oluştu: {str(e)}'})
+
+@get_products_bp.route('/search_products', methods=['GET'])
 def search_products():
-    query = request.args.get('query', '').strip()
-    if not query:
+    """
+    Barkod veya model numarasına göre ürün ara
+    """
+    query = request.args.get('query', '')
+    if not query or len(query.strip()) < 2:
+        flash('Lütfen en az 2 karakter içeren bir arama sorgusu girin', 'warning')
         return redirect(url_for('get_products.product_list'))
 
-    # Barkod veya model kodu ile tam eşleşme araması yap
+    # Ürünleri veritabanından çek
     products = Product.query.filter(
         db.or_(
-            Product.barcode == query,
-            Product.product_main_id == query,
-            Product.original_product_barcode == query
+            Product.barcode.ilike(f'%{query}%'),
+            Product.product_main_id.ilike(f'%{query}%'),
+            Product.title.ilike(f'%{query}%')
         )
     ).all()
 
@@ -589,6 +708,60 @@ def search_products():
                          pagination=None,
                          search_mode=True)
 
+
+
+@get_products_bp.route('/api/delete-product', methods=['POST'])
+def delete_product_api():
+    """
+    API endpoint for deleting all variants of a product by model ID and color
+    """
+    try:
+        model_id = request.form.get('model_id')
+        color = request.form.get('color')
+
+        if not model_id or not color:
+            return jsonify({'success': False, 'message': 'Model ID ve renk gereklidir'})
+
+        # Bu modele ve renge ait tüm ürünleri bul
+        products = Product.query.filter_by(product_main_id=model_id, color=color).all()
+
+        if not products:
+            return jsonify({'success': False, 'message': 'Silinecek ürün bulunamadı'})
+
+        # İşlem logunu hazırla
+        log_details = {
+            'model_id': model_id,
+            'color': color,
+            'deleted_count': len(products),
+            'barcodes': [p.barcode for p in products]
+        }
+
+        # Ürünleri sil
+        for product in products:
+            db.session.delete(product)
+
+        db.session.commit()
+
+        # Kullanıcı işlemini logla
+        try:
+            from user_logs import log_user_action
+            log_user_action(
+                action=f"DELETE_PRODUCTS: {model_id} - {color}",
+                details=log_details
+            )
+        except Exception as e:
+            logger.error(f"Kullanıcı log hatası: {e}")
+
+        return jsonify({
+            'success': True, 
+            'message': f'Toplam {len(products)} ürün başarıyla silindi',
+            'deleted_count': len(products)
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Ürün silme hatası: {e}")
+        return jsonify({'success': False, 'message': f'Hata oluştu: {str(e)}'})
 
 @get_products_bp.route('/product_label')
 def product_label():
@@ -651,7 +824,7 @@ def update_product_costs():
             errors.append(f"Barkod bulunamadı: {barcode}")
             continue
         product.cost_usd = new_cost
-        product.cost_try = new_cost * usd_rate
+        product.cost_try= new_cost * usd_rate
         product.cost_date = datetime.now()
         db.session.add(product)
         updated_count += 1
@@ -713,3 +886,74 @@ def update_product_cost():
         db.session.rollback()
         logger.error(f"Maliyet güncelleme hatası: {e}")
         return jsonify({'success': False, 'message': f'Bir hata oluştu: {str(e)}'})
+@get_products_bp.route('/api/bulk-delete-products', methods=['POST'])
+def bulk_delete_products():
+    """
+    Birden fazla ürünü toplu halde silmek için API endpoint'i
+    """
+    try:
+        data = request.get_json()
+        if not data or 'products' not in data:
+            return jsonify({'success': False, 'message': 'Geçersiz veri formatı'}), 400
+            
+        products_to_delete = data['products']
+        if not products_to_delete:
+            return jsonify({'success': False, 'message': 'Silinecek ürün bulunamadı'}), 400
+            
+        deleted_count = 0
+        deleted_items = []
+        
+        for product_info in products_to_delete:
+            model_id = product_info.get('model_id')
+            color = product_info.get('color')
+            
+            if not model_id or not color:
+                continue
+                
+            # Bu modele ve renge ait tüm ürünleri bul
+            products = Product.query.filter_by(product_main_id=model_id, color=color).all()
+            
+            if not products:
+                continue
+                
+            # Ürünleri sil
+            for product in products:
+                deleted_items.append({
+                    'barcode': product.barcode,
+                    'title': product.title,
+                    'size': product.size
+                })
+                db.session.delete(product)
+                deleted_count += 1
+        
+        if deleted_count > 0:
+            # İşlem logunu hazırla
+            log_details = {
+                'total_deleted': deleted_count,
+                'deleted_items': deleted_items
+            }
+            
+            db.session.commit()
+            
+            # Kullanıcı işlemini logla
+            try:
+                from user_logs import log_user_action
+                log_user_action(
+                    action=f"BULK_DELETE_PRODUCTS: {deleted_count} ürün silindi",
+                    details=log_details
+                )
+            except Exception as e:
+                logger.error(f"Kullanıcı log hatası: {e}")
+            
+            return jsonify({
+                'success': True,
+                'message': f'Toplam {deleted_count} ürün başarıyla silindi',
+                'deleted_count': deleted_count
+            })
+        else:
+            return jsonify({'success': False, 'message': 'Hiçbir ürün silinemedi'})
+            
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Toplu ürün silme hatası: {e}")
+        return jsonify({'success': False, 'message': f'Hata oluştu: {str(e)}'})
