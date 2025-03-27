@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Kâr-Zarar Analizi</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/profit.css') }}">
+</head>
+<body>
+<div class="container">
+    <h2>Kâr-Zarar Analizi</h2>
+
+    <form method="POST" class="form-container">
+        <div class="form-group">
+            <label>Başlangıç Tarihi:</label>
+            <input type="date" name="start_date" required>
+        </div>
+        <div class="form-group">
+            <label>Bitiş Tarihi:</label>
+            <input type="date" name="end_date" required>
+        </div>
+        <div class="form-group">
+            <label>Paketleme Maliyeti (₺):</label>
+            <input type="number" step="0.01" name="package_cost" required>
+        </div>
+        <div class="form-group">
+            <label>İşçilik Maliyeti (₺):</label>
+            <input type="number" step="0.01" name="employee_cost" required>
+        </div>
+        <div class="form-group">
+            <label>Kargo Maliyeti (₺):</label>
+            <input type="number" step="0.01" name="shipping_cost" required>
+        </div>
+        <button type="submit" class="btn">Analizi Başlat</button>
+    </form>
+
+    {% if analysis %}
+    <table>
+        <thead>
+            <tr>
+                <th>Sipariş ID</th>
+                <th>Ürün Adı</th>
+                <th>Net Gelir (₺)</th>
+                <th>Toplam Gider (₺)</th>
+                <th>Kâr/Zarar (₺)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in analysis %}
+            <tr class="{{ 'profit' if item.profit >= 0 else 'loss' }}">
+                <td>{{ item.order_id }}</td>
+                <td>{{ item.product }}</td>
+                <td>{{ "%.2f"|format(item.net_income) }}</td>
+                <td>{{ "%.2f"|format(item.total_expenses) }}</td>
+                <td>{{ "%.2f"|format(item.profit) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="summary-card">
+        <h3>Toplam Kâr: {{ "%.2f"|format(total_profit) }} ₺</h3>
+        <h3>Ortalama Kâr/Sipariş: {{ "%.2f"|format(avg_profit) }} ₺</h3>
+    </div>
+    {% endif %}
+</div>
+</body>
+</html>

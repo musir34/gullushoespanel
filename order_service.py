@@ -127,7 +127,7 @@ def process_all_orders(all_orders_data):
         api_order_numbers = set()
         new_orders = []
 
-        # Mevcut siparişleri al - veritabanı sorgusu sayısını azaltmak için tek sorguda al
+        # Mevcut siparişleri tek seferde çekip bir dictionary'ye atıyoruz
         existing_orders = Order.query.all()
         existing_orders_dict = {order.order_number: order for order in existing_orders}
 
@@ -138,32 +138,32 @@ def process_all_orders(all_orders_data):
 
         logger.info(f"API'den {len(all_orders_data)} sipariş alındı, veritabanında {len(existing_orders)} sipariş var, arşivde {len(archived_orders)} sipariş var.")
 
-        # İşlenen sipariş numaralarını takip etmek için küme
+        # Aynı sipariş numarasını birden fazla kez işlememek için
         processed_order_numbers = set()
 
         for order_data in all_orders_data:
             order_number = str(order_data.get('orderNumber') or order_data.get('id'))
 
-            # Her sipariş numarasını yalnızca bir kez işle
+            # Her sipariş numarasını sadece bir kez işle
             if order_number in processed_order_numbers:
                 logger.info(f"Sipariş {order_number} bu oturumda zaten işlendi, atlanıyor.")
                 continue
 
             processed_order_numbers.add(order_number)
             api_order_numbers.add(order_number)
-            order_status = order_data.get('status')
 
             # Eğer sipariş arşivdeyse, işleme alma
             if order_number in archived_orders_set:
                 logger.info(f"Sipariş {order_number} arşivde bulunduğundan işleme alınmadı.")
                 continue
 
+            # Siparişin status alanı
+            order_status = order_data.get('status')
+
+            # Var olan bir sipariş mi?
             if order_number in existing_orders_dict:
                 existing_order = existing_orders_dict[order_number]
-                if existing_order.status == 'Delivered':
-                    # 'Delivered' siparişleri güncellemiyoruz
-                    continue
-                # Siparişi güncelle
+                # Mevcut siparişi güncelle
                 update_existing_order(existing_order, order_data, order_status)
             else:
                 # Yeni sipariş ekle
@@ -171,7 +171,7 @@ def process_all_orders(all_orders_data):
                 new_order = Order(**combined_order)
                 new_orders.append(new_order)
 
-        # Her 100 yeni sipariş için bir kez commit
+        # Toplu olarak yeni siparişleri kaydedelim
         if new_orders:
             chunk_size = 100
             for i in range(0, len(new_orders), chunk_size):
@@ -180,25 +180,23 @@ def process_all_orders(all_orders_data):
                 db.session.commit()
             logger.info(f"Toplam yeni eklenen sipariş sayısı: {len(new_orders)}")
         else:
-            # Güncelleme yaptıysak commit et
+            # Sadece güncellemeler olduysa
             db.session.commit()
 
-        # Veritabanında olmayan siparişleri sil, ancak 'Delivered' siparişleri silme
+        # Veritabanında var olup, API'de artık olmayan siparişleri silelim (Delivered hariç)
         existing_order_numbers = set(existing_orders_dict.keys())
         orders_to_delete_numbers = existing_order_numbers - api_order_numbers
 
         if orders_to_delete_numbers:
-            # 'Delivered' siparişleri silineceklerden çıkar
+            # Delivered olan siparişleri silineceklerden çıkar
             delivered_orders = Order.query.filter(
                 Order.order_number.in_(orders_to_delete_numbers),
                 Order.status == 'Delivered'
             ).all()
             delivered_order_numbers = {order.order_number for order in delivered_orders}
-            # Silinecek sipariş numaralarını güncelle
             orders_to_delete_numbers = orders_to_delete_numbers - delivered_order_numbers
 
             if orders_to_delete_numbers:
-                # Kalan siparişleri sil
                 chunk_size = 500
                 orders_to_delete_list = list(orders_to_delete_numbers)
                 for i in range(0, len(orders_to_delete_list), chunk_size):
@@ -219,22 +217,44 @@ def process_all_orders(all_orders_data):
         traceback.print_exc()
 
 
-def update_existing_order(existing_order, order_data, status):
+def update_existing_order(existing_order, order_data, new_status):
     """
-    Varolan sipariş kaydı üzerinde güncelleme yaparken
-    satırlardaki komisyonları da günceller.
+    Mevcut siparişi güncellerken:
+      - Eğer sipariş zaten Delivered ise hiçbir şey yapma (return).
+      - Eğer API'den gelen new_status Delivered ise sadece status'ü "Delivered" yap.
+      - Diğer statülerde (Created, Picking, Invoiced, Shipped) barkod/komisyon vb. sıfırla ve yeniden ekle.
     """
     try:
-        new_lines = order_data['lines']
+        # Eğer zaten delivered ise dokunma
+        if existing_order.status == 'Delivered':
+            logger.info(f"Zaten 'Delivered' durumda olan sipariş: {existing_order.order_number}, güncellenmedi.")
+            return
 
-        # Daha önce kaydedilmiş verileri liste olarak çek
-        merchant_skus = existing_order.merchant_sku.split(', ') if existing_order.merchant_sku else []
-        product_barcodes = existing_order.product_barcode.split(', ') if existing_order.product_barcode else []
-        original_product_barcodes = existing_order.original_product_barcode.split(', ') if existing_order.original_product_barcode else []
-        line_ids = existing_order.line_id.split(', ') if existing_order.line_id else []
+        # Eğer yeni statü 'Delivered' geldiyse sadece durumu güncelleyelim
+        if new_status == 'Delivered':
+            existing_order.status = 'Delivered'
+            db.session.commit()
+            logger.info(f"Sipariş {existing_order.order_number} statüsü 'Delivered' olarak güncellendi. Barkodlar değiştirilmedi.")
+            return
 
-        total_qty = 0
-        commission_sum = 0.0  # <-- YENİ KOD: Komisyonları toplayacağız
+        # Bu noktaya geldiysek, statü Created, Picking, Invoiced veya Shipped olabilir.
+        # Barkod alanlarını sıfırla, tekrar ekle.
+        existing_order.merchant_sku = ''
+        existing_order.product_barcode = ''
+        existing_order.original_product_barcode = ''
+        existing_order.line_id = ''
+        existing_order.quantity = 0
+        existing_order.commission = 0.0
+
+        # Genel sipariş durumunu güncelle
+        existing_order.status = new_status
+
+        # lines verisini yeniden işle
+        new_lines = order_data.get('lines', [])
+        new_merchant_skus = []
+        new_product_barcodes = []
+        new_original_barcodes = []
+        new_line_ids = []
 
         for line in new_lines:
             q = line.get('quantity', 1)
@@ -242,51 +262,51 @@ def update_existing_order(existing_order, order_data, status):
                 q = int(q)
             except:
                 q = 1
-            total_qty += q
 
-            merchant_sku = line.get('merchantSku', '')
-            barcode = replace_turkish_characters(line.get('barcode', ''))
-            original_barcode = line.get('barcode', '')
-            line_id = str(line.get('id', ''))
+            # Siparişin toplam adetini toplayalım
+            existing_order.quantity += q
 
             # Komisyon bilgisini satırdan al
-            # Trendyol API'sinde genelde 'commissionFee' adını kullanıyor.
-            commission_fee = line.get('commissionFee', 0.0)  # <-- YENİ KOD
+            commission_fee = line.get('commissionFee', 0.0)
             try:
                 commission_fee = float(commission_fee)
             except:
                 commission_fee = 0.0
-            commission_sum += commission_fee
+            existing_order.commission += commission_fee
 
+            merchant_sku = line.get('merchantSku', '')
+            # barkod
+            original_barcode = line.get('barcode', '')
+            converted_barcode = replace_turkish_characters(original_barcode)
+            # line id
+            line_id = str(line.get('id', ''))
+
+            # Yeni listelere ekle
             if merchant_sku:
-                merchant_skus.append(merchant_sku)
-            if barcode:
-                product_barcodes.append(barcode)
+                new_merchant_skus.append(merchant_sku)
+            if converted_barcode:
+                new_product_barcodes.append(converted_barcode)
             if original_barcode:
-                original_product_barcodes.append(original_barcode)
+                new_original_barcodes.append(original_barcode)
             if line_id:
-                line_ids.append(line_id)
+                new_line_ids.append(line_id)
 
-        # Veritabanındaki sütunları güncelle
-        existing_order.status = status
-        existing_order.merchant_sku = ', '.join(merchant_skus)
-        existing_order.product_barcode = ', '.join(product_barcodes)
-        existing_order.original_product_barcode = ', '.join(original_product_barcodes)
-        existing_order.line_id = ', '.join(line_ids)
+        # Yeni değerleri virgüllü string olarak tekrar kaydet
+        existing_order.merchant_sku = ', '.join(new_merchant_skus)
+        existing_order.product_barcode = ', '.join(new_product_barcodes)
+        existing_order.original_product_barcode = ', '.join(new_original_barcodes)
+        existing_order.line_id = ', '.join(new_line_ids)
 
-        # Yeni eklenen kod: Sipariş detaylarını güncelle
+        # Sipariş detaylarını JSON olarak güncelle
         order_details = create_order_details(new_lines)
         existing_order.details = json.dumps(order_details, ensure_ascii=False)
 
-        # Toplam adet bilgisini tabloya kaydet
-        existing_order.quantity = total_qty
+        db.session.commit()
+        logger.info(f"Güncellenen sipariş: {existing_order.order_number} (status={new_status})")
 
-        # Komisyon bilgisini tabloya kaydet  <-- YENİ KOD
-        existing_order.commission = commission_sum
-
-        logger.info(f"Güncellenen sipariş: {existing_order.order_number}")
     except Exception as e:
         logger.error(f"Hata: update_existing_order - {e}")
+        db.session.rollback()
         traceback.print_exc()
 
 
@@ -310,15 +330,14 @@ def create_order_details(order_lines):
             amount = float(line.get('amount', 0))
 
             # Komisyonu satırda da saklamak isterseniz:
-            commission_fee = float(line.get('commissionFee', 0.0))  # <-- YENİ KOD
+            commission_fee = float(line.get('commissionFee', 0.0))
 
-            # Önce 'lineId' varsa onu al, yoksa 'id' alanına bak
+            # lineId yoksa id
             line_id = str(line.get('lineId', line.get('id', '')))
 
             total_quantity += quantity
 
             key = (barcode, product_color, product_size)
-
             if key not in details_dict:
                 details_dict[key] = {
                     'barcode': barcode,
@@ -332,23 +351,22 @@ def create_order_details(order_lines):
                     'quantity': quantity,
                     'total_price': amount * quantity,
                     'line_id': line_id,
-                    # Komisyonu satır bazında da saklıyoruz  <-- YENİ KOD
                     'commissionFee': commission_fee,
                     'image_url': ''
                 }
             else:
-                # Aynı barkod + renk + bedende miktarı topla
+                # Aynı barkod + renk + bedende miktarları topluyoruz
                 details_dict[key]['quantity'] += quantity
                 details_dict[key]['total_price'] += amount * quantity
                 details_dict[key]['commissionFee'] += commission_fee
-                # line_id vs. birleştirmek isterseniz:
+                # line_id birleştirmek isterseniz:
                 # details_dict[key]['line_id'] += f",{line_id}"
 
         except Exception as e:
             logger.error(f"Sipariş detayı oluşturulurken hata: {e}")
             continue
 
-    # Her bir siparişin total_quantity değerini details içine ekle
+    # Her bir siparişin toplam adetini details içine eklemek isterseniz:
     for detail in details_dict.values():
         detail['total_quantity'] = total_quantity
 
@@ -358,7 +376,7 @@ def create_order_details(order_lines):
 def replace_turkish_characters(text):
     """
     Gelen barkod veya metinlerdeki Türkçe karakterleri başka karakterlerle
-    değiştiren fonksiyon. Sen kendi ihtiyacına göre düzenleyebilirsin.
+    değiştiren fonksiyon. İhtiyaç doğrultusunda düzenlenebilir.
     """
     if isinstance(text, str):
         replacements = str.maketrans({
@@ -384,9 +402,10 @@ def combine_line_items(order_data, status):
     """
     barcodes_with_quantity = []
     total_qty = 0
-    commission_sum = 0.0  # <-- YENİ KOD
+    commission_sum = 0.0
 
-    for line in order_data['lines']:
+    lines = order_data.get('lines', [])
+    for line in lines:
         barcode = line.get('barcode', '')
         quantity = line.get('quantity', 1)
         try:
@@ -395,14 +414,12 @@ def combine_line_items(order_data, status):
             quantity = 1
         total_qty += quantity
 
-        # Komisyon
-        commission_fee = line.get('commissionFee', 0.0)  # <-- YENİ KOD
+        commission_fee = line.get('commissionFee', 0.0)
         try:
             commission_fee = float(commission_fee)
         except:
             commission_fee = 0.0
-
-        commission_sum += commission_fee  # <-- YENİ KOD
+        commission_sum += commission_fee
 
         # Barkod listesi
         barcodes_with_quantity.extend([barcode] * quantity)
@@ -410,54 +427,52 @@ def combine_line_items(order_data, status):
     original_barcodes = barcodes_with_quantity
     converted_barcodes = [replace_turkish_characters(bc) for bc in original_barcodes]
 
-    # Sipariş detaylarını oluştur (her satırın komisyonu da JSON'a yazılıyor)
-    order_details = create_order_details(order_data['lines'])
+    # Sipariş detaylarını oluştur
+    order_details = create_order_details(lines)
 
     combined_order = {
-        'order_number': str(order_data.get('orderNumber', order_data['id'])),
+        'order_number': str(order_data.get('orderNumber', order_data.get('id'))),
         'order_date': datetime.utcfromtimestamp(order_data['orderDate'] / 1000) if order_data.get('orderDate') else None,
-        'merchant_sku': ', '.join([line.get('merchantSku', '') for line in order_data['lines']]),
+        'merchant_sku': ', '.join([line.get('merchantSku', '') for line in lines]),
         'product_barcode': ', '.join(converted_barcodes),
         'original_product_barcode': ', '.join(original_barcodes),
         'status': status,
-        'line_id': ', '.join([str(line.get('id', '')) for line in order_data['lines']]),
+        'line_id': ', '.join([str(line.get('id', '')) for line in lines]),
         'match_status': '',
         'customer_name': order_data.get('shipmentAddress', {}).get('firstName', ''),
         'customer_surname': order_data.get('shipmentAddress', {}).get('lastName', ''),
         'customer_address': order_data.get('shipmentAddress', {}).get('fullAddress', ''),
         'shipping_barcode': order_data.get('cargoTrackingNumber', ''),
-        'product_name': ', '.join([line.get('productName', '') for line in order_data['lines']]),
-        'product_code': ', '.join([str(line.get('productCode', '')) for line in order_data['lines']]),
-        'amount': sum(line.get('amount', 0) for line in order_data['lines']),
-        'discount': sum(line.get('discount', 0) for line in order_data['lines']),
+        'product_name': ', '.join([line.get('productName', '') for line in lines]),
+        'product_code': ', '.join([str(line.get('productCode', '')) for line in lines]),
+        'amount': sum(line.get('amount', 0) for line in lines),
+        'discount': sum(line.get('discount', 0) for line in lines),
         'currency_code': order_data.get('currencyCode', 'TRY'),
-        'vat_base_amount': sum(line.get('vatBaseAmount', 0) for line in order_data['lines']),
+        'vat_base_amount': sum(line.get('vatBaseAmount', 0) for line in lines),
         'package_number': str(order_data.get('id', '')),
-        'stockCode': ', '.join([line.get('merchantSku', '') for line in order_data['lines']]),
+        'stockCode': ', '.join([line.get('merchantSku', '') for line in lines]),
         'estimated_delivery_start': datetime.utcfromtimestamp(order_data.get('estimatedDeliveryStartDate', 0) / 1000) if order_data.get('estimatedDeliveryStartDate') else None,
         'images': '',
-        'product_model_code': ', '.join([line.get('merchantSku', '') for line in order_data['lines']]),
+        'product_model_code': ', '.join([line.get('merchantSku', '') for line in lines]),
         'estimated_delivery_end': datetime.utcfromtimestamp(order_data.get('estimatedDeliveryEndDate', 0) / 1000) if order_data.get('estimatedDeliveryEndDate') else None,
         'origin_shipment_date': datetime.utcfromtimestamp(order_data.get('originShipmentDate', 0) / 1000) if order_data.get('originShipmentDate') else None,
-        'product_size': ', '.join([line.get('productSize', '') for line in order_data['lines']]),
-        'product_main_id': ', '.join([str(line.get('productId', '')) for line in order_data['lines']]),
+        'product_size': ', '.join([line.get('productSize', '') for line in lines]),
+        'product_main_id': ', '.join([str(line.get('productId', '')) for line in lines]),
         'cargo_provider_name': order_data.get('cargoProviderName', ''),
         'agreed_delivery_date': datetime.utcfromtimestamp(order_data.get('agreedDeliveryDate', 0) / 1000) if order_data.get('agreedDeliveryDate') else None,
-        'product_color': ', '.join([line.get('productColor', '') for line in order_data['lines']]),
+        'product_color': ', '.join([line.get('productColor', '') for line in lines]),
         'cargo_tracking_link': order_data.get('cargoTrackingNumber', ''),
         'shipment_package_id': str(order_data.get('shipmentPackageId', '')),
         'details': json.dumps(order_details, ensure_ascii=False),
         'archive_date': None,
         'archive_reason': '',
         'quantity': total_qty,
-
-        # Yeni eklenen kolonlar:
-        'commission': commission_sum  # <-- YENİ KOD: Toplam komisyon
+        'commission': commission_sum
     }
     return combined_order
 
 
-# ===== Sipariş listesi görüntüleme fonksiyonları =====
+# ====== Örnek sipariş listesi görüntüleme fonksiyonları ======
 
 @order_service_bp.route('/order-list/new', methods=['GET'])
 def get_new_orders():

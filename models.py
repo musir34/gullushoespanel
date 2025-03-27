@@ -25,6 +25,7 @@ class Expense(db.Model):
     date_created = db.Column(db.DateTime, default=datetime.utcnow)
 
 
+
 class ExcelUpload(db.Model):
     __tablename__ = 'excel_uploads'
     id = db.Column(db.Integer, primary_key=True)
@@ -134,6 +135,25 @@ class User(db.Model):
     totp_secret = db.Column(db.String(16))  # 16 karakterlik base32 string
     totp_confirmed = db.Column(db.Boolean, default=False)
 
+#Analiz ve hesaplar için kullanılacak tablo 
+class OrderItem(db.Model):
+    __tablename__ = 'order_items'
+
+    id = db.Column(db.Integer, primary_key=True)
+    order_id = db.Column(db.Integer, db.ForeignKey('orders.id', ondelete='CASCADE'), nullable=False)
+    product_barcode = db.Column(db.String, db.ForeignKey('products.barcode'))
+    product_name = db.Column(db.String)
+    quantity = db.Column(db.Integer, default=1)
+    unit_price = db.Column(db.Float)
+    unit_cost = db.Column(db.Float)
+    commission = db.Column(db.Float)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    order = db.relationship('Order', backref=db.backref('items', lazy=True))
+    product = db.relationship('Product')
+
+
 # models.py (veya sizin kullandığınız modele ekleyin)
 
 class Order(db.Model):
@@ -160,7 +180,7 @@ class Order(db.Model):
     product_name = db.Column(db.String)
     product_code = db.Column(db.String)
     amount = db.Column(db.Float)
-    discount = db.Column(db.Float)
+    discount = db.Column(db.Float, default=0.0)
     currency_code = db.Column(db.String)
     vat_base_amount = db.Column(db.Float)
     package_number = db.Column(db.String)
@@ -177,13 +197,16 @@ class Order(db.Model):
     product_color = db.Column(db.String)
     cargo_tracking_link = db.Column(db.String)
     shipment_package_id = db.Column(db.String)
-    details = db.Column(db.Text)  # JSON formatında saklanacak
+    details = db.Column(db.Text)
     archive_date = db.Column(db.DateTime)
     archive_reason = db.Column(db.String)
     quantity = db.Column(db.Integer)
     delivery_date = db.Column(db.DateTime)
     commission = db.Column(db.Float, default=0.0)
-    discount = db.Column(db.Float, default=0.0)
+
+    # Toplam ürün maliyeti buraya ekleniyor
+    product_cost_total = db.Column(db.Float, default=0.0)
+
 
 
 
