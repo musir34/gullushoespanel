@@ -156,6 +156,98 @@ class OrderItem(db.Model):
 
 # models.py (veya sizin kullandığınız modele ekleyin)
 
+# Temel sipariş modeli - tüm statüler için ortak alanlar
+class OrderBase(db.Model):
+    __abstract__ = True
+    
+    id = db.Column(db.Integer, primary_key=True)
+    order_number = db.Column(db.String, index=True)
+    order_date = db.Column(db.DateTime, index=True)
+    merchant_sku = db.Column(db.String)
+    product_barcode = db.Column(db.String)
+    original_product_barcode = db.Column(db.String)
+    line_id = db.Column(db.String)
+    match_status = db.Column(db.String)
+    customer_name = db.Column(db.String)
+    customer_surname = db.Column(db.String)
+    customer_address = db.Column(db.Text)
+    shipping_barcode = db.Column(db.String)
+    product_name = db.Column(db.String)
+    product_code = db.Column(db.String)
+    amount = db.Column(db.Float)
+    discount = db.Column(db.Float, default=0.0)
+    currency_code = db.Column(db.String)
+    vat_base_amount = db.Column(db.Float)
+    package_number = db.Column(db.String)
+    stockCode = db.Column(db.String)
+    estimated_delivery_start = db.Column(db.DateTime)
+    images = db.Column(db.String)
+    product_model_code = db.Column(db.String)
+    estimated_delivery_end = db.Column(db.DateTime)
+    origin_shipment_date = db.Column(db.DateTime)
+    product_size = db.Column(db.String)
+    product_main_id = db.Column(db.String)
+    cargo_provider_name = db.Column(db.String)
+    agreed_delivery_date = db.Column(db.DateTime)
+    product_color = db.Column(db.String)
+    cargo_tracking_link = db.Column(db.String)
+    shipment_package_id = db.Column(db.String)
+    details = db.Column(db.Text)
+    quantity = db.Column(db.Integer)
+    commission = db.Column(db.Float, default=0.0)
+    product_cost_total = db.Column(db.Float, default=0.0)
+    
+    # Mevcut sisteme uyumluluk için status alanı (eski uygulamalar için)
+    status = db.Column(db.String)
+
+# Yeni sipariş tablosu (Created)
+class OrderCreated(OrderBase):
+    __tablename__ = 'orders_created'
+    
+    # Bu statüye özel alanlar eklenebilir
+    creation_time = db.Column(db.DateTime, default=datetime.utcnow)
+
+# İşleme alınan sipariş tablosu (Picking)
+class OrderPicking(OrderBase):
+    __tablename__ = 'orders_picking'
+    
+    # Bu statüye özel alanlar
+    picking_start_time = db.Column(db.DateTime, default=datetime.utcnow)
+    picked_by = db.Column(db.String)
+    
+# Kargodaki sipariş tablosu (Shipped)
+class OrderShipped(OrderBase):
+    __tablename__ = 'orders_shipped'
+    
+    # Bu statüye özel alanlar
+    shipping_time = db.Column(db.DateTime, default=datetime.utcnow)
+    tracking_updated = db.Column(db.Boolean, default=False)
+
+# Teslim edilen sipariş tablosu (Delivered)
+class OrderDelivered(OrderBase):
+    __tablename__ = 'orders_delivered'
+    
+    # Bu statüye özel alanlar
+    delivery_date = db.Column(db.DateTime)
+    delivery_confirmed = db.Column(db.Boolean, default=False)
+    
+# İptal edilen sipariş tablosu (Cancelled)
+class OrderCancelled(OrderBase):
+    __tablename__ = 'orders_cancelled'
+    
+    # Bu statüye özel alanlar
+    cancellation_date = db.Column(db.DateTime, default=datetime.utcnow)
+    cancellation_reason = db.Column(db.String)
+    
+# Arşivlenen sipariş tablosu (Archived)
+class OrderArchived(OrderBase):
+    __tablename__ = 'orders_archived'
+    
+    # Bu statüye özel alanlar
+    archive_date = db.Column(db.DateTime, default=datetime.utcnow)
+    archive_reason = db.Column(db.String)
+
+# Geriye dönük uyumluluk için mevcut sipariş tablosunu da tutalım
 class Order(db.Model):
     __tablename__ = 'orders'
     __table_args__ = (
@@ -203,8 +295,6 @@ class Order(db.Model):
     quantity = db.Column(db.Integer)
     delivery_date = db.Column(db.DateTime)
     commission = db.Column(db.Float, default=0.0)
-
-    # Toplam ürün maliyeti buraya ekleniyor
     product_cost_total = db.Column(db.Float, default=0.0)
 
 

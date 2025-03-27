@@ -107,6 +107,8 @@ with app.app_context():
     db.session.commit()
 
 # Blueprint'leri toplu olarak kaydetme
+from migrate_orders import migrate_orders_bp
+
 blueprints = [
     order_service_bp,
     update_service_bp,
@@ -125,11 +127,12 @@ blueprints = [
     stock_report_bp,
     openai_bp,
     siparisler_bp,
-    product_service_bp,  # Son iki blueprint'i listenin sonunda tutuyoruz
+    product_service_bp,
     claims_service_bp,
     user_logs_bp,
     commission_update_bp,
-    profit_bp
+    profit_bp,
+    migrate_orders_bp
 ]
 
 for bp in blueprints:
