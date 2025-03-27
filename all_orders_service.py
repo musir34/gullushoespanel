@@ -1,61 +1,58 @@
-
-from flask import render_template, request, Blueprint
-from models import Order
+# all_orders_service.py
+from flask import Blueprint, render_template, request
+from sqlalchemy import union_all, select, literal
+from models import db, OrderCreated, OrderPicking, OrderShipped, OrderDelivered, OrderCancelled
 
 all_orders_service_bp = Blueprint('all_orders_service', __name__)
 
-@all_orders_service_bp.route('/order-list/all', methods=['GET'])
-def get_all_orders():
+def all_orders_union():
     """
-    Retrieve and display all orders with pagination and search functionality and caching
+    Tüm statü tablolarını ortak kolonlarda UNION ALL yaparak tek sorgu döndürüyor.
+    Kolon isimlerini aynı label ile seçiyoruz ki birleştirme sorunsuz olsun.
     """
-    cache_key = f"orders_page_{request.args.get('page', 1)}_{request.args.get('search', '')}"
-    cached_data = redis_client.get(cache_key)
-    
-    if cached_data:
-        return cached_data
-    # Get page parameters
-    page = int(request.args.get('page', 1))
-    per_page = 50
-    search = request.args.get('search')
 
-    # Build query
-    orders_query = Order.query
-
-    # Apply search filter if provided
-    if search:
-        orders_query = orders_query.filter(Order.order_number.ilike(f'%{search}%'))
-
-    # Apply sorting and limit
-    orders_query = (orders_query
-                   .order_by(Order.order_date.desc())
-                   .limit(100000))
-
-    # Paginate results
-    paginated_orders = orders_query.paginate(
-        page=page,
-        per_page=per_page,
-        error_out=False
+    # 1) Her tablo için seçilecek kolonlar
+    c = db.session.query(
+        OrderCreated.order_number.label('order_number'),
+        OrderCreated.order_date.label('order_date'),
+        OrderCreated.merchant_sku.label('merchant_sku'),
+        OrderCreated.product_barcode.label('product_barcode'),
+        literal('Created').label('tablo')
     )
 
-    # Process order details
-    orders = paginated_orders.items
-    for order in orders:
-        skus = order.merchant_sku.split(', ') if order.merchant_sku else []
-        barcodes = order.product_barcode.split(', ') if order.product_barcode else []
-
-        # Ensure equal length lists
-        max_length = max(len(skus), len(barcodes))
-        skus.extend([''] * (max_length - len(skus)))
-        barcodes.extend([''] * (max_length - len(barcodes)))
-
-        order.details = [{'sku': sku, 'barcode': barcode} 
-                        for sku, barcode in zip(skus, barcodes)]
-
-    return render_template(
-        'order_list.html',
-        orders=orders,
-        page=page,
-        total_pages=paginated_orders.pages,
-        total_orders_count=paginated_orders.total
+    p = db.session.query(
+        OrderPicking.order_number.label('order_number'),
+        OrderPicking.order_date.label('order_date'),
+        OrderPicking.merchant_sku.label('merchant_sku'),
+        OrderPicking.product_barcode.label('product_barcode'),
+        literal('Picking').label('tablo')
     )
+
+    s = db.session.query(
+        OrderShipped.order_number.label('order_number'),
+        OrderShipped.order_date.label('order_date'),
+        OrderShipped.merchant_sku.label('merchant_sku'),
+        OrderShipped.product_barcode.label('product_barcode'),
+        literal('Shipped').label('tablo')
+    )
+
+    d = db.session.query(
+        OrderDelivered.order_number.label('order_number'),
+        OrderDelivered.order_date.label('order_date'),
+        OrderDelivered.merchant_sku.label('merchant_sku'),
+        OrderDelivered.product_barcode.label('product_barcode'),
+        literal('Delivered').label('tablo')
+    )
+
+    x = db.session.query(
+        OrderCancelled.order_number.label('order_number'),
+        OrderCancelled.order_date.label('order_date'),
+        OrderCancelled.merchant_sku.label('merchant_sku'),
+        OrderCancelled.product_barcode.label('product_barcode'),
+        literal('Cancelled').label('tablo')
+    )
+
+    # 2) UNION ALL
+    union_query = c.union_all(p, s, d, x)
+
+    return union_query
