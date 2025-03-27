@@ -232,6 +232,10 @@ def profit_report():
     - Ürün maliyeti (product.cost_try) de gider kalemine eklenir.
     - Kâr = Gelir - (ürün_maliyeti + paket + işçilik + kargo + komisyon)
     """
+    # Şablon için mevcut tarih değişkeni eklendi
+    from datetime import datetime
+    now = datetime.now()
+    
     results = {
         "analysis": [],
         "total_profit": 0.0,
@@ -326,7 +330,8 @@ def profit_report():
         top_profitable_products=results.get('top_profitable_products', {}),
         top_unprofitable_products=results.get('top_unprofitable_products', {}),
         status_performance=results.get('status_performance', {}),
-        trend_data=json.dumps(results.get('trend_data', {}))
+        trend_data=json.dumps(results.get('trend_data', {})),
+        now=now  # 'now' değişkenini şablona gönderiyoruz
     )
 
 @profit_bp.route('/api/dashboard-stats', methods=['GET'])
