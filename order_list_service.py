@@ -166,7 +166,7 @@ def process_order_details(orders):
     Her sipariş için 'details' alanını işleyerek ürün detaylarını hazırlar.
     (Eski mantıkla aynı)
     """
-    from .barcode_utils import get_product_image  # Varsa
+    from barcode_utils import get_product_image  # Varsa
     try:
         # barkod seti topla
         barcodes = set()
