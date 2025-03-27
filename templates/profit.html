@@ -997,33 +997,35 @@
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        tooltips: {
-          mode: 'index',
-          intersect: false,
-          callbacks: {
-            label: function(tooltipItem, data) {
-              var label = data.datasets[tooltipItem.datasetIndex].label || '';
-              return label + ': ' + tooltipItem.yLabel.toLocaleString('tr-TR', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' ₺';
+        plugins: {
+          tooltip: {
+            mode: 'index',
+            intersect: false,
+            callbacks: {
+              label: function(context) {
+                var label = context.dataset.label || '';
+                return label + ': ' + context.parsed.y.toLocaleString('tr-TR', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' ₺';
+              }
             }
           }
         },
         scales: {
-          xAxes: [{
-            gridLines: {
+          x: {
+            grid: {
               display: false
             },
             ticks: {
               maxTicksLimit: 10
             }
-          }],
-          yAxes: [{
+          },
+          y: {
+            beginAtZero: true,
             ticks: {
-              beginAtZero: true,
               callback: function(value) {
                 return value.toLocaleString('tr-TR', {minimumFractionDigits: 0, maximumFractionDigits: 0}) + ' ₺';
               }
             }
-          }]
+          }
         }
       }
     });
