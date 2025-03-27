@@ -1,150 +1,257 @@
 
-:root {
-  --blue: #007bff;
-  --indigo: #6610f2;
-  --purple: #6f42c1;
-  --pink: #e83e8c;
-  --red: #dc3545;
-  --orange: #fd7e14;
-  --yellow: #ffc107;
-  --green: #28a745;
-  --teal: #20c997;
-  --cyan: #17a2b8;
-  --white: #fff;
-  --gray: #6c757d;
-  --gray-dark: #343a40;
-  --primary: #007bff;
-  --secondary: #6c757d;
-  --success: #28a745;
-  --info: #17a2b8;
-  --warning: #ffc107;
-  --danger: #dc3545;
-  --light: #f8f9fa;
-  --dark: #343a40;
-  --breakpoint-xs: 0;
-  --breakpoint-sm: 576px;
-  --breakpoint-md: 768px;
-  --breakpoint-lg: 992px;
-  --breakpoint-xl: 1200px;
-  --font-family-sans-serif: "Source Sans Pro", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --font-family-monospace: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-}
+/* AdminLTE tabanlı Profit Analiz Panel CSS Stilleri */
 
-body {
-  margin: 0;
-  padding: 0;
-  font-family: var(--font-family-sans-serif);
-  font-size: 1rem;
-  font-weight: 400;
-  line-height: 1.5;
-  color: #212529;
-  text-align: left;
-  background-color: #f4f6f9;
-}
-
-/* Main Layout */
-.wrapper {
-  min-height: 100vh;
-  position: relative;
-}
-
+/* Genel Panel Stilleri */
 .content-wrapper {
-  padding: 1.5rem;
   background-color: #f4f6f9;
+  min-height: 100vh;
 }
 
-/* Navbar */
-.main-header {
-  background-color: #fff;
-  box-shadow: 0 0 1px rgba(0,0,0,.125), 0 1px 3px rgba(0,0,0,.2);
-  position: sticky;
-  top: 0;
-  z-index: 1000;
-}
-
-.navbar {
-  padding: .75rem 1rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.navbar-brand {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #343a40;
-  text-decoration: none;
-}
-
-.navbar-nav {
-  display: flex;
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.nav-item {
-  margin-left: 1rem;
-}
-
-.nav-link {
-  color: #6c757d;
-  text-decoration: none;
-  transition: color .15s ease-in-out;
-}
-
-.nav-link:hover {
-  color: #007bff;
-}
-
-/* Card Styles */
+/* Kart Stilleri */
 .card {
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+  border-radius: 0.5rem;
   margin-bottom: 1.5rem;
-  background-color: #fff;
-  box-shadow: 0 0 1px rgba(0,0,0,.125), 0 1px 3px rgba(0,0,0,.2);
-  border-radius: .25rem;
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+}
+
+.card-outline {
+  border-top: 3px solid;
+}
+
+.card-primary.card-outline {
+  border-top-color: #007bff;
+}
+
+.card-success.card-outline {
+  border-top-color: #28a745;
+}
+
+.card-info.card-outline {
+  border-top-color: #17a2b8;
+}
+
+.card-warning.card-outline {
+  border-top-color: #ffc107;
+}
+
+.card-danger.card-outline {
+  border-top-color: #dc3545;
 }
 
 .card-header {
-  padding: 1rem;
-  border-bottom: 1px solid rgba(0,0,0,.125);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.card-title {
-  font-size: 1.1rem;
-  font-weight: 600;
-  margin: 0;
-  color: #343a40;
+  background-color: transparent;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+  padding: 0.75rem 1.25rem;
+  position: relative;
+  border-top-left-radius: 0.5rem;
+  border-top-right-radius: 0.5rem;
 }
 
 .card-tools {
-  margin-left: auto;
+  float: right;
+  margin-right: -0.625rem;
 }
 
-.card-body {
-  padding: 1.25rem;
+.btn-tool {
+  background-color: transparent;
+  color: #adb5bd;
+  font-size: 0.875rem;
+  margin: -0.75rem 0;
+  padding: 0.25rem 0.5rem;
 }
 
-/* Form Styles */
-.form-group {
+.btn-tool:hover {
+  color: #6c757d;
+}
+
+/* Small Box Stilleri */
+.small-box {
+  border-radius: 0.5rem;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+  margin-bottom: 1.5rem;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.small-box:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+}
+
+.small-box > .inner {
+  padding: 20px;
+}
+
+.small-box h3 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0 0 10px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.small-box p {
+  font-size: 1rem;
+  margin-bottom: 0;
+}
+
+.small-box .icon {
+  color: rgba(0, 0, 0, 0.15);
+  z-index: 0;
+}
+
+.small-box .icon > i {
+  font-size: 70px;
+  position: absolute;
+  right: 15px;
+  top: 15px;
+  transition: transform 0.3s linear;
+}
+
+.small-box:hover .icon > i {
+  transform: scale(1.1);
+}
+
+.small-box .small-box-footer {
+  background-color: rgba(0, 0, 0, 0.1);
+  color: rgba(255, 255, 255, 0.8);
+  display: block;
+  padding: 3px 0;
+  position: relative;
+  text-align: center;
+  text-decoration: none;
+  z-index: 10;
+  border-bottom-left-radius: 0.5rem;
+  border-bottom-right-radius: 0.5rem;
+}
+
+.small-box .small-box-footer:hover {
+  background-color: rgba(0, 0, 0, 0.15);
+  color: #fff;
+}
+
+.bg-info {
+  background-color: #17a2b8 !important;
+}
+
+.bg-success {
+  background-color: #28a745 !important;
+}
+
+.bg-warning {
+  background-color: #ffc107 !important;
+  color: #1f2d3d !important;
+}
+
+.bg-danger {
+  background-color: #dc3545 !important;
+}
+
+/* Tablo Stilleri */
+.table {
+  width: 100%;
   margin-bottom: 1rem;
+  color: #212529;
+  background-color: transparent;
 }
 
+.table th,
+.table td {
+  padding: 0.75rem;
+  vertical-align: middle;
+  border-top: 1px solid #dee2e6;
+}
+
+.table thead th {
+  vertical-align: bottom;
+  border-bottom: 2px solid #dee2e6;
+  background-color: #f8f9fa;
+  font-weight: 600;
+}
+
+.table tbody tr:hover {
+  background-color: rgba(0, 0, 0, 0.03);
+}
+
+.table-striped tbody tr:nth-of-type(odd) {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+.table-bordered {
+  border: 1px solid #dee2e6;
+}
+
+.table-bordered th,
+.table-bordered td {
+  border: 1px solid #dee2e6;
+}
+
+/* Badge Stilleri */
+.badge {
+  display: inline-block;
+  padding: 0.25em 0.4em;
+  font-size: 75%;
+  font-weight: 700;
+  line-height: 1;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: baseline;
+  border-radius: 0.25rem;
+  transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.badge-primary {
+  color: #fff;
+  background-color: #007bff;
+}
+
+.badge-secondary {
+  color: #fff;
+  background-color: #6c757d;
+}
+
+.badge-success {
+  color: #fff;
+  background-color: #28a745;
+}
+
+.badge-info {
+  color: #fff;
+  background-color: #17a2b8;
+}
+
+.badge-warning {
+  color: #1f2d3d;
+  background-color: #ffc107;
+}
+
+.badge-danger {
+  color: #fff;
+  background-color: #dc3545;
+}
+
+/* Form Stilleri */
 .form-control {
   display: block;
   width: 100%;
-  padding: .375rem .75rem;
+  height: calc(2.25rem + 2px);
+  padding: 0.375rem 0.75rem;
   font-size: 1rem;
+  font-weight: 400;
   line-height: 1.5;
   color: #495057;
   background-color: #fff;
   background-clip: padding-box;
   border: 1px solid #ced4da;
-  border-radius: .25rem;
-  transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+  border-radius: 0.25rem;
+  box-shadow: inset 0 0 0 transparent;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
 }
 
 .form-control:focus {
@@ -152,36 +259,14 @@ body {
   background-color: #fff;
   border-color: #80bdff;
   outline: 0;
-  box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
-}
-
-.form-label {
-  margin-bottom: .5rem;
-  display: inline-block;
-  font-weight: 500;
-}
-
-/* Button Styles */
-.btn {
-  display: inline-block;
-  font-weight: 400;
-  text-align: center;
-  white-space: nowrap;
-  vertical-align: middle;
-  user-select: none;
-  border: 1px solid transparent;
-  padding: .375rem .75rem;
-  font-size: 1rem;
-  line-height: 1.5;
-  border-radius: .25rem;
-  transition: color .15s ease-in-out,background-color .15s ease-in-out,border-color .15s ease-in-out,box-shadow .15s ease-in-out;
-  cursor: pointer;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
 }
 
 .btn-primary {
   color: #fff;
   background-color: #007bff;
   border-color: #007bff;
+  box-shadow: none;
 }
 
 .btn-primary:hover {
@@ -190,295 +275,51 @@ body {
   border-color: #0062cc;
 }
 
-/* Info box / Stats card */
-.info-box {
-  min-height: 115px;
-  width: 100%;
-  box-shadow: 0 0 1px rgba(0,0,0,.125), 0 1px 3px rgba(0,0,0,.2);
-  border-radius: .25rem;
-  background-color: #fff;
-  display: flex;
-  margin-bottom: 1.5rem;
+/* Grafik Konteynerleri */
+.chart {
   position: relative;
-  overflow: hidden;
+  height: 300px;
 }
 
-.info-box-icon {
-  width: 80px;
-  height: 115px;
+/* Özel Şık Profit Özet Kutuları */
+.profit-summary-container {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  font-size: 2.5rem;
+  justify-content: space-between;
+  margin-bottom: 2rem;
 }
 
-.bg-info {
-  background-color: #17a2b8 !important;
-  color: #fff;
+.profit-summary {
+  background: linear-gradient(135deg, #f5f7fa 0%, #e2e7f0 100%);
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+  height: 100%;
 }
 
-.bg-success {
-  background-color: #28a745 !important;
-  color: #fff;
+.profit-summary:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
 }
 
-.bg-warning {
-  background-color: #ffc107 !important;
-  color: #fff;
-}
-
-.bg-danger {
-  background-color: #dc3545 !important;
-  color: #fff;
-}
-
-.bg-primary {
-  background-color: #007bff !important;
-  color: #fff;
-}
-
-.info-box-content {
-  padding: 1rem;
-  flex: 1;
-}
-
-.info-box-text {
-  display: block;
-  font-size: 1rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  font-weight: 400;
+.profit-summary-title {
+  font-size: 0.9rem;
   color: #6c757d;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 0.5rem;
 }
 
-.info-box-number {
-  display: block;
+.profit-summary-value {
+  font-size: 2rem;
   font-weight: 700;
-  font-size: 1.5rem;
-  color: #343a40;
+  margin-bottom: 0.5rem;
 }
 
-/* Small Box / Stat Summary */
-.small-box {
-  border-radius: .25rem;
-  box-shadow: 0 0 1px rgba(0,0,0,.125), 0 1px 3px rgba(0,0,0,.2);
-  position: relative;
-  display: block;
-  margin-bottom: 1.5rem;
-  background-color: #fff;
-}
-
-.small-box > .inner {
-  padding: 1rem;
-}
-
-.small-box h3 {
-  font-size: 2.2rem;
-  font-weight: 700;
-  margin: 0 0 10px 0;
-  white-space: nowrap;
-  padding: 0;
-  color: #fff;
-}
-
-.small-box p {
-  color: #fff;
-  font-size: 1rem;
-  margin-bottom: 0;
-}
-
-.small-box .icon {
-  position: absolute;
-  top: 15px;
-  right: 15px;
-  font-size: 3.5rem;
-  color: rgba(255,255,255,0.2);
-}
-
-.small-box-footer {
-  background-color: rgba(0,0,0,0.1);
-  color: #fff;
-  display: block;
-  padding: 3px 0;
-  position: relative;
-  text-align: center;
-  text-decoration: none;
-  z-index: 10;
-}
-
-/* Table */
-.table {
-  width: 100%;
+.profit-summary-label {
+  font-size: 0.9rem;
+  color: #6c757d;
   margin-bottom: 1rem;
-  background-color: transparent;
-  border-collapse: collapse;
-}
-
-.table th,
-.table td {
-  padding: .75rem;
-  vertical-align: top;
-  border-top: 1px solid #dee2e6;
-}
-
-.table thead th {
-  vertical-align: bottom;
-  border-bottom: 2px solid #dee2e6;
-  background-color: #f2f2f2;
-  color: #343a40;
-  font-weight: 500;
-}
-
-.table-striped tbody tr:nth-of-type(odd) {
-  background-color: rgba(0,0,0,.05);
-}
-
-.table-hover tbody tr:hover {
-  background-color: rgba(0,123,255,.075);
-}
-
-/* Profit Table Specific */
-.table-profit {
-  font-size: .9rem;
-}
-
-.table-profit .profit {
-  background-color: rgba(40, 167, 69, 0.1) !important;
-}
-
-.table-profit .loss {
-  background-color: rgba(220, 53, 69, 0.1) !important;
-}
-
-.table-profit .profit td:last-child {
-  color: #28a745;
-  font-weight: 600;
-}
-
-.table-profit .loss td:last-child {
-  color: #dc3545;
-  font-weight: 600;
-}
-
-/* Responsive Grid */
-.row {
-  display: flex;
-  flex-wrap: wrap;
-  margin-right: -7.5px;
-  margin-left: -7.5px;
-}
-
-.col-1, .col-2, .col-3, .col-4, .col-5, .col-6, .col-7, .col-8, .col-9, .col-10, .col-11, .col-12, .col,
-.col-auto, .col-sm-1, .col-sm-2, .col-sm-3, .col-sm-4, .col-sm-5, .col-sm-6, .col-sm-7, .col-sm-8, .col-sm-9, .col-sm-10, .col-sm-11, .col-sm-12, .col-sm,
-.col-sm-auto, .col-md-1, .col-md-2, .col-md-3, .col-md-4, .col-md-5, .col-md-6, .col-md-7, .col-md-8, .col-md-9, .col-md-10, .col-md-11, .col-md-12, .col-md,
-.col-md-auto, .col-lg-1, .col-lg-2, .col-lg-3, .col-lg-4, .col-lg-5, .col-lg-6, .col-lg-7, .col-lg-8, .col-lg-9, .col-lg-10, .col-lg-11, .col-lg-12, .col-lg,
-.col-lg-auto, .col-xl-1, .col-xl-2, .col-xl-3, .col-xl-4, .col-xl-5, .col-xl-6, .col-xl-7, .col-xl-8, .col-xl-9, .col-xl-10, .col-xl-11, .col-xl-12, .col-xl,
-.col-xl-auto {
-  position: relative;
-  width: 100%;
-  min-height: 1px;
-  padding-right: 7.5px;
-  padding-left: 7.5px;
-}
-
-.col-12 {
-  flex: 0 0 100%;
-  max-width: 100%;
-}
-
-.col-6 {
-  flex: 0 0 50%;
-  max-width: 50%;
-}
-
-.col-4 {
-  flex: 0 0 33.333333%;
-  max-width: 33.333333%;
-}
-
-.col-3 {
-  flex: 0 0 25%;
-  max-width: 25%;
-}
-
-@media (min-width: 576px) {
-  .col-sm-6 {
-    flex: 0 0 50%;
-    max-width: 50%;
-  }
-  .col-sm-4 {
-    flex: 0 0 33.333333%;
-    max-width: 33.333333%;
-  }
-  .col-sm-3 {
-    flex: 0 0 25%;
-    max-width: 25%;
-  }
-}
-
-@media (min-width: 768px) {
-  .col-md-6 {
-    flex: 0 0 50%;
-    max-width: 50%;
-  }
-  .col-md-4 {
-    flex: 0 0 33.333333%;
-    max-width: 33.333333%;
-  }
-  .col-md-3 {
-    flex: 0 0 25%;
-    max-width: 25%;
-  }
-}
-
-@media (min-width: 992px) {
-  .col-lg-6 {
-    flex: 0 0 50%;
-    max-width: 50%;
-  }
-  .col-lg-4 {
-    flex: 0 0 33.333333%;
-    max-width: 33.333333%;
-  }
-  .col-lg-3 {
-    flex: 0 0 25%;
-    max-width: 25%;
-  }
-}
-
-/* Utility Classes */
-.mb-4 {
-  margin-bottom: 1.5rem !important;
-}
-
-.mb-3 {
-  margin-bottom: 1rem !important;
-}
-
-.mb-2 {
-  margin-bottom: .5rem !important;
-}
-
-.mt-4 {
-  margin-top: 1.5rem !important;
-}
-
-.mt-3 {
-  margin-top: 1rem !important;
-}
-
-.text-center {
-  text-align: center !important;
-}
-
-.text-right {
-  text-align: right !important;
-}
-
-.font-weight-bold {
-  font-weight: 700 !important;
 }
 
 .text-success {
@@ -489,86 +330,298 @@ body {
   color: #dc3545 !important;
 }
 
-.text-warning {
-  color: #ffc107 !important;
+/* DateRangePicker Stilleri */
+.daterangepicker {
+  font-family: inherit;
+  border-radius: 0.5rem;
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.1);
 }
 
-.text-info {
-  color: #17a2b8 !important;
+.daterangepicker .ranges li.active {
+  background-color: #007bff;
 }
 
-/* Profit Özet Alanı */
-.profit-summary {
-  background-color: #343a40;
-  color: #fff;
-  border-radius: .25rem;
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
-  box-shadow: 0 0 1px rgba(0,0,0,.125), 0 1px 3px rgba(0,0,0,.2);
+.daterangepicker td.active, 
+.daterangepicker td.active:hover {
+  background-color: #007bff;
 }
 
-.profit-summary-title {
-  font-size: 1.1rem;
-  margin-bottom: 1rem;
-  font-weight: 600;
-  border-bottom: 1px solid rgba(255,255,255,.2);
-  padding-bottom: .5rem;
+.daterangepicker .drp-buttons .btn {
+  border-radius: 0.25rem;
 }
 
-.profit-summary-value {
-  font-size: 2.2rem;
-  font-weight: 700;
+/* DataTables Stilleri */
+.dataTables_wrapper .dataTables_filter input {
+  margin-left: 0.5em;
+  border: 1px solid #ced4da;
+  border-radius: 0.25rem;
+  padding: 0.25rem 0.5rem;
 }
 
-.profit-summary-label {
-  font-size: .9rem;
-  color: rgba(255,255,255,.7);
+.dataTables_wrapper .dataTables_length select {
+  border: 1px solid #ced4da;
+  border-radius: 0.25rem;
+  padding: 0.25rem 0.5rem;
 }
 
-/* Progress Bar */
+.dataTables_info {
+  padding-top: 0.85em;
+  color: #6c757d;
+}
+
+.dataTables_paginate .paginate_button {
+  padding: 0.25em 0.5em;
+  margin-left: 2px;
+  border: 1px solid transparent;
+  border-radius: 0.25rem;
+}
+
+.dataTables_paginate .paginate_button.current,
+.dataTables_paginate .paginate_button.current:hover {
+  color: #fff !important;
+  border: 1px solid #007bff;
+  background: #007bff;
+}
+
+.dataTables_paginate .paginate_button:hover {
+  color: #0056b3 !important;
+  border: 1px solid #e9ecef;
+  background: #e9ecef;
+}
+
+/* Duyarlı Tasarım İyileştirmeleri */
+@media (max-width: 767.98px) {
+  .small-box {
+    text-align: center;
+  }
+  
+  .small-box .icon {
+    display: none;
+  }
+  
+  .small-box p {
+    font-size: 0.9rem;
+  }
+  
+  .card-title {
+    font-size: 1.1rem;
+  }
+  
+  .profit-summary-value {
+    font-size: 1.5rem;
+  }
+}
+
+/* Özel DataTable Düğme Stilleri */
+.dt-buttons .btn {
+  margin-right: 5px;
+}
+
+.dt-button-collection {
+  border-radius: 0.25rem;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+}
+
+/* Animasyonlu Progress Bar */
 .progress {
-  display: flex;
-  height: .5rem;
+  border-radius: 0.25rem;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
   overflow: hidden;
-  font-size: .75rem;
   background-color: #e9ecef;
-  border-radius: .25rem;
-  box-shadow: inset 0 0.1rem 0.1rem rgba(0,0,0,.1);
-  margin-top: .5rem;
 }
 
 .progress-bar {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  color: #fff;
-  text-align: center;
-  white-space: nowrap;
   background-color: #007bff;
-  transition: width .6s ease;
+  line-height: 1;
+  transition: width 0.6s ease;
 }
 
-/* Responsive Adjustments for Mobile */
-@media (max-width: 767.98px) {
-  .info-box {
-    flex-direction: column;
-    min-height: auto;
+.progress-xs {
+  height: 4px;
+}
+
+/* Dışa Aktarma Düğme Stilleri */
+.export-buttons .btn {
+  margin-right: 5px;
+  border-radius: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+}
+
+.export-buttons .btn i {
+  margin-right: 5px;
+}
+
+/* Tarayıcılara Özel Düzeltmeler */
+@-moz-document url-prefix() {
+  .form-control {
+    height: calc(2.25rem + 2px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .progress-bar {
+    transition: none;
+  }
+}
+
+/* Print Stili */
+@media print {
+  .no-print, .no-print * {
+    display: none !important;
   }
   
-  .info-box-icon {
-    width: 100%;
-    height: 80px;
+  .content-wrapper {
+    background-color: #fff !important;
   }
   
-  .table-responsive {
-    display: block;
-    width: 100%;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    -ms-overflow-style: -ms-autohiding-scrollbar;
+  .card {
+    box-shadow: none !important;
+    border: 1px solid #ddd;
   }
   
-  .stat-cards {
-    flex-direction: column;
+  .page-break {
+    page-break-before: always;
   }
+}
+
+/* Sayfa Yüklenirken Yükleme Göstergesi */
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.loading-spinner {
+  width: 50px;
+  height: 50px;
+  border: 5px solid #f3f3f3;
+  border-top: 5px solid #007bff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Animasyon Efektleri */
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Tooltip Stilleri */
+.tooltip {
+  position: relative;
+  display: inline-block;
+}
+
+.tooltip .tooltiptext {
+  visibility: hidden;
+  width: 120px;
+  background-color: #555;
+  color: #fff;
+  text-align: center;
+  border-radius: 6px;
+  padding: 5px;
+  position: absolute;
+  z-index: 1;
+  bottom: 125%;
+  left: 50%;
+  margin-left: -60px;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.tooltip:hover .tooltiptext {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* Metrik Kartları */
+.metric-card {
+  padding: 1.5rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  margin-bottom: 1.5rem;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+.metric-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+}
+
+.metric-card .metric-value {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.metric-card .metric-label {
+  font-size: 0.9rem;
+  color: #6c757d;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.metric-card .metric-icon {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  font-size: 2rem;
+  color: rgba(0, 0, 0, 0.1);
+}
+
+/* Durum Kartları */
+.status-card {
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  transition: all 0.3s ease;
+}
+
+.status-card.positive {
+  background-color: rgba(40, 167, 69, 0.1);
+  border-left: 4px solid #28a745;
+}
+
+.status-card.negative {
+  background-color: rgba(220, 53, 69, 0.1);
+  border-left: 4px solid #dc3545;
+}
+
+.status-card.neutral {
+  background-color: rgba(23, 162, 184, 0.1);
+  border-left: 4px solid #17a2b8;
+}
+
+.status-card .status-title {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.status-card .status-value {
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.status-card .status-description {
+  font-size: 0.9rem;
+  color: #6c757d;
+  margin-top: 0.5rem;
 }

@@ -5,475 +5,1031 @@
   <meta charset="UTF-8">
   <title>Kâr-Zarar Analiz Raporu | AdminLTE</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/profit-adminlte.css') }}">
   <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <!-- AdminLTE -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
+  <!-- Ionicons -->
+  <link rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
   <!-- Google Font: Source Sans Pro -->
   <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700" rel="stylesheet">
+  <!-- DateRangePicker -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css">
+  <!-- DataTables -->
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap4.min.css">
+  <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.2.9/css/responsive.bootstrap4.min.css">
+  <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.2.2/css/buttons.bootstrap4.min.css">
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- özel CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/profit-adminlte.css') }}">
 </head>
-<body>
-  <div class="wrapper">
-    <!-- Navbar -->
-    <nav class="main-header navbar">
-      <div class="navbar-brand">
-        <i class="fas fa-chart-line mr-2"></i> Profit Dashboard
-      </div>
-      <ul class="navbar-nav">
-        <li class="nav-item">
-          <a href="/" class="nav-link">
-            <i class="fas fa-home"></i> Anasayfa
+<body class="hold-transition sidebar-mini layout-fixed">
+<div class="wrapper">
+  <!-- Navbar -->
+  <nav class="main-header navbar navbar-expand navbar-white navbar-light">
+    <!-- Left navbar links -->
+    <ul class="navbar-nav">
+      <li class="nav-item">
+        <a class="nav-link" data-widget="pushmenu" href="#" role="button"><i class="fas fa-bars"></i></a>
+      </li>
+      <li class="nav-item d-none d-sm-inline-block">
+        <a href="/" class="nav-link">Ana Sayfa</a>
+      </li>
+      <li class="nav-item d-none d-sm-inline-block">
+        <a href="#" class="nav-link">İletişim</a>
+      </li>
+    </ul>
+
+    <!-- Right navbar links -->
+    <ul class="navbar-nav ml-auto">
+      <!-- Notifications Dropdown Menu -->
+      <li class="nav-item dropdown">
+        <a class="nav-link" data-toggle="dropdown" href="#">
+          <i class="far fa-bell"></i>
+          <span class="badge badge-warning navbar-badge">15</span>
+        </a>
+        <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
+          <span class="dropdown-item dropdown-header">15 Bildirim</span>
+          <div class="dropdown-divider"></div>
+          <a href="#" class="dropdown-item">
+            <i class="fas fa-envelope mr-2"></i> 4 yeni sipariş
+            <span class="float-right text-muted text-sm">3 dk</span>
           </a>
-        </li>
-        <li class="nav-item">
-          <a href="#" class="nav-link">
-            <i class="fas fa-chart-bar"></i> Raporlar
+          <div class="dropdown-divider"></div>
+          <a href="#" class="dropdown-item">
+            <i class="fas fa-users mr-2"></i> 8 ürün stok uyarısı
+            <span class="float-right text-muted text-sm">12 saat</span>
           </a>
-        </li>
-        <li class="nav-item">
-          <a href="#" class="nav-link">
-            <i class="fas fa-cog"></i> Ayarlar
+          <div class="dropdown-divider"></div>
+          <a href="#" class="dropdown-item">
+            <i class="fas fa-file mr-2"></i> 3 yeni rapor
+            <span class="float-right text-muted text-sm">2 gün</span>
           </a>
-        </li>
-      </ul>
-    </nav>
+          <div class="dropdown-divider"></div>
+          <a href="#" class="dropdown-item dropdown-footer">Tüm Bildirimleri Gör</a>
+        </div>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" data-widget="fullscreen" href="#" role="button">
+          <i class="fas fa-expand-arrows-alt"></i>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" data-widget="control-sidebar" data-slide="true" href="#" role="button">
+          <i class="fas fa-th-large"></i>
+        </a>
+      </li>
+    </ul>
+  </nav>
+  <!-- /.navbar -->
 
-    <!-- Content Wrapper -->
-    <div class="content-wrapper">
-      <!-- Başlık ve Durum Özeti -->
-      <div class="row mb-4">
-        <div class="col-12">
-          <h1>Kâr-Zarar Raporu</h1>
-          <p>Bu panel, siparişlerdeki kâr-zarar durumunu analiz eder ve dönemsel performansı gösterir.</p>
+  <!-- Main Sidebar Container -->
+  <aside class="main-sidebar sidebar-dark-primary elevation-4">
+    <!-- Brand Logo -->
+    <a href="/" class="brand-link">
+      <img src="{{ url_for('static', filename='logo/gullu.png') }}" alt="Logo" class="brand-image img-circle elevation-3" style="opacity: .8">
+      <span class="brand-text font-weight-light">ERP Sistemi</span>
+    </a>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <!-- Sidebar user panel (optional) -->
+      <div class="user-panel mt-3 pb-3 mb-3 d-flex">
+        <div class="image">
+          <img src="https://adminlte.io/themes/v3/dist/img/user2-160x160.jpg" class="img-circle elevation-2" alt="User Image">
+        </div>
+        <div class="info">
+          <a href="#" class="d-block">Admin Kullanıcı</a>
         </div>
       </div>
 
-      <!-- Form Kartı -->
-      <div class="row mb-4">
-        <div class="col-12">
-          <div class="card">
-            <div class="card-header">
-              <h3 class="card-title">
-                <i class="fas fa-filter mr-2"></i> Analiz Filtresi
-              </h3>
-              <div class="card-tools">
-                <button type="button" class="btn btn-primary btn-sm" data-toggle="collapse" data-target="#filterForm">
-                  <i class="fas fa-chevron-down"></i>
-                </button>
-              </div>
+      <!-- Sidebar Menu -->
+      <nav class="mt-2">
+        <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
+          <li class="nav-item">
+            <a href="/" class="nav-link">
+              <i class="nav-icon fas fa-tachometer-alt"></i>
+              <p>Dashboard</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="/order_list_service" class="nav-link">
+              <i class="nav-icon fas fa-shopping-cart"></i>
+              <p>Siparişler</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="/product_service" class="nav-link">
+              <i class="nav-icon fas fa-box"></i>
+              <p>Ürünler</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="/stock_report" class="nav-link">
+              <i class="nav-icon fas fa-warehouse"></i>
+              <p>Stok Raporu</p>
+            </a>
+          </li>
+          <li class="nav-item menu-open">
+            <a href="#" class="nav-link active">
+              <i class="nav-icon fas fa-chart-pie"></i>
+              <p>
+                Raporlar
+                <i class="right fas fa-angle-left"></i>
+              </p>
+            </a>
+            <ul class="nav nav-treeview">
+              <li class="nav-item">
+                <a href="/analysis" class="nav-link">
+                  <i class="far fa-circle nav-icon"></i>
+                  <p>Satış Analizi</p>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a href="/profit" class="nav-link active">
+                  <i class="far fa-circle nav-icon"></i>
+                  <p>Kâr-Zarar Analizi</p>
+                </a>
+              </li>
+            </ul>
+          </li>
+          <li class="nav-item">
+            <a href="/user_logs" class="nav-link">
+              <i class="nav-icon fas fa-history"></i>
+              <p>Kullanıcı Logları</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="/login_logout/logout" class="nav-link">
+              <i class="nav-icon fas fa-sign-out-alt"></i>
+              <p>Çıkış</p>
+            </a>
+          </li>
+        </ul>
+      </nav>
+      <!-- /.sidebar-menu -->
+    </div>
+    <!-- /.sidebar -->
+  </aside>
+
+  <!-- Content Wrapper. Contains page content -->
+  <div class="content-wrapper">
+    <!-- Content Header (Page header) -->
+    <div class="content-header">
+      <div class="container-fluid">
+        <div class="row mb-2">
+          <div class="col-sm-6">
+            <h1 class="m-0">Kâr-Zarar Analizi</h1>
+          </div><!-- /.col -->
+          <div class="col-sm-6">
+            <ol class="breadcrumb float-sm-right">
+              <li class="breadcrumb-item"><a href="/">Ana Sayfa</a></li>
+              <li class="breadcrumb-item">Raporlar</li>
+              <li class="breadcrumb-item active">Kâr-Zarar Analizi</li>
+            </ol>
+          </div><!-- /.col -->
+        </div><!-- /.row -->
+      </div><!-- /.container-fluid -->
+    </div>
+    <!-- /.content-header -->
+
+    <!-- Main content -->
+    <section class="content">
+      <div class="container-fluid">
+        
+        <!-- Form Kartı -->
+        <div class="card card-primary card-outline">
+          <div class="card-header">
+            <h3 class="card-title">
+              <i class="fas fa-filter mr-2"></i> Filtreler
+            </h3>
+            <div class="card-tools">
+              <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                <i class="fas fa-minus"></i>
+              </button>
+              <button type="button" class="btn btn-tool" data-card-widget="remove">
+                <i class="fas fa-times"></i>
+              </button>
             </div>
-            <div class="card-body" id="filterForm">
-              <form method="POST" class="row">
-                <div class="col-md-4 form-group">
-                  <label class="form-label" for="start_date">Başlangıç Tarihi</label>
-                  <input type="date" id="start_date" name="start_date" class="form-control">
+          </div>
+          <div class="card-body">
+            <form method="POST" id="filterForm">
+              <div class="row">
+                <!-- Hızlı Filtreler -->
+                <div class="col-md-3">
+                  <div class="form-group">
+                    <label for="quick_filter">Hızlı Tarih Filtresi</label>
+                    <select class="form-control" id="quick_filter" name="quick_filter">
+                      <option value="last_30_days">Son 30 Gün</option>
+                      <option value="today">Bugün</option>
+                      <option value="yesterday">Dün</option>
+                      <option value="this_week">Bu Hafta</option>
+                      <option value="last_week">Geçen Hafta</option>
+                      <option value="this_month">Bu Ay</option>
+                      <option value="last_month">Geçen Ay</option>
+                      <option value="last_3_months">Son 3 Ay</option>
+                      <option value="this_year">Bu Yıl</option>
+                      <option value="last_year">Geçen Yıl</option>
+                      <option value="custom">Özel Aralık</option>
+                    </select>
+                  </div>
                 </div>
-                <div class="col-md-4 form-group">
-                  <label class="form-label" for="end_date">Bitiş Tarihi</label>
-                  <input type="date" id="end_date" name="end_date" class="form-control">
+                
+                <!-- Özel Tarih Aralığı -->
+                <div class="col-md-4" id="custom_date_container" style="display: none;">
+                  <div class="form-group">
+                    <label>Tarih Aralığı</label>
+                    <div class="input-group">
+                      <div class="input-group-prepend">
+                        <span class="input-group-text">
+                          <i class="far fa-calendar-alt"></i>
+                        </span>
+                      </div>
+                      <input type="text" class="form-control float-right" id="date_range_picker">
+                      <input type="hidden" id="start_date" name="start_date">
+                      <input type="hidden" id="end_date" name="end_date">
+                    </div>
+                  </div>
                 </div>
-                <div class="col-md-4 form-group">
-                  <label class="form-label" for="package_cost">Paket Maliyeti (₺)</label>
-                  <input type="number" step="0.01" id="package_cost" name="package_cost" class="form-control">
+                
+                <!-- Durum Filtresi -->
+                <div class="col-md-2">
+                  <div class="form-group">
+                    <label for="status_filter">Durum Filtresi</label>
+                    <select class="form-control" id="status_filter" name="status_filter">
+                      <option value="">Tümü</option>
+                      <option value="Created">Oluşturulan</option>
+                      <option value="Picking">Hazırlanan</option>
+                      <option value="Shipped">Kargolanmış</option>
+                      <option value="Delivered">Teslim Edilmiş</option>
+                      <option value="Cancelled">İptal Edilmiş</option>
+                    </select>
+                  </div>
                 </div>
-                <div class="col-md-4 form-group">
-                  <label class="form-label" for="employee_cost">İşçilik Maliyeti (₺)</label>
-                  <input type="number" step="0.01" id="employee_cost" name="employee_cost" class="form-control">
+                
+                <!-- Ürün Filtresi -->
+                <div class="col-md-3">
+                  <div class="form-group">
+                    <label for="product_filter">Ürün Ara</label>
+                    <input type="text" class="form-control" id="product_filter" name="product_filter" placeholder="Ürün adı, kodu...">
+                  </div>
                 </div>
-                <div class="col-md-4 form-group">
-                  <label class="form-label" for="shipping_cost">Kargo Maliyeti (₺)</label>
-                  <input type="number" step="0.01" id="shipping_cost" name="shipping_cost" class="form-control">
+              </div>
+              
+              <div class="row">
+                <!-- Maliyet Parametreleri -->
+                <div class="col-md-3">
+                  <div class="form-group">
+                    <label for="package_cost">Paket Maliyeti (₺)</label>
+                    <div class="input-group">
+                      <div class="input-group-prepend">
+                        <span class="input-group-text"><i class="fas fa-box"></i></span>
+                      </div>
+                      <input type="number" step="0.01" min="0" class="form-control" id="package_cost" name="package_cost" value="5.00">
+                    </div>
+                  </div>
                 </div>
-                <div class="col-md-4 form-group" style="display: flex; align-items: flex-end;">
-                  <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-search mr-1"></i> Analizi Başlat
-                  </button>
+                
+                <div class="col-md-3">
+                  <div class="form-group">
+                    <label for="employee_cost">İşçilik Maliyeti (₺)</label>
+                    <div class="input-group">
+                      <div class="input-group-prepend">
+                        <span class="input-group-text"><i class="fas fa-user-hard-hat"></i></span>
+                      </div>
+                      <input type="number" step="0.01" min="0" class="form-control" id="employee_cost" name="employee_cost" value="10.00">
+                    </div>
+                  </div>
                 </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {% if analysis %}
-      <!-- Özet Kartları (Info Boxes) -->
-      <div class="row mb-4">
-        <!-- Toplam Gelir -->
-        <div class="col-lg-3 col-md-6 col-sm-6">
-          <div class="info-box">
-            <span class="info-box-icon bg-success">
-              <i class="fas fa-coins"></i>
-            </span>
-            <div class="info-box-content">
-              <span class="info-box-text">Toplam Gelir</span>
-              <span class="info-box-number">{{ "%.2f"|format(total_revenue or 0) }} ₺</span>
-              <div class="progress">
-                <div class="progress-bar bg-success" style="width: 100%"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Toplam Ürün Maliyeti -->
-        <div class="col-lg-3 col-md-6 col-sm-6">
-          <div class="info-box">
-            <span class="info-box-icon bg-primary">
-              <i class="fas fa-box-open"></i>
-            </span>
-            <div class="info-box-content">
-              <span class="info-box-text">Ürün Maliyeti</span>
-              <span class="info-box-number">{{ "%.2f"|format(total_product_spent or 0) }} ₺</span>
-              <div class="progress">
-                <div class="progress-bar bg-primary" style="width: {{ (total_product_spent / total_revenue * 100) if total_revenue > 0 else 0 }}%"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Komisyon Gideri -->
-        <div class="col-lg-3 col-md-6 col-sm-6">
-          <div class="info-box">
-            <span class="info-box-icon bg-warning">
-              <i class="fas fa-percentage"></i>
-            </span>
-            <div class="info-box-content">
-              <span class="info-box-text">Komisyon Gideri</span>
-              <span class="info-box-number">{{ "%.2f"|format(total_commission_spent or 0) }} ₺</span>
-              <div class="progress">
-                <div class="progress-bar bg-warning" style="width: {{ (total_commission_spent / total_revenue * 100) if total_revenue > 0 else 0 }}%"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Diğer Giderler -->
-        <div class="col-lg-3 col-md-6 col-sm-6">
-          <div class="info-box">
-            <span class="info-box-icon bg-danger">
-              <i class="fas fa-truck"></i>
-            </span>
-            <div class="info-box-content">
-              <span class="info-box-text">Sevkiyat Giderleri</span>
-              <span class="info-box-number">{{ "%.2f"|format(total_shipping_spent + total_package_spent or 0) }} ₺</span>
-              <div class="progress">
-                <div class="progress-bar bg-danger" style="width: {{ ((total_shipping_spent + total_package_spent) / total_revenue * 100) if total_revenue > 0 else 0 }}%"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- İşçilik Gideri -->
-        <div class="col-lg-3 col-md-6 col-sm-6">
-          <div class="info-box">
-            <span class="info-box-icon bg-info">
-              <i class="fas fa-users"></i>
-            </span>
-            <div class="info-box-content">
-              <span class="info-box-text">İşçilik Gideri</span>
-              <span class="info-box-number">{{ "%.2f"|format(total_employee_spent or 0) }} ₺</span>
-              <div class="progress">
-                <div class="progress-bar bg-info" style="width: {{ (total_employee_spent / total_revenue * 100) if total_revenue > 0 else 0 }}%"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Paket Gideri -->
-        <div class="col-lg-3 col-md-6 col-sm-6">
-          <div class="info-box">
-            <span class="info-box-icon bg-secondary">
-              <i class="fas fa-box"></i>
-            </span>
-            <div class="info-box-content">
-              <span class="info-box-text">Paket Gideri</span>
-              <span class="info-box-number">{{ "%.2f"|format(total_package_spent or 0) }} ₺</span>
-              <div class="progress">
-                <div class="progress-bar bg-secondary" style="width: {{ (total_package_spent / total_revenue * 100) if total_revenue > 0 else 0 }}%"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Kargo Gideri -->
-        <div class="col-lg-3 col-md-6 col-sm-6">
-          <div class="info-box">
-            <span class="info-box-icon bg-info">
-              <i class="fas fa-shipping-fast"></i>
-            </span>
-            <div class="info-box-content">
-              <span class="info-box-text">Kargo Gideri</span>
-              <span class="info-box-number">{{ "%.2f"|format(total_shipping_spent or 0) }} ₺</span>
-              <div class="progress">
-                <div class="progress-bar bg-info" style="width: {{ (total_shipping_spent / total_revenue * 100) if total_revenue > 0 else 0 }}%"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Sipariş Sayısı -->
-        <div class="col-lg-3 col-md-6 col-sm-6">
-          <div class="info-box">
-            <span class="info-box-icon bg-primary">
-              <i class="fas fa-shopping-cart"></i>
-            </span>
-            <div class="info-box-content">
-              <span class="info-box-text">Toplam Sipariş</span>
-              <span class="info-box-number">{{ analysis|length }}</span>
-              <span class="info-box-text mt-2">Ortalama Sipariş Değeri</span>
-              <span class="info-box-number">{{ "%.2f"|format(total_revenue / analysis|length if analysis|length > 0 else 0) }} ₺</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Ana Özet Panosu -->
-      <div class="row mb-4">
-        <!-- Toplam Kâr -->
-        <div class="col-lg-6 col-md-6">
-          <div class="profit-summary">
-            <div class="profit-summary-title">Toplam Kâr / Zarar</div>
-            <div class="profit-summary-value {{ 'text-success' if total_profit > 0 else 'text-danger' }}">
-              {{ "%.2f"|format(total_profit or 0) }} ₺
-              <i class="fas {{ 'fa-arrow-up' if total_profit > 0 else 'fa-arrow-down' }}"></i>
-            </div>
-            <div class="profit-summary-label">Analiz edilen dönemde toplam kâr/zarar</div>
-            <div class="progress">
-              <div class="progress-bar {{ 'bg-success' if total_profit > 0 else 'bg-danger' }}" 
-                   style="width: {{ (total_profit / total_revenue * 100) if total_revenue > 0 and total_profit > 0 else ((-total_profit) / total_revenue * 100) if total_revenue > 0 and total_profit < 0 else 0 }}%">
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Ortalama Kâr -->
-        <div class="col-lg-6 col-md-6">
-          <div class="profit-summary">
-            <div class="profit-summary-title">Ortalama Kâr / Zarar</div>
-            <div class="profit-summary-value {{ 'text-success' if avg_profit > 0 else 'text-danger' }}">
-              {{ "%.2f"|format(avg_profit or 0) }} ₺
-              <i class="fas {{ 'fa-arrow-up' if avg_profit > 0 else 'fa-arrow-down' }}"></i>
-            </div>
-            <div class="profit-summary-label">Sipariş başına ortalama kâr/zarar</div>
-            <div class="progress">
-              <div class="progress-bar {{ 'bg-success' if avg_profit > 0 else 'bg-danger' }}" 
-                   style="width: {{ (avg_profit / (total_revenue / analysis|length) * 100) if analysis|length > 0 and avg_profit > 0 else ((-avg_profit) / (total_revenue / analysis|length) * 100) if analysis|length > 0 and avg_profit < 0 else 0 }}%">
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Grafik Bölümü -->
-      <div class="row mb-4">
-        <div class="col-lg-8">
-          <div class="card">
-            <div class="card-header">
-              <h3 class="card-title">
-                <i class="fas fa-chart-pie mr-2"></i> Gider Dağılımı
-              </h3>
-              <div class="card-tools">
-                <button type="button" class="btn btn-tool">
-                  <i class="fas fa-sync-alt"></i>
-                </button>
-              </div>
-            </div>
-            <div class="card-body">
-              <canvas id="expensesChart" height="300"></canvas>
-            </div>
-          </div>
-        </div>
-        <div class="col-lg-4">
-          <div class="card">
-            <div class="card-header">
-              <h3 class="card-title">
-                <i class="fas fa-chart-bar mr-2"></i> Kâr-Zarar Dağılımı
-              </h3>
-            </div>
-            <div class="card-body">
-              <canvas id="profitLossChart" height="300"></canvas>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Sipariş Detay Tablosu -->
-      <div class="row">
-        <div class="col-12">
-          <div class="card">
-            <div class="card-header">
-              <h3 class="card-title">
-                <i class="fas fa-list mr-2"></i> Sipariş Detayları
-              </h3>
-              <div class="card-tools">
-                <div class="input-group input-group-sm" style="width: 150px;">
-                  <input type="text" id="orderSearch" class="form-control" placeholder="Sipariş ara...">
-                  <div class="input-group-append">
-                    <button type="button" class="btn btn-default">
-                      <i class="fas fa-search"></i>
+                
+                <div class="col-md-3">
+                  <div class="form-group">
+                    <label for="shipping_cost">Kargo Maliyeti (₺)</label>
+                    <div class="input-group">
+                      <div class="input-group-prepend">
+                        <span class="input-group-text"><i class="fas fa-truck"></i></span>
+                      </div>
+                      <input type="number" step="0.01" min="0" class="form-control" id="shipping_cost" name="shipping_cost" value="15.00">
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Analiz Butonu -->
+                <div class="col-md-3 d-flex align-items-end">
+                  <div class="form-group w-100">
+                    <button type="submit" class="btn btn-primary btn-block">
+                      <i class="fas fa-search mr-1"></i> Analizi Başlat
                     </button>
                   </div>
                 </div>
               </div>
+            </form>
+          </div>
+        </div>
+        
+        {% if analysis %}
+        <!-- Özet Kartları -->
+        <div class="row">
+          <!-- Toplam Gelir -->
+          <div class="col-lg-3 col-md-6">
+            <div class="small-box bg-info">
+              <div class="inner">
+                <h3>{{ '{:,.2f}'.format(total_revenue) }} ₺</h3>
+                <p>Toplam Gelir</p>
+              </div>
+              <div class="icon">
+                <i class="ion ion-bag"></i>
+              </div>
+              <a href="#" class="small-box-footer">Detaylar <i class="fas fa-arrow-circle-right"></i></a>
             </div>
-            <div class="card-body table-responsive p-0">
-              <table class="table table-hover table-striped table-profit">
-                <thead>
-                  <tr>
-                    <th>Sipariş No</th>
-                    <th>Tablo</th>
-                    <th>Durum</th>
-                    <th>Ürün</th>
-                    <th class="text-right">Gelir (₺)</th>
-                    <th class="text-right">Gider (₺)</th>
-                    <th class="text-right">Kâr (₺)</th>
-                    <th class="text-right">Kâr Oranı (%)</th>
-                  </tr>
-                </thead>
-                <tbody>
-                {% for item in analysis %}
-                  <tr class="{{ 'profit' if item.profit >= 0 else 'loss' }}">
-                    <td>{{ item.order_number }}</td>
-                    <td><span class="badge bg-{{ 'primary' if item.order_table == 'OrderCreated' else 'success' if item.order_table == 'OrderDelivered' else 'warning' if item.order_table == 'OrderShipped' else 'info' if item.order_table == 'OrderPicking' else 'danger' }}">{{ item.order_table }}</span></td>
-                    <td>{{ item.status }}</td>
-                    <td>{{ item.product }}</td>
-                    <td class="text-right">{{ "%.2f"|format(item.net_income) }}</td>
-                    <td class="text-right">{{ "%.2f"|format(item.total_expenses) }}</td>
-                    <td class="text-right font-weight-bold">{{ "%.2f"|format(item.profit) }}</td>
-                    <td class="text-right">{{ "%.2f"|format((item.profit / item.net_income * 100) if item.net_income > 0 else 0) }}%</td>
-                  </tr>
-                {% endfor %}
-                </tbody>
-              </table>
+          </div>
+          <!-- Toplam Gider -->
+          <div class="col-lg-3 col-md-6">
+            <div class="small-box bg-warning">
+              <div class="inner">
+                <h3>{{ '{:,.2f}'.format(total_commission_spent + total_package_spent + total_shipping_spent + total_employee_spent + total_product_spent) }} ₺</h3>
+                <p>Toplam Gider</p>
+              </div>
+              <div class="icon">
+                <i class="ion ion-stats-bars"></i>
+              </div>
+              <a href="#expense-details" class="small-box-footer">Detaylar <i class="fas fa-arrow-circle-right"></i></a>
+            </div>
+          </div>
+          <!-- Toplam Kar/Zarar -->
+          <div class="col-lg-3 col-md-6">
+            <div class="small-box {{ 'bg-success' if total_profit > 0 else 'bg-danger' }}">
+              <div class="inner">
+                <h3>{{ '{:,.2f}'.format(total_profit) }} ₺</h3>
+                <p>{{ 'Kâr' if total_profit > 0 else 'Zarar' }}</p>
+              </div>
+              <div class="icon">
+                <i class="ion {{ 'ion-arrow-graph-up-right' if total_profit > 0 else 'ion-arrow-graph-down-right' }}"></i>
+              </div>
+              <a href="#" class="small-box-footer">Detaylar <i class="fas fa-arrow-circle-right"></i></a>
+            </div>
+          </div>
+          <!-- Ortalama Kar -->
+          <div class="col-lg-3 col-md-6">
+            <div class="small-box {{ 'bg-success' if avg_profit > 0 else 'bg-danger' }}">
+              <div class="inner">
+                <h3>{{ '{:,.2f}'.format(avg_profit) }} ₺</h3>
+                <p>Sipariş Başına {{ 'Kâr' if avg_profit > 0 else 'Zarar' }}</p>
+              </div>
+              <div class="icon">
+                <i class="ion ion-calculator"></i>
+              </div>
+              <a href="#" class="small-box-footer">Detaylar <i class="fas fa-arrow-circle-right"></i></a>
             </div>
           </div>
         </div>
-      </div>
-
-      <!-- JavaScript: Grafikleri oluştur -->
-      <script>
-        document.addEventListener('DOMContentLoaded', function() {
-          // Gider Dağılımı Grafik
-          const expensesCtx = document.getElementById('expensesChart').getContext('2d');
-          new Chart(expensesCtx, {
-            type: 'doughnut',
-            data: {
-              labels: ['Ürün Maliyeti', 'Komisyon', 'Paket', 'Kargo', 'İşçilik'],
-              datasets: [{
-                data: [
-                  {{ total_product_spent or 0 }},
-                  {{ total_commission_spent or 0 }},
-                  {{ total_package_spent or 0 }},
-                  {{ total_shipping_spent or 0 }},
-                  {{ total_employee_spent or 0 }}
-                ],
-                backgroundColor: [
-                  '#007bff',
-                  '#ffc107',
-                  '#6c757d',
-                  '#17a2b8',
-                  '#28a745'
-                ],
-                borderWidth: 1
-              }]
-            },
-            options: {
-              responsive: true,
-              legend: {
-                position: 'right',
-              },
-              title: {
-                display: true,
-                text: 'Gider Dağılımı'
-              },
-              animation: {
-                animateScale: true,
-                animateRotate: true
-              }
-            }
-          });
-
-          // Kâr-Zarar Grafiği
-          const plChart = document.getElementById('profitLossChart').getContext('2d');
-          
-          // Kâr-zarar durumuna göre siparişleri say
-          let profitCount = 0;
-          let lossCount = 0;
-          {% for item in analysis %}
-            {% if item.profit >= 0 %}
-              profitCount++;
-            {% else %}
-              lossCount++;
-            {% endif %}
-          {% endfor %}
-          
-          new Chart(plChart, {
-            type: 'bar',
-            data: {
-              labels: ['Kârlı Siparişler', 'Zararlı Siparişler'],
-              datasets: [{
-                label: 'Sipariş Sayısı',
-                data: [profitCount, lossCount],
-                backgroundColor: [
-                  '#28a745',
-                  '#dc3545'
-                ],
-                borderWidth: 1
-              }]
-            },
-            options: {
-              responsive: true,
-              scales: {
-                yAxes: [{
-                  ticks: {
-                    beginAtZero: true,
-                    precision: 0
-                  }
-                }]
-              }
-            }
-          });
-        });
-
-        // Sipariş arama fonksiyonu
-        document.getElementById('orderSearch').addEventListener('keyup', function() {
-          const value = this.value.toLowerCase();
-          const rows = document.querySelectorAll('.table-profit tbody tr');
-          
-          rows.forEach(row => {
-            const orderNum = row.cells[0].textContent.toLowerCase();
-            const product = row.cells[3].textContent.toLowerCase();
-            
-            if (orderNum.includes(value) || product.includes(value)) {
-              row.style.display = '';
-            } else {
-              row.style.display = 'none';
-            }
-          });
-        });
-      </script>
-      {% else %}
-      <div class="row">
-        <div class="col-12">
-          <div class="card">
-            <div class="card-header">
-              <h3 class="card-title">Analiz Sonucu</h3>
+        
+        <!-- Kâr Dağılımı & Trend Grafikleri -->
+        <div class="row">
+          <div class="col-lg-8">
+            <div class="card card-primary card-outline">
+              <div class="card-header">
+                <h3 class="card-title">
+                  <i class="fas fa-chart-line mr-1"></i>
+                  Kâr-Zarar Trend Analizi
+                </h3>
+                <div class="card-tools">
+                  <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                    <i class="fas fa-minus"></i>
+                  </button>
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="chart">
+                  <canvas id="profitTrendChart" style="height: 300px;"></canvas>
+                </div>
+              </div>
             </div>
-            <div class="card-body">
-              <div class="text-center">
-                <i class="fas fa-info-circle fa-3x text-info mb-3"></i>
-                <p>Henüz bir analiz yapılmadı veya sonuç bulunamadı.</p>
-                <p class="text-muted">Analiz yapmak için yukarıdaki filtre formunu kullanın.</p>
+          </div>
+          
+          <div class="col-lg-4">
+            <div class="card card-success card-outline">
+              <div class="card-header">
+                <h3 class="card-title">
+                  <i class="fas fa-chart-pie mr-1"></i>
+                  Gider Dağılımı
+                </h3>
+                <div class="card-tools">
+                  <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                    <i class="fas fa-minus"></i>
+                  </button>
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="chart">
+                  <canvas id="expenseDonutChart" style="height: 300px;"></canvas>
+                </div>
               </div>
             </div>
           </div>
         </div>
+        
+        <!-- Detaylı İstatistikler -->
+        <div class="row">
+          <!-- Gider Detayları -->
+          <div class="col-lg-6" id="expense-details">
+            <div class="card card-warning card-outline">
+              <div class="card-header">
+                <h3 class="card-title">
+                  <i class="fas fa-money-bill-wave mr-1"></i>
+                  Gider Detayları
+                </h3>
+                <div class="card-tools">
+                  <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                    <i class="fas fa-minus"></i>
+                  </button>
+                </div>
+              </div>
+              <div class="card-body p-0">
+                <table class="table table-striped">
+                  <thead>
+                    <tr>
+                      <th>Gider Kalemi</th>
+                      <th>Tutar (₺)</th>
+                      <th>Oran</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><i class="fas fa-box-open text-primary mr-2"></i> Ürün Maliyeti</td>
+                      <td>{{ '{:,.2f}'.format(total_product_spent) }}</td>
+                      <td>
+                        <div class="progress progress-xs">
+                          <div class="progress-bar bg-primary" style="width: {{ (total_product_spent / (total_commission_spent + total_package_spent + total_shipping_spent + total_employee_spent + total_product_spent) * 100) if (total_commission_spent + total_package_spent + total_shipping_spent + total_employee_spent + total_product_spent) > 0 else 0 }}%"></div>
+                        </div>
+                        <span class="badge bg-primary">{{ '{:.1f}'.format((total_product_spent / (total_commission_spent + total_package_spent + total_shipping_spent + total_employee_spent + total_product_spent) * 100)) if (total_commission_spent + total_package_spent + total_shipping_spent + total_employee_spent + total_product_spent) > 0 else 0 }}%</span>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td><i class="fas fa-percentage text-warning mr-2"></i> Komisyon</td>
+                      <td>{{ '{:,.2f}'.format(total_commission_spent) }}</td>
+                      <td>
+                        <div class="progress progress-xs">
+                          <div class="progress-bar bg-warning" style="width: {{ (total_commission_spent / (total_commission_spent + total_package_spent + total_shipping_spent + total_employee_spent + total_product_spent) * 100) if (total_commission_spent + total_package_spent + total_shipping_spent + total_employee_spent + total_product_spent) > 0 else 0 }}%"></div>
+                        </div>
+                        <span class="badge bg-warning">{{ '{:.1f}'.format((total_commission_spent / (total_commission_spent + total_package_spent + total_shipping_spent + total_employee_spent + total_product_spent) * 100)) if (total_commission_spent + total_package_spent + total_shipping_spent + total_employee_spent + total_product_spent) > 0 else 0 }}%</span>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td><i class="fas fa-box text-secondary mr-2"></i> Paket Maliyeti</td>
+                      <td>{{ '{:,.2f}'.format(total_package_spent) }}</td>
+                      <td>
+                        <div class="progress progress-xs">
+                          <div class="progress-bar bg-secondary" style="width: {{ (total_package_spent / (total_commission_spent + total_package_spent + total_shipping_spent + total_employee_spent + total_product_spent) * 100) if (total_commission_spent + total_package_spent + total_shipping_spent + total_employee_spent + total_product_spent) > 0 else 0 }}%"></div>
+                        </div>
+                        <span class="badge bg-secondary">{{ '{:.1f}'.format((total_package_spent / (total_commission_spent + total_package_spent + total_shipping_spent + total_employee_spent + total_product_spent) * 100)) if (total_commission_spent + total_package_spent + total_shipping_spent + total_employee_spent + total_product_spent) > 0 else 0 }}%</span>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td><i class="fas fa-shipping-fast text-info mr-2"></i> Kargo Maliyeti</td>
+                      <td>{{ '{:,.2f}'.format(total_shipping_spent) }}</td>
+                      <td>
+                        <div class="progress progress-xs">
+                          <div class="progress-bar bg-info" style="width: {{ (total_shipping_spent / (total_commission_spent + total_package_spent + total_shipping_spent + total_employee_spent + total_product_spent) * 100) if (total_commission_spent + total_package_spent + total_shipping_spent + total_employee_spent + total_product_spent) > 0 else 0 }}%"></div>
+                        </div>
+                        <span class="badge bg-info">{{ '{:.1f}'.format((total_shipping_spent / (total_commission_spent + total_package_spent + total_shipping_spent + total_employee_spent + total_product_spent) * 100)) if (total_commission_spent + total_package_spent + total_shipping_spent + total_employee_spent + total_product_spent) > 0 else 0 }}%</span>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td><i class="fas fa-users text-success mr-2"></i> İşçilik Maliyeti</td>
+                      <td>{{ '{:,.2f}'.format(total_employee_spent) }}</td>
+                      <td>
+                        <div class="progress progress-xs">
+                          <div class="progress-bar bg-success" style="width: {{ (total_employee_spent / (total_commission_spent + total_package_spent + total_shipping_spent + total_employee_spent + total_product_spent) * 100) if (total_commission_spent + total_package_spent + total_shipping_spent + total_employee_spent + total_product_spent) > 0 else 0 }}%"></div>
+                        </div>
+                        <span class="badge bg-success">{{ '{:.1f}'.format((total_employee_spent / (total_commission_spent + total_package_spent + total_shipping_spent + total_employee_spent + total_product_spent) * 100)) if (total_commission_spent + total_package_spent + total_shipping_spent + total_employee_spent + total_product_spent) > 0 else 0 }}%</span>
+                      </td>
+                    </tr>
+                  </tbody>
+                  <tfoot>
+                    <tr class="font-weight-bold">
+                      <td>TOPLAM</td>
+                      <td>{{ '{:,.2f}'.format(total_commission_spent + total_package_spent + total_shipping_spent + total_employee_spent + total_product_spent) }} ₺</td>
+                      <td>100%</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Kârlılık Durumu -->
+          <div class="col-lg-6">
+            <div class="card card-info card-outline">
+              <div class="card-header">
+                <h3 class="card-title">
+                  <i class="fas fa-chart-bar mr-1"></i>
+                  Kârlılık Özeti
+                </h3>
+                <div class="card-tools">
+                  <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                    <i class="fas fa-minus"></i>
+                  </button>
+                </div>
+              </div>
+              <div class="card-body p-0">
+                <table class="table table-striped">
+                  <thead>
+                    <tr>
+                      <th>Kategori</th>
+                      <th>Değer</th>
+                      <th>Grafik</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>Toplam Sipariş</td>
+                      <td>{{ analysis|length }}</td>
+                      <td>
+                        <div class="progress progress-xs">
+                          <div class="progress-bar bg-primary" style="width: 100%"></div>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>Kârlı Siparişler</td>
+                      <td>{{ profitable_count }}</td>
+                      <td>
+                        <div class="progress progress-xs">
+                          <div class="progress-bar bg-success" style="width: {{ (profitable_count / analysis|length * 100) if analysis|length > 0 else 0 }}%"></div>
+                        </div>
+                        <span class="badge bg-success">{{ '{:.1f}'.format((profitable_count / analysis|length * 100)) if analysis|length > 0 else 0 }}%</span>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>Zararlı Siparişler</td>
+                      <td>{{ unprofitable_count }}</td>
+                      <td>
+                        <div class="progress progress-xs">
+                          <div class="progress-bar bg-danger" style="width: {{ (unprofitable_count / analysis|length * 100) if analysis|length > 0 else 0 }}%"></div>
+                        </div>
+                        <span class="badge bg-danger">{{ '{:.1f}'.format((unprofitable_count / analysis|length * 100)) if analysis|length > 0 else 0 }}%</span>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>Ortalama Sipariş Değeri</td>
+                      <td>{{ '{:,.2f}'.format(total_revenue / analysis|length if analysis|length > 0 else 0) }} ₺</td>
+                      <td>
+                        <i class="fas fa-info-circle text-info"></i>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>Kâr Marjı</td>
+                      <td>{{ '{:,.2f}'.format((total_profit / total_revenue * 100) if total_revenue > 0 else 0) }}%</td>
+                      <td>
+                        <div class="progress progress-xs">
+                          <div class="progress-bar {{ 'bg-success' if total_profit > 0 else 'bg-danger' }}" style="width: {{ (total_profit / total_revenue * 100) if total_revenue > 0 and total_profit > 0 else 0 }}%"></div>
+                        </div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- En Kârlı/Zararlı Ürünler -->
+        <div class="row">
+          <!-- En Kârlı Ürünler -->
+          <div class="col-md-6">
+            <div class="card card-success card-outline">
+              <div class="card-header">
+                <h3 class="card-title">
+                  <i class="fas fa-arrow-up mr-1"></i>
+                  En Kârlı Ürünler
+                </h3>
+                <div class="card-tools">
+                  <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                    <i class="fas fa-minus"></i>
+                  </button>
+                </div>
+              </div>
+              <div class="card-body p-0">
+                <table class="table table-striped">
+                  <thead>
+                    <tr>
+                      <th>Ürün</th>
+                      <th>Adet</th>
+                      <th>Toplam Kâr</th>
+                      <th>Kâr Marjı</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for product_code, stats in top_profitable_products.items() %}
+                    <tr>
+                      <td title="{{ product_code }}">{{ product_code[:30] + '...' if product_code|length > 30 else product_code }}</td>
+                      <td>{{ stats.count }}</td>
+                      <td class="text-success">{{ '{:,.2f}'.format(stats.profit) }} ₺</td>
+                      <td>{{ '{:,.1f}'.format((stats.profit / stats.revenue * 100) if stats.revenue > 0 else 0) }}%</td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          
+          <!-- En Zararlı Ürünler -->
+          <div class="col-md-6">
+            <div class="card card-danger card-outline">
+              <div class="card-header">
+                <h3 class="card-title">
+                  <i class="fas fa-arrow-down mr-1"></i>
+                  En Zararlı Ürünler
+                </h3>
+                <div class="card-tools">
+                  <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                    <i class="fas fa-minus"></i>
+                  </button>
+                </div>
+              </div>
+              <div class="card-body p-0">
+                <table class="table table-striped">
+                  <thead>
+                    <tr>
+                      <th>Ürün</th>
+                      <th>Adet</th>
+                      <th>Toplam Zarar</th>
+                      <th>Zarar Oranı</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for product_code, stats in top_unprofitable_products.items() %}
+                    <tr>
+                      <td title="{{ product_code }}">{{ product_code[:30] + '...' if product_code|length > 30 else product_code }}</td>
+                      <td>{{ stats.count }}</td>
+                      <td class="text-danger">{{ '{:,.2f}'.format(stats.profit) }} ₺</td>
+                      <td>{{ '{:,.1f}'.format((stats.profit / stats.revenue * 100) if stats.revenue > 0 else 0) }}%</td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Sipariş Detay Tablosu -->
+        <div class="card card-primary card-outline">
+          <div class="card-header">
+            <h3 class="card-title">
+              <i class="fas fa-table mr-1"></i>
+              Sipariş Detayları
+            </h3>
+            <div class="card-tools">
+              <div class="btn-group">
+                <button type="button" class="btn btn-sm btn-outline-primary" id="exportCSV">
+                  <i class="fas fa-file-csv mr-1"></i> CSV İndir
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-success" id="exportExcel">
+                  <i class="fas fa-file-excel mr-1"></i> Excel İndir
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-danger" id="exportPDF">
+                  <i class="fas fa-file-pdf mr-1"></i> PDF İndir
+                </button>
+              </div>
+              <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                <i class="fas fa-minus"></i>
+              </button>
+            </div>
+          </div>
+          <div class="card-body">
+            <table id="orders-table" class="table table-bordered table-striped">
+              <thead>
+                <tr>
+                  <th>Sipariş No</th>
+                  <th>Tarih</th>
+                  <th>Durum</th>
+                  <th>Ürün</th>
+                  <th>Gelir (₺)</th>
+                  <th>Gider (₺)</th>
+                  <th>Kâr (₺)</th>
+                  <th>Kâr Marjı</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for item in analysis %}
+                <tr class="{{ 'text-success' if item.profit >= 0 else 'text-danger' }}">
+                  <td>{{ item.order_number }}</td>
+                  <td>{{ item.order_date.strftime('%d.%m.%Y') }}</td>
+                  <td>
+                    <span class="badge {{ 'badge-primary' if item.status == 'Created' else 'badge-warning' if item.status == 'Picking' else 'badge-info' if item.status == 'Shipped' else 'badge-success' if item.status == 'Delivered' else 'badge-danger' }}">
+                      {{ item.status }}
+                    </span>
+                  </td>
+                  <td title="{{ item.product_name }}">{{ item.product[:20] + '...' if item.product|length > 20 else item.product }}</td>
+                  <td>{{ '{:,.2f}'.format(item.net_income) }}</td>
+                  <td>{{ '{:,.2f}'.format(item.total_expenses) }}</td>
+                  <td class="{{ 'text-success' if item.profit >= 0 else 'text-danger' }} font-weight-bold">
+                    {{ '{:,.2f}'.format(item.profit) }}
+                  </td>
+                  <td>
+                    <span class="badge {{ 'bg-success' if item.profit_margin >= 0 else 'bg-danger' }}">
+                      {{ '{:,.1f}'.format(item.profit_margin) }}%
+                    </span>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+              <tfoot>
+                <tr>
+                  <th>Sipariş No</th>
+                  <th>Tarih</th>
+                  <th>Durum</th>
+                  <th>Ürün</th>
+                  <th>Gelir (₺)</th>
+                  <th>Gider (₺)</th>
+                  <th>Kâr (₺)</th>
+                  <th>Kâr Marjı</th>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+        {% else %}
+        <!-- Sonuç bulunamadı -->
+        <div class="card">
+          <div class="card-body">
+            <div class="text-center py-5">
+              <i class="fas fa-search fa-4x mb-3 text-muted"></i>
+              <h3>Henüz bir analiz yapılmadı</h3>
+              <p class="text-muted">Analiz yapmak için yukarıdaki filtreleri kullanıp "Analizi Başlat" düğmesine tıklayın.</p>
+              {% if error %}
+              <div class="alert alert-danger">{{ error }}</div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        {% endif %}
       </div>
-      {% endif %}
-    </div>
+    </section>
+    <!-- /.content -->
   </div>
+  <!-- /.content-wrapper -->
 
-  <!-- Font Awesome -->
-  <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+  <!-- Footer -->
+  <footer class="main-footer">
+    <div class="float-right d-none d-sm-block">
+      <b>Version</b> 1.0
+    </div>
+    <strong>&copy; 2023-{{ now.year }} <a href="/">ERP Sistemi</a>.</strong> Tüm hakları saklıdır.
+  </footer>
+</div>
+<!-- ./wrapper -->
+
+<!-- REQUIRED SCRIPTS -->
+<!-- jQuery -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<!-- Bootstrap 4 -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/js/bootstrap.bundle.min.js"></script>
+<!-- AdminLTE App -->
+<script src="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/js/adminlte.min.js"></script>
+<!-- Moment.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+<!-- DateRangePicker -->
+<script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+<!-- DataTables & Plugins -->
+<script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap4.min.js"></script>
+<script src="https://cdn.datatables.net/responsive/2.2.9/js/dataTables.responsive.min.js"></script>
+<script src="https://cdn.datatables.net/responsive/2.2.9/js/responsive.bootstrap4.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.2.2/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.2.2/js/buttons.bootstrap4.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.2.2/js/buttons.html5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.2.2/js/buttons.print.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.2.2/js/buttons.colVis.min.js"></script>
+
+<script>
+  $(document).ready(function() {
+    // Form görünümünü ayarla
+    $('#quick_filter').change(function() {
+      if ($(this).val() === 'custom') {
+        $('#custom_date_container').show();
+      } else {
+        $('#custom_date_container').hide();
+      }
+    });
+    
+    // DateRangePicker
+    $('#date_range_picker').daterangepicker({
+      locale: {
+        format: 'DD.MM.YYYY',
+        applyLabel: 'Uygula',
+        cancelLabel: 'İptal',
+        fromLabel: 'Başlangıç',
+        toLabel: 'Bitiş',
+        customRangeLabel: 'Özel Aralık',
+        daysOfWeek: ['Pz', 'Pt', 'Sa', 'Çr', 'Pr', 'Cu', 'Ct'],
+        monthNames: ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık']
+      },
+      startDate: moment().subtract(30, 'days'),
+      endDate: moment()
+    }, function(start, end) {
+      $('#start_date').val(start.format('YYYY-MM-DD'));
+      $('#end_date').val(end.format('YYYY-MM-DD'));
+    });
+    
+    // Başlangıçta tarih değerlerini ayarla
+    $('#start_date').val(moment().subtract(30, 'days').format('YYYY-MM-DD'));
+    $('#end_date').val(moment().format('YYYY-MM-DD'));
+    
+    // DataTables
+    $('#orders-table').DataTable({
+      "responsive": true,
+      "lengthChange": true,
+      "autoWidth": false,
+      "language": {
+        "search": "Ara:",
+        "lengthMenu": "_MENU_ kayıt göster",
+        "info": "_TOTAL_ kayıttan _START_ - _END_ arası gösteriliyor",
+        "infoEmpty": "Kayıt yok",
+        "infoFiltered": "(_MAX_ kayıt içerisinden filtrelendi)",
+        "zeroRecords": "Eşleşen kayıt bulunamadı",
+        "paginate": {
+          "first": "İlk",
+          "last": "Son",
+          "next": "Sonraki",
+          "previous": "Önceki"
+        }
+      },
+      "order": [[6, 'desc']], // Kâr sütununa göre sırala
+      "buttons": [
+        {
+          extend: 'csv',
+          text: '<i class="fas fa-file-csv"></i> CSV',
+          title: 'Kar_Zarar_Analizi_' + moment().format('YYYY-MM-DD'),
+          className: 'btn-sm btn-outline-primary'
+        },
+        {
+          extend: 'excel',
+          text: '<i class="fas fa-file-excel"></i> Excel',
+          title: 'Kar_Zarar_Analizi_' + moment().format('YYYY-MM-DD'),
+          className: 'btn-sm btn-outline-success'
+        },
+        {
+          extend: 'pdf',
+          text: '<i class="fas fa-file-pdf"></i> PDF',
+          title: 'Kar_Zarar_Analizi_' + moment().format('YYYY-MM-DD'),
+          className: 'btn-sm btn-outline-danger'
+        },
+        {
+          extend: 'print',
+          text: '<i class="fas fa-print"></i> Yazdır',
+          title: 'Kar Zarar Analizi',
+          className: 'btn-sm btn-outline-secondary'
+        }
+      ]
+    });
+    
+    // Dışa aktarma butonları
+    $('#exportCSV').click(function() {
+      $('#orders-table_wrapper .buttons-csv').click();
+    });
+    
+    $('#exportExcel').click(function() {
+      $('#orders-table_wrapper .buttons-excel').click();
+    });
+    
+    $('#exportPDF').click(function() {
+      $('#orders-table_wrapper .buttons-pdf').click();
+    });
+    
+    {% if analysis %}
+    // Grafikleri hazırla
+    
+    // Gider Dağılımı Pasta Grafiği
+    var expenseDonutChart = new Chart(document.getElementById('expenseDonutChart').getContext('2d'), {
+      type: 'doughnut',
+      data: {
+        labels: ['Ürün Maliyeti', 'Komisyon', 'Paket', 'Kargo', 'İşçilik'],
+        datasets: [{
+          data: [
+            {{ total_product_spent }},
+            {{ total_commission_spent }},
+            {{ total_package_spent }},
+            {{ total_shipping_spent }},
+            {{ total_employee_spent }}
+          ],
+          backgroundColor: [
+            '#007bff', // primary
+            '#ffc107', // warning
+            '#6c757d', // secondary
+            '#17a2b8', // info
+            '#28a745'  // success
+          ]
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        legend: {
+          position: 'right'
+        },
+        tooltips: {
+          callbacks: {
+            label: function(tooltipItem, data) {
+              var dataset = data.datasets[tooltipItem.datasetIndex];
+              var total = dataset.data.reduce(function(previousValue, currentValue) {
+                return previousValue + currentValue;
+              });
+              var currentValue = dataset.data[tooltipItem.index];
+              var percentage = Math.floor(((currentValue/total) * 100)+0.5);
+              return data.labels[tooltipItem.index] + ': ' + currentValue.toLocaleString('tr-TR', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' ₺ (' + percentage + "%)";
+            }
+          }
+        }
+      }
+    });
+    
+    // Kâr-Zarar Trend Grafiği
+    {% if trend_data %}
+    var trendData = {{ trend_data|safe }};
+    var dates = Object.keys(trendData).sort();
+    var profits = [];
+    var revenues = [];
+    
+    for (var i = 0; i < dates.length; i++) {
+      profits.push(trendData[dates[i]].profit);
+      revenues.push(trendData[dates[i]].revenue);
+      
+      // Tarih formatını değiştir
+      var formattedDate = moment(dates[i]).format('DD.MM.YYYY');
+      dates[i] = formattedDate;
+    }
+    
+    var profitTrendChart = new Chart(document.getElementById('profitTrendChart').getContext('2d'), {
+      type: 'line',
+      data: {
+        labels: dates,
+        datasets: [
+          {
+            label: 'Gelir',
+            borderColor: '#17a2b8',
+            backgroundColor: 'rgba(23, 162, 184, 0.1)',
+            data: revenues,
+            pointRadius: 3,
+            pointHoverRadius: 5,
+            borderWidth: 2,
+            fill: true
+          },
+          {
+            label: 'Kâr/Zarar',
+            borderColor: '#28a745',
+            backgroundColor: 'rgba(40, 167, 69, 0.1)',
+            data: profits,
+            pointRadius: 3,
+            pointHoverRadius: 5,
+            borderWidth: 2,
+            fill: true
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        tooltips: {
+          mode: 'index',
+          intersect: false,
+          callbacks: {
+            label: function(tooltipItem, data) {
+              var label = data.datasets[tooltipItem.datasetIndex].label || '';
+              return label + ': ' + tooltipItem.yLabel.toLocaleString('tr-TR', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' ₺';
+            }
+          }
+        },
+        scales: {
+          xAxes: [{
+            gridLines: {
+              display: false
+            },
+            ticks: {
+              maxTicksLimit: 10
+            }
+          }],
+          yAxes: [{
+            ticks: {
+              beginAtZero: true,
+              callback: function(value) {
+                return value.toLocaleString('tr-TR', {minimumFractionDigits: 0, maximumFractionDigits: 0}) + ' ₺';
+              }
+            }
+          }]
+        }
+      }
+    });
+    {% endif %}
+    {% endif %}
+  });
+</script>
 </body>
 </html>
