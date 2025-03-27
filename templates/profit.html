@@ -1,119 +1,479 @@
+
 <!DOCTYPE html>
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
-  <title>Profit Dashboard - Glassmorphism</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1.0">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/glass.css') }}">
-  <!-- Google Font -->
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <title>Kâr-Zarar Analiz Raporu | AdminLTE</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/profit-adminlte.css') }}">
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <!-- Google Font: Source Sans Pro -->
+  <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700" rel="stylesheet">
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-<div class="container">
-  <!-- Navbar benzeri -->
-  <nav class="navbar">
-    <div class="navbar-title">Glass Profit</div>
-    <div class="navbar-links">
-      <a href="#">Anasayfa</a>
-      <a href="#">Raporlar</a>
-      <a href="#">İstatistik</a>
-    </div>
-  </nav>
+  <div class="wrapper">
+    <!-- Navbar -->
+    <nav class="main-header navbar">
+      <div class="navbar-brand">
+        <i class="fas fa-chart-line mr-2"></i> Profit Dashboard
+      </div>
+      <ul class="navbar-nav">
+        <li class="nav-item">
+          <a href="/" class="nav-link">
+            <i class="fas fa-home"></i> Anasayfa
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="#" class="nav-link">
+            <i class="fas fa-chart-bar"></i> Raporlar
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="#" class="nav-link">
+            <i class="fas fa-cog"></i> Ayarlar
+          </a>
+        </li>
+      </ul>
+    </nav>
 
-  <h2 style="margin-bottom:20px;">Kâr-Zarar Raporu (Cam Tasarım)</h2>
+    <!-- Content Wrapper -->
+    <div class="content-wrapper">
+      <!-- Başlık ve Durum Özeti -->
+      <div class="row mb-4">
+        <div class="col-12">
+          <h1>Kâr-Zarar Raporu</h1>
+          <p>Bu panel, siparişlerdeki kâr-zarar durumunu analiz eder ve dönemsel performansı gösterir.</p>
+        </div>
+      </div>
 
-  <!-- Form -->
-  <form method="POST" class="analysis-form">
-    <div class="form-group">
-      <label for="start_date">Başlangıç Tarihi</label>
-      <input type="date" id="start_date" name="start_date">
-    </div>
-    <div class="form-group">
-      <label for="end_date">Bitiş Tarihi</label>
-      <input type="date" id="end_date" name="end_date">
-    </div>
-    <div class="form-group">
-      <label for="package_cost">Paket Maliyeti (₺)</label>
-      <input type="number" step="0.01" id="package_cost" name="package_cost">
-    </div>
-    <div class="form-group">
-      <label for="employee_cost">İşçilik Maliyeti (₺)</label>
-      <input type="number" step="0.01" id="employee_cost" name="employee_cost">
-    </div>
-    <div class="form-group">
-      <label for="shipping_cost">Kargo Maliyeti (₺)</label>
-      <input type="number" step="0.01" id="shipping_cost" name="shipping_cost">
-    </div>
-    <button type="submit" class="btn btn-primary">Analizi Başlat</button>
-  </form>
+      <!-- Form Kartı -->
+      <div class="row mb-4">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">
+                <i class="fas fa-filter mr-2"></i> Analiz Filtresi
+              </h3>
+              <div class="card-tools">
+                <button type="button" class="btn btn-primary btn-sm" data-toggle="collapse" data-target="#filterForm">
+                  <i class="fas fa-chevron-down"></i>
+                </button>
+              </div>
+            </div>
+            <div class="card-body" id="filterForm">
+              <form method="POST" class="row">
+                <div class="col-md-4 form-group">
+                  <label class="form-label" for="start_date">Başlangıç Tarihi</label>
+                  <input type="date" id="start_date" name="start_date" class="form-control">
+                </div>
+                <div class="col-md-4 form-group">
+                  <label class="form-label" for="end_date">Bitiş Tarihi</label>
+                  <input type="date" id="end_date" name="end_date" class="form-control">
+                </div>
+                <div class="col-md-4 form-group">
+                  <label class="form-label" for="package_cost">Paket Maliyeti (₺)</label>
+                  <input type="number" step="0.01" id="package_cost" name="package_cost" class="form-control">
+                </div>
+                <div class="col-md-4 form-group">
+                  <label class="form-label" for="employee_cost">İşçilik Maliyeti (₺)</label>
+                  <input type="number" step="0.01" id="employee_cost" name="employee_cost" class="form-control">
+                </div>
+                <div class="col-md-4 form-group">
+                  <label class="form-label" for="shipping_cost">Kargo Maliyeti (₺)</label>
+                  <input type="number" step="0.01" id="shipping_cost" name="shipping_cost" class="form-control">
+                </div>
+                <div class="col-md-4 form-group" style="display: flex; align-items: flex-end;">
+                  <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-search mr-1"></i> Analizi Başlat
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
 
-  {% if analysis %}
-    <!-- Stat Cards -->
-    <div class="stat-cards">
-      <div class="stat-card">
-        <div class="stat-title">Toplam Gelir</div>
-        <div class="stat-value">{{ "%.2f"|format(total_revenue or 0) }} ₺</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-title">Komisyon Gideri</div>
-        <div class="stat-value">{{ "%.2f"|format(total_commission_spent or 0) }} ₺</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-title">Paket Gideri</div>
-        <div class="stat-value">{{ "%.2f"|format(total_package_spent or 0) }} ₺</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-title">Kargo Gideri</div>
-        <div class="stat-value">{{ "%.2f"|format(total_shipping_spent or 0) }} ₺</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-title">İşçilik Gideri</div>
-        <div class="stat-value">{{ "%.2f"|format(total_employee_spent or 0) }} ₺</div>
-      </div>
-    </div>
+      {% if analysis %}
+      <!-- Özet Kartları (Info Boxes) -->
+      <div class="row mb-4">
+        <!-- Toplam Gelir -->
+        <div class="col-lg-3 col-md-6 col-sm-6">
+          <div class="info-box">
+            <span class="info-box-icon bg-success">
+              <i class="fas fa-coins"></i>
+            </span>
+            <div class="info-box-content">
+              <span class="info-box-text">Toplam Gelir</span>
+              <span class="info-box-number">{{ "%.2f"|format(total_revenue or 0) }} ₺</span>
+              <div class="progress">
+                <div class="progress-bar bg-success" style="width: 100%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
 
-    <!-- Summary Panel -->
-    <div class="summary-panel">
-      <div class="summary-item">
-        <div class="summary-label">Toplam Kâr</div>
-        <div class="summary-value">{{ "%.2f"|format(total_profit or 0) }} ₺</div>
-      </div>
-      <div class="summary-item">
-        <div class="summary-label">Ortalama Kâr</div>
-        <div class="summary-value">{{ "%.2f"|format(avg_profit or 0) }} ₺</div>
-      </div>
-    </div>
+        <!-- Toplam Ürün Maliyeti -->
+        <div class="col-lg-3 col-md-6 col-sm-6">
+          <div class="info-box">
+            <span class="info-box-icon bg-primary">
+              <i class="fas fa-box-open"></i>
+            </span>
+            <div class="info-box-content">
+              <span class="info-box-text">Ürün Maliyeti</span>
+              <span class="info-box-number">{{ "%.2f"|format(total_product_spent or 0) }} ₺</span>
+              <div class="progress">
+                <div class="progress-bar bg-primary" style="width: {{ (total_product_spent / total_revenue * 100) if total_revenue > 0 else 0 }}%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
 
-    <!-- Analysis Table -->
-    <table class="analysis-table">
-      <thead>
-        <tr>
-          <th>Sipariş No</th>
-          <th>Ürün</th>
-          <th>Gelir (₺)</th>
-          <th>Gider (₺)</th>
-          <th>Kâr (₺)</th>
-        </tr>
-      </thead>
-      <tbody>
-      {% for item in analysis %}
-        <tr class="{{ 'profit' if item.profit >= 0 else 'loss' }}">
-          <td>{{ item.order_number }}</td>
-          <td>{{ item.product }}</td>
-          <td>{{ "%.2f"|format(item.net_income) }}</td>
-          <td>{{ "%.2f"|format(item.total_expenses) }}</td>
-          <td>{{ "%.2f"|format(item.profit) }}</td>
-        </tr>
-      {% endfor %}
-      </tbody>
-    </table>
-  {% else %}
-    <div class="glass-card">
-      <div class="card-header">Analiz Sonucu Yok</div>
-      <div class="card-body">Henüz bir filtre girilmedi veya sonuç bulunamadı.</div>
-    </div>
-  {% endif %}
-</div>
+        <!-- Komisyon Gideri -->
+        <div class="col-lg-3 col-md-6 col-sm-6">
+          <div class="info-box">
+            <span class="info-box-icon bg-warning">
+              <i class="fas fa-percentage"></i>
+            </span>
+            <div class="info-box-content">
+              <span class="info-box-text">Komisyon Gideri</span>
+              <span class="info-box-number">{{ "%.2f"|format(total_commission_spent or 0) }} ₺</span>
+              <div class="progress">
+                <div class="progress-bar bg-warning" style="width: {{ (total_commission_spent / total_revenue * 100) if total_revenue > 0 else 0 }}%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
 
+        <!-- Diğer Giderler -->
+        <div class="col-lg-3 col-md-6 col-sm-6">
+          <div class="info-box">
+            <span class="info-box-icon bg-danger">
+              <i class="fas fa-truck"></i>
+            </span>
+            <div class="info-box-content">
+              <span class="info-box-text">Sevkiyat Giderleri</span>
+              <span class="info-box-number">{{ "%.2f"|format(total_shipping_spent + total_package_spent or 0) }} ₺</span>
+              <div class="progress">
+                <div class="progress-bar bg-danger" style="width: {{ ((total_shipping_spent + total_package_spent) / total_revenue * 100) if total_revenue > 0 else 0 }}%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- İşçilik Gideri -->
+        <div class="col-lg-3 col-md-6 col-sm-6">
+          <div class="info-box">
+            <span class="info-box-icon bg-info">
+              <i class="fas fa-users"></i>
+            </span>
+            <div class="info-box-content">
+              <span class="info-box-text">İşçilik Gideri</span>
+              <span class="info-box-number">{{ "%.2f"|format(total_employee_spent or 0) }} ₺</span>
+              <div class="progress">
+                <div class="progress-bar bg-info" style="width: {{ (total_employee_spent / total_revenue * 100) if total_revenue > 0 else 0 }}%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Paket Gideri -->
+        <div class="col-lg-3 col-md-6 col-sm-6">
+          <div class="info-box">
+            <span class="info-box-icon bg-secondary">
+              <i class="fas fa-box"></i>
+            </span>
+            <div class="info-box-content">
+              <span class="info-box-text">Paket Gideri</span>
+              <span class="info-box-number">{{ "%.2f"|format(total_package_spent or 0) }} ₺</span>
+              <div class="progress">
+                <div class="progress-bar bg-secondary" style="width: {{ (total_package_spent / total_revenue * 100) if total_revenue > 0 else 0 }}%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Kargo Gideri -->
+        <div class="col-lg-3 col-md-6 col-sm-6">
+          <div class="info-box">
+            <span class="info-box-icon bg-info">
+              <i class="fas fa-shipping-fast"></i>
+            </span>
+            <div class="info-box-content">
+              <span class="info-box-text">Kargo Gideri</span>
+              <span class="info-box-number">{{ "%.2f"|format(total_shipping_spent or 0) }} ₺</span>
+              <div class="progress">
+                <div class="progress-bar bg-info" style="width: {{ (total_shipping_spent / total_revenue * 100) if total_revenue > 0 else 0 }}%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sipariş Sayısı -->
+        <div class="col-lg-3 col-md-6 col-sm-6">
+          <div class="info-box">
+            <span class="info-box-icon bg-primary">
+              <i class="fas fa-shopping-cart"></i>
+            </span>
+            <div class="info-box-content">
+              <span class="info-box-text">Toplam Sipariş</span>
+              <span class="info-box-number">{{ analysis|length }}</span>
+              <span class="info-box-text mt-2">Ortalama Sipariş Değeri</span>
+              <span class="info-box-number">{{ "%.2f"|format(total_revenue / analysis|length if analysis|length > 0 else 0) }} ₺</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Ana Özet Panosu -->
+      <div class="row mb-4">
+        <!-- Toplam Kâr -->
+        <div class="col-lg-6 col-md-6">
+          <div class="profit-summary">
+            <div class="profit-summary-title">Toplam Kâr / Zarar</div>
+            <div class="profit-summary-value {{ 'text-success' if total_profit > 0 else 'text-danger' }}">
+              {{ "%.2f"|format(total_profit or 0) }} ₺
+              <i class="fas {{ 'fa-arrow-up' if total_profit > 0 else 'fa-arrow-down' }}"></i>
+            </div>
+            <div class="profit-summary-label">Analiz edilen dönemde toplam kâr/zarar</div>
+            <div class="progress">
+              <div class="progress-bar {{ 'bg-success' if total_profit > 0 else 'bg-danger' }}" 
+                   style="width: {{ (total_profit / total_revenue * 100) if total_revenue > 0 and total_profit > 0 else ((-total_profit) / total_revenue * 100) if total_revenue > 0 and total_profit < 0 else 0 }}%">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Ortalama Kâr -->
+        <div class="col-lg-6 col-md-6">
+          <div class="profit-summary">
+            <div class="profit-summary-title">Ortalama Kâr / Zarar</div>
+            <div class="profit-summary-value {{ 'text-success' if avg_profit > 0 else 'text-danger' }}">
+              {{ "%.2f"|format(avg_profit or 0) }} ₺
+              <i class="fas {{ 'fa-arrow-up' if avg_profit > 0 else 'fa-arrow-down' }}"></i>
+            </div>
+            <div class="profit-summary-label">Sipariş başına ortalama kâr/zarar</div>
+            <div class="progress">
+              <div class="progress-bar {{ 'bg-success' if avg_profit > 0 else 'bg-danger' }}" 
+                   style="width: {{ (avg_profit / (total_revenue / analysis|length) * 100) if analysis|length > 0 and avg_profit > 0 else ((-avg_profit) / (total_revenue / analysis|length) * 100) if analysis|length > 0 and avg_profit < 0 else 0 }}%">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Grafik Bölümü -->
+      <div class="row mb-4">
+        <div class="col-lg-8">
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">
+                <i class="fas fa-chart-pie mr-2"></i> Gider Dağılımı
+              </h3>
+              <div class="card-tools">
+                <button type="button" class="btn btn-tool">
+                  <i class="fas fa-sync-alt"></i>
+                </button>
+              </div>
+            </div>
+            <div class="card-body">
+              <canvas id="expensesChart" height="300"></canvas>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-4">
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">
+                <i class="fas fa-chart-bar mr-2"></i> Kâr-Zarar Dağılımı
+              </h3>
+            </div>
+            <div class="card-body">
+              <canvas id="profitLossChart" height="300"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sipariş Detay Tablosu -->
+      <div class="row">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">
+                <i class="fas fa-list mr-2"></i> Sipariş Detayları
+              </h3>
+              <div class="card-tools">
+                <div class="input-group input-group-sm" style="width: 150px;">
+                  <input type="text" id="orderSearch" class="form-control" placeholder="Sipariş ara...">
+                  <div class="input-group-append">
+                    <button type="button" class="btn btn-default">
+                      <i class="fas fa-search"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="card-body table-responsive p-0">
+              <table class="table table-hover table-striped table-profit">
+                <thead>
+                  <tr>
+                    <th>Sipariş No</th>
+                    <th>Tablo</th>
+                    <th>Durum</th>
+                    <th>Ürün</th>
+                    <th class="text-right">Gelir (₺)</th>
+                    <th class="text-right">Gider (₺)</th>
+                    <th class="text-right">Kâr (₺)</th>
+                    <th class="text-right">Kâr Oranı (%)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                {% for item in analysis %}
+                  <tr class="{{ 'profit' if item.profit >= 0 else 'loss' }}">
+                    <td>{{ item.order_number }}</td>
+                    <td><span class="badge bg-{{ 'primary' if item.order_table == 'OrderCreated' else 'success' if item.order_table == 'OrderDelivered' else 'warning' if item.order_table == 'OrderShipped' else 'info' if item.order_table == 'OrderPicking' else 'danger' }}">{{ item.order_table }}</span></td>
+                    <td>{{ item.status }}</td>
+                    <td>{{ item.product }}</td>
+                    <td class="text-right">{{ "%.2f"|format(item.net_income) }}</td>
+                    <td class="text-right">{{ "%.2f"|format(item.total_expenses) }}</td>
+                    <td class="text-right font-weight-bold">{{ "%.2f"|format(item.profit) }}</td>
+                    <td class="text-right">{{ "%.2f"|format((item.profit / item.net_income * 100) if item.net_income > 0 else 0) }}%</td>
+                  </tr>
+                {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- JavaScript: Grafikleri oluştur -->
+      <script>
+        document.addEventListener('DOMContentLoaded', function() {
+          // Gider Dağılımı Grafik
+          const expensesCtx = document.getElementById('expensesChart').getContext('2d');
+          new Chart(expensesCtx, {
+            type: 'doughnut',
+            data: {
+              labels: ['Ürün Maliyeti', 'Komisyon', 'Paket', 'Kargo', 'İşçilik'],
+              datasets: [{
+                data: [
+                  {{ total_product_spent or 0 }},
+                  {{ total_commission_spent or 0 }},
+                  {{ total_package_spent or 0 }},
+                  {{ total_shipping_spent or 0 }},
+                  {{ total_employee_spent or 0 }}
+                ],
+                backgroundColor: [
+                  '#007bff',
+                  '#ffc107',
+                  '#6c757d',
+                  '#17a2b8',
+                  '#28a745'
+                ],
+                borderWidth: 1
+              }]
+            },
+            options: {
+              responsive: true,
+              legend: {
+                position: 'right',
+              },
+              title: {
+                display: true,
+                text: 'Gider Dağılımı'
+              },
+              animation: {
+                animateScale: true,
+                animateRotate: true
+              }
+            }
+          });
+
+          // Kâr-Zarar Grafiği
+          const plChart = document.getElementById('profitLossChart').getContext('2d');
+          
+          // Kâr-zarar durumuna göre siparişleri say
+          let profitCount = 0;
+          let lossCount = 0;
+          {% for item in analysis %}
+            {% if item.profit >= 0 %}
+              profitCount++;
+            {% else %}
+              lossCount++;
+            {% endif %}
+          {% endfor %}
+          
+          new Chart(plChart, {
+            type: 'bar',
+            data: {
+              labels: ['Kârlı Siparişler', 'Zararlı Siparişler'],
+              datasets: [{
+                label: 'Sipariş Sayısı',
+                data: [profitCount, lossCount],
+                backgroundColor: [
+                  '#28a745',
+                  '#dc3545'
+                ],
+                borderWidth: 1
+              }]
+            },
+            options: {
+              responsive: true,
+              scales: {
+                yAxes: [{
+                  ticks: {
+                    beginAtZero: true,
+                    precision: 0
+                  }
+                }]
+              }
+            }
+          });
+        });
+
+        // Sipariş arama fonksiyonu
+        document.getElementById('orderSearch').addEventListener('keyup', function() {
+          const value = this.value.toLowerCase();
+          const rows = document.querySelectorAll('.table-profit tbody tr');
+          
+          rows.forEach(row => {
+            const orderNum = row.cells[0].textContent.toLowerCase();
+            const product = row.cells[3].textContent.toLowerCase();
+            
+            if (orderNum.includes(value) || product.includes(value)) {
+              row.style.display = '';
+            } else {
+              row.style.display = 'none';
+            }
+          });
+        });
+      </script>
+      {% else %}
+      <div class="row">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Analiz Sonucu</h3>
+            </div>
+            <div class="card-body">
+              <div class="text-center">
+                <i class="fas fa-info-circle fa-3x text-info mb-3"></i>
+                <p>Henüz bir analiz yapılmadı veya sonuç bulunamadı.</p>
+                <p class="text-muted">Analiz yapmak için yukarıdaki filtre formunu kullanın.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Font Awesome -->
+  <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
 </body>
 </html>
