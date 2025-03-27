@@ -20,7 +20,7 @@
   <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.2.9/css/responsive.bootstrap4.min.css">
   <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.2.2/css/buttons.bootstrap4.min.css">
   <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
   <!-- özel CSS -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/profit-adminlte.css') }}">
 </head>
@@ -810,7 +810,28 @@
 <script src="https://cdn.datatables.net/buttons/2.2.2/js/buttons.colVis.min.js"></script>
 
 <script>
-  $(document).ready(function() {
+  // Chart.js yükleme kontrolü ve yedek plan
+  if (typeof Chart === 'undefined') {
+    console.warn('Chart.js yüklenemedi! Alternatif CDN deneniyor...');
+    const chartScript = document.createElement('script');
+    chartScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js';
+    chartScript.onload = function() {
+      console.log('Chart.js alternatif CDN ile yüklendi');
+      initializeCharts();
+    };
+    chartScript.onerror = function() {
+      console.error('Chart.js hiçbir şekilde yüklenemedi!');
+      document.getElementById('profitTrendChart').parentNode.innerHTML = 
+        '<div class="alert alert-danger">Grafik kütüphanesi yüklenemedi. Lütfen sayfayı yenileyin.</div>';
+      document.getElementById('expenseDonutChart').parentNode.innerHTML = 
+        '<div class="alert alert-danger">Grafik kütüphanesi yüklenemedi. Lütfen sayfayı yenileyin.</div>';
+    };
+    document.head.appendChild(chartScript);
+  } else {
+    $(document).ready(initializeCharts);
+  }
+  
+  function initializeCharts() {
     // Form görünümünü ayarla
     $('#quick_filter').change(function() {
       if ($(this).val() === 'custom') {
@@ -1031,6 +1052,106 @@
     });
     {% endif %}
     {% endif %}
+  } // initializeCharts fonksiyonu sonu
+  
+  // Dokümana hazır olduğunda initializeCharts'ı çağır
+  $(document).ready(function() {
+    // Form görünümünü ayarla
+    $('#quick_filter').change(function() {
+      if ($(this).val() === 'custom') {
+        $('#custom_date_container').show();
+      } else {
+        $('#custom_date_container').hide();
+      }
+    });
+    
+    // DateRangePicker
+    $('#date_range_picker').daterangepicker({
+      locale: {
+        format: 'DD.MM.YYYY',
+        applyLabel: 'Uygula',
+        cancelLabel: 'İptal',
+        fromLabel: 'Başlangıç',
+        toLabel: 'Bitiş',
+        customRangeLabel: 'Özel Aralık',
+        daysOfWeek: ['Pz', 'Pt', 'Sa', 'Çr', 'Pr', 'Cu', 'Ct'],
+        monthNames: ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık']
+      },
+      startDate: moment().subtract(30, 'days'),
+      endDate: moment()
+    }, function(start, end) {
+      $('#start_date').val(start.format('YYYY-MM-DD'));
+      $('#end_date').val(end.format('YYYY-MM-DD'));
+    });
+    
+    // Başlangıçta tarih değerlerini ayarla
+    $('#start_date').val(moment().subtract(30, 'days').format('YYYY-MM-DD'));
+    $('#end_date').val(moment().format('YYYY-MM-DD'));
+    
+    // DataTables
+    try {
+      $('#orders-table').DataTable({
+        "responsive": true,
+        "lengthChange": true,
+        "autoWidth": false,
+        "language": {
+          "search": "Ara:",
+          "lengthMenu": "_MENU_ kayıt göster",
+          "info": "_TOTAL_ kayıttan _START_ - _END_ arası gösteriliyor",
+          "infoEmpty": "Kayıt yok",
+          "infoFiltered": "(_MAX_ kayıt içerisinden filtrelendi)",
+          "zeroRecords": "Eşleşen kayıt bulunamadı",
+          "paginate": {
+            "first": "İlk",
+            "last": "Son",
+            "next": "Sonraki",
+            "previous": "Önceki"
+          }
+        },
+        "order": [[6, 'desc']], // Kâr sütununa göre sırala
+        "buttons": [
+          {
+            extend: 'csv',
+            text: '<i class="fas fa-file-csv"></i> CSV',
+            title: 'Kar_Zarar_Analizi_' + moment().format('YYYY-MM-DD'),
+            className: 'btn-sm btn-outline-primary'
+          },
+          {
+            extend: 'excel',
+            text: '<i class="fas fa-file-excel"></i> Excel',
+            title: 'Kar_Zarar_Analizi_' + moment().format('YYYY-MM-DD'),
+            className: 'btn-sm btn-outline-success'
+          },
+          {
+            extend: 'pdf',
+            text: '<i class="fas fa-file-pdf"></i> PDF',
+            title: 'Kar_Zarar_Analizi_' + moment().format('YYYY-MM-DD'),
+            className: 'btn-sm btn-outline-danger'
+          },
+          {
+            extend: 'print',
+            text: '<i class="fas fa-print"></i> Yazdır',
+            title: 'Kar Zarar Analizi',
+            className: 'btn-sm btn-outline-secondary'
+          }
+        ]
+      });
+      
+      // Dışa aktarma butonları
+      $('#exportCSV').click(function() {
+        $('#orders-table_wrapper .buttons-csv').click();
+      });
+      
+      $('#exportExcel').click(function() {
+        $('#orders-table_wrapper .buttons-excel').click();
+      });
+      
+      $('#exportPDF').click(function() {
+        $('#orders-table_wrapper .buttons-pdf').click();
+      });
+    } catch (e) {
+      console.error('DataTable yüklenirken hata:', e);
+    }
   });
 </script>
 </body>
