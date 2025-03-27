@@ -2,13 +2,19 @@
 from flask import Flask
 from models import db, Order, OrderCreated, OrderPicking, OrderShipped, OrderDelivered, OrderCancelled, OrderArchived
 import logging
+import os
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 def create_app():
     app = Flask(__name__)
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:postgres@localhost:5432/siparisyonetim'
+    
+    # Replit ortamına uygun veritabanı bağlantısı
+    database_url = os.environ.get('DATABASE_URL', 'sqlite:///siparis.db')
+    
+    # Eğer çevre değişkeni varsa onu kullan
+    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     db.init_app(app)
     return app
