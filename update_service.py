@@ -1,20 +1,25 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
-from flask_sqlalchemy import SQLAlchemy
-from trendyol_api import API_KEY, API_SECRET, SUPPLIER_ID, BASE_URL
-import requests
+from flask import Blueprint, render_template, request, redirect, url_for, flash
+from datetime import datetime
 import traceback
 import json
 import base64
-from models import db, Order
+import requests
 
+# Yeni tablolar (Created, Picking vs.) ve DB objesi
+from models import db, OrderCreated, OrderPicking, Product
+# Trendyol API kimlikleri ve BASE_URL
+from trendyol_api import API_KEY, API_SECRET, SUPPLIER_ID, BASE_URL
 
 update_service_bp = Blueprint('update_service', __name__)
 
-
-
-
-# Trendyol API üzerinden sipariş statüsünü güncelleyen fonksiyon
+##############################################
+# Trendyol API üzerinden statü güncelleme
+##############################################
 def update_order_status_to_picking(supplier_id, shipment_package_id, lines):
+    """
+    Trendyol API'ye PUT isteği atarak belirtilen package_id'yi 'Picking' statüsüne çevirir.
+    lines: [{ "lineId": <int>, "quantity": <int> }, ...]
+    """
     try:
         url = f"{BASE_URL}suppliers/{supplier_id}/shipment-packages/{shipment_package_id}"
 
@@ -31,165 +36,189 @@ def update_order_status_to_picking(supplier_id, shipment_package_id, lines):
             "params": {},
             "status": "Picking"
         }
-
-        print(f"API isteği: URL={url}, Payload={json.dumps(payload, ensure_ascii=False)}")
+        print(f"PUT {url}")
         print(f"Headers: {headers}")
+        print(f"Payload: {json.dumps(payload, ensure_ascii=False)}")
 
         response = requests.put(url, headers=headers, data=json.dumps(payload), timeout=30)
 
         print(f"API yanıtı: Status Code={response.status_code}, Response Text={response.text}")
 
         if response.status_code == 200:
-            # Yanıt gövdesinin boş olup olmadığını kontrol edin
-            if response.text:
-                data = response.json()
-                print(f"Paket {shipment_package_id} statüsü 'Picking' olarak güncellendi.")
-            else:
-                print(f"Paket {shipment_package_id} statüsü 'Picking' olarak güncellendi (boş yanıt gövdesi).")
+            # Yanıt boş olabilir, yine de başarılı sayarız
+            print(f"Paket {shipment_package_id} Trendyol'da 'Picking' statüsüne güncellendi.")
             return True
         else:
-            print(f"Beklenmeyen durum kodu veya yanıt: {response.status_code}, Yanıt: {response.text}")
+            print(f"Beklenmeyen durum kodu veya hata: {response.status_code}, Yanıt: {response.text}")
             return False
 
     except Exception as e:
-        print(f"API üzerinden paket statüsü güncellenirken bir hata oluştu: {e}")
+        print(f"Trendyol API üzerinden paket statüsü güncellenirken hata: {e}")
+        traceback.print_exc()
         return False
 
-# Paketleme onayı fonksiyonu
+
+##############################################
+# confirm_packing: Barkodlar onayı, tablo taşıma
+##############################################
 @update_service_bp.route('/confirm_packing', methods=['POST'])
 def confirm_packing():
+    """
+    Formdan gelen order_number ve barkodları karşılaştırır.
+    Eğer doğruysa, Trendyol API'de statüyü 'Picking' yapar,
+    veritabanında OrderCreated -> OrderPicking taşıması yapar.
+    """
     try:
-        # Sipariş numarasını al
-        order_number = request.form['order_number']
+        # 1) Form verilerini alalım
+        order_number = request.form.get('order_number')
+        if not order_number:
+            flash('Sipariş numarası bulunamadı.', 'danger')
+            return redirect(url_for('home.home'))
+
         print(f"Received order_number: {order_number}")
 
-        # Barkodları topla
+        # Gönderilen barkodları topla
         barkodlar = []
         for key in request.form:
             if key.startswith('barkod_right_') or key.startswith('barkod_left_'):
                 barkod_value = request.form[key].strip()
                 barkodlar.append(barkod_value)
-        print(f"Received barcodes: {barkodlar}")
-        print(f"Received barcodes (repr): {[repr(b) for b in barkodlar]}")
 
-        # Siparişi veritabanından al
-        order = Order.query.filter_by(order_number=order_number).first()
-        if not order:
-            flash('Sipariş bulunamadı.', 'danger')
-            print("Order not found.")
+        print(f"Received barcodes: {barkodlar}")
+
+        # 2) OrderCreated tablosundan siparişi bul
+        order_created = OrderCreated.query.filter_by(order_number=order_number).first()
+        if not order_created:
+            flash('Created tablosunda bu sipariş bulunamadı.', 'danger')
+            print("Order not found in OrderCreated.")
             return redirect(url_for('home.home'))
 
-        # Sipariş detaylarını al ve JSON olarak yükle
-        details_json = order.details or '[]'
+        # 3) Sipariş detaylarını parse et
+        details_json = order_created.details or '[]'
         try:
             details = json.loads(details_json)
             print(f"Parsed details: {details}")
         except json.JSONDecodeError:
             details = []
-            print(f"order.details JSON parse edilemedi: {order.details}")
+            print(f"order.details JSON parse edilemedi: {order_created.details}")
 
-        # ShipmentPackageId'leri ürün detaylarından toplayın
-        shipment_package_ids = set()
-        for detail in details:
-            sp_id = detail.get('shipmentPackageId') or order.shipment_package_id or order.package_number
-            if sp_id:
-                shipment_package_ids.add(sp_id)
-
-        print(f"Shipment Package IDs: {shipment_package_ids}")
-
-        if not shipment_package_ids:
-            shipment_package_ids = {order.shipment_package_id or order.package_number}
-            print(f"Using order level Shipment Package ID: {shipment_package_ids}")
-
-        if not shipment_package_ids:
-            flash("shipmentPackageId bulunamadı.", 'danger')
-            print("shipmentPackageId bulunamadı.")
-            return redirect(url_for('home.home'))
-
+        # 4) Beklenen barkodları hesapla (miktar*2 = sol/sağ barkod)
         expected_barcodes = []
         for detail in details:
-            print(f"Processing detail: {detail}")
-            # Her quantity için barkodları ekleyin (sol ve sağ olmak üzere iki kez)
-            barcode = detail['barcode']
+            barcode = detail.get('barcode')
+            if not barcode:
+                continue
+
             quantity = int(detail.get('quantity', 1))
-            count = quantity * 2  # Sol ve sağ barkodlar için miktarı ikiyle çarpıyoruz
-            print(f"Adding {count} copies of barcode: {barcode}")
+            # Her adet ürün için 2 barkod: sol + sağ
+            count = quantity * 2  
             expected_barcodes.extend([barcode] * count)
-        print(f"Expected barcodes after processing details: {expected_barcodes}")
-        print(f"Expected barcodes (repr): {[repr(b) for b in expected_barcodes]}")
 
-        # Debug: Barkod listesini ve beklenen barkod listesini karşılaştır
-        print(f"Comparing received barcodes ({len(barkodlar)}): {barkodlar}")
-        print(f"With expected barcodes ({len(expected_barcodes)}): {expected_barcodes}")
+        print(f"Expected barcodes: {expected_barcodes}")
 
-        if sorted(barkodlar) == sorted(expected_barcodes):
-            print("Barcodes match.")
-            order.status = 'Picking'  # Sipariş statüsünü güncelliyoruz
-            db.session.commit()
-            print(f"Updated order status to 'Picking' for order_number: {order_number}")
-
-            # Gerekli verileri al
-            supplier_id = SUPPLIER_ID
-            print(f"Supplier ID: {supplier_id}, Shipment Package IDs: {shipment_package_ids}")
-
-            lines = []
-            for detail in details:
-                line_id = detail.get('line_id')
-                quantity = int(detail.get('quantity', 1))
-                sp_id = detail.get('shipmentPackageId') or order.shipment_package_id or order.package_number
-                print(f"Detail line_id: {line_id}, quantity: {quantity}, shipmentPackageId: {sp_id}")
-
-                if line_id is None:
-                    flash("'line_id' değeri bulunamadı. Sipariş verilerini kontrol edin.", 'danger')
-                    print("'line_id' değeri bulunamadı.")
-                    return redirect(url_for('home.home'))
-
-                try:
-                    line = {
-                        "lineId": int(line_id),
-                        "quantity": quantity,
-                        "shipmentPackageId": sp_id
-                    }
-                    lines.append(line)
-                    print(f"Added line to lines: {line}")
-                except ValueError as ve:
-                    flash(f"Line ID veya quantity hatalı: {ve}", 'danger')
-                    print(f"Error converting line_id or quantity: {ve}")
-                    return redirect(url_for('home.home'))
-
-            print(f"Lines to send to API: {lines}")
-
-            # lines listesini shipmentPackageId'ye göre gruplandırın
-            from collections import defaultdict
-
-            lines_by_sp_id = defaultdict(list)
-            for line in lines:
-                sp_id = line.pop('shipmentPackageId')
-                lines_by_sp_id[sp_id].append(line)
-
-            # Her bir shipmentPackageId için API çağrısı yapın
-            for sp_id, lines_for_sp in lines_by_sp_id.items():
-                print(f"Making API call for Shipment Package ID: {sp_id} with lines: {lines_for_sp}")
-                result = update_order_status_to_picking(supplier_id, sp_id, lines_for_sp)
-                print(f"update_order_status_to_picking result for {sp_id}: {result}")
-                if result:
-                    flash(f"Paket {sp_id} başarıyla güncellendi ve API üzerinden statü güncellendi.", 'success')
-                else:
-                    flash(f"Paket statüsü API üzerinde güncellenirken bir hata oluştu. Paket ID: {sp_id}", 'danger')
-
-            # Bir sonraki siparişi bul
-            next_order = Order.query.filter_by(status='Created').first()
-            if next_order:
-                flash(f'Bir sonraki sipariş: {next_order.order_number}.', 'info')
-                print(f"Next order found: {next_order.order_number}")
-                return redirect(url_for('home.home', order_number=next_order.order_number))
-            else:
-                flash('Yeni bir sipariş bulunamadı.', 'info')
-                print("No new order found.")
-        else:
+        # 5) Karşılaştırma
+        if sorted(barkodlar) != sorted(expected_barcodes):
             flash('Barkodlar uyuşmuyor, lütfen tekrar deneyin!', 'danger')
             print("Barcodes do not match.")
             return redirect(url_for('home.home'))
+
+        print("Barcodes match. Devam ediliyor...")
+
+        # 6) Trendyol API'ye status=Picking çağrısı (shipmentPackageId'ye göre)
+        # ShipmentPackageId'leri JSON detaydan veya tablo alanından alalım
+        shipment_package_ids = set()
+
+        # 6a) details içinde her satırda 'shipmentPackageId' varsa toplayın
+        for detail in details:
+            sp_id = detail.get('shipmentPackageId') or order_created.shipment_package_id or order_created.package_number
+            if sp_id:
+                shipment_package_ids.add(sp_id)
+
+        # eğer hiç yoksa, sipariş tablosundaki (order_created.shipment_package_id) ya da (package_number) kullanılabilir
+        if not shipment_package_ids:
+            sp_id_fallback = order_created.shipment_package_id or order_created.package_number
+            if sp_id_fallback:
+                shipment_package_ids.add(sp_id_fallback)
+
+        if not shipment_package_ids:
+            flash("shipmentPackageId bulunamadı. API güncellemesi yapılamıyor.", 'danger')
+            print("shipmentPackageId is missing. Cannot update Trendyol API.")
+            return redirect(url_for('home.home'))
+
+        # 6b) lines (Trendyol formatında) hazırlama
+        lines = []
+        for detail in details:
+            line_id = detail.get('line_id')
+            if not line_id:
+                # Trendyol update için lineId gerekli
+                flash("'line_id' değeri yok, Trendyol update mümkün değil.", 'danger')
+                return redirect(url_for('home.home'))
+
+            q = int(detail.get('quantity', 1))
+            line = {
+                "lineId": int(line_id),
+                "quantity": q
+            }
+            lines.append(line)
+
+        # 6c) lines'ı shipmentPackageId'ye göre gruplandırıp Trendyol'a yolla
+        from collections import defaultdict
+        lines_by_sp = defaultdict(list)
+
+        for detail_line in lines:
+            # Detay JSON'daki 'shipmentPackageId' bulalım
+            # veya fallback olarak order_created'dan
+            sp_id_detail = None
+            # Aradığımız detail objeyi bulmak için line_id eşleşmesi yapabiliriz
+            # ama bu kod basit olsun diye 'detail_line["lineId"]''a göre bulabilir
+            # ya da her satırda sp_id var mi? Yukarıda toplanmış olabilir.
+
+            # Tek tek details'e bakıp line_id eşleşen satırın shipmentPackageId'sini alalım
+            for d in details:
+                if str(d.get('line_id')) == str(detail_line["lineId"]):
+                    sp_id_detail = d.get('shipmentPackageId')
+
+            # fallback
+            if not sp_id_detail:
+                sp_id_detail = order_created.shipment_package_id or order_created.package_number
+
+            lines_by_sp[sp_id_detail].append(detail_line)
+
+        # Trendyol güncellemesi
+        supplier_id = SUPPLIER_ID
+        for sp_id, lines_for_sp in lines_by_sp.items():
+            print(f"Calling Trendyol for sp_id={sp_id}, lines={lines_for_sp}")
+            result = update_order_status_to_picking(supplier_id, sp_id, lines_for_sp)
+            if result:
+                flash(f"Paket {sp_id} Trendyol'da 'Picking' olarak güncellendi.", 'success')
+            else:
+                flash(f"Trendyol API güncellemesi sırasında hata. Paket ID: {sp_id}", 'danger')
+
+        # 7) Veritabanı tarafında OrderCreated -> OrderPicking taşı
+        # (order_created kaydını al, OrderPicking'e ekle, OrderCreated'tan sil)
+        data = order_created.__dict__.copy()
+        data.pop('_sa_instance_state', None)
+
+        # Kolonları, OrderPicking tablosunda var olanlarla filtreleyelim
+        picking_cols = {c.name for c in OrderPicking.__table__.columns}
+        data = {k: v for k, v in data.items() if k in picking_cols}
+
+        # Yeni picking kaydı oluştur
+        new_picking_record = OrderPicking(**data)
+        # picking tablosunda ek kolonlar varsa set edebilirsiniz:
+        new_picking_record.picking_start_time = datetime.utcnow()
+
+        db.session.add(new_picking_record)
+        db.session.delete(order_created)
+        db.session.commit()
+        print(f"Taşıma tamam: OrderCreated -> OrderPicking. Order num: {order_number}")
+
+        # 8) Bir sonraki created siparişi bul
+        next_created = OrderCreated.query.order_by(OrderCreated.order_date).first()
+        if next_created:
+            flash(f'Bir sonraki Created sipariş: {next_created.order_number}.', 'info')
+        else:
+            flash('Yeni Created sipariş bulunamadı.', 'info')
 
     except Exception as e:
         print(f"Hata: {e}")
@@ -198,9 +227,15 @@ def confirm_packing():
 
     return redirect(url_for('home.home'))
 
-# Diğer fonksiyonlar
+
+##############################################
+# Örnek diğer fonksiyonlar
+##############################################
+
 def fetch_orders_from_api():
-    # Base64 ile Authorization oluşturma
+    """
+    Trendyol API'den siparişleri çeker (basit örnek).
+    """
     auth_str = f"{API_KEY}:{API_SECRET}"
     b64_auth_str = base64.b64encode(auth_str.encode()).decode('utf-8')
 
@@ -211,16 +246,18 @@ def fetch_orders_from_api():
     }
 
     response = requests.get(url, headers=headers)
-
     if response.status_code == 200:
-        return response.json()  # API'den dönen JSON veriyi döner
+        return response.json()
     else:
-        print(f"API'den siparişler çekilirken hata oluştu: {response.status_code} - {response.text}")
+        print(f"API'den siparişler çekilirken hata: {response.status_code} - {response.text}")
         return []
 
 def update_package_to_picking(supplier_id, package_id, line_id, quantity):
+    """
+    Tek bir lineId ve quantity için (daha eski örnek). Yukarıda 'update_order_status_to_picking' ile benzer işler yapıyor.
+    Bu fonksiyon belki artık kullanılmayabilir, ama isterseniz koruyun.
+    """
     url = f"{BASE_URL}suppliers/{supplier_id}/shipment-packages/{package_id}"
-
     headers = {
         "Content-Type": "application/json",
         "Authorization": f"Basic {base64.b64encode(f'{API_KEY}:{API_SECRET}'.encode()).decode()}"
@@ -244,5 +281,4 @@ def update_package_to_picking(supplier_id, package_id, line_id, quantity):
     if response.status_code == 200:
         print(f"Paket başarıyla Picking statüsüne güncellendi. Yanıt: {response.json()}")
     else:
-        print(f"Paket güncellenemedi! Hata kodu: {response.status_code}")
-        print(f"API Yanıtı: {response.text}")
+        print(f"Paket güncellenemedi! Hata kodu: {response.status_code}, Yanıt: {response.text}")

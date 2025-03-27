@@ -7,13 +7,26 @@ import logging
 from datetime import datetime
 
 from models import db, Product, OrderCreated, OrderPicking, OrderShipped, OrderDelivered, OrderCancelled
-# "Order" kullanılmıyorsa import etme, istersen silebilirsin.
-
-from barcode_utils import generate_barcode
+from barcode_utils import generate_barcode  # Bunu yalnızca generate_barcode için kullanıyoruz
 
 order_list_service_bp = Blueprint('order_list_service', __name__)
-
 logger = logging.getLogger(__name__)
+
+############################
+# 0) Ürün barkod resmini bulma fonksiyonu
+############################
+def get_product_image(barcode):
+    """
+    Ürün barkoduna göre resim dosyası yolunu döndürür.
+    """
+    images_folder = os.path.join('static', 'images')
+    extensions = ['.jpg', '.jpeg', '.png', '.gif']
+    for ext in extensions:
+        image_filename = f"{barcode}{ext}"
+        image_path = os.path.join(images_folder, image_filename)
+        if os.path.exists(image_path):
+            return f"/static/images/{image_filename}"
+    return "/static/logo/gullu.png"
 
 ############################
 # 1) UNION ALL Sorgusu
@@ -23,7 +36,6 @@ def get_union_all_orders():
     Beş tabloda ortak kolonları seçip UNION ALL ile birleştirir.
     .label('details') diyerek tablo bazında 'details' alanını seçiyoruz.
     """
-    # Kolonlar her tabloda aynı isimle varsa:
     c = db.session.query(
         OrderCreated.id.label('id'),
         OrderCreated.order_number.label('order_number'),
@@ -74,7 +86,6 @@ def get_union_all_orders():
         literal('Cancelled').label('status_name')
     )
 
-    # UNION ALL:
     return c.union_all(p, s, d, x)
 
 ############################
@@ -90,14 +101,12 @@ def get_order_list():
         per_page = 50
         search_query = request.args.get('search', None)
 
-        # UNION ALL sorgusu
         union_query = get_union_all_orders()
-
-        # subquery olarak aliased
         sub = union_query.subquery()
+
         # Aliased
         from sqlalchemy.orm import aliased
-        AllOrders = aliased(sub)  # sub sorgusundan bir 'alias' modeli
+        AllOrders = aliased(sub)
 
         q = db.session.query(AllOrders)
 
@@ -107,32 +116,21 @@ def get_order_list():
             q = q.filter(AllOrders.c.order_number.ilike(f"%{search_query}%"))
             logger.debug(f"Arama sorgusuna göre filtre: {search_query}")
 
-        # order_date desc
         from sqlalchemy import desc
         q = q.order_by(desc(AllOrders.c.order_date))
 
-        # Paginate
-        # Not: Bazı durumlarda union vs. paginate ile "nrows" bulma sorunu olabilir.
-        # Sorun yaşarsan manüel sayfalama (offset/limit) kullan.
+        # Flask-SQLAlchemy paginate
         paginated_orders = q.paginate(page=page, per_page=per_page, error_out=False)
 
-        rows = paginated_orders.items  # her bir satır -> row
+        rows = paginated_orders.items
         total_pages = paginated_orders.pages
         total_orders_count = paginated_orders.total
 
-        # rows: her biri
-        # row.id, row.order_number, row.order_date, row.details, row.merchant_sku, row.product_barcode, row.status_name
-        # Biz bunları "nesne" gibi işleyip process_order_details fonksiyonuna göndereceğiz.
-
-        # 1) row'ları "mock" order objesine çevir
-        #    process_order_details listede .details kullandığı için
-        #    bir class veya namedtuple da yapabilirsin.
+        # row'ları "mock" order objesine çevir
         orders = []
+        class MockOrder:
+            pass
         for r in rows:
-            # r -> row
-            class MockOrder:
-                pass
-
             mock = MockOrder()
             mock.id = r.id
             mock.order_number = r.order_number
@@ -140,10 +138,10 @@ def get_order_list():
             mock.details = r.details
             mock.merchant_sku = r.merchant_sku
             mock.product_barcode = r.product_barcode
-            mock.status = r.status_name  # from literal
+            mock.status = r.status_name
             orders.append(mock)
 
-        # 2) process_order_details
+        # process details
         process_order_details(orders)
 
         return render_template(
@@ -156,6 +154,7 @@ def get_order_list():
         )
     except Exception as e:
         logger.error(f"Hata: get_order_list - {e}")
+        flash("Sipariş listesi yüklenirken hata oluştu.", "danger")
         return redirect(url_for('home.home'))
 
 ############################
@@ -164,9 +163,7 @@ def get_order_list():
 def process_order_details(orders):
     """
     Her sipariş için 'details' alanını işleyerek ürün detaylarını hazırlar.
-    (Eski mantıkla aynı)
     """
-    from .barcode_utils import get_product_image  # Varsa
     try:
         # barkod seti topla
         barcodes = set()
@@ -183,18 +180,17 @@ def process_order_details(orders):
                 bc = d.get('barcode','')
                 if bc:
                     barcodes.add(bc)
-        # Ürünleri DB'den çek
+
         products_dict = {}
         if barcodes:
-            from models import Product
             products_list = Product.query.filter(Product.barcode.in_(barcodes)).all()
             products_dict = {p.barcode: p for p in products_list}
 
-        # her siparişin details'ini parse
         for order in orders:
             if not order.details:
                 order.processed_details = []
                 continue
+
             try:
                 details_list = json.loads(order.details) if isinstance(order.details, str) else order.details
             except json.JSONDecodeError:
@@ -232,7 +228,6 @@ def get_filtered_orders(status):
     her birine ayrı sorgu atanır. Eskisi gibi status=... filter
     yerine, tablo seçeceğiz.
     """
-    # Harita
     status_map = {
         'Yeni': OrderCreated,
         'İşleme Alındı': OrderPicking,
@@ -240,7 +235,6 @@ def get_filtered_orders(status):
         'Teslim Edildi': OrderDelivered,
         'İptal Edildi': OrderCancelled
     }
-
     try:
         page = request.args.get('page', 1, type=int)
         per_page = 50
@@ -249,15 +243,12 @@ def get_filtered_orders(status):
             flash(f"{status} durumuna ait tablo bulunamadı.", "warning")
             return redirect(url_for('home.home'))
 
-        # Sorgu
         orders_query = model_cls.query.order_by(model_cls.order_date.desc())
-
         paginated_orders = orders_query.paginate(page=page, per_page=per_page, error_out=False)
         orders = paginated_orders.items
         total_pages = paginated_orders.pages
         total_orders_count = paginated_orders.total
 
-        # Detay işle
         process_order_details(orders)
 
         return render_template(
@@ -272,18 +263,15 @@ def get_filtered_orders(status):
         flash(f'{status} durumundaki siparişler yüklenirken bir hata oluştu.', 'danger')
         return redirect(url_for('home.home'))
 
-
 ############################
 # 5) Sipariş arama (tek tablo değil!)
 ############################
 def search_order_by_number(order_number):
     """
-    Eski kod Order tablosunda arıyordu; şimdi beş tabloyu da kontrol edebiliriz.
-    Basit çözüm: Tüm tablolarda arama yapıp ilk bulduğumuzu döndür.
+    Eski kod Order tablosunda arıyordu; şimdi beş tabloyu da kontrol ediyoruz.
     """
     try:
         logger.debug(f"Sipariş aranıyor: {order_number}")
-        # Sırasıyla tablolar
         for model_cls in (OrderCreated, OrderPicking, OrderShipped, OrderDelivered, OrderCancelled):
             order = model_cls.query.filter_by(order_number=order_number).first()
             if order:
@@ -295,41 +283,31 @@ def search_order_by_number(order_number):
         logger.error(f"Hata: search_order_by_number - {e}")
         return None
 
-
 ###############################################
 # Route kısımları
 ###############################################
 @order_list_service_bp.route('/order-list/all', methods=['GET'])
 def order_list_all():
-    # Tüm siparişler (union all)
     return get_order_list()
 
 @order_list_service_bp.route('/order-list/new', methods=['GET'])
 def order_list_new():
-    # Created
     return get_filtered_orders('Yeni')
 
 @order_list_service_bp.route('/order-list/processed', methods=['GET'])
 def order_list_processed():
-    # Picking
     return get_filtered_orders('İşleme Alındı')
 
 @order_list_service_bp.route('/order-list/shipped', methods=['GET'])
 def order_list_shipped():
-    # Shipped
     return get_filtered_orders('Kargoda')
 
 @order_list_service_bp.route('/order-list/delivered', methods=['GET'])
 def order_list_delivered():
-    # Delivered
     return get_filtered_orders('Teslim Edildi')
-
 
 @order_list_service_bp.route('/order-label', methods=['POST'])
 def order_label():
-    """
-    Kargo etiketi oluşturma
-    """
     from urllib.parse import unquote
     try:
         order_number = request.form.get('order_number')
@@ -342,9 +320,7 @@ def order_label():
 
         logger.debug(f"Order num: {order_number}, shipping_code: {shipping_code}, telefon_no: {telefon_no}")
 
-        # Barkod
         if shipping_code:
-            from barcode_utils import generate_barcode
             barcode_path = generate_barcode(shipping_code)
         else:
             barcode_path = None

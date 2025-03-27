@@ -4,9 +4,14 @@ from flask import Blueprint, render_template
 import json
 import os
 import traceback
-from models import Order, Product
 
-# Logging ayarları
+# Yeni tablolarınız:
+from models import (
+    OrderCreated,
+    Product,
+    # ... eğer diğer tabloları da kullanacaksanız, buraya ekleyin
+)
+
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 home_bp = Blueprint('home', __name__)
@@ -19,22 +24,23 @@ def home():
 def get_home():
     """
     Ana sayfa için gerekli sipariş verilerini hazırlar.
+    Artık eski 'Order' tablosu yerine 'OrderCreated' tablosunu kullanıyoruz.
     """
     try:
-        # En eski 'Created' statüsündeki siparişi veritabanından çekelim
-        oldest_order = Order.query.filter_by(status='Created').order_by(Order.order_date).first()
+        # En eski 'Created' siparişi OrderCreated tablosundan çekelim
+        oldest_order = OrderCreated.query.order_by(OrderCreated.order_date).first()
 
         if oldest_order:
             logging.info("En eski 'Created' statüsündeki sipariş işleniyor.")
 
-            shipping_barcode = oldest_order.shipping_barcode
+            shipping_barcode = oldest_order.shipping_barcode  # Eğer OrderBase içinde shipping_barcode varsa
             remaining_time = calculate_remaining_time(oldest_order.agreed_delivery_date)
 
             # Sipariş detaylarını alalım
-            details_json = oldest_order.details or '[]'  # 'details' alanı eksikse varsayılan olarak boş liste
+            details_json = oldest_order.details or '[]'
             logging.info(f"Sipariş detayları: {details_json}")
 
-            # details_json tipini kontrol edelim
+            # details_json string mi, list mi kontrol edelim
             if isinstance(details_json, str):
                 try:
                     details_list = json.loads(details_json)
@@ -57,7 +63,7 @@ def get_home():
             else:
                 products_dict = {}
 
-            # Ürün listesini oluşturalım
+            # Görselleri ekleyelim
             products = []
             for detail in details_list:
                 product_barcode = detail.get('barcode', '')
@@ -69,6 +75,7 @@ def get_home():
                     'image_url': image_url
                 })
 
+            # Şablonda kolay erişim için sipariş nesnesine ekliyoruz (opsiyonel)
             oldest_order.products = products
 
             return {
@@ -91,6 +98,7 @@ def get_home():
         logging.error(f"Bir hata oluştu: {e}")
         traceback.print_exc()
         return default_order_data()
+
 
 def default_order_data():
     """
@@ -136,7 +144,6 @@ def get_product_image(barcode):
     Ürün görselinin yolunu döndürür.
     """
     images_folder = os.path.join('static', 'images')
-    # Olası dosya uzantıları
     extensions = ['.jpg', '.jpeg', '.png', '.gif']
     for ext in extensions:
         image_filename = f"{barcode}{ext}"

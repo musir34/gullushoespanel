@@ -1,114 +1,233 @@
-body {
-  font-family: 'Roboto', sans-serif;
-  background-color: #f4f7fa;
+/* GENEL */
+
+* {
+  box-sizing: border-box;
   margin: 0;
-  padding: 20px;
-  color: #333;
+  padding: 0;
 }
 
+html, body {
+  height: 100%;
+  background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+  font-family: 'Roboto', sans-serif;
+  color: #e0e0e0;
+  line-height: 1.4;
+}
+
+/* Container (Ana Kutu) */
 .container {
-  max-width: 900px;
-  margin: auto;
-  padding: 25px;
-  background-color: #ffffff;
-  border-radius: 10px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+  max-width: 1100px;
+  margin: 40px auto;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.1); /* Yarı saydam */
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  box-shadow: 0 4px 30px rgba(0,0,0,0.5);
+  border: 1px solid rgba(255,255,255,0.2);
+  position: relative;
 }
 
-h2 {
-  text-align: center;
+/* Navbar */
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 20px;
-  color: #444;
+}
+.navbar .navbar-title {
+  font-size: 1.4rem;
+  font-weight: 500;
+  color: #ffffff;
+}
+.navbar .navbar-links {
+  display: flex;
+  gap: 1rem;
+}
+.navbar .navbar-links a {
+  color: #00d1ff;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.3s;
+}
+.navbar .navbar-links a:hover {
+  text-shadow: 0 0 6px #00d1ff;
 }
 
-.form-container {
+/* Cam Kart (Glass Card) */
+.glass-card {
+  background: rgba(255,255,255,0.1);
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.2);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+  padding: 20px;
+  margin-bottom: 20px;
+  transition: box-shadow 0.3s;
+}
+.glass-card:hover {
+  box-shadow: 0 2px 16px rgba(0,0,0,0.7);
+}
+.glass-card .card-header {
+  font-size: 1.1rem;
+  color: #00d1ff;
+  margin-bottom: 8px;
+}
+.glass-card .card-body {
+  font-size: 0.95rem;
+}
+
+/* Butonlar */
+.btn {
+  display: inline-block;
+  padding: 10px 16px;
+  border-radius: 12px;
+  cursor: pointer;
+  text-decoration: none;
+  color: #ffffff;
+  background: #00d1ff;
+  border: none;
+  font-weight: 500;
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+.btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 15px rgba(0,209,255,0.5);
+}
+.btn.btn-primary {
+  /* Aynı; ama isterseniz ekstra stil */
+}
+
+/* Form Alanı */
+.analysis-form {
   display: flex;
   flex-wrap: wrap;
-  justify-content: space-between;
-  gap: 15px;
-  margin-bottom: 25px;
+  gap: 1rem;
+  margin-bottom: 20px;
 }
-
-.form-group {
-  flex: 1 1 calc(50% - 15px);
+.analysis-form .form-group {
   display: flex;
   flex-direction: column;
+  min-width: 220px;
 }
-
-.form-group label {
+.analysis-form .form-group label {
+  margin-bottom: 5px;
   font-weight: 500;
-  margin-bottom: 6px;
-  color: #555;
+  color: #e0e0e0;
 }
-
-.form-group input {
-  padding: 10px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
+.analysis-form .form-group input {
+  padding: 8px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.2);
+  background-color: rgba(255,255,255,0.1);
+  color: #ffffff;
   transition: border-color 0.3s;
 }
-
-.form-group input:focus {
+.analysis-form .form-group input:focus {
   outline: none;
-  border-color: #007bff;
-  box-shadow: 0 0 6px rgba(0,123,255,0.1);
+  border-color: #00d1ff;
+  box-shadow: 0 0 3px rgba(0,209,255,0.2);
 }
 
-.btn {
-  padding: 12px 20px;
-  background-color: #007bff;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background-color 0.3s;
-  width: 100%;
-  margin-top: 15px;
-}
-
-.btn:hover {
-  background-color: #0056b3;
-}
-
-table {
+/* Tablo */
+.analysis-table {
   width: 100%;
   border-collapse: collapse;
   margin-top: 20px;
+  font-size: 0.95rem;
 }
-
-table th, table td {
-  padding: 12px 10px;
+.analysis-table th, .analysis-table td {
+  padding: 10px;
   text-align: center;
-  border-bottom: 1px solid #eee;
+}
+.analysis-table th {
+  background: rgba(255,255,255,0.08);
+  color: #00d1ff;
+  border-bottom: 1px solid rgba(255,255,255,0.2);
+}
+.analysis-table td {
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+.analysis-table tbody tr:nth-child(even) {
+  background-color: rgba(255,255,255,0.05);
+}
+.analysis-table tbody tr:hover {
+  background-color: rgba(0,209,255,0.1);
 }
 
-table th {
-  background-color: #007bff;
-  color: white;
-}
-
-table tbody tr:hover {
-  background-color: #f1f8ff;
-}
-
+/* Kar / Zarar satırı */
 .profit {
-  background-color: #e6ffed;
+  background-color: rgba(59,238,99,0.1) !important;
 }
-
 .loss {
-  background-color: #ffecec;
+  background-color: rgba(255,100,100,0.1) !important;
 }
 
-.summary-card {
-  background-color: #f0f4ff;
-  padding: 15px 20px;
-  border-radius: 8px;
-  margin-top: 20px;
+/* Stat Cards (toplam gelir vs.) */
+.stat-cards {
+  display: flex;
+  gap: 1rem;
+  margin: 20px 0;
+}
+.stat-cards .stat-card {
+  flex: 1;
+  background: rgba(255,255,255,0.1);
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.2);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+  padding: 1rem;
   text-align: center;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+  transition: box-shadow 0.3s;
+}
+.stat-cards .stat-card:hover {
+  box-shadow: 0 2px 16px rgba(0,0,0,0.7);
+}
+.stat-cards .stat-card .stat-title {
+  color: #00d1ff;
+  margin-bottom: 5px;
+  font-size: 0.9rem;
+}
+.stat-cards .stat-card .stat-value {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #ffffff;
 }
 
-.summary-card h3 {
-  margin: 8px 0;
-  color: #444;
+/* Summary Panel */
+.summary-panel {
+  display: flex;
+  justify-content: space-around;
+  background: rgba(255,255,255,0.1);
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.2);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+  padding: 20px;
+  margin-bottom: 20px;
+}
+.summary-panel .summary-item {
+  text-align: center;
+  color: #fff;
+}
+.summary-panel .summary-item .summary-label {
+  font-size: 0.9rem;
+  margin-bottom: 4px;
+  color: #00d1ff;
+}
+.summary-panel .summary-item .summary-value {
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+/* Mobil Uyumluluk */
+@media (max-width: 768px) {
+  .analysis-form {
+    flex-direction: column;
+  }
+  .stat-cards {
+    flex-direction: column;
+  }
+  .summary-panel {
+    flex-direction: column;
+  }
 }
