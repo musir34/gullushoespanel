@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request
-from models import db, Order, Product, OrderCreated, OrderPicking, OrderShipped, OrderDelivered
-from sqlalchemy import or_, union_all
+from models import db, Order, Product
+from sqlalchemy import or_
 import logging
 from datetime import datetime
 
@@ -26,33 +26,15 @@ def profit_report():
         start_date_obj = datetime.strptime(start_date, '%Y-%m-%d')
         end_date_obj = datetime.strptime(end_date, '%Y-%m-%d')
 
-        # Tüm statü tablolarından tarih aralığındaki siparişleri al
-        created_orders = OrderCreated.query.filter(OrderCreated.order_date.between(start_date_obj, end_date_obj)).all()
-        picking_orders = OrderPicking.query.filter(OrderPicking.order_date.between(start_date_obj, end_date_obj)).all()
-        shipped_orders = OrderShipped.query.filter(OrderShipped.order_date.between(start_date_obj, end_date_obj)).all()
-        delivered_orders = OrderDelivered.query.filter(OrderDelivered.order_date.between(start_date_obj, end_date_obj)).all()
+        # Siparişleri tarih aralığına göre sorgula
+        orders = Order.query.filter(Order.order_date.between(start_date_obj, end_date_obj)).all()
         
-        # Eski sistem (Order tablosu) için de sorgula
-        old_orders = Order.query.filter(Order.order_date.between(start_date_obj, end_date_obj)).all()
-        
-        # Tüm siparişleri birleştir
-        all_orders = created_orders + picking_orders + shipped_orders + delivered_orders + old_orders
-        
-        # Benzersiz sipariş numaralarını al (tekrar hesap yapmamak için)
-        processed_order_numbers = set()
-        unique_orders = []
-        
-        for order in all_orders:
-            if order.order_number not in processed_order_numbers:
-                processed_order_numbers.add(order.order_number)
-                unique_orders.append(order)
-        
-        logging.info(f"Toplam benzersiz sipariş sayısı: {len(unique_orders)}")
+        logging.info(f"Toplam sipariş sayısı: {len(orders)}")
 
         total_profit = 0
         analysis = []
 
-        for order in unique_orders:
+        for order in orders:
             product = Product.query.filter_by(original_product_barcode=order.original_product_barcode).first()
 
             if not product:
