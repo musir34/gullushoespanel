@@ -130,6 +130,30 @@ def get_order_list():
         orders = []
         class MockOrder:
             pass
+        
+        # Önce tüm sipariş numaralarını alalım
+        order_numbers = [r.order_number for r in rows]
+        
+        # Kargo bilgisi için daha detaylı bilgileri alalım
+        # (Bu bilgiler order_details'de olabilir ama daha net olmak için tablolardan çekelim)
+        cargo_data = {}
+        for model in [OrderCreated, OrderPicking, OrderShipped, OrderDelivered, OrderCancelled]:
+            cargo_infos = model.query.filter(model.order_number.in_(order_numbers)).with_entities(
+                model.order_number, model.cargo_provider_name, model.agreed_delivery_date, 
+                model.shipping_barcode, model.customer_name, model.customer_surname, 
+                model.customer_address
+            ).all()
+            
+            for info in cargo_infos:
+                cargo_data[info.order_number] = {
+                    'cargo_provider_name': info.cargo_provider_name,
+                    'agreed_delivery_date': info.agreed_delivery_date,
+                    'shipping_barcode': info.shipping_barcode,
+                    'customer_name': info.customer_name,
+                    'customer_surname': info.customer_surname,
+                    'customer_address': info.customer_address
+                }
+                
         for r in rows:
             mock = MockOrder()
             mock.id = r.id
@@ -140,6 +164,31 @@ def get_order_list():
             mock.product_barcode = r.product_barcode
             # Statü adını direkt olarak kullan
             mock.status = r.status_name
+            
+            # Kargo bilgilerini ekleyelim
+            cargo_info = cargo_data.get(r.order_number, {})
+            mock.cargo_provider_name = cargo_info.get('cargo_provider_name', 'Bilinmiyor')
+            mock.shipping_barcode = cargo_info.get('shipping_barcode', '')
+            mock.customer_name = cargo_info.get('customer_name', '')
+            mock.customer_surname = cargo_info.get('customer_surname', '')
+            mock.customer_address = cargo_info.get('customer_address', '')
+            
+            # Kargoya kalan süre
+            from datetime import datetime
+            delivery_date = cargo_info.get('agreed_delivery_date')
+            if delivery_date:
+                now = datetime.now()
+                diff = delivery_date - now
+                if diff.total_seconds() > 0:
+                    days, seconds = divmod(diff.total_seconds(), 86400)
+                    hours, seconds = divmod(seconds, 3600)
+                    minutes = int(seconds // 60)
+                    mock.remaining_time = f"{int(days)} gün {int(hours)} saat {minutes} dakika"
+                else:
+                    mock.remaining_time = "Süre Doldu"
+            else:
+                mock.remaining_time = "Kalan Süre Yok"
+            
             orders.append(mock)
 
         # process details
@@ -267,6 +316,27 @@ def get_filtered_orders(status):
                 order.status = 'Delivered'
             elif isinstance(order, OrderCancelled):
                 order.status = 'Cancelled'
+            
+            # Kargoya kalan süre hesaplaması
+            from datetime import datetime
+            if hasattr(order, 'agreed_delivery_date') and order.agreed_delivery_date:
+                now = datetime.now()
+                diff = order.agreed_delivery_date - now
+                if diff.total_seconds() > 0:
+                    days, seconds = divmod(diff.total_seconds(), 86400)
+                    hours, seconds = divmod(seconds, 3600)
+                    minutes = int(seconds // 60)
+                    order.remaining_time = f"{int(days)} gün {int(hours)} saat {minutes} dakika"
+                else:
+                    order.remaining_time = "Süre Doldu"
+            else:
+                order.remaining_time = "Kalan Süre Yok"
+
+            # Kargo firması üzerinde veri temizleme varsa düzeltelim
+            if hasattr(order, 'cargo_provider_name') and order.cargo_provider_name:
+                order.cargo_provider_name = order.cargo_provider_name.strip()
+            else:
+                order.cargo_provider_name = "Bilinmiyor"
 
         process_order_details(orders)
 

@@ -360,21 +360,42 @@ def update_existing_order_minimal(order_obj, order_data, commit_immediately=Fals
         logger.info(f"{order_obj.order_number} zaten {order_obj.status}, güncellenmedi.")
         return
 
-    # Delivered/Cancelled ise statüyü set et, barkod vs. değiştirme
+    # Eğer Delivered/Cancelled ise tabloya göre taşıma ya da güncelleme yapalım
     if new_status in ('Delivered', 'Cancelled'):
-        order_obj.status = new_status
-        if commit_immediately:
-            db.session.commit()
-        logger.info(f"{order_obj.order_number} -> statü {new_status}, barkod güncellenmedi.")
-        return
+        # Eğer başka bir tablodaysa, Delivered/Cancelled için doğru tabloya taşıyalım
+        if (new_status == 'Delivered' and not isinstance(order_obj, OrderDelivered)) or \
+           (new_status == 'Cancelled' and not isinstance(order_obj, OrderCancelled)):
+            target_cls = OrderDelivered if new_status == 'Delivered' else OrderCancelled
+            move_order_between_tables_in_memory(order_obj.order_number, order_obj, type(order_obj), target_cls)
+            logger.info(f"{order_obj.order_number} -> {new_status} tablosuna taşındı.")
+            # Taşıma işleminden sonra barkod güncellemeden çıkabilirisiniz
+            if commit_immediately:
+                db.session.commit()
+            return
+        # Zaten doğru tablodaysa sadece statü güncellemesi
+        else:
+            order_obj.status = new_status
+            if commit_immediately:
+                db.session.commit()
+            logger.info(f"{order_obj.order_number} -> statü {new_status}, barkod güncellenmedi.")
+            return
 
-    # Shipped ise statüyü set et, barkod güncelleme
+    # Shipped ise doğru tabloya taşıma ve güncelleme
     if new_status == 'Shipped':
-        order_obj.status = 'Shipped'
-        if commit_immediately:
-            db.session.commit()
-        logger.info(f"{order_obj.order_number} -> Shipped yapıldı, barkod güncellenmedi.")
-        return
+        # Farklı bir tablodaysa Shipped tablosuna taşı
+        if not isinstance(order_obj, OrderShipped):
+            move_order_between_tables_in_memory(order_obj.order_number, order_obj, type(order_obj), OrderShipped)
+            logger.info(f"{order_obj.order_number} -> Shipped tablosuna taşındı.")
+            if commit_immediately:
+                db.session.commit()
+            return
+        # Zaten Shipped tablosunda ise sadece statü güncellemesi
+        else:
+            order_obj.status = 'Shipped'
+            if commit_immediately:
+                db.session.commit()
+            logger.info(f"{order_obj.order_number} -> Shipped yapıldı, barkod güncellenmedi.")
+            return
 
     # Geri kalan (Created, Picking, Invoiced) barkod vs. sıfırla ve yeniden doldur
     order_obj.merchant_sku = ''
