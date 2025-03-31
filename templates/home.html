@@ -267,6 +267,9 @@
       <!-- Anasayfa ve Arşiv ayrı -->
       <a href="{{ url_for('home.home') }}" class="btn btn-secondary">Anasayfa</a>
       <a href="{{ url_for('display_archive') }}" class="btn btn-secondary">Arşiv</a>
+      <form action="{{ url_for('all_orders_service.update_order_statuses') }}" method="POST" style="display: inline;">
+          <button type="submit" class="btn btn-info">Sipariş Durumlarını Güncelle</button>
+      </form>
       
       <!-- KULLANICI İŞLEMLERİ DROPDOWN -->
       <div class="dropdown">

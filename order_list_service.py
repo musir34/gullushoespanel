@@ -1,10 +1,10 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
-from sqlalchemy import literal, union_all
+from sqlalchemy import literal, union_all, func
 from sqlalchemy.orm import aliased
 import json
 import os
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from models import db, Product, OrderCreated, OrderPicking, OrderShipped, OrderDelivered, OrderCancelled
 from barcode_utils import generate_barcode  # Bunu yalnızca generate_barcode için kullanıyoruz
@@ -29,12 +29,12 @@ def get_product_image(barcode):
     return "/static/logo/gullu.png"
 
 ############################
-# 1) UNION ALL Sorgusu
+# 1) UNION ALL Sorgusu (Güncellendi)
 ############################
 def get_union_all_orders():
     """
     Beş tabloda ortak kolonları seçip UNION ALL ile birleştirir.
-    .label('details') diyerek tablo bazında 'details' alanını seçiyoruz.
+    Kargo bilgilerini de ekler.
     """
     c = db.session.query(
         OrderCreated.id.label('id'),
@@ -43,6 +43,8 @@ def get_union_all_orders():
         OrderCreated.details.label('details'),
         OrderCreated.merchant_sku.label('merchant_sku'),
         OrderCreated.product_barcode.label('product_barcode'),
+        literal(None).label('shipping_company'),
+        literal(None).label('shipping_remaining_time'),
         literal('Created').label('status_name')
     )
 
@@ -53,6 +55,8 @@ def get_union_all_orders():
         OrderPicking.details.label('details'),
         OrderPicking.merchant_sku.label('merchant_sku'),
         OrderPicking.product_barcode.label('product_barcode'),
+        literal(None).label('shipping_company'),
+        literal(None).label('shipping_remaining_time'),
         literal('Picking').label('status_name')
     )
 
@@ -63,6 +67,8 @@ def get_union_all_orders():
         OrderShipped.details.label('details'),
         OrderShipped.merchant_sku.label('merchant_sku'),
         OrderShipped.product_barcode.label('product_barcode'),
+        OrderShipped.shipping_company.label('shipping_company'),
+        OrderShipped.estimated_delivery_date.label('estimated_delivery_date'),
         literal('Shipped').label('status_name')
     )
 
@@ -73,6 +79,8 @@ def get_union_all_orders():
         OrderDelivered.details.label('details'),
         OrderDelivered.merchant_sku.label('merchant_sku'),
         OrderDelivered.product_barcode.label('product_barcode'),
+        OrderDelivered.shipping_company.label('shipping_company'),
+        literal(None).label('estimated_delivery_date'),
         literal('Delivered').label('status_name')
     )
 
@@ -83,18 +91,22 @@ def get_union_all_orders():
         OrderCancelled.details.label('details'),
         OrderCancelled.merchant_sku.label('merchant_sku'),
         OrderCancelled.product_barcode.label('product_barcode'),
+        literal(None).label('shipping_company'),
+        literal(None).label('estimated_delivery_date'),
         literal('Cancelled').label('status_name')
     )
 
     return c.union_all(p, s, d, x)
 
+
 ############################
-# 2) Tüm siparişleri listeleme
+# 2) Tüm siparişleri listeleme (Güncellendi)
 ############################
 def get_order_list():
     """
     Tüm tabloları tek listede gösterir (UNION ALL).
     Arama (order_number) + sayfalama yapar.
+    Kargo bilgilerini ekler.
     """
     try:
         page = request.args.get('page', 1, type=int)
@@ -105,7 +117,6 @@ def get_order_list():
         sub = union_query.subquery()
 
         # Aliased
-        from sqlalchemy.orm import aliased
         AllOrders = aliased(sub)
 
         q = db.session.query(AllOrders)
@@ -138,8 +149,12 @@ def get_order_list():
             mock.details = r.details
             mock.merchant_sku = r.merchant_sku
             mock.product_barcode = r.product_barcode
-            # Statü adını direkt olarak kullan
             mock.status = r.status_name
+            mock.shipping_company = r.shipping_company
+            if r.estimated_delivery_date:
+                mock.shipping_remaining_time = (r.estimated_delivery_date - datetime.now()).days
+            else:
+                mock.shipping_remaining_time = None
             orders.append(mock)
 
         # process details
@@ -303,11 +318,46 @@ def search_order_by_number(order_number):
         return None
 
 ###############################################
-# Route kısımları
+# Route kısımları (Güncellendi)
 ###############################################
 @order_list_service_bp.route('/order-list/all', methods=['GET'])
 def order_list_all():
-    return get_order_list()
+    """
+    Tüm sipariş durumlarından birleştirilmiş liste gösterir.
+    Eski: Her durumu ayrı sayfada görüntülüyorduk.
+    Yeni: UNION ALL ile tek sayfada gösteriyoruz.
+    """
+    from datetime import datetime
+    search = request.args.get('search', '')
+    page = request.args.get('page', 1, type=int)
+    per_page = 50
+
+    union_query = get_union_all_orders()
+
+    if search:
+        # LIKE ile arama; SQL'i doğru oluşturmak dikkat gerektirir
+        union_query = union_query.filter(
+            OrderCreated.order_number.ilike(f'%{search}%') |
+            OrderCreated.merchant_sku.ilike(f'%{search}%') |
+            OrderCreated.product_barcode.ilike(f'%{search}%')
+        )
+
+    paginated_orders = union_query.paginate(page=page, per_page=per_page, error_out=False)
+    orders = paginated_orders.items
+    total_pages = paginated_orders.pages
+    total_orders_count = paginated_orders.total
+
+    process_order_details(orders) #Detayları işle
+
+    return render_template(
+        'order_list.html',
+        orders=orders,
+        page=page,
+        total_pages=total_pages,
+        total_orders_count=total_orders_count,
+        search_query=search
+    )
+
 
 @order_list_service_bp.route('/order-list/new', methods=['GET'])
 def order_list_new():

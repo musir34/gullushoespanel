@@ -1,7 +1,7 @@
 import os
 import json
 import logging
-from datetime import timedelta
+from datetime import timedelta, datetime # Added datetime import
 
 from flask import Flask, request, url_for, redirect, flash, session, current_app
 from flask_sqlalchemy import SQLAlchemy
@@ -206,6 +206,11 @@ def schedule_jobs(app):
 
 # schedule_jobs fonksiyonunu app.run'dan önce çağır:
 schedule_jobs(app)
+
+# DateTime context processor
+@app.context_processor
+def inject_now():
+    return {'datetime': datetime}
 
 if __name__ == '__main__':
     debug_mode = os.environ.get('FLASK_DEBUG', 'False') == 'True'
