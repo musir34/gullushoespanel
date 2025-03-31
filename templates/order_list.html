@@ -413,27 +413,6 @@
               Arşivle
             </button>
           </div>
-          <!-- Kargo Firması ve Kalan Süre -->
-          <div class="order-cargo-info">
-              <p><strong>Kargo Firması:</strong> {{ order.cargo_provider_name if order.cargo_provider_name else 'Belirtilmemiş' }}</p>
-
-              {% if order.agreed_delivery_date %}
-              <p>
-                  <strong>Kargoya Kalan:</strong>
-                  {% set now = now|default(datetime.now()) %}
-                  {% set time_diff = order.agreed_delivery_date - now %}
-                  {% set hours_left = (time_diff.total_seconds() / 3600)|int %}
-
-                  {% if hours_left < 0 %}
-                      <span class="text-danger">Gecikmiş</span>
-                  {% elif hours_left < 24 %}
-                      <span class="text-warning">{{ hours_left }} saat</span>
-                  {% else %}
-                      <span>{{ (hours_left / 24)|int }} gün {{ hours_left % 24 }} saat</span>
-                  {% endif %}
-              </p>
-              {% endif %}
-          </div>
         </div>
         <div class="card-body">
           {% if translated_status in ['Yeni','İşleme Alındı'] %}
