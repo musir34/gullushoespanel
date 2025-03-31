@@ -138,6 +138,7 @@ def get_order_list():
             mock.details = r.details
             mock.merchant_sku = r.merchant_sku
             mock.product_barcode = r.product_barcode
+            # Statü adını direkt olarak kullan
             mock.status = r.status_name
             orders.append(mock)
 
@@ -230,10 +231,15 @@ def get_filtered_orders(status):
     """
     status_map = {
         'Yeni': OrderCreated,
+        'Created': OrderCreated,
         'İşleme Alındı': OrderPicking,
+        'Picking': OrderPicking,
         'Kargoda': OrderShipped,
+        'Shipped': OrderShipped,
         'Teslim Edildi': OrderDelivered,
-        'İptal Edildi': OrderCancelled
+        'Delivered': OrderDelivered,
+        'İptal Edildi': OrderCancelled,
+        'Cancelled': OrderCancelled
     }
     try:
         page = request.args.get('page', 1, type=int)
@@ -248,6 +254,19 @@ def get_filtered_orders(status):
         orders = paginated_orders.items
         total_pages = paginated_orders.pages
         total_orders_count = paginated_orders.total
+
+        # Doğru statü adını atama
+        for order in orders:
+            if isinstance(order, OrderCreated):
+                order.status = 'Created'
+            elif isinstance(order, OrderPicking):
+                order.status = 'Picking'
+            elif isinstance(order, OrderShipped):
+                order.status = 'Shipped'
+            elif isinstance(order, OrderDelivered):
+                order.status = 'Delivered'
+            elif isinstance(order, OrderCancelled):
+                order.status = 'Cancelled'
 
         process_order_details(orders)
 

@@ -329,7 +329,8 @@
               'Created': 'Yeni',
               'Picking': 'İşleme Alındı',
               'Shipped': 'Kargoda',
-              'Delivered': 'Teslim Edildi'
+              'Delivered': 'Teslim Edildi',
+              'Cancelled': 'İptal Edildi'
             }.get(order.status, order.status) %}
             <span
               class="badge
@@ -341,6 +342,8 @@
                     bg-danger
                 {% elif translated_status == 'Teslim Edildi' %}
                     bg-orange
+                {% elif translated_status == 'İptal Edildi' %}
+                    bg-dark
                 {% else %}
                     bg-secondary
                 {% endif %}
