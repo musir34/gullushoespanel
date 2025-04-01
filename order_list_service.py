@@ -1,5 +1,7 @@
+# order_list_service.py
+
 from flask import Blueprint, render_template, request, redirect, url_for, flash
-from sqlalchemy import literal, union_all
+from sqlalchemy import literal
 from sqlalchemy.orm import aliased
 import json
 import os
@@ -11,6 +13,7 @@ from barcode_utils import generate_barcode  # Bunu yalnızca generate_barcode i�
 
 order_list_service_bp = Blueprint('order_list_service', __name__)
 logger = logging.getLogger(__name__)
+
 
 ############################
 # 0) Ürün barkod resmini bulma fonksiyonu
@@ -28,14 +31,16 @@ def get_product_image(barcode):
             return f"/static/images/{image_filename}"
     return "/static/logo/gullu.png"
 
+
 ############################
-# 1) UNION ALL Sorgusu
+# 1) UNION ALL Sorgusu (Güncellenmiş)
 ############################
 def get_union_all_orders():
     """
     Beş tabloda ortak kolonları seçip UNION ALL ile birleştirir.
-    .label('details') diyerek tablo bazında 'details' alanını seçiyoruz.
+    Kargo firması, tahmini teslim tarihi vs. kolonları da ekliyoruz.
     """
+
     c = db.session.query(
         OrderCreated.id.label('id'),
         OrderCreated.order_number.label('order_number'),
@@ -43,6 +48,13 @@ def get_union_all_orders():
         OrderCreated.details.label('details'),
         OrderCreated.merchant_sku.label('merchant_sku'),
         OrderCreated.product_barcode.label('product_barcode'),
+        OrderCreated.cargo_provider_name.label('cargo_provider_name'),
+        OrderCreated.customer_name.label('customer_name'),
+        OrderCreated.customer_surname.label('customer_surname'),
+        OrderCreated.customer_address.label('customer_address'),
+        OrderCreated.shipping_barcode.label('shipping_barcode'),
+        OrderCreated.agreed_delivery_date.label('agreed_delivery_date'),
+        OrderCreated.estimated_delivery_end.label('estimated_delivery_end'),
         literal('Created').label('status_name')
     )
 
@@ -53,6 +65,13 @@ def get_union_all_orders():
         OrderPicking.details.label('details'),
         OrderPicking.merchant_sku.label('merchant_sku'),
         OrderPicking.product_barcode.label('product_barcode'),
+        OrderPicking.cargo_provider_name.label('cargo_provider_name'),
+        OrderPicking.customer_name.label('customer_name'),
+        OrderPicking.customer_surname.label('customer_surname'),
+        OrderPicking.customer_address.label('customer_address'),
+        OrderPicking.shipping_barcode.label('shipping_barcode'),
+        OrderPicking.agreed_delivery_date.label('agreed_delivery_date'),
+        OrderPicking.estimated_delivery_end.label('estimated_delivery_end'),
         literal('Picking').label('status_name')
     )
 
@@ -63,6 +82,13 @@ def get_union_all_orders():
         OrderShipped.details.label('details'),
         OrderShipped.merchant_sku.label('merchant_sku'),
         OrderShipped.product_barcode.label('product_barcode'),
+        OrderShipped.cargo_provider_name.label('cargo_provider_name'),
+        OrderShipped.customer_name.label('customer_name'),
+        OrderShipped.customer_surname.label('customer_surname'),
+        OrderShipped.customer_address.label('customer_address'),
+        OrderShipped.shipping_barcode.label('shipping_barcode'),
+        OrderShipped.agreed_delivery_date.label('agreed_delivery_date'),
+        OrderShipped.estimated_delivery_end.label('estimated_delivery_end'),
         literal('Shipped').label('status_name')
     )
 
@@ -73,6 +99,13 @@ def get_union_all_orders():
         OrderDelivered.details.label('details'),
         OrderDelivered.merchant_sku.label('merchant_sku'),
         OrderDelivered.product_barcode.label('product_barcode'),
+        OrderDelivered.cargo_provider_name.label('cargo_provider_name'),
+        OrderDelivered.customer_name.label('customer_name'),
+        OrderDelivered.customer_surname.label('customer_surname'),
+        OrderDelivered.customer_address.label('customer_address'),
+        OrderDelivered.shipping_barcode.label('shipping_barcode'),
+        OrderDelivered.agreed_delivery_date.label('agreed_delivery_date'),
+        OrderDelivered.estimated_delivery_end.label('estimated_delivery_end'),
         literal('Delivered').label('status_name')
     )
 
@@ -83,10 +116,18 @@ def get_union_all_orders():
         OrderCancelled.details.label('details'),
         OrderCancelled.merchant_sku.label('merchant_sku'),
         OrderCancelled.product_barcode.label('product_barcode'),
+        OrderCancelled.cargo_provider_name.label('cargo_provider_name'),
+        OrderCancelled.customer_name.label('customer_name'),
+        OrderCancelled.customer_surname.label('customer_surname'),
+        OrderCancelled.customer_address.label('customer_address'),
+        OrderCancelled.shipping_barcode.label('shipping_barcode'),
+        OrderCancelled.agreed_delivery_date.label('agreed_delivery_date'),
+        OrderCancelled.estimated_delivery_end.label('estimated_delivery_end'),
         literal('Cancelled').label('status_name')
     )
 
     return c.union_all(p, s, d, x)
+
 
 ############################
 # 2) Tüm siparişleri listeleme
@@ -104,10 +145,7 @@ def get_order_list():
         union_query = get_union_all_orders()
         sub = union_query.subquery()
 
-        # Aliased
-        from sqlalchemy.orm import aliased
         AllOrders = aliased(sub)
-
         q = db.session.query(AllOrders)
 
         # Arama
@@ -138,8 +176,17 @@ def get_order_list():
             mock.details = r.details
             mock.merchant_sku = r.merchant_sku
             mock.product_barcode = r.product_barcode
-            # Statü adını direkt olarak kullan
             mock.status = r.status_name
+
+            # Eklediğimiz yeni kolonları da mock nesnesine atıyoruz:
+            mock.cargo_provider_name = getattr(r, 'cargo_provider_name', '')
+            mock.customer_name       = getattr(r, 'customer_name', '')
+            mock.customer_surname    = getattr(r, 'customer_surname', '')
+            mock.customer_address    = getattr(r, 'customer_address', '')
+            mock.shipping_barcode    = getattr(r, 'shipping_barcode', '')
+            mock.agreed_delivery_date = getattr(r, 'agreed_delivery_date', None)
+            mock.estimated_delivery_end = getattr(r, 'estimated_delivery_end', None)
+
             orders.append(mock)
 
         # process details
@@ -158,6 +205,7 @@ def get_order_list():
         flash("Sipariş listesi yüklenirken hata oluştu.", "danger")
         return redirect(url_for('home.home'))
 
+
 ############################
 # 3) Sipariş detaylarını işlemek
 ############################
@@ -171,10 +219,14 @@ def process_order_details(orders):
         for order in orders:
             details_json = order.details
             if not details_json:
+                order.processed_details = []
                 continue
+
+            # details alanı JSON formatında
             try:
                 details_list = json.loads(details_json) if isinstance(details_json, str) else details_json
             except json.JSONDecodeError:
+                order.processed_details = []
                 continue
 
             for d in details_list:
@@ -182,11 +234,13 @@ def process_order_details(orders):
                 if bc:
                     barcodes.add(bc)
 
+        # Ürün resim url'lerini bulmak için barkod bazında sorgu
         products_dict = {}
         if barcodes:
             products_list = Product.query.filter(Product.barcode.in_(barcodes)).all()
             products_dict = {p.barcode: p for p in products_list}
 
+        # Her siparişin detaylarını processed_details olarak set et
         for order in orders:
             if not order.details:
                 order.processed_details = []
@@ -205,7 +259,8 @@ def process_order_details(orders):
                 qty = d.get('quantity',0)
                 color = d.get('color','')
                 size = d.get('size','')
-                # resim bul
+
+                # Ürün resmi bul
                 img_url = get_product_image(product_barcode)
 
                 processed_details.append({
@@ -220,14 +275,14 @@ def process_order_details(orders):
     except Exception as e:
         logger.error(f"Hata: process_order_details - {e}")
 
+
 ############################
-# 4) Belirli Durumlara Göre Filtre (yeni tablolar)
+# 4) Belirli Durumlara Göre Filtre
 ############################
 def get_filtered_orders(status):
     """
     Created, Picking, Shipped, Delivered, Cancelled tablolarının
-    her birine ayrı sorgu atanır. Eskisi gibi status=... filter
-    yerine, tablo seçeceğiz.
+    her birine ayrı sorgu atanır.
     """
     status_map = {
         'Yeni': OrderCreated,
@@ -255,7 +310,7 @@ def get_filtered_orders(status):
         total_pages = paginated_orders.pages
         total_orders_count = paginated_orders.total
 
-        # Doğru statü adını atama
+        # Statü atama
         for order in orders:
             if isinstance(order, OrderCreated):
                 order.status = 'Created'
@@ -282,6 +337,7 @@ def get_filtered_orders(status):
         flash(f'{status} durumundaki siparişler yüklenirken bir hata oluştu.', 'danger')
         return redirect(url_for('home.home'))
 
+
 ############################
 # 5) Sipariş arama (tek tablo değil!)
 ############################
@@ -301,6 +357,7 @@ def search_order_by_number(order_number):
     except Exception as e:
         logger.error(f"Hata: search_order_by_number - {e}")
         return None
+
 
 ###############################################
 # Route kısımları
@@ -324,6 +381,7 @@ def order_list_shipped():
 @order_list_service_bp.route('/order-list/delivered', methods=['GET'])
 def order_list_delivered():
     return get_filtered_orders('Teslim Edildi')
+
 
 @order_list_service_bp.route('/order-label', methods=['POST'])
 def order_label():

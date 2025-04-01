@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app
 import asyncio
 import aiohttp
@@ -10,7 +12,15 @@ from sqlalchemy.exc import SQLAlchemyError
 import threading
 
 # Tablolar: Created, Picking, Shipped, Delivered, Cancelled, Archive
-from models import db, OrderCreated, OrderPicking, OrderShipped, OrderDelivered, OrderCancelled, OrderArchived
+from models import (
+    db,
+    OrderCreated,
+    OrderPicking,
+    OrderShipped,
+    OrderDelivered,
+    OrderCancelled,
+    OrderArchived
+)
 
 # Trendyol API kimlik bilgileri
 from trendyol_api import API_KEY, API_SECRET, SUPPLIER_ID
@@ -30,19 +40,17 @@ formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(messag
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
-
 ############################
-# Sipariş Statüsü -> Model eşlemesi
+# Statü -> Model eşlemesi
 ############################
 STATUS_TABLE_MAP = {
-    'Created': OrderCreated,
-    'Picking': OrderPicking,
-    'Invoiced': OrderPicking,  # Invoiced da picking’e gitsin
-    'Shipped': OrderShipped,
+    'Created':   OrderCreated,
+    'Picking':   OrderPicking,
+    'Invoiced':  OrderPicking,  # Invoiced -> picking tablosu
+    'Shipped':   OrderShipped,
     'Delivered': OrderDelivered,
     'Cancelled': OrderCancelled
 }
-
 
 ############################
 # 1) Trendyol'dan Sipariş Çekme (Asenkron)
@@ -77,11 +85,10 @@ async def fetch_trendyol_orders_async():
             "Content-Type": "application/json"
         }
 
-        # size=500 diyerek daha az sayfa ile çekme (performans için)
         params = {
             "status": "Created,Picking,Invoiced,Shipped,Delivered,Cancelled",
             "page": 0,
-            "size": 500,
+            "size": 500,  # Daha az sayfa ile çekmek için
             "orderByField": "PackageLastModifiedDate",
             "orderByDirection": "DESC"
         }
@@ -90,33 +97,34 @@ async def fetch_trendyol_orders_async():
             async with session.get(url, headers=headers, params=params) as response:
                 data = await response.json()
                 if response.status != 200:
-                    print(f"API Error: {response.status} - {data}")
+                    logger.error(f"API Error: {response.status} - {data}")
                     return
 
                 total_elements = data.get('totalElements', 0)
                 total_pages = data.get('totalPages', 1)
-                print(f"Toplam sipariş sayısı: {total_elements}, Toplam sayfa sayısı: {total_pages}")
+                logger.info(f"Toplam sipariş sayısı: {total_elements}, Toplam sayfa sayısı: {total_pages}")
 
-                # Aynı anda en fazla 10 istek
-                from asyncio import Semaphore
-                semaphore = Semaphore(10)
+                from asyncio import Semaphore, gather
+                sem = Semaphore(10)
                 tasks = []
-                for page_number in range(total_pages):
-                    params_page = params.copy()
-                    params_page['page'] = page_number
-                    task = fetch_orders_page(session, url, headers, params_page, semaphore)
-                    tasks.append(task)
+                # İlk sayfadan gelen siparişler
+                all_orders_data = data.get('content', [])
 
-                pages_data = await asyncio.gather(*tasks)
-                all_orders_data = []
-                for orders in pages_data:
-                    all_orders_data.extend(orders)
+                # Ek sayfalar varsa paralel çek
+                for page_number in range(1, total_pages):
+                    params_page = dict(params, page=page_number)
+                    tasks.append(fetch_orders_page(session, url, headers, params_page, sem))
 
-                print(f"Toplam çekilen sipariş sayısı: {len(all_orders_data)}")
+                if tasks:
+                    pages_data = await gather(*tasks)
+                    for orders in pages_data:
+                        all_orders_data.extend(orders)
+
+                logger.info(f"Toplam çekilen sipariş sayısı: {len(all_orders_data)}")
                 process_all_orders(all_orders_data)
 
     except Exception as e:
-        print(f"Hata: fetch_trendyol_orders_async - {e}")
+        logger.error(f"Hata: fetch_trendyol_orders_async - {e}")
         traceback.print_exc()
 
 
@@ -128,302 +136,242 @@ async def fetch_orders_page(session, url, headers, params, semaphore):
         try:
             async with session.get(url, headers=headers, params=params) as response:
                 if response.status != 200:
-                    print(f"API isteği başarısız oldu: {response.status} - {await response.text()}")
+                    logger.error(f"API isteği başarısız oldu: {response.status} - {await response.text()}")
                     return []
                 data = await response.json()
                 return data.get('content', [])
         except Exception as e:
-            print(f"Hata: fetch_orders_page - {e}")
+            logger.error(f"Hata: fetch_orders_page - {e}")
             return []
 
 
 ############################
-# 2) Gelen Siparişleri İşleme
+# 2) Gelen Siparişleri İşleme (Created/Picking/Cancelled Senkron)
 ############################
 def process_all_orders(all_orders_data):
     """
-    - Tüm siparişler için tablo hareketlerini minimal sorgu ve tek transaction ile yapar.
-      * Tek seferde 5 tabloyu order_number IN(...) ile sorgular.
-      * Her siparişi tabloya göre update/insert/taşıma yapar.
-      * En sonda tek commit.
-    - Arka planda Shipped/Delivered siparişlerini ayrı bir thread’de işleyebilir.
+    Tüm siparişler statüsüne göre ayrılır:
+    - (Created, Picking, Invoiced, Cancelled) -> Hemen işlenir (senkron).
+    - (Shipped, Delivered) -> Arka planda işlenir (thread).
     """
     try:
         if not all_orders_data:
             logger.info("Hiç sipariş gelmedi.")
             return
 
-        # 1) Arşiv kontrolü
+        # 1) Arşiv kontrolü: arşivdeyse atla
         archived_list = OrderArchived.query.all()
         archived_set = {o.order_number for o in archived_list}
 
-        # 2) Tüm order_number'ları set olarak alalım:
-        order_numbers = set(str(od.get('orderNumber') or od.get('id')) for od in all_orders_data)
+        # 2) Siparişleri statüye göre 2 kategoriye ayıralım
+        sync_orders = []  # Created / Picking / Cancelled / Invoiced
+        bg_orders   = []  # Shipped / Delivered
 
-        # 3) 5 tabloyu tek sorguda çek:
-        existing_created   = OrderCreated.query.filter(OrderCreated.order_number.in_(order_numbers)).all()
-        existing_picking   = OrderPicking.query.filter(OrderPicking.order_number.in_(order_numbers)).all()
-        existing_shipped   = OrderShipped.query.filter(OrderShipped.order_number.in_(order_numbers)).all()
-        existing_delivered = OrderDelivered.query.filter(OrderDelivered.order_number.in_(order_numbers)).all()
-        existing_cancelled = OrderCancelled.query.filter(OrderCancelled.order_number.in_(order_numbers)).all()
-
-        # Dictionary map: order_number -> (model_instance, tablo_sinifi)
-        created_map   = {row.order_number: (row, OrderCreated)   for row in existing_created}
-        picking_map   = {row.order_number: (row, OrderPicking)   for row in existing_picking}
-        shipped_map   = {row.order_number: (row, OrderShipped)   for row in existing_shipped}
-        delivered_map = {row.order_number: (row, OrderDelivered) for row in existing_delivered}
-        cancelled_map = {row.order_number: (row, OrderCancelled) for row in existing_cancelled}
-
-        def find_existing_order_in_maps(onum):
-            if onum in created_map:
-                return created_map[onum]
-            if onum in picking_map:
-                return picking_map[onum]
-            if onum in shipped_map:
-                return shipped_map[onum]
-            if onum in delivered_map:
-                return delivered_map[onum]
-            if onum in cancelled_map:
-                return cancelled_map[onum]
-            return None, None
-
-        # 4) Siparişleri duruma göre gruplayalım
-        sync_orders_grouped = {}  # new eklenecek siparişler: {model_cls: [dict_data, ...]}
-        bg_orders = []            # Shipped / Delivered arka planda işlenecekler
-        processed = set()
-
+        processed_numbers = set()
         for od in all_orders_data:
-            order_number = str(od.get('orderNumber') or od.get('id'))
-            if order_number in processed:
+            onum = str(od.get('orderNumber') or od.get('id'))
+            if onum in processed_numbers:
                 continue
-            processed.add(order_number)
+            processed_numbers.add(onum)
 
-            if order_number in archived_set:
-                logger.info(f"{order_number} arşivde, atlanıyor.")
+            if onum in archived_set:
+                logger.info(f"{onum} arşivde, atlanıyor.")
                 continue
 
             st = (od.get('status') or '').strip()
-            target_model = STATUS_TABLE_MAP.get(st)
-
-            if st in ('Created', 'Picking', 'Invoiced'):
-                old_obj, old_model = find_existing_order_in_maps(order_number)
-                if old_obj:
-                    # Zaten tabloda var, belki tablo taşıma gerekebilir:
-                    if old_model != target_model:
-                        # Tablolar arası taşıma
-                        move_order_between_tables_in_memory(order_number, old_obj, old_model, target_model)
-                        # Yeni tabloya taşındıktan sonra update
-                        new_rec = target_model.query.filter_by(order_number=order_number).first()
-                        if new_rec:
-                            update_existing_order_minimal(new_rec, od, commit_immediately=False)
-                    else:
-                        # Sadece minimal update
-                        update_existing_order_minimal(old_obj, od, commit_immediately=False)
-                else:
-                    # Yepyeni sipariş
-                    new_data = combine_line_items(od, st)
-                    sync_orders_grouped.setdefault(target_model, []).append(new_data)
-
+            # 'Invoiced' => picking
+            if st in ('Created', 'Picking', 'Invoiced', 'Cancelled'):
+                sync_orders.append(od)
             elif st in ('Shipped', 'Delivered'):
                 bg_orders.append(od)
-
             else:
-                logger.warning(f"{order_number} - işlenmeyen statü: {st}")
+                logger.warning(f"{onum} - işlenmeyen statü: {st}")
 
-        # 5) Senkron bulk insert işlemi
-        for model_cls, orders_data in sync_orders_grouped.items():
-            if orders_data:
-                db.session.bulk_insert_mappings(model_cls, orders_data)
-                logger.info(f"{len(orders_data)} yeni sipariş {model_cls.__tablename__} tablosuna eklendi (bulk_insert).")
+        # 3) Senkron siparişleri tek transaction ile işleyelim
+        _process_sync_orders_bulk(sync_orders)
 
-        # 6) Tek commit
-        db.session.commit()
-        logger.info("Senkron siparişler işleme alındı ve commit edildi.")
-
-        # 7) Arka plan işlemleri: Shipped / Delivered
+        # 4) Shipped/Delivered -> Arka plan
         if bg_orders:
             app = current_app._get_current_object()
-            thread = threading.Thread(target=process_bg_orders, args=(bg_orders, app))
-            thread.start()
+            t = threading.Thread(target=process_bg_orders_bulk, args=(bg_orders, app))
+            t.start()
 
-    except SQLAlchemyError as e:
-        logger.error(f"Veritabanı hatası: {e}")
-        db.session.rollback()
     except Exception as e:
         logger.error(f"Hata: process_all_orders - {e}")
         traceback.print_exc()
         db.session.rollback()
 
 
-def process_bg_orders(bg_orders, app):
+def _process_sync_orders_bulk(sync_orders):
     """
-    Shipped ve Delivered siparişlerini arka planda işleyen fonksiyon.
-    Bu fonksiyon, ayrı bir thread içinde çalışır ve tek seferde commit yapılır.
+    Created/Picking/Cancelled siparişlerini toplu şekilde ekleme/güncelleme
+    (tek seferde commit).
+    """
+    if not sync_orders:
+        return
+
+    try:
+        # 1) Siparişlerin order_number seti
+        numbers = {str(od.get('orderNumber') or od.get('id')) for od in sync_orders}
+
+        # 2) Mevcut kayıtları sorgula
+        existing_created   = OrderCreated.query.filter(OrderCreated.order_number.in_(numbers)).all()
+        existing_picking   = OrderPicking.query.filter(OrderPicking.order_number.in_(numbers)).all()
+        existing_cancelled = OrderCancelled.query.filter(OrderCancelled.order_number.in_(numbers)).all()
+
+        created_map   = {r.order_number: r for r in existing_created}
+        picking_map   = {r.order_number: r for r in existing_picking}
+        cancelled_map = {r.order_number: r for r in existing_cancelled}
+
+        # 3) Bulk insert için listeler
+        to_insert_created   = []
+        to_insert_picking   = []
+        to_insert_cancelled = []
+
+        # 4) Döngü ile statüye göre ekle/güncelle
+        for od in sync_orders:
+            onum = str(od.get('orderNumber') or od.get('id'))
+            st   = (od.get('status') or '').strip()
+
+            # "Invoiced" = picking kabul
+            if st == 'Invoiced':
+                st = 'Picking'
+
+            target_model = STATUS_TABLE_MAP.get(st)  # Created, Picking veya Cancelled
+            new_data = combine_line_items(od, st)
+
+            if target_model == OrderCreated:
+                old_obj = created_map.get(onum)
+                if old_obj:
+                    _minimal_update_bulk(old_obj, new_data)
+                else:
+                    to_insert_created.append(new_data)
+
+            elif target_model == OrderPicking:
+                old_obj = picking_map.get(onum)
+                if old_obj:
+                    _minimal_update_bulk(old_obj, new_data)
+                else:
+                    to_insert_picking.append(new_data)
+
+            elif target_model == OrderCancelled:
+                old_obj = cancelled_map.get(onum)
+                if old_obj:
+                    _minimal_update_bulk(old_obj, new_data)
+                else:
+                    to_insert_cancelled.append(new_data)
+
+        # 5) Tek seferde ekle
+        if to_insert_created:
+            db.session.bulk_insert_mappings(OrderCreated, to_insert_created)
+            logger.info(f"{len(to_insert_created)} Created sipariş eklendi (bulk).")
+        if to_insert_picking:
+            db.session.bulk_insert_mappings(OrderPicking, to_insert_picking)
+            logger.info(f"{len(to_insert_picking)} Picking sipariş eklendi (bulk).")
+        if to_insert_cancelled:
+            db.session.bulk_insert_mappings(OrderCancelled, to_insert_cancelled)
+            logger.info(f"{len(to_insert_cancelled)} Cancelled sipariş eklendi (bulk).")
+
+        # 6) Commit
+        db.session.commit()
+        logger.info("Created/Picking/Cancelled siparişler tek seferde güncellendi ve commit edildi.")
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        logger.error(f"Senkron sipariş kaydetme hatası: {e}")
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Senkron sipariş beklenmeyen hata: {e}")
+
+
+def _minimal_update_bulk(old_obj, new_data):
+    """
+    Basit 'update' mantığı: statü, barkod, quantity, details vs.
+    """
+    old_obj.status = new_data.get('status')
+    old_obj.product_barcode = new_data.get('product_barcode')
+    old_obj.order_date = new_data.get('order_date')
+    old_obj.quantity = new_data.get('quantity')
+    old_obj.commission = new_data.get('commission')
+    old_obj.details = new_data.get('details')
+
+
+############################
+# 3) Arka Plan Shipped/Delivered (Toplu Yaklaşım)
+############################
+def process_bg_orders_bulk(bg_orders, app):
+    """
+    Shipped ve Delivered siparişlerini tek seferde tablolara ekle/sil (bulk).
     """
     with app.app_context():
         try:
             if not bg_orders:
                 return
 
-            # Tek seferde tablo sorgusu için:
-            order_numbers = set(str(od.get('orderNumber') or od.get('id')) for od in bg_orders)
+            # 1) Sipariş seti
+            numbers = {str(od.get('orderNumber') or od.get('id')) for od in bg_orders}
 
-            existing_created   = OrderCreated.query.filter(OrderCreated.order_number.in_(order_numbers)).all()
-            existing_picking   = OrderPicking.query.filter(OrderPicking.order_number.in_(order_numbers)).all()
-            existing_shipped   = OrderShipped.query.filter(OrderShipped.order_number.in_(order_numbers)).all()
-            existing_delivered = OrderDelivered.query.filter(OrderDelivered.order_number.in_(order_numbers)).all()
-            existing_cancelled = OrderCancelled.query.filter(OrderCancelled.order_number.in_(order_numbers)).all()
+            # 2) Mevcut picking / shipped sorgula
+            existing_picking = OrderPicking.query.filter(OrderPicking.order_number.in_(numbers)).all()
+            existing_shipped = OrderShipped.query.filter(OrderShipped.order_number.in_(numbers)).all()
 
-            created_map   = {r.order_number: (r, OrderCreated)   for r in existing_created}
-            picking_map   = {r.order_number: (r, OrderPicking)   for r in existing_picking}
-            shipped_map   = {r.order_number: (r, OrderShipped)   for r in existing_shipped}
-            delivered_map = {r.order_number: (r, OrderDelivered) for r in existing_delivered}
-            cancelled_map = {r.order_number: (r, OrderCancelled) for r in existing_cancelled}
+            picking_map = {r.order_number: r for r in existing_picking}
+            shipped_map = {r.order_number: r for r in existing_shipped}
 
-            def find_existing_bg(onum):
-                if onum in created_map:
-                    return created_map[onum]
-                if onum in picking_map:
-                    return picking_map[onum]
-                if onum in shipped_map:
-                    return shipped_map[onum]
-                if onum in delivered_map:
-                    return delivered_map[onum]
-                if onum in cancelled_map:
-                    return cancelled_map[onum]
-                return None, None
+            # Toplu ekleme/silme listeleri
+            to_insert_shipped = []
+            to_insert_delivered = []
+            to_delete_picking = []
+            to_delete_shipped = []
 
+            # 3) Döngüyle Shipped/Delivered ayrımı
             for od in bg_orders:
-                order_number = str(od.get('orderNumber') or od.get('id'))
+                onum = str(od.get('orderNumber') or od.get('id'))
                 st = (od.get('status') or '').strip()
 
-                old_obj, old_model = find_existing_bg(order_number)
-                if not old_obj:
-                    # Eğer arka planda tablo yoksa, Shipped ise ekleyebiliriz.
-                    if st == 'Shipped':
-                        new_data = combine_line_items(od, 'Shipped')
-                        db.session.bulk_insert_mappings(OrderShipped, [new_data])
-                        logger.info(f"Yeni shipped sipariş (arka plan) eklendi: {order_number}")
-                    continue
+                if st == 'Shipped':
+                    # picking → shipped
+                    old_pick = picking_map.get(onum)
+                    data_dict = combine_line_items(od, 'Shipped')
+                    if old_pick:
+                        to_delete_picking.append(old_pick.id)
+                    to_insert_shipped.append(data_dict)
 
-                # Eğer Delivered ise Shipped tablosundan Delivered tablosuna taşı
-                if st == 'Delivered' and old_model == OrderShipped:
-                    move_order_between_tables_in_memory(order_number, old_obj, old_model, OrderDelivered)
-                    logger.info(f"{order_number} shipped'den delivered'a taşındı (arka plan).")
+                elif st == 'Delivered':
+                    # shipped → delivered
+                    old_ship = shipped_map.get(onum)
+                    data_dict = combine_line_items(od, 'Delivered')
+                    if old_ship:
+                        to_delete_shipped.append(old_ship.id)
+                    to_insert_delivered.append(data_dict)
+
+            # 4) Bulk insert & delete
+            if to_insert_shipped:
+                db.session.bulk_insert_mappings(OrderShipped, to_insert_shipped)
+                logger.info(f"{len(to_insert_shipped)} sipariş Shipped tablosuna eklendi (arka plan).")
+
+            if to_insert_delivered:
+                db.session.bulk_insert_mappings(OrderDelivered, to_insert_delivered)
+                logger.info(f"{len(to_insert_delivered)} sipariş Delivered tablosuna eklendi (arka plan).")
+
+            if to_delete_picking:
+                OrderPicking.query.filter(OrderPicking.id.in_(to_delete_picking)).delete(synchronize_session=False)
+                logger.info(f"{len(to_delete_picking)} sipariş picking tablosundan silindi (arka plan).")
+
+            if to_delete_shipped:
+                OrderShipped.query.filter(OrderShipped.id.in_(to_delete_shipped)).delete(synchronize_session=False)
+                logger.info(f"{len(to_delete_shipped)} sipariş shipped tablosundan silindi (arka plan).")
 
             db.session.commit()
-            logger.info("Arka plan siparişleri tamamlandı ve commit edildi.")
+            logger.info("Arka plan Shipped/Delivered siparişleri tek seferde tamamlandı.")
 
         except Exception as e:
-            logger.error(f"Hata (process_bg_orders): {e}")
             db.session.rollback()
+            logger.error(f"Hata (process_bg_orders_bulk): {e}")
 
 
 ############################
-# Tablolar Arası Taşıma (Commit'siz)
+# Yardımcı Fonksiyonlar (Barkod vs.)
 ############################
-def move_order_between_tables_in_memory(order_number, old_rec, old_model, new_model):
-    """
-    Siparişin kaydını eski tablodan silip, verilerini yeni tabloya taşır.
-    Tek transaction kapsamında commit etmez, process_all_orders sonunda commit edilecek.
-    """
-    if not old_rec:
-        logger.error(f"Sipariş bulunamadı: {order_number} ({old_model.__tablename__})")
-        return
-
-    data = old_rec.__dict__.copy()
-    data.pop('_sa_instance_state', None)
-
-    new_cols = set(new_model.__table__.columns.keys())
-    data = {k: v for k, v in data.items() if k in new_cols}
-
-    new_rec = new_model(**data)
-    db.session.add(new_rec)
-    db.session.delete(old_rec)
-    logger.info(f"Sipariş taşındı: {order_number} -> {new_model.__tablename__}")
-
-
-############################
-# 3) Minimal Update Mantığı (Commit Etme)
-############################
-def update_existing_order_minimal(order_obj, order_data, commit_immediately=False):
-    """
-    - Delivered/Cancelled ise barkodu güncelleme
-    - Shipped ise sadece statüyü güncelle
-    - Created/Picking/Invoiced ise barkodu silip yeniden ekle
-    - commit_immediately=False: Biriktiriyoruz, en sonda toplu commit.
-    """
-    new_status = (order_data.get('status') or '').strip()
-
-    # Halihazırda Delivered/Cancelled ise dokunma
-    if order_obj.status in ('Delivered', 'Cancelled'):
-        logger.info(f"{order_obj.order_number} zaten {order_obj.status}, güncellenmedi.")
-        return
-
-    # Delivered/Cancelled ise statüyü set et, barkod vs. değiştirme
-    if new_status in ('Delivered', 'Cancelled'):
-        order_obj.status = new_status
-        if commit_immediately:
-            db.session.commit()
-        logger.info(f"{order_obj.order_number} -> statü {new_status}, barkod güncellenmedi.")
-        return
-
-    # Shipped ise statüyü set et, barkod güncelleme
-    if new_status == 'Shipped':
-        order_obj.status = 'Shipped'
-        if commit_immediately:
-            db.session.commit()
-        logger.info(f"{order_obj.order_number} -> Shipped yapıldı, barkod güncellenmedi.")
-        return
-
-    # Geri kalan (Created, Picking, Invoiced) barkod vs. sıfırla ve yeniden doldur
-    order_obj.merchant_sku = ''
-    order_obj.product_barcode = ''
-    order_obj.original_product_barcode = ''
-    order_obj.line_id = ''
-    order_obj.quantity = 0
-    order_obj.commission = 0.0
-    order_obj.status = new_status
-
-    lines = order_data.get('lines', [])
-    new_skus, new_bcs, new_obcs, new_lids = [], [], [], []
-
-    for li in lines:
-        qty = safe_int(li.get('quantity'), 1)
-        cf = safe_float(li.get('commissionFee'), 0.0)
-        order_obj.quantity += qty
-        order_obj.commission += cf
-
-        msku = li.get('merchantSku', '')
-        original_bc = li.get('barcode', '')
-        converted_bc = replace_turkish_characters_cached(original_bc)
-        lid = str(li.get('id', ''))
-
-        if msku: new_skus.append(msku)
-        if converted_bc: new_bcs.append(converted_bc)
-        if original_bc: new_obcs.append(original_bc)
-        if lid: new_lids.append(lid)
-
-    order_obj.merchant_sku = ', '.join(new_skus)
-    order_obj.product_barcode = ', '.join(new_bcs)
-    order_obj.original_product_barcode = ', '.join(new_obcs)
-    order_obj.line_id = ', '.join(new_lids)
-
-    from json import dumps
-    details_dict = create_order_details(lines)
-    order_obj.details = dumps(details_dict, ensure_ascii=False)
-
-    if commit_immediately:
-        db.session.commit()
-
-    logger.info(f"{order_obj.order_number} -> {new_status}, barkod güncellendi.")
-
-
-############################
-# 4) Yardımcı Fonksiyonlar
-############################
-
-# Basit int/float convert fonksiyonları
 def safe_int(val, default=0):
     try:
         return int(val)
@@ -436,8 +384,6 @@ def safe_float(val, default=0.0):
     except:
         return default
 
-
-# Basit bir cache kullanarak aynı metin tekrar dönüştürüldüğünde hız kazanın
 _turkish_replace_cache = {}
 
 def replace_turkish_characters_cached(text):
@@ -445,15 +391,13 @@ def replace_turkish_characters_cached(text):
         return text
     if text in _turkish_replace_cache:
         return _turkish_replace_cache[text]
-
     converted = replace_turkish_characters(text)
     _turkish_replace_cache[text] = converted
     return converted
 
-
 def replace_turkish_characters(text):
     """
-    Orijinal karakter dönüştürme fonksiyonunuz.
+    Karakter dönüşüm fonksiyonu.
     """
     if not isinstance(text, str):
         return text
@@ -471,55 +415,52 @@ def replace_turkish_characters(text):
     })
     return text.translate(replacements)
 
-
 def create_order_details(lines):
     """
-    lines içindeki her bir barkod, color, size vb. birleştirir.
-    Tekrarlı satırları quantity toplayarak tek entry haline getirir.
+    lines içindeki barkod, color, size vb. birleştirir.
+    Toplam quantity vb. alanları doldurur. (Örnek)
     """
     details_dict = {}
     total_quantity = 0
     for line in lines:
         bc = line.get('barcode', '')
-        c = line.get('productColor', '')
-        s = line.get('productSize', '')
+        color = line.get('productColor', '')
+        size_ = line.get('productSize', '')
         q = safe_int(line.get('quantity'), 1)
         total_quantity += q
         cf = safe_float(line.get('commissionFee'), 0.0)
         line_id = str(line.get('id', ''))
 
-        key = (bc, c, s)
+        key = (bc, color, size_)
         if key not in details_dict:
             details_dict[key] = {
                 'barcode': bc,
                 'converted_barcode': replace_turkish_characters_cached(bc),
-                'color': c,
-                'size': s,
+                'color': color,
+                'size': size_,
                 'sku': line.get('merchantSku', ''),
                 'productName': line.get('productName', ''),
                 'productCode': str(line.get('productCode', '')),
                 'product_main_id': str(line.get('productId', '')),
                 'quantity': q,
-                'total_price': safe_float(line.get('amount'), 0) * q,
-                'line_id': line_id,
                 'commissionFee': cf,
-                'image_url': ''
+                'line_id': line_id,
+                'total_price': safe_float(line.get('amount'), 0) * q
             }
         else:
             details_dict[key]['quantity'] += q
             details_dict[key]['commissionFee'] += cf
             details_dict[key]['total_price'] += safe_float(line.get('amount'), 0) * q
 
-    for det in details_dict.values():
-        det['total_quantity'] = total_quantity
+    # Her entry'ye toplam quantity koy
+    for val in details_dict.values():
+        val['total_quantity'] = total_quantity
 
     return list(details_dict.values())
 
-
 def combine_line_items(order_data, status):
     """
-    Yeni sipariş eklemek için dict döndürür.
-    Barkodları vs. virgülle birleştirir.
+    Tabloya yazılacak verileri hazırlayan fonksiyon (SENİN GÜNCEL KODUN).
     """
     lines = order_data.get('lines', [])
     total_qty = 0
@@ -584,9 +525,9 @@ def combine_line_items(order_data, status):
     }
 
 
-########################################
-# Ek Rotalar: Created, Picking, Shipped, Delivered, Cancelled
-########################################
+############################
+# 4) Rotalar: Created, Picking, Shipped, Delivered, Cancelled
+############################
 
 @order_service_bp.route('/order-list/new', methods=['GET'])
 def get_new_orders():
@@ -596,11 +537,13 @@ def get_new_orders():
     paginated = q.paginate(page=page, per_page=per_page, error_out=False)
     orders = paginated.items
     process_order_details(orders)
-    return render_template('order_list.html',
-                           orders=orders,
-                           page=page,
-                           total_pages=paginated.pages,
-                           total_orders_count=paginated.total)
+    return render_template(
+        'order_list.html',
+        orders=orders,
+        page=page,
+        total_pages=paginated.pages,
+        total_orders_count=paginated.total
+    )
 
 @order_service_bp.route('/order-list/picking', methods=['GET'])
 def get_picking_orders():
@@ -610,11 +553,13 @@ def get_picking_orders():
     paginated = q.paginate(page=page, per_page=per_page, error_out=False)
     orders = paginated.items
     process_order_details(orders)
-    return render_template('order_list.html',
-                           orders=orders,
-                           page=page,
-                           total_pages=paginated.pages,
-                           total_orders_count=paginated.total)
+    return render_template(
+        'order_list.html',
+        orders=orders,
+        page=page,
+        total_pages=paginated.pages,
+        total_orders_count=paginated.total
+    )
 
 @order_service_bp.route('/order-list/shipped', methods=['GET'])
 def get_shipped_orders():
@@ -624,11 +569,13 @@ def get_shipped_orders():
     paginated = q.paginate(page=page, per_page=per_page, error_out=False)
     orders = paginated.items
     process_order_details(orders)
-    return render_template('order_list.html',
-                           orders=orders,
-                           page=page,
-                           total_pages=paginated.pages,
-                           total_orders_count=paginated.total)
+    return render_template(
+        'order_list.html',
+        orders=orders,
+        page=page,
+        total_pages=paginated.pages,
+        total_orders_count=paginated.total
+    )
 
 @order_service_bp.route('/order-list/delivered', methods=['GET'])
 def get_delivered_orders():
@@ -638,11 +585,13 @@ def get_delivered_orders():
     paginated = q.paginate(page=page, per_page=per_page, error_out=False)
     orders = paginated.items
     process_order_details(orders)
-    return render_template('order_list.html',
-                           orders=orders,
-                           page=page,
-                           total_pages=paginated.pages,
-                           total_orders_count=paginated.total)
+    return render_template(
+        'order_list.html',
+        orders=orders,
+        page=page,
+        total_pages=paginated.pages,
+        total_orders_count=paginated.total
+    )
 
 @order_service_bp.route('/order-list/cancelled', methods=['GET'])
 def get_cancelled_orders():
@@ -652,8 +601,10 @@ def get_cancelled_orders():
     paginated = q.paginate(page=page, per_page=per_page, error_out=False)
     orders = paginated.items
     process_order_details(orders)
-    return render_template('order_list.html',
-                           orders=orders,
-                           page=page,
-                           total_pages=paginated.pages,
-                           total_orders_count=paginated.total)
+    return render_template(
+        'order_list.html',
+        orders=orders,
+        page=page,
+        total_pages=paginated.pages,
+        total_orders_count=paginated.total
+    )
