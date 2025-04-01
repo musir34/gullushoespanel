@@ -29,8 +29,8 @@ except ImportError:
          pass
 
 # --- Loglama Ayarları ---
-# Temel loglama yapılandırması
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+# Logger_config.py'dan loglama modülünü kullanalım
+from logger_config import app_logger as logging
 
 # --- Form Tanımı ---
 # ProfitReportForm sınıfını doğrudan bu dosyada tanımlıyoruz
@@ -218,19 +218,27 @@ def profit_report():
                                 daily_profit_data[date_str] = daily_profit_data.get(date_str, Decimal('0.0')) + item['profit']
                             # else: Tarih yoksa veya geçersizse grafiğe ekleme
 
-                        if daily_profit_data:
-                            sorted_dates = sorted(daily_profit_data.keys())
-                            chart_labels = sorted_dates
-                            # Chart.js float bekler, Decimal'i float'a çevir
-                            chart_values = [float(daily_profit_data[date]) for date in sorted_dates]
+                        # Veri bulunamasa bile en azından boş bir grafik gösterelim
+                        sorted_dates = sorted(daily_profit_data.keys()) if daily_profit_data else []
+                        chart_labels = sorted_dates
+                        
+                        # Chart.js float bekler, Decimal'i float'a çevir
+                        chart_values = [float(daily_profit_data[date]) for date in sorted_dates]
+                        
+                        if chart_labels:
                             logging.info(f"Grafik için {len(chart_labels)} günlük veri noktası hazırlandı.")
                         else:
-                             logging.info("Grafik oluşturmak için yeterli günlük veri bulunamadı (geçerli tarihli sipariş yok?).")
+                            logging.warning("Grafik için veri bulunamadı. Boş grafik gösterilecek.")
+                            # Boş grafik için en azından bir örnek veri noktası oluşturalım
+                            chart_labels = [datetime.now().strftime('%Y-%m-%d')]
+                            chart_values = [0.0]
 
                     except Exception as chart_e:
                         logging.error(f"Grafik verisi hazırlanırken hata oluştu: {chart_e}")
-                        chart_labels = [] # Hata durumunda sıfırla
-                        chart_values = []
+                        # Hata durumunda basit bir veri seti oluşturalım
+                        chart_labels = [datetime.now().strftime('%Y-%m-%d')] 
+                        chart_values = [0.0]
+                        flash("Grafik verisi oluşturulurken bir hata oluştu, basit görünüm gösteriliyor.", "warning")
                 # --- GRAFİK VERİSİ HAZIRLAMA SONU ---
 
                 # 6) Ortalama kârı hesapla
