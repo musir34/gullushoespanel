@@ -170,9 +170,10 @@
         </div>
 
         <div class="chart-container">
-            <h5 class="text-center mb-3"><i class="bi bi-bar-chart-line-fill"></i> Kâr/Zarar Zaman Çizelgesi</h5>
+            <h5 class="text-center mb-3"><i class="bi bi-bar-chart-line-fill"></i> Kâr/Zarar Zaman Çizelgesi (Yakında!)</h5>
             {# Grafik için Canvas elementi #}
             <canvas id="profitChart"></canvas>
+            <p class="text-muted text-center small mt-2">Not: Grafik verisi henüz eklenmemiştir.</p> {# Şimdilik yer tutucu #}
         </div>
 
         <div class="card shadow-sm">
@@ -252,69 +253,68 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
 
 <script>
-  document.addEventListener('DOMContentLoaded', function() {
-    try {
-      // Grafik verisi HTML'den alınıyor
-      const chartLabels = {{ chart_labels|tojson }};
-      const chartValues = {{ chart_values|tojson }};
+    // Bu script bloğu grafik verisi Flask tarafından gönderildiğinde doldurulacak
+    const ctx = document.getElementById('profitChart');
 
-      const canvas = document.getElementById('profitChart');
+    // Örnek Veri (Flask'tan gelmesi gereken yapı)
+    // const chartLabels = {{ chart_labels|tojson|safe }}; // ['2024-01-01', '2024-01-02', ...];
+    // const chartData = {{ chart_values|tojson|safe }};   // [150.50, -25.10, 300.00, ...];
 
-      if (!canvas) {
-        console.error("Grafik canvas'ı bulunamadı!");
-        return;
-      }
-
-      if (!chartLabels || !chartValues) {
-        console.warn("Chart.js yüklendi ve canvas bulundu, ancak grafik verisi bulunamadı.");
-        return;
-      }
-
-      if (chartLabels.length === 0 || chartValues.length === 0) {
-        console.warn("Chart.js yüklendi ve canvas bulundu, ancak grafik verisi boş.");
-        return;
-      }
-
-      // Grafik oluşturma
-      const ctx = canvas.getContext('2d');
-      new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: chartLabels,
-          datasets: [{
-            label: 'Günlük Kâr/Zarar (TL)',
-            data: chartValues,
-            borderColor: function() {
-              // Değer pozitifse yeşil, negatifse kırmızı
-              return chartValues.map(value => value >= 0 ? '#28a745' : '#dc3545');
-            },
-            tension: 0.1,
-            fill: false
-          }]
-        },
-        options: {
-          responsive: true,
-          scales: {
-            y: {
-              beginAtZero: false
-            }
-          },
-          plugins: {
-            tooltip: {
-              callbacks: {
-                label: function(context) {
-                  return `${context.parsed.y.toFixed(2)} TL`;
-                }
-              }
-            }
-          }
-        }
-      });
-      console.log("Kâr/Zarar grafiği başarıyla oluşturuldu.");
-    } catch (e) {
-      console.error("Grafik oluşturulurken hata:", e);
-    }
-  });
+    // Şimdilik grafik oluşturmayı yorum satırı yapalım veya boş gösterelim
+    if (typeof Chart !== 'undefined' && ctx /* && typeof chartLabels !== 'undefined' && typeof chartData !== 'undefined' */) {
+         /*
+         const profitChart = new Chart(ctx, {
+             type: 'line', // Veya 'bar'
+             data: {
+                 labels: chartLabels,
+                 datasets: [{
+                     label: 'Günlük Kâr/Zarar (TL)',
+                     data: chartData,
+                     borderColor: function(context) {
+                         const index = context.dataIndex;
+                         const value = context.dataset.data[index];
+                         return value >= 0 ? 'rgba(25, 135, 84, 0.8)' : 'rgba(220, 53, 69, 0.8)'; // Yeşil veya Kırmızı
+                     },
+                     backgroundColor: function(context) {
+                         const index = context.dataIndex;
+                         const value = context.dataset.data[index];
+                         return value >= 0 ? 'rgba(25, 135, 84, 0.2)' : 'rgba(220, 53, 69, 0.2)'; // Alan rengi
+                     },
+                     tension: 0.1,
+                     fill: true // Alanı doldur
+                 }]
+             },
+             options: {
+                 responsive: true,
+                 maintainAspectRatio: false, // Container'a uyması için
+                 scales: {
+                     y: {
+                         beginAtZero: false // Kâr/Zarar olduğu için sıfırdan başlamayabilir
+                     }
+                 },
+                 plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed.y !== null) {
+                                    label += new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(context.parsed.y);
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                 }
+             }
+         });
+         */
+         console.log("Chart.js yüklendi ve canvas bulundu, ancak grafik verisi bekleniyor.");
+     } else {
+         console.log("Chart.js yüklenemedi veya canvas elementi bulunamadı.");
+     }
 </script>
 
 </body>
