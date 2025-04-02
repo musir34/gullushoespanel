@@ -3,35 +3,29 @@ import json
 import logging
 from datetime import timedelta
 
-from flask import Flask, request, url_for, redirect, flash, session, current_app
+from flask import Flask, request, url_for, redirect, flash, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from werkzeug.routing import BuildError
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
+from flask_login import LoginManager
+from models import db, Base, User
 
-# Flask-Login yapılandırması için
-from flask_login import LoginManager, current_user
-from models import db, Base, User  # User modelinizin doğru tanımlandığından emin olun
-
-# Logging ayarları
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Ana uygulama oluşturma
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'varsayılan_anahtar')
 
-# Flask-Login yapılandırması
 login_manager = LoginManager()
 login_manager.init_app(app)
-login_manager.login_view = "login_logout.login"  # Giriş yapmamış kullanıcıların yönlendirileceği endpoint
+login_manager.login_view = "login_logout.login"
 
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
 
-# JSON filtresi ekle
 @app.template_filter('from_json')
 def from_json(value):
     try:
@@ -39,34 +33,24 @@ def from_json(value):
     except Exception:
         return {}
 
-# Asenkron işlemleri destekle
 CORS(app)
 
-# Veritabanı ayarları
-DATABASE_URI = os.environ.get('DATABASE_URL', 'postgresql+psycopg2://username:password@host:port/database_name')
+DATABASE_URI = os.environ.get('DATABASE_URL')
 app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URI
 
-# SQLAlchemy veritabanı motoru ve oturum oluşturma
 try:
-    engine = create_engine(DATABASE_URI)
+    engine = create_engine(DATABASE_URI, pool_pre_ping=True)
     Session = sessionmaker(bind=engine)
     Base.metadata.create_all(engine)
-    logger.info("Veritabanına başarıyla bağlanıldı ve tablolar oluşturuldu.")
+    app.config['Session'] = Session
+    logger.info("Veritabanına başarıyla bağlanıldı.")
 except Exception as e:
     logger.error(f"Veritabanı bağlantı hatası: {e}")
-    engine = None
+    raise SystemExit("Veritabanına bağlanamadı.")
 
-# Session nesnesini uygulama context'ine ekleyelim
-app.config['Session'] = Session
-
-# Flask-SQLAlchemy, Flask-Login ve diğer uzantıları başlat
 db.init_app(app)
 
-# Trendyol API servisleri
-from cache_config import redis_client, CACHE_TIMES
-from siparisler import siparisler_bp
-
-# Blueprint'lerin kaydını toplu olarak en sonda yapacağız
+# Blueprint'ler
 from product_service import product_service_bp
 from claims_service import claims_service_bp
 from order_service import order_service_bp
@@ -85,51 +69,20 @@ from siparis_fisi import siparis_fisi_bp
 from analysis import analysis_bp
 from stock_report import stock_report_bp
 from openai_service import openai_bp
+from siparisler import siparisler_bp
 from user_logs import user_logs_bp, log_user_action
 from commission_update_routes import commission_update_bp
 from profit import profit_bp
 
-with app.app_context():
-    # Eksik sütunu ekle
-    db.session.execute(text('ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_date TIMESTAMP'))
-
-    # Yeni tabloları oluştur
-    from models import YeniSiparis, SiparisUrun
-    db.create_all()
-
-    # ProductArchive tablosunu oluştur
-    from models import ProductArchive
-    from sqlalchemy import inspect
-    inspector = inspect(db.engine)
-    if not inspector.has_table('product_archive'):
-        ProductArchive.__table__.create(db.engine)
-
-    db.session.commit()
-
-
 blueprints = [
-    order_service_bp,
-    update_service_bp,
-    archive_bp,
-    order_list_service_bp,
-    login_logout_bp,
-    degisim_bp,
-    home_bp,
-    get_products_bp,
-    all_orders_service_bp,
-    new_orders_service_bp,
-    processed_orders_service_bp,
-    iade_islemleri,
-    siparis_fisi_bp,
-    analysis_bp,
-    stock_report_bp,
-    openai_bp,
-    siparisler_bp,
-    product_service_bp,
-    claims_service_bp,
-    user_logs_bp,
-    commission_update_bp,
-    profit_bp
+    order_service_bp, update_service_bp, archive_bp,
+    order_list_service_bp, login_logout_bp, degisim_bp,
+    home_bp, get_products_bp, all_orders_service_bp,
+    new_orders_service_bp, processed_orders_service_bp,
+    iade_islemleri, siparis_fisi_bp, analysis_bp,
+    stock_report_bp, openai_bp, siparisler_bp,
+    product_service_bp, claims_service_bp,
+    user_logs_bp, commission_update_bp, profit_bp
 ]
 
 for bp in blueprints:
@@ -137,40 +90,28 @@ for bp in blueprints:
 
 @app.before_request
 def log_request():
-    # Her isteği logla; statik dosyalar hariç
     if not request.path.startswith('/static/'):
-        # log_user_action fonksiyonu Flask-Login ve session kontrolü yapıyor
-        from user_logs import log_user_action
         log_user_action(
             action=f"PAGE_VIEW: {request.endpoint}",
-            details={
-                'path': request.path,
-                'endpoint': request.endpoint
-            },
+            details={'path': request.path, 'endpoint': request.endpoint},
             force_log=True
         )
 
 @app.before_request
 def check_authentication():
-    # İzin verilen rotalar
     allowed_routes = [
-        'login_logout.login',
-        'login_logout.register',
-        'login_logout.static',
-        'login_logout.verify_totp',
+        'login_logout.login', 'login_logout.register',
+        'login_logout.static', 'login_logout.verify_totp',
         'login_logout.logout'
     ]
 
-    # Oturum süresini ayarla - 1 ay (30 gün)
     app.permanent_session_lifetime = timedelta(days=30)
 
-    # Eğer izin verilen rotalara istek yapılmışsa ve kullanıcı henüz giriş yapmamışsa yönlendir
     if request.endpoint not in allowed_routes:
         if 'username' not in session:
             flash('Lütfen giriş yapınız.', 'danger')
             return redirect(url_for('login_logout.login'))
 
-        # Kullanıcı giriş yapmış ama TOTP doğrulaması yapmamışsa
         if 'pending_user' in session and request.endpoint != 'login_logout.verify_totp':
             return redirect(url_for('login_logout.verify_totp'))
 
@@ -188,9 +129,6 @@ def custom_url_for(endpoint, **values):
 
 app.jinja_env.globals['url_for'] = custom_url_for
 
-#####################################
-# APScheduler ile işlerin planlanması
-#####################################
 from apscheduler.schedulers.background import BackgroundScheduler
 
 def fetch_and_save_returns():
@@ -198,15 +136,9 @@ def fetch_and_save_returns():
         data = fetch_data_from_api()
         save_to_database(data)
 
-def schedule_jobs(app):
-    scheduler = BackgroundScheduler(timezone="Europe/Istanbul")
-    # Her gün 23:50'de çalışacak cron job
-    scheduler.add_job(func=fetch_and_save_returns, trigger='cron', hour=23, minute=50)
-    scheduler.start()
-
-# schedule_jobs fonksiyonunu app.run'dan önce çağır:
-schedule_jobs(app)
+scheduler = BackgroundScheduler(timezone="Europe/Istanbul")
+scheduler.add_job(func=fetch_and_save_returns, trigger='cron', hour=23, minute=50)
+scheduler.start()
 
 if __name__ == '__main__':
-    debug_mode = os.environ.get('FLASK_DEBUG', 'False') == 'True'
-    app.run(host='0.0.0.0', port=8080, debug=debug_mode)
+    app.run(host='0.0.0.0', port=8080)
